@@ -1,0 +1,7 @@
+name = "Surrogates"
+uuid = "6fc51010-71bc-11e9-0e15-a3fcc6593c49"
+authors = ["ludoro <ludovicobessi@gmail.com>"]
+version = "0.1.0"
+
+[deps]
+DifferentialEquations = "0c46a032-eb83-5123-abaf-570d42b7fbaa"
