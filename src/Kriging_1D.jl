@@ -31,7 +31,6 @@ function Kriging_1D(x,y,p)
     return mu[1], b, sigma[1],inverse_of_R
 end
 
-mu,b,sigma,inverse_cov = Kriging_1D([1,2,3,4], [3,4,5,8],1.5)
 function evaluate(new_point,p,mu,b,x,sigma,inv)
     #= Krigin predictor:
     y(x*) = mu + sum(b_i * phi(x* - x[i]))
