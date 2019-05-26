@@ -1,12 +1,15 @@
 function Radial_1D(x,y,a,b,kind::String,lambda = 0)
-    #=
+    '''
     (x,y) set of nodes
     (a,b) interval
     kind is type of radial basis function
     lambda is optional parameter with kind == multiquadric
-    =#
+    '''
 
-    #1D Chebyshev is suggested
+    if length(x) != length(y)
+        error("Data length does not match")
+    end
+
     Chebyshev(x,k) = cos(k*acos(-1 + 2/(b-a)*(x-a)))
 
     #Type of Radial basis function
@@ -33,17 +36,14 @@ function Radial_1D(x,y,a,b,kind::String,lambda = 0)
             error("Wrong type")
         end
     end
-    if length(x) != length(y)
-        error("Data length does not match")
-    end
     n = length(x)
     #Find coefficients for both radial basis functions and polynomial terms
     size = n+q
-    D = zeros(Float32, size, size)
-    d = zeros(Float32,size)
+    D = zeros(float(eltype(x)), size, size)
+    d = zeros(float(eltype(x)),size)
     #In this array I have in the first n entries the coefficient of the radial
     #basis function, in the last q term the coefficients for polynomial terms
-    coeff = zeros(Float32,size)
+    coeff = zeros(float(eltype(x)),size)
 
     #Matrix made by 4 blocks:
     #=
@@ -53,7 +53,7 @@ function Radial_1D(x,y,a,b,kind::String,lambda = 0)
     =#
 
 
-    for i = 1:n
+    @inbounds for i = 1:n
         d[i] =  y[i]
         for j = 1:n
             D[i,j] = phi(x[i] - x[j])
@@ -64,6 +64,8 @@ function Radial_1D(x,y,a,b,kind::String,lambda = 0)
             D[k,i] = D[i,k]
         end
     end
+
+    Sym = Symmetric(D)
 
     #Vector of size n + q containing in the first n terms the coefficients of
     # the radial basis function and in the last q term the coefficient for the
