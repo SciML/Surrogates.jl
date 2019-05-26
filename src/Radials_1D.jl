@@ -6,7 +6,6 @@ function Radial_1D(x,y,a,b,kind::String,lambda = 0)
     lambda is optional parameter with kind == multiquadric
     =#
 
-
     #1D Chebyshev is suggested
     Chebyshev(x,k) = cos(k*acos(-1 + 2/(b-a)*(x-a)))
 
