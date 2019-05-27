@@ -1,9 +1,24 @@
-'''
+abstract type AbstractBasisFunction end
+
+struct Basis <: AbstractBasisFunction
+    phi::Function
+    number_of_elements_in_polynomial_basis::Int
+end
+
+linear_basis_function = Basis(z->abs(z), 1)
+cubic_basis_function = Basis(z->abs(z)^3, 2)
+thinplate_basis_function = Basis(z->z^2*log(abs(z)),2)
+function multiquadric_basis_function(lambda)
+    return Basis(z->sqrt(abs(z)^2 + lambda^2),1)
+end
+
+
+"""
 (x,y) set of nodes
 (a,b) interval
 kind is type of radial basis function
 lambda is optional parameter with kind == multiquadric
-'''
+"""
 function Radial_1D(x,y,a,b,kind::String,lambda = 0)
     if length(x) != length(y)
         error("Data length does not match")

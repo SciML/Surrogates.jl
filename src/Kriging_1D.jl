@@ -1,9 +1,8 @@
-'''
+"""
 theta_l > 0 higher theta models functions that are highly changing in the
             l-th coordinate,
 0 < p <= 2, higher p -> function being modelled is smoother
-'''
-
+"""
 function Kriging_1D(x,y,p)
 
     if length(x) != length(y)
@@ -30,10 +29,10 @@ function Kriging_1D(x,y,p)
     return mu[1], b, sigma[1],inverse_of_R
 end
 
-'''
-Krigin predictor:
+"""
+Kriging predictor:
 y(x*) = mu + sum(b_i * phi(x* - x[i]))
-'''
+"""
 function evaluate(new_point,p,mu,b,x,sigma,inv)
     n = length(x)
     #Building the predictor
