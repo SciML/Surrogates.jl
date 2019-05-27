@@ -5,7 +5,6 @@ function Radial_1D(x,y,a,b,kind::String,lambda = 0)
     kind is type of radial basis function
     lambda is optional parameter with kind == multiquadric
     '''
-
     if length(x) != length(y)
         error("Data length does not match")
     end
@@ -52,25 +51,24 @@ function Radial_1D(x,y,a,b,kind::String,lambda = 0)
     A nxn, B nxq A,B symmetric so the matrix D is symmetric as well.
     =#
 
-
     @inbounds for i = 1:n
         d[i] =  y[i]
         for j = 1:n
             D[i,j] = phi(x[i] - x[j])
         end
-        for k = n+1:size
-            #Symmetric
-            D[i,k] = Chebyshev(x[i],k)
-            D[k,i] = D[i,k]
+        if i < n + 1
+            for k = n+1:size
+                D[i,k] = Chebyshev(x[i],k)
+            end
         end
     end
 
-    Sym = Symmetric(D)
+    Sym = Symmetric(D,:U)
 
     #Vector of size n + q containing in the first n terms the coefficients of
     # the radial basis function and in the last q term the coefficient for the
     # polynomials
-    return D\d
+    return Sym\d
 
 end
 
