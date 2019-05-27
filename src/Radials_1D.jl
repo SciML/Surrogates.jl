@@ -1,10 +1,10 @@
+'''
+(x,y) set of nodes
+(a,b) interval
+kind is type of radial basis function
+lambda is optional parameter with kind == multiquadric
+'''
 function Radial_1D(x,y,a,b,kind::String,lambda = 0)
-    '''
-    (x,y) set of nodes
-    (a,b) interval
-    kind is type of radial basis function
-    lambda is optional parameter with kind == multiquadric
-    '''
     if length(x) != length(y)
         error("Data length does not match")
     end

@@ -1,16 +1,15 @@
+'''
+theta_l > 0 higher theta models functions that are highly changing in the
+            l-th coordinate,
+0 < p <= 2, higher p -> function being modelled is smoother
+'''
+
 function Kriging_1D(x,y,p)
-    #=
-    theta_l > 0 higher theta models functions that are highly changing in the
-                l-th coordinate, theta = 1 for now seemes the safest option
-                since we are in 1D (Tried very different values but it does not change result)
-    0 < p <= 2, higher p -> function being modelled is smoother
-    =#
-    theta_l = 1
 
     if length(x) != length(y)
         error("Dimension of x and y are not equal")
     end
-
+    theta_l = 1
     n = length(x)
 
     #Covariance matrix R
@@ -31,10 +30,11 @@ function Kriging_1D(x,y,p)
     return mu[1], b, sigma[1],inverse_of_R
 end
 
+'''
+Krigin predictor:
+y(x*) = mu + sum(b_i * phi(x* - x[i]))
+'''
 function evaluate(new_point,p,mu,b,x,sigma,inv)
-    #= Krigin predictor:
-    y(x*) = mu + sum(b_i * phi(x* - x[i]))
-    =#
     n = length(x)
     #Building the predictor
     phi(z) = exp(-(abs(z))^p)
