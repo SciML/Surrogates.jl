@@ -1,4 +1,10 @@
-using LinearAlgebra
+#=
+Rsponse surfaces implementantion, following:
+"A Taxonomy of Global Optimization Methods Based on Response Surfaces"
+by DONALD R. JONES
+=#
+
+export Radial_1D,evaluate_Radial
 
 abstract type AbstractBasisFunction end
 
@@ -68,7 +74,7 @@ coeff: returned vector from Radial_1D
 x: set of points
 (a,b): interval
 """
-function evaluate(value,coeff,x,a,b,basisFunc::AbstractBasisFunction)
+function evaluate_Radial(value,coeff,x,a,b,basisFunc::AbstractBasisFunction)
 
     Chebyshev(x,k) = cos(k*acos(-1 + 2/(b-a)*(x-a)))
     n = length(x)
