@@ -3,8 +3,10 @@ Rsponse surfaces implementantion, following:
 "A Taxonomy of Global Optimization Methods Based on Response Surfaces"
 by DONALD R. JONES
 =#
+using LinearAlgebra
 
-export Radial_1D,evaluate_Radial
+export Radial_1D,evaluate_Radial,linear_basis_function,
+       cubic_basis_function,thinplate_basis_function,multiquadric_basis_function
 
 abstract type AbstractBasisFunction end
 
@@ -13,19 +15,24 @@ struct Basis <: AbstractBasisFunction
     number_of_elements_in_polynomial_basis::Int
 end
 
-linear_basis_function = Basis(z->abs(z), 1)
-cubic_basis_function = Basis(z->abs(z)^3, 2)
-thinplate_basis_function = Basis(z->z^2*log(abs(z)),2)
+linear_basis_function = Basis(z->norm(z), 1)
+cubic_basis_function = Basis(z->norm(z)^3, 2)
+thinplate_basis_function = Basis(z->norm(z)^2*log(norm(z)),2)
 function multiquadric_basis_function(lambda)
-    return Basis(z->sqrt(abs(z)^2 + lambda^2),1)
+    return Basis(z->sqrt(norm(z)^2 + lambda^2),1)
 end
 
 
 """
-(x,y): set of nodes
-(a,b): interval
-basisFunc: selected Basis function
-Output: vector of coefficients n+q required by the estimator
+    Radial_1D(x,y,a,b,AbstractBasisFunction)
+
+Find coefficients for interpolation using a radial basis function and a low d
+degree polynomial.
+
+#Arguments:
+- (x,y): set of nodes
+- (a,b): interval
+- 'basisFunc': selected Basis function
 """
 function Radial_1D(x,y,a,b,basisFunc::AbstractBasisFunction)
     if length(x) != length(y)
@@ -35,20 +42,9 @@ function Radial_1D(x,y,a,b,basisFunc::AbstractBasisFunction)
 
     n = length(x)
     q = basisFunc.number_of_elements_in_polynomial_basis
-    #Find coefficients for both radial basis functions and polynomial terms
     size = n+q
     D = zeros(float(eltype(x)), size, size)
     d = zeros(float(eltype(x)),size)
-    #In this array I have in the first n entries the coefficient of the radial
-    #basis function, in the last q term the coefficients for polynomial terms
-    coeff = zeros(float(eltype(x)),size)
-
-    #Matrix made by 4 blocks:
-    #=
-    A | B
-    B^t | 0
-    A nxn, B nxq A,B symmetric so the matrix D is symmetric as well.
-    =#
 
     @inbounds for i = 1:n
         d[i] =  y[i]
@@ -69,10 +65,18 @@ function Radial_1D(x,y,a,b,basisFunc::AbstractBasisFunction)
 end
 
 """
-value: value at which you want the approximation
-coeff: returned vector from Radial_1D
-x: set of points
-(a,b): interval
+    evaluate_Radial(value,coeff,x,a,b,AbstractBasisFunction)
+
+Finds the estimation at point "value" given the coefficients previously
+calculated with  Radial_1D.
+
+#Arguments:
+
+- 'value' : value at which you want the approximation
+- 'coeff' : returned vector from Radial_1D
+- 'x' : set of points
+- (a,b): interval
+- 'basisFunc': same basis function used in Radial_1D
 """
 function evaluate_Radial(value,coeff,x,a,b,basisFunc::AbstractBasisFunction)
 

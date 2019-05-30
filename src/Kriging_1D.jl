@@ -3,15 +3,20 @@ One dimensional Kriging method, following this paper:
 "A Taxonomy of Global Optimization Methods Based on Response Surfaces"
 by DONALD R. JONES
 =#
+export Kriging_1D,evaluate_Kriging
 
 """
-Kriging:
-(x,y): sampled point
-p: value between 0 and 2 modelling the
+    Kriging_1D(x,y,p)
+
+Returns mu,b,sigma,inverse_of_R which are used to find
+estimation at a new point.
+
+#Arguments:
+
+-(x,y): sampled points
+-'p': value between 0 and 2 modelling the
    smoothness of the function being approximated, 0-> rough  2-> C^infinity
 """
-export Krigin_1D,evaluate_Kriging
-
 function Kriging_1D(x,y,p)
     if length(x) != length(y)
         error("Dimension of x and y are not equal")
@@ -24,7 +29,6 @@ function Kriging_1D(x,y,p)
             R[i,j] = exp(-theta_l*abs(x[i]-x[j])^p)
         end
     end
-    #Finding coeffcients
     one = ones(n,1)
     one_t = one'
     inverse_of_R = inv(R)
@@ -35,16 +39,18 @@ function Kriging_1D(x,y,p)
 end
 
 """
-Kriging predictor:
-y(x_star) = mu + sum(b_i * phi(x* - x[i]))
-new_point: value at which we want the approximation
-x: set of points
-p: value between 0 and 2 modelling the
-   smoothness of the function being approximated, 0-> rough  2-> C^infinity
-mu,b,sigma,inverse_of_R values returned from Krigin_1D
+    evaluate_Kriging(new_point,x,p,mu,b,sigma,inverse_of_R)
 
 Returns the prediction at the new point and the expected mean squared error at
-that point
+that point.
+
+#Arguments
+'new_point': value at which we want the approximation
+'x': set of points
+'p': value between 0 and 2 modelling the
+   smoothness of the function being approximated, 0-> rough  2-> C^infinity
+
+'mu,b,sigma,inverse_of_R' values returned from Krigin_1D
 """
 function evaluate_Kriging(new_point,x,p,mu,b,sigma,inverse_of_R)
     n = length(x)

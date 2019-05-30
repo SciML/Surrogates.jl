@@ -89,9 +89,9 @@ version = "2.5.2"
 
 [[DiffEqDiffTools]]
 deps = ["LinearAlgebra"]
-git-tree-sha1 = "8af3031742111fe1214d1357b87c8f0f10746797"
+git-tree-sha1 = "14c4ec4f8796e71ba034f5089b6186876574a49d"
 uuid = "01453d9d-ee7c-5054-8395-0335cb756afa"
-version = "0.9.0"
+version = "0.10.1"
 
 [[DiffEqFinancial]]
 deps = ["DiffEqBase", "DiffEqNoiseProcess", "LinearAlgebra", "Markdown", "RandomNumbers", "Test"]
@@ -113,9 +113,9 @@ version = "0.14.0"
 
 [[DiffEqNoiseProcess]]
 deps = ["DataStructures", "DiffEqBase", "LinearAlgebra", "Random", "RandomNumbers", "RecipesBase", "RecursiveArrayTools", "Requires", "ResettableStacks", "StaticArrays", "Statistics"]
-git-tree-sha1 = "c99c2c5d932b979b28f28516d0c8085fbb699f05"
+git-tree-sha1 = "f5333c0aa6208680e48cd24ae6f759c262a1cf85"
 uuid = "77a26b50-5914-5dd7-bc55-306e6241c503"
-version = "3.3.0"
+version = "3.3.1"
 
 [[DiffEqOperators]]
 deps = ["DiffEqBase", "ForwardDiff", "LinearAlgebra", "SparseArrays", "StaticArrays", "SuiteSparse"]
@@ -177,9 +177,9 @@ version = "1.4.0"
 
 [[FillArrays]]
 deps = ["LinearAlgebra", "Random", "SparseArrays", "Test"]
-git-tree-sha1 = "4c9269860074f5e9cf3f9078c49228bf13e4b33b"
+git-tree-sha1 = "537280935008196578bc24bb056ee1ac016d5530"
 uuid = "1a297f60-69ca-5386-bcde-b61e274b549b"
-version = "0.6.1"
+version = "0.6.2"
 
 [[ForwardDiff]]
 deps = ["CommonSubexpressions", "DiffResults", "DiffRules", "InteractiveUtils", "LinearAlgebra", "NaNMath", "Random", "SparseArrays", "SpecialFunctions", "StaticArrays", "Test"]
