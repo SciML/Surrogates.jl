@@ -25,7 +25,7 @@ function Kriging_1D(x,y,p)
     n = length(x)
     theta_l = 1
     R = zeros(float(eltype(x)), n, n)
-    for i = 1:n
+    @inbounds for i = 1:n
         for j = 1:n
             R[i,j] = exp(-theta_l*abs(x[i]-x[j])^p)
         end
@@ -56,13 +56,13 @@ function evaluate_Kriging_1D(new_point,x,p,mu,b,sigma,inverse_of_R)
     n = length(x)
     phi(z) = exp(-(abs(z))^p)
     prediction = 0
-    for i = 1:n
+    @inbounds for i = 1:n
         prediction = prediction + b[i]*phi(new_point-x[i])
     end
     prediction = mu + prediction
 
     r = zeros(float(eltype(x)),n,1)
-    for i = 1:n
+    @inbounds for i = 1:n
         r[i] = phi(new_point - x[i])
     end
     one = ones(n,1)
@@ -91,14 +91,14 @@ estimation at a new point
 -'theta': vector containing values theta_l>=0. Large values of theta_l serve to
           model functions that are highly active in the l-th variable.
 """
-function Kriging_ND(x::AbstractMatrix,y::AbstractArray,p::AbstractArray,theta::AbstractArray)
+function Kriging_ND(x,y,p,theta)
     if size(x,1) != length(y)
         error("Dimension of x and y are not equal")
     end
     n = size(x,1)
     d = size(x,2)
     R = zeros(float(eltype(x)), n, n)
-    for i = 1:n
+    @inbounds for i = 1:n
         for j = 1:n
             sum = 0
             for l = 1:d
@@ -131,13 +131,11 @@ that point.
           model functions that are highly active in the l-th variable.
 -'mu,b,sigma,inverse_of_R' values returned from Krigin_1D
 """
-function evaluate_Kriging_ND(new_point::AbstractArray,x::AbstractMatrix,
-                             p::AbstractArray,theta::AbstractArray,
-                             mu,b,sigma,inverse_of_R::AbstractMatrix)
+function evaluate_Kriging_ND(new_point,x,p,theta,mu,b,sigma,inverse_of_R)
     n = size(x,1)
     d = size(x,2)
     prediction = 0
-    for i = 1:n
+    @inbounds for i = 1:n
         sum = 0
         for l = 1:d
             sum = sum + theta[l]*norm(new_point[l]-x[i,l])^p[l]
@@ -147,7 +145,7 @@ function evaluate_Kriging_ND(new_point::AbstractArray,x::AbstractMatrix,
     prediction = mu + prediction
 
     r = zeros(float(eltype(x)),n,1)
-    for i = 1:n
+    @inbounds for i = 1:n
         sum = 0
         for l = 1:d
             sum = sum + theta[l]*norm(new_point[l]-x[i,l])^p[l]
