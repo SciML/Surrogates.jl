@@ -35,7 +35,7 @@ using Surrogates
         x_star = 3.5
         coeff = Radial_1D(x,y,a,b,linear_basis_function)
         @test coeff ≈ [0.375,0.375,0.375,0.25]
-        new_value = evaluate_Radial(x_star,coeff,x,a,b,linear_basis_function)
+        new_value = evaluate_Radial_1D(x_star,coeff,x,a,b,linear_basis_function)
         @test Float32(new_value) ≈ Float32(1.6875)
     end
 
