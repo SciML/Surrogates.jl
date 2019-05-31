@@ -11,9 +11,9 @@ export Radial_1D,evaluate_Radial_1D,linear_basis_function,
 
 abstract type AbstractBasisFunction end
 
-struct Basis <: AbstractBasisFunction
-    phi::Function
-    number_of_elements_in_polynomial_basis::Int
+struct Basis{F,Q} <: AbstractBasisFunction
+    phi::F
+    dim_poly::Q
 end
 
 linear_basis_function = Basis(z->norm(z), 1)
@@ -42,7 +42,7 @@ function Radial_1D(x,y,a,b,basisFunc::AbstractBasisFunction)
     Chebyshev(x,k) = cos(k*acos(-1 + 2/(b-a)*(x-a)))
 
     n = length(x)
-    q = basisFunc.number_of_elements_in_polynomial_basis
+    q = basisFunc.dim_poly
     size = n+q
     D = zeros(float(eltype(x)), size, size)
     d = zeros(float(eltype(x)),size)
@@ -83,8 +83,8 @@ function evaluate_Radial_1D(value,coeff,x,a,b,basisFunc::AbstractBasisFunction)
 
     Chebyshev(x,k) = cos(k*acos(-1 + 2/(b-a)*(x-a)))
     n = length(x)
-    q = basisFunc.number_of_elements_in_polynomial_basis
-    approx = 0
+    q = basisFunc.dim_poly
+    approx = zero(eltype(x))
     for i = 1:n
         approx = approx + coeff[i]*basisFunc.phi(value - x[i])
     end
@@ -132,14 +132,14 @@ function Radial_ND(x,y,bounds,basisFunc::AbstractBasisFunction)
     n = Base.size(x,1)
     d = Base.size(x,2)
     central_point = zeros(float(eltype(x)), d)
-    sum = 0
+    sum = zero(eltype(x))
     @inbounds for i = 1:d
         central_point[i] = (bounds[i][1]+bounds[i][2])/2
         sum += (bounds[i][2]-bounds[i][1])/2
     end
     half_diameter_domain = sum/d
 
-    q = basisFunc.number_of_elements_in_polynomial_basis
+    q = basisFunc.dim_poly
     size = n+q
     D = zeros(float(eltype(x)), size, size)
     d = zeros(float(eltype(x)),size)
@@ -180,15 +180,15 @@ function evaluate_Radial_ND(value,coeff,x,bounds,basisFunc::AbstractBasisFunctio
     d = size(x,2)
 
     central_point = zeros(float(eltype(x)), d)
-    sum = 0
+    sum = zero(eltype(x))
     @inbounds for i = 1:d
         central_point[i] = (bounds[i][1]+bounds[i][2])/2
         sum += (bounds[i][2]-bounds[i][1])/2
     end
     half_diameter_domain = sum/d
 
-    q = basisFunc.number_of_elements_in_polynomial_basis
-    approx = 0
+    q = basisFunc.dim_poly
+    approx = zero(eltype(x))
     for i = 1:n
         approx = approx + coeff[i]*basisFunc.phi(value - x[i,:])
     end
