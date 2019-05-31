@@ -4,7 +4,7 @@ One dimensional Kriging method, following this paper:
 "A Taxonomy of Global Optimization Methods Based on Response Surfaces"
 by DONALD R. JONES
 =#
-export Kriging_1D,evaluate_Kriging,Kriging_ND,evaluate_Kriging_ND
+export Kriging_1D,evaluate_Kriging_1D,Kriging_ND,evaluate_Kriging_ND
 
 """
     Kriging_1D(x,y,p)
@@ -91,7 +91,7 @@ estimation at a new point
 -'theta': vector containing values theta_l>=0. Large values of theta_l serve to
           model functions that are highly active in the l-th variable.
 """
-function Kringing_ND(x,y,p,theta)
+function Kriging_ND(x::AbstractMatrix,y::AbstractArray,p::AbstractArray,theta::AbstractArray)
     if size(x,1) != length(y)
         error("Dimension of x and y are not equal")
     end
@@ -131,7 +131,9 @@ that point.
           model functions that are highly active in the l-th variable.
 -'mu,b,sigma,inverse_of_R' values returned from Krigin_1D
 """
-function evaluate_Kriging_ND(new_point,x,p,theta,mu,b,sigma,inverse_of_R)
+function evaluate_Kriging_ND(new_point::AbstractArray,x::AbstractMatrix,
+                             p::AbstractArray,theta::AbstractArray,
+                             mu,b,sigma,inverse_of_R::AbstractMatrix)
     n = size(x,1)
     d = size(x,2)
     prediction = 0
