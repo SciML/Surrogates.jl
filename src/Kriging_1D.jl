@@ -1,3 +1,4 @@
+using LinearAlgebra
 #=
 One dimensional Kriging method, following this paper:
 "A Taxonomy of Global Optimization Methods Based on Response Surfaces"
@@ -96,13 +97,12 @@ function Kringing_ND(x,y,p,theta)
     end
     n = size(x,1)
     d = size(x,2)
-
     R = zeros(float(eltype(x)), n, n)
     for i = 1:n
         for j = 1:n
             sum = 0
             for l = 1:d
-            sum = sum + theta[l]*norm(x[i][l]-x[j][l])^p[l]
+            sum = sum + theta[l]*norm(x[i,l]-x[j,l])^p[l]
             end
             R[i,j] = exp(-sum)
         end
@@ -114,7 +114,6 @@ function Kringing_ND(x,y,p,theta)
     b = inverse_of_R*(y-one*mu)
     sigma = ((y-one*mu)' * inverse_of_R * (y - one*mu))/n
     return mu[1], b, sigma[1],inverse_of_R
-
 end
 
 """
@@ -139,7 +138,7 @@ function evaluate_Kriging_ND(new_point,x,p,theta,mu,b,sigma,inverse_of_R)
     for i = 1:n
         sum = 0
         for l = 1:d
-            sum = sum + theta[l]*norm(new_point[l]-x[i][l])^p[l]
+            sum = sum + theta[l]*norm(new_point[l]-x[i,l])^p[l]
         end
         prediction = prediction + b[i]*exp(-sum)
     end
@@ -149,7 +148,7 @@ function evaluate_Kriging_ND(new_point,x,p,theta,mu,b,sigma,inverse_of_R)
     for i = 1:n
         sum = 0
         for l = 1:d
-            sum = sum + theta[l]*norm(new_point[l]-x[i][l])^p[l]
+            sum = sum + theta[l]*norm(new_point[l]-x[i,l])^p[l]
         end
         r[i] = exp(-sum)
     end
