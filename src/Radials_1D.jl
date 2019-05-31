@@ -1,109 +1,100 @@
-function Radial_1D(x,y,a,b,kind::String,lambda = 0)
-    #=
-    (x,y) set of nodes
-    (a,b) interval
-    kind is type of radial basis function
-    lambda is optional parameter with kind == multiquadric
-    =#
+#=
+Rsponse surfaces implementantion, following:
+"A Taxonomy of Global Optimization Methods Based on Response Surfaces"
+by DONALD R. JONES
+=#
+using LinearAlgebra
 
-    #1D Chebyshev is suggested
-    Chebyshev(x,k) = cos(k*acos(-1 + 2/(b-a)*(x-a)))
+export Radial_1D,evaluate_Radial,linear_basis_function,
+       cubic_basis_function,thinplate_basis_function,multiquadric_basis_function
 
-    #Type of Radial basis function
-    #q is the number of polynomials in the basis
-    #The numbers are suggested by papers
-    if lambda === nothing
-        if kind == "linear"
-            q = 1
-            phi = z -> abs(z)
-        elseif kind == "cubic"
-            q = 2
-            phi = z -> abs(z)^3
-        elseif kind == "thinplate"
-            q = 2
-            phi = z -> z^2*log(abs(z))
-        else
-            error("Wrong type")
-        end
-    else
-        if kind == "multiquadric"
-            q = 1
-            phi = z -> sqrt(abs(z)^2 + lambda^2)
-        else
-            error("Wrong type")
-        end
-    end
+abstract type AbstractBasisFunction end
+
+struct Basis <: AbstractBasisFunction
+    phi::Function
+    number_of_elements_in_polynomial_basis::Int
+end
+
+linear_basis_function = Basis(z->norm(z), 1)
+cubic_basis_function = Basis(z->norm(z)^3, 2)
+thinplate_basis_function = Basis(z->norm(z)^2*log(norm(z)),2)
+function multiquadric_basis_function(lambda)
+    return Basis(z->sqrt(norm(z)^2 + lambda^2),1)
+end
+
+
+"""
+    Radial_1D(x,y,a,b,AbstractBasisFunction)
+
+Find coefficients for interpolation using a radial basis function and a low d
+degree polynomial.
+
+#Arguments:
+- (x,y): set of nodes
+- (a,b): interval
+- 'basisFunc': selected Basis function
+"""
+function Radial_1D(x,y,a,b,basisFunc::AbstractBasisFunction)
     if length(x) != length(y)
         error("Data length does not match")
     end
+    Chebyshev(x,k) = cos(k*acos(-1 + 2/(b-a)*(x-a)))
+
     n = length(x)
-    #Find coefficients for both radial basis functions and polynomial terms
+    q = basisFunc.number_of_elements_in_polynomial_basis
     size = n+q
-    D = zeros(Float32, size, size)
-    d = zeros(Float32,size)
-    #In this array I have in the first n entries the coefficient of the radial
-    #basis function, in the last q term the coefficients for polynomial terms
-    coeff = zeros(Float32,size)
+    D = zeros(float(eltype(x)), size, size)
+    d = zeros(float(eltype(x)),size)
 
-    #Matrix made by 4 blocks:
-    #=
-    A | B
-    B^t | 0
-    A nxn, B nxq A,B symmetric so the matrix D is symmetric as well.
-    =#
-
-
-    for i = 1:n
+    @inbounds for i = 1:n
         d[i] =  y[i]
         for j = 1:n
-            D[i,j] = phi(x[i] - x[j])
+            D[i,j] = basisFunc.phi(x[i] - x[j])
         end
-        for k = n+1:size
-            #Symmetric
-            D[i,k] = Chebyshev(x[i],k)
-            D[k,i] = D[i,k]
+        if i < n + 1
+            for k = n+1:size
+                D[i,k] = Chebyshev(x[i],k)
+            end
         end
     end
 
-    #Vector of size n + q containing in the first n terms the coefficients of
-    # the radial basis function and in the last q term the coefficient for the
-    # polynomials
-    return D\d
+    Sym = Symmetric(D,:U)
+
+    return Sym\d
 
 end
 
-function evaluate(value,coeff,x,a,b,kind::String,lambda = 0)
+"""
+    evaluate_Radial(value,coeff,x,a,b,AbstractBasisFunction)
+
+Finds the estimation at point "value" given the coefficients previously
+calculated with  Radial_1D.
+
+#Arguments:
+
+- 'value' : value at which you want the approximation
+- 'coeff' : returned vector from Radial_1D
+- 'x' : set of points
+- (a,b): interval
+- 'basisFunc': same basis function used in Radial_1D
+"""
+function evaluate_Radial(value,coeff,x,a,b,basisFunc::AbstractBasisFunction)
 
     Chebyshev(x,k) = cos(k*acos(-1 + 2/(b-a)*(x-a)))
-    if lambda === nothing
-        if kind == "linear"
-            q = 1
-            phi = z -> abs(z)
-        elseif kind == "cubic"
-            q = 2
-            phi = z -> abs(z)^3
-        elseif kind == "thinplate"
-            q = 2
-            phi = z -> z^2*log(abs(z))
-        else
-            error("Wrong type")
-        end
-    else
-        if kind == "multiquadric"
-            q = 1
-            phi = z -> sqrt(abs(z)^2 + lambda^2)
-        else
-            error("Wrong type")
-        end
-    end
     n = length(x)
-    q = length(coeff) - n
+    q = basisFunc.number_of_elements_in_polynomial_basis
     approx = 0
     for i = 1:n
-        approx = approx + coeff[i]*phi(value - x[i])
+        approx = approx + coeff[i]*basisFunc.phi(value - x[i])
     end
     for i = n+1:q
         approx = approx + coeff[i]*Chebyshev(value,n+1-i)
     end
     return approx
+end
+
+
+function Radial_ND(x,y,a,b,basisFunc::AbstractBasisFunction)
+    
+
 end
