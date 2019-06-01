@@ -11,9 +11,9 @@ export Radial_1D,evaluate_Radial_1D,linear_basis_function,
 
 abstract type AbstractBasisFunction end
 
-struct Basis{F,Q} <: AbstractBasisFunction
+struct Basis{F} <: AbstractBasisFunction
     phi::F
-    dim_poly::Q
+    dim_poly::Int
 end
 
 linear_basis_function = Basis(z->norm(z), 1)
