@@ -17,25 +17,6 @@ struct RadialBasis{F} <: AbstractBasisFunction
     prediction
 end
 
-"""
-    centralized_monomial(vect,alpha,half_diameter_domain,central_point)
-
-Returns the value at point vect[] of the alpha degree monomial centralized.
-
-#Arguments:
--'vect': vector of points i.e [x,y,...,w]
--'alpha': degree
--'half_diameter_domain': half diameter of the domain
--'central_point': central point in the domain
-"""
-function centralized_monomial(vect,alpha,half_diameter_domain,central_point)
-    mul = 1
-    for i = 1:length(vect)
-        mul *= vect[i]
-    end
-    return ((mul-norm(central_point))/(half_diameter_domain))^alpha
-end
-
 #=
 linear_basis_function = Basis(z->norm(z), 1)
 cubic_basis_function = Basis(z->norm(z)^3, 2)
@@ -138,4 +119,23 @@ function RadialBasis(new_value::Array,x::Array,y::Array,bounds,phi::Function,q::
         approx = approx + coeff[i]*centralized_monomial(new_value,n+1-i)
     end
     RadialBasis(phi,q,x,y,bounds,coeff,approx)
+end
+
+"""
+    centralized_monomial(vect,alpha,half_diameter_domain,central_point)
+
+Returns the value at point vect[] of the alpha degree monomial centralized.
+
+#Arguments:
+-'vect': vector of points i.e [x,y,...,w]
+-'alpha': degree
+-'half_diameter_domain': half diameter of the domain
+-'central_point': central point in the domain
+"""
+function centralized_monomial(vect,alpha,half_diameter_domain,central_point)
+    mul = 1
+    for i = 1:length(vect)
+        mul *= vect[i]
+    end
+    return ((mul-norm(central_point))/(half_diameter_domain))^alpha
 end
