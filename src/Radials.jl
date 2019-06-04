@@ -116,7 +116,7 @@ function RadialBasis(new_value::Array,x::Array,y::Array,bounds,phi::Function,q::
         approx = approx + coeff[i]*phi(new_value - x[i,:])
     end
     for i = n+1:q
-        approx = approx + coeff[i]*centralized_monomial(new_value,n+1-i)
+        approx = approx + coeff[i]*centralized_monomial(new_value,n+1-i,half_diameter_domain,central_point)
     end
     RadialBasis(phi,q,x,y,bounds,coeff,approx)
 end
@@ -138,4 +138,41 @@ function centralized_monomial(vect,alpha,half_diameter_domain,central_point)
         mul *= vect[i]
     end
     return ((mul-norm(central_point))/(half_diameter_domain))^alpha
+end
+
+function add_point!(rad::RadialBasis,new_x::Array,new_y::Array)
+    rad.x = vcat(rad.x,new_x)
+    rad.y = vcat(rad.x,new_y)
+    return RadialBasis(rad.phi,rad.q,rad.x,rad.y,rad.bounds,rad.coeff,rad.approx)
+end
+
+function current_estimate(rad::RadialBasis,val::Array)
+    d = Base.size(rad.x,2)
+    central_point = zeros(float(eltype(rad.x)), d)
+    sum = zero(eltype(rad.x))
+    @inbounds for i = 1:d
+        central_point[i] = (rad.bounds[i][1]+rad.bounds[i][2])/2
+        sum += (rad.bounds[i][2]-rad.bounds[i][1])/2
+    end
+    half_diameter_domain = sum/d
+    approx = zero(eltype(x))
+    for i = 1:n
+        approx = approx + rad.coeff[i]*rad.phi(val - x[i,:])
+    end
+    for i = n+1:q
+        approx = approx + rad.coeff[i]*centralized_monomial(val,n+1-i,half_diameter_domain,central_point)
+    end
+    return approx
+end
+
+function current_estimate(rad::RadialBasis,val::Number)
+    approx = zero(eltype(rad.x))
+    Chebyshev(x,k) = cos(k*acos(-1 + 2/(bounds[2]-bounds[1])*(x-bounds[1])))
+    for i = 1:n
+        approx = approx + rad.coeff[i]*rad.phi(val - rad.x[i])
+    end
+    for i = n+1:q
+        approx = approx + rad.coeff[i]*Chebyshev(val,n+1-i)
+    end
+    return approx
 end
