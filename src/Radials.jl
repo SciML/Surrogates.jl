@@ -140,12 +140,22 @@ function centralized_monomial(vect,alpha,half_diameter_domain,central_point)
     return ((mul-norm(central_point))/(half_diameter_domain))^alpha
 end
 
+"""
+    add_point!(rad::RadialBasis,new_x::Array,new_y::Array)
+
+Add new samples x and y and updates the coefficients. Return the new object radial.
+"""
 function add_point!(rad::RadialBasis,new_x::Array,new_y::Array)
     rad.x = vcat(rad.x,new_x)
     rad.y = vcat(rad.x,new_y)
     return RadialBasis(rad.phi,rad.q,rad.x,rad.y,rad.bounds,rad.coeff,rad.approx)
 end
 
+"""
+    current_estimate(rad::RadialBasis,val::Array)
+
+Calculates current estimate of array value 'val' with respect to RadialBasis object.
+"""
 function current_estimate(rad::RadialBasis,val::Array)
     d = Base.size(rad.x,2)
     central_point = zeros(float(eltype(rad.x)), d)
@@ -165,6 +175,11 @@ function current_estimate(rad::RadialBasis,val::Array)
     return approx
 end
 
+"""
+    current_estimate(rad::RadialBasis,val::Number)
+
+Calculates current estimate of value 'val' with respect to RadialBasis object.
+"""
 function current_estimate(rad::RadialBasis,val::Number)
     approx = zero(eltype(rad.x))
     Chebyshev(x,k) = cos(k*acos(-1 + 2/(bounds[2]-bounds[1])*(x-bounds[1])))
