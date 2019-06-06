@@ -130,7 +130,7 @@ Add new samples x and y and updates the coefficients. Return the new object radi
 """
 function add_point!(rad::RadialBasis,new_x::Array,new_y::Array)
     if Base.size(rad.x,1) == 1
-        rad.x = vcat(vec(rad.x), new_x)
+        rad.x = hcat(rad.x, new_x)
         rad.y = vcat(vec(rad.y), new_y)
         return RadialBasis(rad.x,rad.y,rad.bounds[1],rad.bounds[2],rad.phi,rad.dim_poly)
     else
