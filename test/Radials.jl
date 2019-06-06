@@ -45,6 +45,5 @@ using Surrogates
         est = current_estimate(my_rad2,3)
         @test est ≈ 6.499999999999991
 
-
     end
 end

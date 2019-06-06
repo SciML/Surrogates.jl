@@ -156,7 +156,7 @@ function current_estimate(rad::RadialBasis,val::Array)
         sum += (rad.bounds[i][2]-rad.bounds[i][1])/2
     end
     half_diameter_domain = sum/d
-    approx = zero(eltype(x))
+    approx = zero(eltype(rad.x))
     for i = 1:n
         approx = approx + rad.coeff[i]*rad.phi(vec(val) - rad.x[i,:])
     end

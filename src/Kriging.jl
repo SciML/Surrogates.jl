@@ -100,9 +100,16 @@ Returns the updated Kriging model.
 
 """
 function add_point!(k::AbstractBasisFunction,new_x::Array,new_y::Array)
-    k.x = vcat(k.x,new_x)
-    k.y = vcat(k.y,new_y)
-    return Kriging(k.x,k.y,k.p,k.theta,k.mu,k.b,k.sigma,k.inverse_of_R)
+    if Base.size(k.x,1) == 1
+        k.x = vcat(vec(k.x),new_x)
+        k.y = vcat(vec(k.y),new_y)
+        return Kriging(k.x,k.y,k.p)
+    else
+        k.x = vcat(k.x,new_x)
+        k.y = vcat(k.y,new_y)
+        return Kriging(k.x,k.y,k.p,k.theta)
+    end
+
 end
 
 
@@ -119,7 +126,7 @@ function current_estimate(k::AbstractBasisFunction,val::Array)
     @inbounds for i = 1:n
         sum = zero(eltype(k.x))
         for l = 1:d
-            sum = sum + k.theta[l]*norm(val[l]-k.x[i,l])^k.p[l]
+            sum = sum + k.theta[l]*norm(val[l]-k.x[i,l])^(k.p[l])
         end
         r[i] = exp(-sum)
         prediction = prediction + k.b[i]*exp(-sum)
@@ -143,10 +150,10 @@ end
 Gives the current estimate for 'val' with respect to the Kriging object k.
 """
 function current_estimate(k::AbstractBasisFunction,val::Number)
-    phi(z) = exp(-(abs(z))^p)
-    n = length(x)
-    prediction = zero(eltype(x))
-    r = zeros(float(eltype(x)),n,1)
+    phi(z) = exp(-(abs(z))^k.p)
+    n = length(k.x)
+    prediction = zero(eltype(k.x))
+    r = zeros(float(eltype(k.x)),n,1)
     @inbounds for i = 1:n
         prediction = prediction + k.b[i]*phi(val-k.x[i])
         r[i] = phi(val - k.x[i])
