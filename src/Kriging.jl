@@ -33,6 +33,7 @@ Constructor for type Kriging.
 
 """
 function Kriging(x::Array,y::Array,p::Number)
+
     n = length(x)
     theta = 1
     R = zeros(float(eltype(x)), n, n)
@@ -101,15 +102,20 @@ Returns the updated Kriging model.
 """
 function add_point!(k::AbstractBasisFunction,new_x::Array,new_y::Array)
     if Base.size(k.x,1) == 1
-        k.x = vcat(vec(k.x),new_x)
-        k.y = vcat(vec(k.y),new_y)
-        return Kriging(k.x,k.y,k.p)
+        if length(new_x) > 1
+            k.x = hcat(k.x,new_x)
+            k.y = vcat(k.y,new_y)
+            return Kriging(k.x,k.y,k.p)
+        else
+            k.x = vcat(vec(k.x),new_x)
+            k.y = vcat(vec(k.y),new_y)
+            return Kriging(k.x,k.y,k.p)
+        end
     else
         k.x = vcat(k.x,new_x)
         k.y = vcat(k.y,new_y)
         return Kriging(k.x,k.y,k.p,k.theta)
     end
-
 end
 
 
@@ -159,7 +165,6 @@ function current_estimate(k::AbstractBasisFunction,val::Number)
         r[i] = phi(val - k.x[i])
     end
     prediction = k.mu + prediction
-
     one = ones(n,1)
     one_t = one'
     a = r'*k.inverse_of_R*r
