@@ -7,7 +7,7 @@ by DONALD R. JONES
 
 abstract type AbstractBasisFunction end
 
-export Kriging
+export Kriging,add_point!,current_estimate
 
 mutable struct Kriging <: AbstractBasisFunction
     x
@@ -112,12 +112,12 @@ end
 Gives the current estimate for array 'val' with respect to the Kriging object k.
 """
 function current_estimate(k::AbstractBasisFunction,val::Array)
-    prediction = zero(eltype(x))
-    n = Base.size(x,1)
-    d = Base.size(x,2)
-    r = zeros(float(eltype(x)),n,1)
+    prediction = zero(eltype(k.x))
+    n = Base.size(k.x,1)
+    d = Base.size(k.x,2)
+    r = zeros(float(eltype(k.x)),n,1)
     @inbounds for i = 1:n
-        sum = zero(eltype(x))
+        sum = zero(eltype(k.x))
         for l = 1:d
             sum = sum + k.theta[l]*norm(val[l]-k.x[i,l])^k.p[l]
         end

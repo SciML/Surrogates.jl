@@ -5,6 +5,8 @@ by DONALD R. JONES
 =#
 using LinearAlgebra
 
+export RadialBasis, add_point!, centralized_monomial, current_estimate
+
 abstract type AbstractBasisFunction end
 
 mutable struct RadialBasis{F} <: AbstractBasisFunction
@@ -127,9 +129,15 @@ end
 Add new samples x and y and updates the coefficients. Return the new object radial.
 """
 function add_point!(rad::RadialBasis,new_x::Array,new_y::Array)
-    rad.x = vcat(rad.x,new_x)
-    rad.y = vcat(rad.y,new_y)
-    return RadialBasis(rad.x,rad.y,rad.bounds,rad.phi,rad.dim_poly)
+    if Base.size(rad.x,1) == 1
+        rad.x = vcat(vec(rad.x), new_x)
+        rad.y = vcat(vec(rad.y), new_y)
+        return RadialBasis(rad.x,rad.y,rad.bounds[1],rad.bounds[2],rad.phi,rad.dim_poly)
+    else
+        rad.x = vcat(rad.x,new_x)
+        rad.y = vcat(rad.y,new_y)
+        return RadialBasis(rad.x,rad.y,rad.bounds,rad.phi,rad.dim_poly)
+    end
 end
 
 """
