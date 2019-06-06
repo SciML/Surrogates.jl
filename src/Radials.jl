@@ -7,14 +7,13 @@ using LinearAlgebra
 
 abstract type AbstractBasisFunction end
 
-struct RadialBasis{F} <: AbstractBasisFunction
+mutable struct RadialBasis{F} <: AbstractBasisFunction
     phi::F
     dim_poly::Int
     x
     y
     bounds
     coeff
-    prediction
 end
 
 #=
@@ -27,18 +26,17 @@ end
 =#
 
 """
-    RadialBasis(new_value::Number,x::Array,y::Array,a::Number,b::Number,phi::Function,q::Int)
+    RadialBasis(x::Array,y::Array,a::Number,b::Number,phi::Function,q::Int)
 
-Constructor for RadialBasis type that finds the approximation at point new_value
+Constructor for RadialBasis type
 
 #Arguments:
-- 'new_value': point at which you want to find the approximation
 - (x,y): sampled points
 - '(a,b)': interval of interest
 -'phi': radial basis of choice
 -'q': number of polynomial elements
 """
-function RadialBasis(new_value::Number,x::Array,y::Array,a::Number,b::Number,phi::Function,q::Int)
+function RadialBasis(x::Array,y::Array,a::Number,b::Number,phi::Function,q::Int)
     Chebyshev(x,k) = cos(k*acos(-1 + 2/(b-a)*(x-a)))
     n = length(x)
     size = n+q
@@ -58,21 +56,13 @@ function RadialBasis(new_value::Number,x::Array,y::Array,a::Number,b::Number,phi
     end
     Sym = Symmetric(D,:U)
     coeff = Sym\d
-    approx = zero(eltype(x))
-    for i = 1:n
-        approx = approx + coeff[i]*phi(new_value - x[i])
-    end
-    for i = n+1:q
-        approx = approx + coeff[i]*Chebyshev(new_value,n+1-i)
-    end
-
-    RadialBasis(phi,q,x,y,[a,b],coeff,approx)
+    RadialBasis(phi,q,x,y,[a,b],coeff)
 end
 
 """
-    RadialBasis(new_value::Array,x::Array,y::Array,bounds,phi::Function,q::Int)
+    RadialBasis(x::Array,y::Array,bounds,phi::Function,q::Int)
 
-    Constructor for RadialBasis type that finds the approximation at array new_value
+    Constructor for RadialBasis type.
 
 #Arguments:
 - 'new_value': array at which you want to find the approximation
@@ -81,7 +71,7 @@ end
 -'phi': radial basis of choice
 -'q': number of polynomial elements
 """
-function RadialBasis(new_value::Array,x::Array,y::Array,bounds,phi::Function,q::Int)
+function RadialBasis(x::Array,y::Array,bounds,phi::Function,q::Int)
     n = Base.size(x,1)
     d = Base.size(x,2)
     central_point = zeros(float(eltype(x)), d)
@@ -107,18 +97,9 @@ function RadialBasis(new_value::Array,x::Array,y::Array,bounds,phi::Function,q::
             end
         end
     end
-
     Sym = Symmetric(D,:U)
     coeff = Sym\d
-
-    approx = zero(eltype(x))
-    for i = 1:n
-        approx = approx + coeff[i]*phi(new_value - x[i,:])
-    end
-    for i = n+1:q
-        approx = approx + coeff[i]*centralized_monomial(new_value,n+1-i,half_diameter_domain,central_point)
-    end
-    RadialBasis(phi,q,x,y,bounds,coeff,approx)
+    RadialBasis(phi,q,x,y,bounds,coeff)
 end
 
 """
@@ -134,7 +115,7 @@ Returns the value at point vect[] of the alpha degree monomial centralized.
 """
 function centralized_monomial(vect,alpha,half_diameter_domain,central_point)
     mul = 1
-    for i = 1:length(vect)
+    @inbounds for i = 1:length(vect)
         mul *= vect[i]
     end
     return ((mul-norm(central_point))/(half_diameter_domain))^alpha
@@ -147,8 +128,8 @@ Add new samples x and y and updates the coefficients. Return the new object radi
 """
 function add_point!(rad::RadialBasis,new_x::Array,new_y::Array)
     rad.x = vcat(rad.x,new_x)
-    rad.y = vcat(rad.x,new_y)
-    return RadialBasis(rad.phi,rad.q,rad.x,rad.y,rad.bounds,rad.coeff,rad.approx)
+    rad.y = vcat(rad.y,new_y)
+    return RadialBasis(rad.x,rad.y,rad.bounds,rad.phi,rad.dim_poly)
 end
 
 """
@@ -157,7 +138,9 @@ end
 Calculates current estimate of array value 'val' with respect to RadialBasis object.
 """
 function current_estimate(rad::RadialBasis,val::Array)
+    n = Base.size(rad.x,1)
     d = Base.size(rad.x,2)
+    q = rad.dim_poly
     central_point = zeros(float(eltype(rad.x)), d)
     sum = zero(eltype(rad.x))
     @inbounds for i = 1:d
@@ -167,9 +150,9 @@ function current_estimate(rad::RadialBasis,val::Array)
     half_diameter_domain = sum/d
     approx = zero(eltype(x))
     for i = 1:n
-        approx = approx + rad.coeff[i]*rad.phi(val - x[i,:])
+        approx = approx + rad.coeff[i]*rad.phi(vec(val) - rad.x[i,:])
     end
-    for i = n+1:q
+    for i = n+1:n+q
         approx = approx + rad.coeff[i]*centralized_monomial(val,n+1-i,half_diameter_domain,central_point)
     end
     return approx
@@ -182,11 +165,13 @@ Calculates current estimate of value 'val' with respect to RadialBasis object.
 """
 function current_estimate(rad::RadialBasis,val::Number)
     approx = zero(eltype(rad.x))
-    Chebyshev(x,k) = cos(k*acos(-1 + 2/(bounds[2]-bounds[1])*(x-bounds[1])))
+    n = length(rad.x)
+    q = rad.dim_poly
+    Chebyshev(x,k) = cos(k*acos(-1 + 2/(rad.bounds[2]-rad.bounds[1])*(x-rad.bounds[1])))
     for i = 1:n
         approx = approx + rad.coeff[i]*rad.phi(val - rad.x[i])
     end
-    for i = n+1:q
+    for i = n+1:n+q
         approx = approx + rad.coeff[i]*Chebyshev(val,n+1-i)
     end
     return approx
