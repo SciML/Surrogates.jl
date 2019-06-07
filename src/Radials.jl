@@ -45,7 +45,7 @@ end
 """
 Calculates current estimate of value 'val' with respect to RadialBasis object.
 """
-(rad::RadialBasis)(dval::Number)
+function (rad::RadialBasis)(val::Number)
     approx = zero(eltype(rad.x))
     n = length(rad.x)
     q = rad.dim_poly
@@ -100,7 +100,7 @@ function RadialBasis(x,y,a::Number,b::Number,phi::Function,q::Int)
     end
     Sym = Symmetric(D,:U)
     coeff = Sym\d
-    RadialBasis(phi,q,x,y,[a,b],coeff)
+    RadialBasis(phi,q,x,y,(a,b),coeff)
 end
 
 """

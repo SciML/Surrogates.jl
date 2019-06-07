@@ -23,7 +23,7 @@ mutable struct Kriging <: AbstractBasisFunction
  """
  Gives the current estimate for array 'val' with respect to the Kriging object k.
  """
- function (k::AbstractBasisFunction)(val)
+ function (k::Kriging)(val)
      prediction = zero(eltype(k.x))
      n = Base.size(k.x,1)
      d = Base.size(k.x,2)
@@ -52,7 +52,7 @@ mutable struct Kriging <: AbstractBasisFunction
  """
  Gives the current estimate for 'val' with respect to the Kriging object k.
  """
- function (k::AbstractBasisFunction)(val::Number)
+ function (k::Kriging)(val::Number)
      phi(z) = exp(-(abs(z))^k.p)
      n = length(k.x)
      prediction = zero(eltype(k.x))
@@ -154,7 +154,7 @@ Warning: If you are just adding a single point, you have to wrap it with []
 Returns the updated Kriging model.
 
 """
-function add_point!(k::AbstractBasisFunction,new_x,new_y)
+function add_point!(k::Kriging,new_x,new_y)
     if Base.size(k.x,1) == 1
         if length(new_x) > 1
             k.x = hcat(k.x,new_x)
