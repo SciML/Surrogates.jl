@@ -9,7 +9,7 @@ abstract type AbstractBasisFunction end
 
 export Kriging,add_point!,current_estimate
 
-mutable struct Kriging <: AbstractBasisFunction
+mutable struct Kriging <: AbstractSurrogate
     x
     y
     p

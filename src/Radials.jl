@@ -7,9 +7,7 @@ using LinearAlgebra
 
 export RadialBasis, add_point!, centralized_monomial, current_estimate
 
-abstract type AbstractBasisFunction end
-
-mutable struct RadialBasis{F} <: AbstractBasisFunction
+mutable struct RadialBasis{F} <: AbstractSurrogate
     phi::F
     dim_poly::Int
     x
