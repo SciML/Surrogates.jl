@@ -20,9 +20,63 @@ mutable struct Kriging <: AbstractBasisFunction
     inverse_of_R
  end
 
+ """
+ Gives the current estimate for array 'val' with respect to the Kriging object k.
+ """
+ function (k::AbstractBasisFunction)(val)
+     prediction = zero(eltype(k.x))
+     n = Base.size(k.x,1)
+     d = Base.size(k.x,2)
+     r = zeros(float(eltype(k.x)),n,1)
+     @inbounds for i = 1:n
+         sum = zero(eltype(k.x))
+         for l = 1:d
+             sum = sum + k.theta[l]*norm(val[l]-k.x[i,l])^(k.p[l])
+         end
+         r[i] = exp(-sum)
+         prediction = prediction + k.b[i]*exp(-sum)
+     end
+     prediction = k.mu + prediction
+
+     one = ones(n,1)
+     one_t = one'
+     a = r'*k.inverse_of_R*r
+     a = a[1]
+     b = one_t*k.inverse_of_R*one
+     b = b[1]
+     mean_squared_error = k.sigma*(1 - a + (1-a)^2/(b))
+     std_error = sqrt(mean_squared_error)
+     return prediction, std_error
+ end
+
+ """
+ Gives the current estimate for 'val' with respect to the Kriging object k.
+ """
+ function (k::AbstractBasisFunction)(val::Number)
+     phi(z) = exp(-(abs(z))^k.p)
+     n = length(k.x)
+     prediction = zero(eltype(k.x))
+     r = zeros(float(eltype(k.x)),n,1)
+     @inbounds for i = 1:n
+         prediction = prediction + k.b[i]*phi(val-k.x[i])
+         r[i] = phi(val - k.x[i])
+     end
+     prediction = k.mu + prediction
+     one = ones(n,1)
+     one_t = one'
+     a = r'*k.inverse_of_R*r
+     a = a[1]
+     b = one_t*k.inverse_of_R*one
+     b = b[1]
+     mean_squared_error = k.sigma*(1 - a + (1-a)^2/(b))
+     std_error = sqrt(mean_squared_error)
+     return prediction, std_error
+ end
+
+
 
 """
-    Kriging(x::Array,y::Array,p::Number)
+    Kriging(x,y,p::Number)
 
 Constructor for type Kriging.
 
@@ -32,7 +86,7 @@ Constructor for type Kriging.
    smoothness of the function being approximated, 0-> rough  2-> C^infinity
 
 """
-function Kriging(x::Array,y::Array,p::Number)
+function Kriging(x,y,p::Number)
 
     n = length(x)
     theta = 1
@@ -55,7 +109,7 @@ end
 
 
 """
-    Kriging(x::Array,y::Array,p::Array,theta::Array)
+    Kriging(x,y,p,theta)
 
 Constructor for type Kriging.
 
@@ -68,7 +122,7 @@ Constructor for type Kriging.
           changing in the i-th variable
 
 """
-function Kriging(x::Array,y::Array,p::Array,theta::Array)
+function Kriging(x,y,p,theta)
     n = size(x,1)
     d = size(x,2)
     R = zeros(float(eltype(x)), n, n)
@@ -93,14 +147,14 @@ end
 
 
 """
-    add_point!(k::AbstractBasisFunction,new_x::Array,new_y::Array)
+    add_point!(k::AbstractBasisFunction,new_x,new_y)
 
 Adds the new point and its respective value to the sample points.
 Warning: If you are just adding a single point, you have to wrap it with []
 Returns the updated Kriging model.
 
 """
-function add_point!(k::AbstractBasisFunction,new_x::Array,new_y::Array)
+function add_point!(k::AbstractBasisFunction,new_x,new_y)
     if Base.size(k.x,1) == 1
         if length(new_x) > 1
             k.x = hcat(k.x,new_x)
@@ -116,62 +170,4 @@ function add_point!(k::AbstractBasisFunction,new_x::Array,new_y::Array)
         k.y = vcat(k.y,new_y)
         return Kriging(k.x,k.y,k.p,k.theta)
     end
-end
-
-
-"""
-    current_estimate(k::AbstractBasisFunction,val::Array)
-
-Gives the current estimate for array 'val' with respect to the Kriging object k.
-"""
-function current_estimate(k::AbstractBasisFunction,val::Array)
-    prediction = zero(eltype(k.x))
-    n = Base.size(k.x,1)
-    d = Base.size(k.x,2)
-    r = zeros(float(eltype(k.x)),n,1)
-    @inbounds for i = 1:n
-        sum = zero(eltype(k.x))
-        for l = 1:d
-            sum = sum + k.theta[l]*norm(val[l]-k.x[i,l])^(k.p[l])
-        end
-        r[i] = exp(-sum)
-        prediction = prediction + k.b[i]*exp(-sum)
-    end
-    prediction = k.mu + prediction
-
-    one = ones(n,1)
-    one_t = one'
-    a = r'*k.inverse_of_R*r
-    a = a[1]
-    b = one_t*k.inverse_of_R*one
-    b = b[1]
-    mean_squared_error = k.sigma*(1 - a + (1-a)^2/(b))
-    std_error = sqrt(mean_squared_error)
-    return prediction, std_error
-end
-
-"""
-    current_estimate(k::AbstractBasisFunction,val::Array)
-
-Gives the current estimate for 'val' with respect to the Kriging object k.
-"""
-function current_estimate(k::AbstractBasisFunction,val::Number)
-    phi(z) = exp(-(abs(z))^k.p)
-    n = length(k.x)
-    prediction = zero(eltype(k.x))
-    r = zeros(float(eltype(k.x)),n,1)
-    @inbounds for i = 1:n
-        prediction = prediction + k.b[i]*phi(val-k.x[i])
-        r[i] = phi(val - k.x[i])
-    end
-    prediction = k.mu + prediction
-    one = ones(n,1)
-    one_t = one'
-    a = r'*k.inverse_of_R*r
-    a = a[1]
-    b = one_t*k.inverse_of_R*one
-    b = b[1]
-    mean_squared_error = k.sigma*(1 - a + (1-a)^2/(b))
-    std_error = sqrt(mean_squared_error)
-    return prediction, std_error
 end
