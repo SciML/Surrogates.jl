@@ -3,10 +3,6 @@ Response surfaces implementantion, following:
 "A Taxonomy of Global Optimization Methods Based on Response Surfaces"
 by DONALD R. JONES
 =#
-using LinearAlgebra
-
-export RadialBasis, add_point!, centralized_monomial, current_estimate
-
 mutable struct RadialBasis{F} <: AbstractSurrogate
     phi::F
     dim_poly::Int

@@ -1,13 +1,8 @@
-using LinearAlgebra
 #=
 One dimensional Kriging method, following this paper:
 "A Taxonomy of Global Optimization Methods Based on Response Surfaces"
 by DONALD R. JONES
 =#
-
-abstract type AbstractBasisFunction end
-
-export Kriging,add_point!,current_estimate
 
 mutable struct Kriging <: AbstractSurrogate
     x
