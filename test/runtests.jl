@@ -7,5 +7,5 @@ println("Starting tests")
        end;
 
 @testset "Kriging.jl" begin
-   include("kriging.jl")
+   include("Kriging.jl")
       end;
