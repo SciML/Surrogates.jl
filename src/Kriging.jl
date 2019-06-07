@@ -147,7 +147,7 @@ end
 
 
 """
-    add_point!(k::AbstractBasisFunction,new_x,new_y)
+    add_point!(k::Kriging,new_x,new_y)
 
 Adds the new point and its respective value to the sample points.
 Warning: If you are just adding a single point, you have to wrap it with []
