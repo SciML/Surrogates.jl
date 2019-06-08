@@ -16,6 +16,7 @@ using Surrogates
         est = my_rad(3)
         @test est ≈ 7.875
 
+
         #WITH ADD_POINT, adding singleton
         x = [1 2 3]
         y = [4,5,6]
@@ -26,15 +27,17 @@ using Surrogates
         est = my_rad2(3)
         @test est ≈ 6.499999999999991
 
+
         #WITH ADD_POINT, adding more
         x = [1 2 3]
         y = [4,5,6]
         a = 0
         b = 4
         my_rad = RadialBasis(x,y,a,b,z->norm(z),1)
+        est_rad = my_rad(3)
         my_rad2= add_point!(my_rad,[3.2 3.3 3.4],[8,9,10])
-        est = my_rad(3)
-        @test est ≈ 6.49416593818781
+        est_rad2 = my_rad2(3)
+        @test est_rad2 ≈ 6.49416593818781
 
     end
 
