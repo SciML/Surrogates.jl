@@ -38,6 +38,7 @@ using Surrogates
     end
     @testset "1D" begin
         #WITHOUT ADD POINT
+
         x = [1 2 3]
         y = [4,5,6]
         p = 1.3
@@ -45,13 +46,14 @@ using Surrogates
         est,std_err = my_k(1)
         @test std_err < 10^(-6)
 
+
         #WITH ADD POINT adding singleton
         x = [1 2 3]
         y = [4,5,6]
         p = 1.3
         my_k = Kriging(x,y,p)
-        my_k2 = add_point!(my_k,[4],[9])
-        est,std_err = my_k2([4])
+        my_k2 = add_point!(my_k,4,9)
+        est,std_err = my_k2(4)
         @test std_err < 10^(-6)
 
         #WITH ADD POINT adding more

@@ -4,15 +4,15 @@ One dimensional Kriging method, following this paper:
 by DONALD R. JONES
 =#
 
-mutable struct Kriging <: AbstractSurrogate
-    x
-    y
-    p
-    theta
-    mu
-    b
-    sigma
-    inverse_of_R
+mutable struct Kriging{X,Y,P,T,M,B,S,R} <: AbstractSurrogate
+    x::X
+    y::Y
+    p::P
+    theta::T
+    mu::M
+    b::B
+    sigma::S
+    inverse_of_R::R
  end
 
  """
@@ -82,7 +82,6 @@ Constructor for type Kriging.
 
 """
 function Kriging(x,y,p::Number)
-
     n = length(x)
     theta = 1
     R = zeros(float(eltype(x)), n, n)
@@ -91,6 +90,7 @@ function Kriging(x,y,p::Number)
             R[i,j] = exp(-theta*abs(x[i]-x[j])^p)
         end
     end
+
     one = ones(n,1)
     one_t = one'
     inverse_of_R = inv(R)
@@ -156,9 +156,10 @@ function add_point!(k::Kriging,new_x,new_y)
             k.y = vcat(k.y,new_y)
             return Kriging(k.x,k.y,k.p)
         else
-            k.x = vcat(vec(k.x),new_x)
-            k.y = vcat(vec(k.y),new_y)
-            return Kriging(k.x,k.y,k.p)
+            a = vec(k.x)
+            push!(a,new_x)
+            push!(k.y,new_y)
+            return Kriging(a,k.y,k.p)
         end
     else
         k.x = vcat(k.x,new_x)
