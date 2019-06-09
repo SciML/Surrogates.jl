@@ -3,13 +3,13 @@ Response surfaces implementantion, following:
 "A Taxonomy of Global Optimization Methods Based on Response Surfaces"
 by DONALD R. JONES
 =#
-mutable struct RadialBasis{F} <: AbstractSurrogate
+mutable struct RadialBasis{F,X,Y,B,C} <: AbstractSurrogate
     phi::F
     dim_poly::Int
-    x
-    y
-    bounds
-    coeff
+    x::X
+    y::Y
+    bounds::B
+    coeff::C
 end
 
 """
@@ -171,9 +171,7 @@ function add_point!(rad::RadialBasis,new_x,new_y)
             rad.y = vcat(rad.y, new_y)
             return RadialBasis(rad.x,rad.y,rad.bounds[1],rad.bounds[2],rad.phi,rad.dim_poly)
         else
-            rad.x = vcat(vec(rad.x),new_x)
-            rad.y = vcat(vec(rad.y),new_y)
-            return RadialBasis(rad.x,rad.y,rad.bounds[1],rad.bounds[2],rad.phi,rad.dim_poly)
+            return RadialBasis(push!(vec(rad.x),new_x),push!(rad.y,new_y),rad.bounds[1],rad.bounds[2],rad.phi,rad.dim_poly)
         end
     else
         rad.x = vcat(rad.x,new_x)
