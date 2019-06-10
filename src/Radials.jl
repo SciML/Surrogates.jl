@@ -16,19 +16,19 @@ end
 Calculates current estimate of array value 'val' with respect to RadialBasis object.
 """
 function (rad::RadialBasis)(val)
-    n = Base.size(rad.x,1)
-    d = Base.size(rad.x,2)
+    n = length(rad.x)
+    d = length(rad.x[1])
     q = rad.dim_poly
-    central_point = zeros(float(eltype(rad.x)), d)
-    sum = zero(eltype(rad.x))
+    central_point = zeros(eltype(rad.x[1]), d)
+    sum = zero(eltype(rad.x[1]))
     @inbounds for i = 1:d
         central_point[i] = (rad.bounds[i][1]+rad.bounds[i][2])/2
         sum += (rad.bounds[i][2]-rad.bounds[i][1])/2
     end
     half_diameter_domain = sum/d
-    approx = zero(eltype(rad.x))
+    approx = zero(eltype(rad.x[1]))
     for i = 1:n
-        approx = approx + rad.coeff[i]*rad.phi(vec(val) - rad.x[i,:])
+        approx = approx + rad.coeff[i]*rad.phi(val .- rad.x[i])
     end
     for i = n+1:n+q
         approx = approx + rad.coeff[i]*centralized_monomial(val,n+1-i,half_diameter_domain,central_point)
@@ -40,12 +40,12 @@ end
 Calculates current estimate of value 'val' with respect to RadialBasis object.
 """
 function (rad::RadialBasis)(val::Number)
-    approx = zero(eltype(rad.x))
+    approx = zero(eltype(rad.x[1]))
     n = length(rad.x)
     q = rad.dim_poly
-    Chebyshev(x,k) = cos(k*acos(-1 + 2/(rad.bounds[2]-rad.bounds[1])*(x-rad.bounds[1])))
+    Chebyshev(x,k) = cos(k*acos(-1 + 2/(rad.bounds[2]-rad.bounds[1])*(x.-rad.bounds[1])))
     for i = 1:n
-        approx = approx + rad.coeff[i]*rad.phi(val - rad.x[i])
+        approx = approx + rad.coeff[i]*rad.phi(val .- rad.x[i])
     end
     for i = n+1:n+q
         approx = approx + rad.coeff[i]*Chebyshev(val,n+1-i)
@@ -78,13 +78,13 @@ function RadialBasis(x,y,a::Number,b::Number,phi::Function,q::Int)
     Chebyshev(x,k) = cos(k*acos(-1 + 2/(b-a)*(x-a)))
     n = length(x)
     size = n+q
-    D = zeros(float(eltype(x)), size, size)
-    d = zeros(float(eltype(x)),size)
+    D = zeros(eltype(x[1]), size, size)
+    d = zeros(eltype(x[1]),size)
 
     @inbounds for i = 1:n
         d[i] =  y[i]
         for j = 1:n
-            D[i,j] = phi(x[i] - x[j])
+            D[i,j] = phi(x[i] .- x[j])
         end
         if i < n + 1
             for k = n+1:size
@@ -110,10 +110,10 @@ end
 -'q': number of polynomial elements
 """
 function RadialBasis(x,y,bounds,phi::Function,q::Int)
-    n = Base.size(x,1)
-    d = Base.size(x,2)
-    central_point = zeros(float(eltype(x)), d)
-    sum = zero(eltype(x))
+    n = length(x)
+    d = length(x[1])
+    central_point = zeros(eltype(x[1]), d)
+    sum = zero(eltype(x[1]))
     @inbounds for i = 1:d
         central_point[i] = (bounds[i][1]+bounds[i][2])/2
         sum += (bounds[i][2]-bounds[i][1])/2
@@ -121,17 +121,17 @@ function RadialBasis(x,y,bounds,phi::Function,q::Int)
     half_diameter_domain = sum/d
 
     size = n+q
-    D = zeros(float(eltype(x)), size, size)
-    d = zeros(float(eltype(x)),size)
+    D = zeros(eltype(x[1]), size, size)
+    d = zeros(eltype(x[1]),size)
 
     @inbounds for i = 1:n
         d[i] =  y[i]
         for j = 1:n
-            D[i,j] = phi(x[i,:] - x[j,:])
+            D[i,j] = phi(x[i] .- x[j])
         end
         if i < n + 1
             for k = n+1:size
-                D[i,k] = centralized_monomial(x[i,:],k,half_diameter_domain,central_point)
+                D[i,k] = centralized_monomial(x[i],k,half_diameter_domain,central_point)
             end
         end
     end
@@ -165,17 +165,21 @@ end
 Add new samples x and y and updates the coefficients. Return the new object radial.
 """
 function add_point!(rad::RadialBasis,new_x,new_y)
-    if Base.size(rad.x,1) == 1
-        if length(new_x) > 1
-            rad.x = hcat(rad.x, new_x)
-            rad.y = vcat(rad.y, new_y)
+    if (length(new_x) == 1 && length(new_x[1]) == 1) || ( length(new_x) > 1 && length(new_x[1]) == 1 && length(rad.bounds[1])>1)
+        push!(rad.x,new_x)
+        push!(rad.y,new_y)
+        if length(rad.bounds[1]) == 1
             return RadialBasis(rad.x,rad.y,rad.bounds[1],rad.bounds[2],rad.phi,rad.dim_poly)
         else
-            return RadialBasis(push!(vec(rad.x),new_x),push!(rad.y,new_y),rad.bounds[1],rad.bounds[2],rad.phi,rad.dim_poly)
+            return RadialBasis(rad.x,rad.y,rad.bounds,rad.phi,rad.dim_poly)
         end
     else
-        rad.x = vcat(rad.x,new_x)
-        rad.y = vcat(rad.y,new_y)
-        return RadialBasis(rad.x,rad.y,rad.bounds,rad.phi,rad.dim_poly)
+        append!(rad.x,new_x)
+        append!(rad.y,new_y)
+        if length(rad.bounds[1]) == 1
+            return RadialBasis(rad.x,rad.y,rad.bounds[1],rad.bounds[2],rad.phi,rad.dim_poly)
+        else
+            return RadialBasis(rad.x,rad.y,rad.bounds,rad.phi,rad.dim_poly)
+        end
     end
 end
