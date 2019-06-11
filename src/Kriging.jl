@@ -19,14 +19,14 @@ mutable struct Kriging{X,Y,P,T,M,B,S,R} <: AbstractSurrogate
  Gives the current estimate for array 'val' with respect to the Kriging object k.
  """
  function (k::Kriging)(val)
-     prediction = zero(eltype(k.x))
-     n = Base.size(k.x,1)
-     d = Base.size(k.x,2)
-     r = zeros(float(eltype(k.x)),n,1)
+     prediction = zero(eltype(k.x[1]))
+     n = length(k.x)
+     d = length(k.x[1])
+     r = zeros(float(eltype(k.x[1])),n,1)
      @inbounds for i = 1:n
-         sum = zero(eltype(k.x))
+         sum = zero(eltype(k.x[1]))
          for l = 1:d
-             sum = sum + k.theta[l]*norm(val[l]-k.x[i,l])^(k.p[l])
+             sum = sum + k.theta[l]*norm(val[l]-k.x[i][l])^(k.p[l])
          end
          r[i] = exp(-sum)
          prediction = prediction + k.b[i]*exp(-sum)
@@ -118,14 +118,14 @@ Constructor for type Kriging.
 
 """
 function Kriging(x,y,p,theta)
-    n = size(x,1)
-    d = size(x,2)
-    R = zeros(float(eltype(x)), n, n)
+    n = length(x)
+    d = length(x[1])
+    R = zeros(float(eltype(x[1])), n, n)
     @inbounds for i = 1:n
         for j = 1:n
-            sum = zero(eltype(x))
+            sum = zero(eltype(x[1]))
             for l = 1:d
-            sum = sum + theta[l]*norm(x[i,l]-x[j,l])^p[l]
+            sum = sum + theta[l]*norm(x[i][l]-x[j][l])^p[l]
             end
             R[i,j] = exp(-sum)
         end
@@ -150,6 +150,26 @@ Returns the updated Kriging model.
 
 """
 function add_point!(k::Kriging,new_x,new_y)
+    if (length(new_x) == 1 && length(new_x[1]) == 1) || ( length(new_x) > 1 && length(new_x[1]) == 1 && length(k.theta)>1)
+        push!(k.x,new_x)
+        push!(k.y,new_y)
+        if length(k.theta) == 1
+            return Kriging(k.x,k.y,k.p)
+        else
+            return Kriging(k.x,k.y,k.p,k.theta)
+        end
+    else
+        append!(k.x,new_x)
+        append!(k.y,new_y)
+        if length(k.theta) == 1
+            return Kriging(k.x,k.y,k.p)
+        else
+            return Kriging(k.x,k.y,k.p,k.theta)
+        end
+    end
+end
+#=
+function add_point!(k::Kriging,new_x,new_y)
     if Base.size(k.x,1) == 1
         if length(new_x) > 1
             k.x = hcat(k.x,new_x)
@@ -167,3 +187,4 @@ function add_point!(k::Kriging,new_x,new_y)
         return Kriging(k.x,k.y,k.p,k.theta)
     end
 end
+=#
