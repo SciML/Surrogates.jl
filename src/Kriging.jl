@@ -82,8 +82,13 @@ Constructor for type Kriging.
 
 """
 function Kriging(x,y,p::Number)
-    n = length(x)
     theta = 1
+    mu,b,sigma,inverse_of_R = _calc_kriging_coeffs(x,y,p,theta)
+    Kriging(x,y,p,theta,mu,b,sigma,inverse_of_R)
+end
+
+function _calc_kriging_coeffs(x,y,p::Number,theta)
+    n = length(x)
     R = zeros(float(eltype(x)), n, n)
     @inbounds for i = 1:n
         for j = 1:n
@@ -97,11 +102,8 @@ function Kriging(x,y,p::Number)
     mu = (one_t*inverse_of_R*y)/(one_t*inverse_of_R*one)
     b = inverse_of_R*(y-one*mu)
     sigma = ((y-one*mu)' * inverse_of_R * (y - one*mu))/n
-    #mu[1], b, sigma[1],inverse_of_R
-    Kriging(x,y,p,theta,mu[1],b,sigma[1],inverse_of_R)
+    mu[1], b, sigma[1],inverse_of_R
 end
-
-
 
 """
     Kriging(x,y,p,theta)
@@ -118,6 +120,11 @@ Constructor for type Kriging.
 
 """
 function Kriging(x,y,p,theta)
+    mu,b,sigma,inverse_of_R = _calc_kriging_coeffs(x,y,p,theta)
+    Kriging(x,y,p,theta,mu,b,sigma,inverse_of_R)
+end
+
+function _calc_kriging_coeffs(x,y,p,theta)
     n = length(x)
     d = length(x[1])
     R = zeros(float(eltype(x[1])), n, n)
@@ -136,8 +143,7 @@ function Kriging(x,y,p,theta)
     mu = (one_t*inverse_of_R*y)/(one_t*inverse_of_R*one)
     b = inverse_of_R*(y-one*mu)
     sigma = ((y-one*mu)' * inverse_of_R * (y - one*mu))/n
-    #mu[1], b, sigma[1],inverse_of_R
-    Kriging(x,y,p,theta,mu[1],b,sigma[1],inverse_of_R)
+    mu[1], b, sigma[1],inverse_of_R
 end
 
 
@@ -153,38 +159,10 @@ function add_point!(k::Kriging,new_x,new_y)
     if (length(new_x) == 1 && length(new_x[1]) == 1) || ( length(new_x) > 1 && length(new_x[1]) == 1 && length(k.theta)>1)
         push!(k.x,new_x)
         push!(k.y,new_y)
-        if length(k.theta) == 1
-            return Kriging(k.x,k.y,k.p)
-        else
-            return Kriging(k.x,k.y,k.p,k.theta)
-        end
     else
         append!(k.x,new_x)
         append!(k.y,new_y)
-        if length(k.theta) == 1
-            return Kriging(k.x,k.y,k.p)
-        else
-            return Kriging(k.x,k.y,k.p,k.theta)
-        end
     end
+    k.mu,k.b,k.sigma,k.inverse_of_R = _calc_kriging_coeffs(k.x,k.y,k.p,k.theta)
+    nothing
 end
-#=
-function add_point!(k::Kriging,new_x,new_y)
-    if Base.size(k.x,1) == 1
-        if length(new_x) > 1
-            k.x = hcat(k.x,new_x)
-            k.y = vcat(k.y,new_y)
-            return Kriging(k.x,k.y,k.p)
-        else
-            a = vec(k.x)
-            push!(a,new_x)
-            push!(k.y,new_y)
-            return Kriging(a,k.y,k.p)
-        end
-    else
-        k.x = vcat(k.x,new_x)
-        k.y = vcat(k.y,new_y)
-        return Kriging(k.x,k.y,k.p,k.theta)
-    end
-end
-=#
