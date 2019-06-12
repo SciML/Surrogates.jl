@@ -75,6 +75,11 @@ Constructor for RadialBasis type
 -'q': number of polynomial elements
 """
 function RadialBasis(x,y,a::Number,b::Number,phi::Function,q::Int)
+    coeff = _calc_coeffs(x,y,a,b,phi,q)
+    RadialBasis(phi,q,x,y,(a,b),coeff)
+end
+
+function _calc_coeffs(x,y,a,b,phi,q)
     Chebyshev(x,k) = cos(k*acos(-1 + 2/(b-a)*(x-a)))
     n = length(x)
     size = n+q
@@ -94,7 +99,6 @@ function RadialBasis(x,y,a::Number,b::Number,phi::Function,q::Int)
     end
     Sym = Symmetric(D,:U)
     coeff = Sym\d
-    RadialBasis(phi,q,x,y,(a,b),coeff)
 end
 
 """
@@ -110,6 +114,11 @@ end
 -'q': number of polynomial elements
 """
 function RadialBasis(x,y,bounds,phi::Function,q::Int)
+    coeff = _calc_coeffs(x,y,bounds,phi,q)
+    RadialBasis(phi,q,x,y,bounds,coeff)
+end
+
+function _calc_coeffs(x,y,bounds,phi,q)
     n = length(x)
     d = length(x[1])
     central_point = zeros(eltype(x[1]), d)
@@ -137,7 +146,6 @@ function RadialBasis(x,y,bounds,phi::Function,q::Int)
     end
     Sym = Symmetric(D,:U)
     coeff = Sym\d
-    RadialBasis(phi,q,x,y,bounds,coeff)
 end
 
 """
@@ -169,17 +177,18 @@ function add_point!(rad::RadialBasis,new_x,new_y)
         push!(rad.x,new_x)
         push!(rad.y,new_y)
         if length(rad.bounds[1]) == 1
-            return RadialBasis(rad.x,rad.y,rad.bounds[1],rad.bounds[2],rad.phi,rad.dim_poly)
+            rad.coeff = _calc_coeffs(rad.x,rad.y,rad.bounds[1],rad.bounds[2],rad.phi,rad.dim_poly)
         else
-            return RadialBasis(rad.x,rad.y,rad.bounds,rad.phi,rad.dim_poly)
+            rad.coeff = _calc_coeffs(rad.x,rad.y,rad.bounds,rad.phi,rad.dim_poly)
         end
     else
         append!(rad.x,new_x)
         append!(rad.y,new_y)
         if length(rad.bounds[1]) == 1
-            return RadialBasis(rad.x,rad.y,rad.bounds[1],rad.bounds[2],rad.phi,rad.dim_poly)
+            rad.coeff = _calc_coeffs(rad.x,rad.y,rad.bounds[1],rad.bounds[2],rad.phi,rad.dim_poly)
         else
-            return RadialBasis(rad.x,rad.y,rad.bounds,rad.phi,rad.dim_poly)
+            rad.coeff = _calc_coeffs(rad.x,rad.y,rad.bounds,rad.phi,rad.dim_poly)
         end
     end
+    nothing
 end
