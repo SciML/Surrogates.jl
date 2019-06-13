@@ -50,7 +50,12 @@ function sobol_sample(n,lb,ub)
     for i = 1:n
         push!(x,Tuple(next!(s)))
     end
-    return x
+    if length(lb) == 1
+        flat(arr::Array) = mapreduce(x -> isa(x, Array) ? flat(x) : x, append!, arr,init=[])
+        return flat(x)
+    else
+        return x
+    end
 end
 
 """
