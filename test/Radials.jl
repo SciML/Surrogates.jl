@@ -8,13 +8,11 @@ using Surrogates
     @testset "1D" begin
 
         #WITHOUT ADD_POINT
-
-
         x = [1.0,2.0,3.0]
         y = [4.0,5.0,6.0]
         a = 0
         b = 4
-        my_rad = RadialBasis(x,y,a,b,z->norm(z),1)
+        my_rad = RadialBasis(sx,sy,a,b,z->norm(z),1)
         est = my_rad(3.0)
         @test est ≈ 7.875
 

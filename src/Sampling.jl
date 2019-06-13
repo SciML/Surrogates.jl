@@ -1,3 +1,7 @@
+using LinearAlgebra
+using Distributions
+using Sobol
+using LatinHypercubeSampling
 #=
 1) Random sampling
 2) Uniform sampling
@@ -7,8 +11,6 @@
 6) Monte carlo importance sampling
 7) Low- discrepancy sampling
 =#
-using LinearAlgebra
-using Distributions
 
 """
 sample(f,kind_of_sample()) returns the evaluation of function f
@@ -16,11 +18,11 @@ and the sampling points, ready to be used in Kriging and Radials.
 """
 function sample(f::Function,sample)
     n = Base.size(sample,1)
-    vals = zeros(eltype(sample),n,1)
+    vals = zeros(eltype(sample[1]),1,n)
     for i = 1:n
-        vals[i] = f(sample[i,:])
+        vals[i] = f(sample[i])
     end
-    return vals,sample
+    return vec(vals),sample
 end
 
 """
@@ -41,8 +43,14 @@ end
 """
 Sobol
 """
-function sobol_sample(lb,ub)
-    return SobolSeq(lb,ub)
+function sobol_sample(n,lb,ub)
+    x = Tuple[]
+    s = SobolSeq(lb,ub)
+    skip(s,n)
+    for i = 1:n
+        push!(x,Tuple(next!(s)))
+    end
+    return x
 end
 
 """
