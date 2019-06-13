@@ -49,8 +49,21 @@ end
 """
 uniform_sample
 """
-function uniform_sample(n,d,bounds)
-    return rand(Uniform(bounds[1],bounds[2]),n,d)
+function uniform_sample(n,lb,ub)
+    if length(lb) == 1
+        return vec(rand(Uniform(lb,ub),n))
+    else
+        d = length(lb)
+        x = Tuple[]
+        y = zeros(Float64,d,1)
+        for i = 1:n
+            for j = 1:d
+                y[j] = rand(Uniform(lb[j],ub[j]))
+            end
+            push!(x,Tuple(y))
+        end
+        return x
+    end
 end
 
 """
