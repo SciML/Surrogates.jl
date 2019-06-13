@@ -29,8 +29,21 @@ end
 random_sample(n,d,bounds) returns a nxd Array containing
 random numbers
 """
-function random_sample(n,d,bounds)
-    return rand(bounds[1]:0.0000001:bounds[2],n,d)
+function random_sample(n,lb,ub)
+    if length(lb) == 1
+        return vec(rand(lb:0.0000001:ub,n,1))
+    else
+        d = length(lb)
+        x = Tuple[]
+        y = zeros(Float64,d,1)
+        for i = 1:n
+            for j = 1:d
+                y[j] = rand(lb[j]:0.0000001:ub[j])
+            end
+            push!(x,Tuple(y))
+        end
+        return x
+    end
 end
 
 """
@@ -62,5 +75,10 @@ end
 Latin hypercube sapling
 """
 function LHS_sample(n,d)
-    return LHCoptim(n,d,1)[1]
+    if d == 1
+        return vec(LHCoptim(n,d,1)[1])
+    else
+        x = LHCoptim(n,d,1)[1]
+        return x
+    end
 end

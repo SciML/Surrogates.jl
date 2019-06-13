@@ -16,9 +16,7 @@ using Surrogates
         est = my_rad(3.0)
         @test est ≈ 7.875
 
-
         #WITH ADD_POINT, adding singleton
-
         x = [1.0,2.0,3.0]
         y = [4.0,5.0,6.0]
         a = 0
@@ -47,7 +45,6 @@ using Surrogates
     end
     @testset "ND" begin
         #WITHOUT ADD_POINT
-
 
         x = [(1.0,2.0,3.0),(4.0,5.0,6.0),(7.0,8.0,9.0)]
         y = [4.0,5.0,6.0]
