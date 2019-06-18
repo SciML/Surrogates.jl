@@ -19,6 +19,8 @@ w_range = [0.2,0.5,0.7,0.95]
 i = 1
 box_size = lb-ub
 num_new_samples = 10
+success = 0
+failures = 0
 for k = 1:maxiters
     if i == 4
         i = 1
@@ -30,7 +32,7 @@ for k = 1:maxiters
     incumbent_value = minimum(rad.y)
     incumbent_x = x[argmin(rad.y)]
     new_sample = sample(num_new_samples,incumbent_x-scale,incumbent_x+scale)
-    println(new_sample)
+
     #2) Create  merit function STILL NEED TO FIND D_MAX, D_X AND D_MIN
     s = zeros(eltype(rad.x[1]),num_new_samples)
     for j = 1:num_new_samples
@@ -38,6 +40,9 @@ for k = 1:maxiters
     end
     s_max = max(s)
     s_min = min(s)
+
+    for r = 1:num_new_samples
+        for c = 1:num
 
     merit_function =
     x -> w*(rad(x) - s_min)/(s_max-s_min) + (1-w)*((d_max - d_x)/d_max - d_min))
@@ -52,14 +57,38 @@ for k = 1:maxiters
     adaptive_point_y = rad(new_sample)
 
     #5) Update surrogate with (adaptive_point,objective(adaptive_point)
-    #=
-    if Surrogate(adaptive_point) < Incumbent_value
-        incumbent = adaptive_point
-        #Success
-    # three times Success -> scale = 2*scale
-    # five times I do not find anything scale = scale/2 fino 1e-5 * size(b-a)
+    add_point!(rad,adaptive_point_x,adaptive_point_y)
 
-    =#
+    #6) How to go on?
+    if rad(adaptive_point_x) < incumbent_value
+        incumbent_x = adaptive_point_x
+        incumbent_value = adaptive_point_y
+        success += 1
+    else
+        failure += 1
+    end
+
+    if (success == 3 & failure == 0) || (success - failure == 0)
+        scale = scale*2
+        #check bounds cant go more than [a,b]
+        if lb*scale < lb || ub*scale > ub
+            println("Exiting, searched the whole box")
+            exit()
+        end
+        success = 0
+        failure = 0
+    end
+    if (failure == 5 & success == 0) || (failure - success == 0)
+        scale = scale/2
+        #check bounds and go on only if > 1e-5*interval
+        if scale < 1e-5
+            println("Exiting, too narrow")
+            exit()
+        end
+        sucess = 0
+        failure = 0
+    end
+
 end
 
 end
