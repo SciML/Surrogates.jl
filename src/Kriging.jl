@@ -40,7 +40,7 @@ mutable struct Kriging{X,Y,P,T,M,B,S,R} <: AbstractSurrogate
      b = one_t*k.inverse_of_R*one
      b = b[1]
      mean_squared_error = k.sigma*(1 - a + (1-a)^2/(b))
-     std_error = sqrt(mean_squared_error)
+     std_error = sqrt(abs(mean_squared_error))
      return prediction, std_error
  end
 
@@ -64,7 +64,7 @@ mutable struct Kriging{X,Y,P,T,M,B,S,R} <: AbstractSurrogate
      b = one_t*k.inverse_of_R*one
      b = b[1]
      mean_squared_error = k.sigma*(1 - a + (1-a)^2/(b))
-     std_error = sqrt(mean_squared_error)
+     std_error = sqrt(abs(mean_squared_error))
      return prediction, std_error
  end
 
