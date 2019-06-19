@@ -1,18 +1,19 @@
 using Surrogates
 using LinearAlgebra
 
-#Building the surrogate with linear radial basis
-objective_function = x -> 2*x+1
-x = [2.0,4.0,6.0]
-y = [5.0,9.0,13.0]
-incumbent = argmin(y)
-p = 2
-a = 2
-b = 6
-my_k = Kriging(x,y,p)
+function merit_function(point,w,krig::Kriging,s_max,s_min,d_max,d_min,box_size)
+    D_x = box_size+1
+    for i = 1:length(krig.x)
+        distance = norm(krig.x[i]-point)
+        if distance < D_x
+            D_x = distance
+        end
+    end
+    return w*(krig(x)[1] - s_min)/(s_max-s_min) + (1-w)*((d_max - D_x)/(d_max - d_min))
+end
 
 #1D version due to operations on lb and ub
-function optimization(lb,ub,krig::Kriging,maxiters,sample::Function)
+function optimization(lb,ub,krig::Kriging,maxiters,sample::Function,num_new_samples)
 #Suggested by:
 #https://www.mathworks.com/help/gads/surrogate-optimization-algorithm.html
 scale = 0.2
@@ -21,7 +22,6 @@ failure = 0
 w_range = [0.2,0.5,0.7,0.95]
 i = 1
 box_size = lb-ub
-num_new_samples = 10
 success = 0
 failures = 0
 for k = 1:maxiters
@@ -31,7 +31,7 @@ for k = 1:maxiters
     w = w_range[i]
     i = i + 1
 
-    #1) Sample near incumbent
+    #1) Sample near incumbent (the 2 fraction is arbitrary here)
     incumbent_value = minimum(krig.y)
     incumbent_x = x[argmin(krig.y)]
 
@@ -39,7 +39,7 @@ for k = 1:maxiters
                         incumbent_x-scale*norm(incumbent_x-a)/2,
                         incumbent_x+scale*norm(incumbent_x-b)/2)
 
-    #2) Create  merit function STILL NEED TO FIND D_MAX, D_X AND D_MIN
+    #2) Create  merit function
     s = zeros(eltype(krig.x[1]),num_new_samples)
     for j = 1:num_new_samples
         s[j] = krig(new_sample[j])[1]
@@ -61,20 +61,7 @@ for k = 1:maxiters
         end
     end
 
-    function merit_function(point,w,krig::Kriging,s_max,s_min,d_max,d_min,box_size)
-        D_x = box_size+1
-        for i = 1:length(krig.x)
-            distance = norm(krig.x[i]-point)
-            if distance < D_x
-                D_x = distance
-            end
-        end
-        return w*(krig(x)[1] - s_min)/(s_max-s_min) + (1-w)*( (d_max - D_x)/(d_max - d_min))
-    end
-
-
-    #3) Evaluate merit function in sampled_points
-
+    #3) Evaluate merit function in the sampled points
     evaluation_of_merit_function = merit_function.(new_sample,w,krig,s_max,s_min,d_max,d_min,box_size)
 
     #4) Find minimum of merit function = adaptive point
@@ -118,8 +105,13 @@ for k = 1:maxiters
 end
 end
 
-println(length(my_k.x))
-optimization(a,b,my_k,10,random_sample)
-println(my_k.x)
-println(my_k.y)
-println(my_k(5.0))
+#Example
+objective_function = x -> 2*x+1
+x = [2.0,4.0,6.0]
+y = [5.0,9.0,13.0]
+p = 2
+a = 2
+b = 6
+my_k = Kriging(x,y,p)
+
+optimization(a,b,my_k,10,random_sample,10)
