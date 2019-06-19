@@ -11,10 +11,14 @@ b = 4
 phi = z -> norm(z)
 q = 1
 my_rad = RadialBasis(x,y,a,b,phi,q)
+
+#1D version due to operations on lb and ub
 function optimization(lb,ub,rad::RadialBasis,maxiters,sample::Function)
 #Suggested by:
 #https://www.mathworks.com/help/gads/surrogate-optimization-algorithm.html
 scale = 0.2
+success = 0
+failure = 0
 w_range = [0.2,0.5,0.7,0.95]
 i = 1
 box_size = lb-ub
@@ -38,17 +42,36 @@ for k = 1:maxiters
     for j = 1:num_new_samples
         s[j] = rad(new_sample[j])
     end
-    s_max = max(s)
-    s_min = min(s)
+    s_max = maximum(s)
+    s_min = minimum(s)
 
-    for r = 1:num_new_samples
-        for c = 1:num
+    d_min = box_size + 1
+    d_max = 0.0
+    for r = 1:length(rad.x)
+        for c = 1:num_new_samples
+            distance_rc = norm(rad.x[r]-new_sample[c])
+            if distance_rc > d_max
+                d_max = distance_rc
+            end
+            if distance_rc < d_min
+                d_min = distance_rc
+            end
+        end
+    end
 
-    merit_function =
-    x -> w*(rad(x) - s_min)/(s_max-s_min) + (1-w)*((d_max - d_x)/d_max - d_min))
+    function merit_function(point,w,rad::RadialBasis,s_max,s_min,d_max,d_min,box_size)
+        D_x = box_size+1
+        for i = 1:length(rad.x)
+            distance = norm(rad.x[i]-point)
+            if distance < D_x
+                D_x = distance
+            end
+        end
+        return w*(rad(x) - s_min)/(s_max-s_min) + (1-w)*( (d_max - D_x)/(d_max - d_min))
+    end
 
     #3) Evaluate merit function in sampled_points
-    evaluation_of_merit_function = merit_function.(new_sample)
+    evaluation_of_merit_function = merit_function.(new_sample,w,rad,s_max,s_min,d_max,d_min,box_size)
 
     #4) Find minimum of merit function = adaptive point
     adaptive_point_x = new_sample[argmin(evaluation_of_merit_function)]
