@@ -32,7 +32,23 @@ mutable struct Kriging{X,Y,P,T,M,B,S,R} <: AbstractSurrogate
          prediction = prediction + k.b[i]*exp(-sum)
      end
      prediction = k.mu + prediction
+     return prediction
+ end
 
+ """
+     Returns sqrt of expected mean_squared_error errot at the point.
+ """
+ function std_error_at_point(k::Kriging,val)
+     n = length(k.x)
+     d = length(k.x[1])
+     r = zeros(float(eltype(k.x[1])),n,1)
+     @inbounds for i = 1:n
+         sum = zero(eltype(k.x[1]))
+         for l = 1:d
+             sum = sum + k.theta[l]*norm(val[l]-k.x[i][l])^(k.p[l])
+         end
+         r[i] = exp(-sum)
+     end
      one = ones(n,1)
      one_t = one'
      a = r'*k.inverse_of_R*r
@@ -40,8 +56,7 @@ mutable struct Kriging{X,Y,P,T,M,B,S,R} <: AbstractSurrogate
      b = one_t*k.inverse_of_R*one
      b = b[1]
      mean_squared_error = k.sigma*(1 - a + (1-a)^2/(b))
-     std_error = sqrt(mean_squared_error)
-     return prediction, std_error
+     return sqrt(abs(mean_squared_error))
  end
 
  """
@@ -57,17 +72,28 @@ mutable struct Kriging{X,Y,P,T,M,B,S,R} <: AbstractSurrogate
          r[i] = phi(val - k.x[i])
      end
      prediction = k.mu + prediction
-     one = ones(n,1)
-     one_t = one'
-     a = r'*k.inverse_of_R*r
-     a = a[1]
-     b = one_t*k.inverse_of_R*one
-     b = b[1]
-     mean_squared_error = k.sigma*(1 - a + (1-a)^2/(b))
-     std_error = sqrt(mean_squared_error)
-     return prediction, std_error
+     return prediction
  end
 
+"""
+    Returns sqrt of expected mean_squared_error errot at the point.
+"""
+function std_error_at_point(k::Kriging,val::Number)
+    phi(z) = exp(-(abs(z))^k.p)
+    n = length(k.x)
+    r = zeros(float(eltype(k.x)),n,1)
+    @inbounds for i = 1:n
+        r[i] = phi(val - k.x[i])
+    end
+    one = ones(n,1)
+    one_t = one'
+    a = r'*k.inverse_of_R*r
+    a = a[1]
+    b = one_t*k.inverse_of_R*one
+    b = b[1]
+    mean_squared_error = k.sigma*(1 - a + (1-a)^2/(b))
+    return sqrt(abs(mean_squared_error))
+end
 
 
 """
