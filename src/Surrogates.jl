@@ -10,8 +10,10 @@ abstract type AbstractSurrogate <: Function end
 include("Radials.jl")
 include("Kriging.jl")
 include("Sampling.jl")
+include("Optimization.jl")
 
 export Kriging, RadialBasis, add_point!, current_estimate, std_error_at_point
-export sample, GridSample, UniformSample, SobolSample, LatinHypercubeSample
+export sample, SamplingAlgorithm, GridSample, UniformSample, SobolSample, LatinHypercubeSample
+export optimization
 
 end
