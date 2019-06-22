@@ -11,7 +11,124 @@ function merit_function(point,w,surr::AbstractSurrogate,s_max,s_min,d_max,d_min,
     return w*(surr(point) - s_min)/(s_max-s_min) + (1-w)*((d_max - D_x)/(d_max - d_min))
 end
 
-#1D version due to operations on lb and ub
+"""
+optimization(lb,ub,surr::AbstractSurrogate,
+             maxiters::Int,
+             sample_type::SamplingAlgorithm,num_new_samples::Int)
+Finds minimum of objective function while sampling the AbstractSurrogate at
+the same time.
+"""
+function optimization(lb,ub,surr::AbstractSurrogate,maxiters::Int,sample_type::SamplingAlgorithm,num_new_samples::Int)
+#Suggested by:
+#https://www.mathworks.com/help/gads/surrogate-optimization-algorithm.html
+    scale = 0.2
+    success = 0
+    failure = 0
+    w_range = [0.3,0.5,0.7,0.95]
+
+    #Vector containing size in each direction
+    box_size = lb-ub
+    success = 0
+    failures = 0
+    @inbounds for k = 1:maxiters
+        for w in Iterators.cycle(w_range)
+
+            #1) Sample near incumbent (the 2 fraction is arbitrary here)
+            incumbent_value = minimum(surr.y)
+            incumbent_x = surr.x[argmin(surr.y)]
+
+            new_lb = incumbent_x .- scale*norm(incumbent_x-lb)
+            new_ub = incumbent_x .+ scale*norm(incumbent_x-lb)
+            new_sample = sample(num_new_samples,new_lb,new_ub,sample_type)
+
+            #2) Create  merit function
+            s = zeros(eltype(surr.x[1]),num_new_samples)
+            for j = 1:num_new_samples
+                s[j] = surr(new_sample[j])
+            end
+            s_max = maximum(s)
+            s_min = minimum(s)
+
+            d_min = box_size + 1
+            d_max = 0.0
+            for r = 1:length(surr.x)
+                for c = 1:num_new_samples
+                    distance_rc = norm(surr.x[r]-new_sample[c])
+                    if distance_rc > d_max
+                        d_max = distance_rc
+                    end
+                    if distance_rc < d_min
+                        d_min = distance_rc
+                    end
+                end
+            end
+            #3) Evaluate merit function in the sampled points
+            evaluation_of_merit_function = merit_function.(new_sample,w,surr,s_max,s_min,d_max,d_min,box_size)
+
+            #4) Find minimum of merit function = adaptive point
+            adaptive_point_x = new_sample[argmin(evaluation_of_merit_function)]
+
+            #4) Evaluate objective function at adaptive point
+            adaptive_point_y = surr(adaptive_point_x)
+
+            #5) Update surrogate with (adaptive_point,objective(adaptive_point)
+            add_point!(surr,adaptive_point_x,adaptive_point_y)
+
+            #6) How to go on?
+            if surr(adaptive_point_x)[1] < incumbent_value
+                #success
+                incumbent_x = adaptive_point_x
+                incumbent_value = adaptive_point_y
+                if failure == 0
+                    success +=1
+                else
+                    failure = 0
+                    success += 1
+                end
+            else
+                #failure
+                if success == 0
+                    failure += 1
+                else
+                    success = 0
+                    failure += 1
+                end
+            end
+
+            if success == 3
+                scale = scale*2
+                #check bounds
+                @inbounds for q = 1:length(lb)
+                    if lb[q]*scale < lb[q] || ub[q]*scale > ub[q]
+                        println("Exiting, searched the whole box")
+                        return
+                    end
+                end
+                success = 0
+                failure = 0
+            end
+
+            if failure == 5
+                scale = scale/2
+                #check bounds and go on only if > 1e-5*interval
+                if scale < 1e-5
+                    println("Exiting, too narrow")
+                    return
+                end
+                sucess = 0
+                failure = 0
+            end
+        end
+    end
+end
+
+"""
+optimization(lb::Number,ub::Number,surr::AbstractSurrogate,
+             maxiters::Int,
+             sample_type::SamplingAlgorithm,num_new_samples::Int)
+Finds minimum of objective function while sampling the AbstractSurrogate at
+the same time.
+"""
 function optimization(lb::Number,ub::Number,surr::AbstractSurrogate,maxiters::Int,sample_type::SamplingAlgorithm,num_new_samples::Int)
 #Suggested by:
 #https://www.mathworks.com/help/gads/surrogate-optimization-algorithm.html
