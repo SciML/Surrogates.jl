@@ -3,7 +3,11 @@ using LinearAlgebra
 objective_function = x -> 2*x+1
 x = [2.0,4.0,6.0]
 y = [5.0,9.0,13.0]
-p = 2
+
+# In 1D values of p closer to 2 make the det(R) closer and closer to 0,
+#this does not happen in higher dimensions because p would be a vector and not
+#all components are generally C^inf
+p = 1.0
 a = 2
 b = 6
 

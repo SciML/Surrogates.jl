@@ -22,7 +22,7 @@ function optimization(lb::Number,ub::Number,surr::AbstractSurrogate,maxiters::In
     box_size = lb-ub
     success = 0
     failures = 0
-    for k = 1:maxiters
+    @inbounds for k = 1:maxiters
         for w in Iterators.cycle(w_range)
 
             #1) Sample near incumbent (the 2 fraction is arbitrary here)
@@ -54,7 +54,6 @@ function optimization(lb::Number,ub::Number,surr::AbstractSurrogate,maxiters::In
                     end
                 end
             end
-
             #3) Evaluate merit function in the sampled points
             evaluation_of_merit_function = merit_function.(new_sample,w,surr,s_max,s_min,d_max,d_min,box_size)
 
@@ -69,26 +68,37 @@ function optimization(lb::Number,ub::Number,surr::AbstractSurrogate,maxiters::In
 
             #6) How to go on?
             if surr(adaptive_point_x)[1] < incumbent_value
+                #success
                 incumbent_x = adaptive_point_x
                 incumbent_value = adaptive_point_y
-                success += 1
+                if failure == 0
+                    success +=1
+                else
+                    failure = 0
+                    success += 1
+                end
             else
-                failure += 1
+                #failure
+                if success == 0
+                    failure += 1
+                else
+                    success = 0
+                    failure += 1
+                end
             end
 
-            if (success == 3 & failure == 0) || (success - failure == 0)
+            if success == 3
                 scale = scale*2
                 #check bounds cant go more than [a,b]
                 if lb*scale < lb || ub*scale > ub
                     println("Exiting, searched the whole box")
                     return
-                    println("QUI")
                 end
                 success = 0
                 failure = 0
             end
 
-            if (failure == 5 & success == 0) || (failure - success == 0)
+            if failure == 5
                 scale = scale/2
                 #check bounds and go on only if > 1e-5*interval
                 if scale < 1e-5
