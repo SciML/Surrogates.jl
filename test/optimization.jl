@@ -1,5 +1,7 @@
 using Surrogates
 using LinearAlgebra
+
+##### 1D #####
 objective_function = x -> 2*x+1
 x = [2.0,4.0,6.0]
 y = [5.0,9.0,13.0]
@@ -13,8 +15,24 @@ b = 6
 
 #Using Kriging
 my_k = Kriging(x,y,p)
-optimization(a,b,my_k,10,UniformSample(),10)
+optimization(a,b,my_k,10,UniformSample(),10,objective_function)
 
 #Using RadialBasis
+
 my_rad = RadialBasis(x,y,a,b,z->norm(z),1)
-optimization(a,b,my_rad,10,UniformSample(),10)
+optimization(a,b,my_rad,10,UniformSample(),10,objective_function)
+
+
+##### ND #####
+
+objective_function_ND = z -> 3*norm(z)+1
+
+x = [(1.0,3.0),(3.0,3.5),(5.2,5.7)]
+y = objective_function_ND.(x)
+p = [1.2,1.2]
+theta = [2.0,2.0]
+lb = [1,1]
+ub = [6,6]
+
+my_k_ND = Kriging(x,y,p,theta)
+optimization(lb,ub,my_k_ND,10,UniformSample(),10,objective_function_ND)
