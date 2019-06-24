@@ -1,5 +1,6 @@
 using Surrogates
 
+
 lb = 0.1
 ub = 1.0
 n = 100
@@ -11,6 +12,8 @@ sample(n,lb,ub,LatinHypercubeSample())
 f(x) = x^2
 f.(s)
 
+
+
 lb = [0.1,-0.5]
 ub = [1.0,20.0]
 n = 100
@@ -21,3 +24,9 @@ sample(n,lb,ub,LatinHypercubeSample())
 
 f(x) = x[1]+x[2]^2
 f.(s)
+
+
+lb = [1.2,1.2]
+ub = [2.0,2.0]
+n = 5
+sample(n,lb,ub,LatinHypercubeSample())
