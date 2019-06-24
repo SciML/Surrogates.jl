@@ -56,10 +56,13 @@ function sample(n,lb,ub,::LatinHypercubeSample)
     if lb isa Number
         x = vec(LHCoptim(n,d,1)[1])
         # x∈[0,n], so affine transform
-        return @. (ub-lb) * x/(n) - lb
+        return @. (ub-lb) * x/(n) + lb
     else
-        x = LHCoptim(n,d,1)[1]
-        # TODO: scale into the box
+        x = float(LHCoptim(n,d,1)[1])
+        # x∈[0,n], so affine transform column-wise
+        @inbounds for c = 1:d
+            x[:,c] = (ub[c]-lb[c])*x[:,c]/n .+ lb[c]
+        end
         return x
     end
 end
