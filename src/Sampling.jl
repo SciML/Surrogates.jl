@@ -5,6 +5,9 @@ end
 struct UniformSample <: SamplingAlgorithm end
 struct SobolSample <: SamplingAlgorithm end
 struct LatinHypercubeSample <: SamplingAlgorithm end
+struct LowDiscrepancySample{T} <: SamplingAlgorithm
+    base::T
+end
 
 function sample(n,lb,ub,S::GridSample)
     dx = S.dx
@@ -65,4 +68,33 @@ function sample(n,lb,ub,::LatinHypercubeSample)
         end
         return x
     end
+end
+
+
+"""
+sample(n,lb,ub,S::LowDiscrepancySample)
+
+Low discrepancy sampling
+"""
+function sample(n,lb,ub,S::LowDiscrepancySample)
+    if length(lb) == 1
+        #Van der Corput
+        b = S.base
+        x = zeros(Float32,n)
+        for i = 1:n
+            expansion = digits(i,base = b)
+            L = length(expansion)
+            val = zero(Float64)
+            for k = 1:L
+                val += expansion[k]*float(b)^(-(k-1)-1)
+            end
+            x[i] = val
+        end
+        # It is always defined on the unit interval, resizing:
+        return @. (ub-lb) * x + lb
+    else
+        #Halton sequence
+
+    end
+
 end

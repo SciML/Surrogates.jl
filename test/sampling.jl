@@ -8,6 +8,7 @@ s = sample(n,lb,ub,GridSample(0.1))
 sample(n,lb,ub,UniformSample())
 sample(n,lb,ub,SobolSample())
 sample(n,lb,ub,LatinHypercubeSample())
+sample(20,lb,ub,LowDiscrepancySample(10))
 
 f(x) = x^2
 f.(s)
