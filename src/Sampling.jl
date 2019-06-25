@@ -74,17 +74,19 @@ end
 """
 sample(n,lb,ub,S::LowDiscrepancySample)
 
-Low discrepancy sampling
+LowDiscrepancySample for different bases.
+If dimension d > 1, every bases must be coprime with each other.
 """
 function sample(n,lb,ub,S::LowDiscrepancySample)
-    if length(lb) == 1
+    d = length(lb)
+    if d == 1
         #Van der Corput
         b = S.base
         x = zeros(Float32,n)
         for i = 1:n
             expansion = digits(i,base = b)
             L = length(expansion)
-            val = zero(Float64)
+            val = zero(Float32)
             for k = 1:L
                 val += expansion[k]*float(b)^(-(k-1)-1)
             end
@@ -94,7 +96,25 @@ function sample(n,lb,ub,S::LowDiscrepancySample)
         return @. (ub-lb) * x + lb
     else
         #Halton sequence
-
+        x = zeros(Float32,n,d)
+        for j = 1:d
+            b = S.base[j]
+            for i = 1:n
+                val = zero(Float32)
+                expansion = digits(i, base = b)
+                L = length(expansion)
+                val = zero(Float32)
+                for k = 1:L
+                    val += expansion[k]*float(b)^(-(k-1)-1)
+                end
+                x[i,j] = val
+            end
+        end
+        #Resizing
+        # x∈[0,1], so affine transform column-wise
+        @inbounds for c = 1:d
+            x[:,c] = (ub[c]-lb[c])*x[:,c] .+ lb[c]
+        end
+        return x
     end
-
 end
