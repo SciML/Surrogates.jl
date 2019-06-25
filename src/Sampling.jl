@@ -5,6 +5,9 @@ end
 struct UniformSample <: SamplingAlgorithm end
 struct SobolSample <: SamplingAlgorithm end
 struct LatinHypercubeSample <: SamplingAlgorithm end
+struct LowDiscrepancySample{T} <: SamplingAlgorithm
+    base::T
+end
 
 function sample(n,lb,ub,S::GridSample)
     dx = S.dx
@@ -62,6 +65,55 @@ function sample(n,lb,ub,::LatinHypercubeSample)
         # x∈[0,n], so affine transform column-wise
         @inbounds for c = 1:d
             x[:,c] = (ub[c]-lb[c])*x[:,c]/n .+ lb[c]
+        end
+        return x
+    end
+end
+
+
+"""
+sample(n,lb,ub,S::LowDiscrepancySample)
+
+LowDiscrepancySample for different bases.
+If dimension d > 1, every bases must be coprime with each other.
+"""
+function sample(n,lb,ub,S::LowDiscrepancySample)
+    d = length(lb)
+    if d == 1
+        #Van der Corput
+        b = S.base
+        x = zeros(Float32,n)
+        for i = 1:n
+            expansion = digits(i,base = b)
+            L = length(expansion)
+            val = zero(Float32)
+            for k = 1:L
+                val += expansion[k]*float(b)^(-(k-1)-1)
+            end
+            x[i] = val
+        end
+        # It is always defined on the unit interval, resizing:
+        return @. (ub-lb) * x + lb
+    else
+        #Halton sequence
+        x = zeros(Float32,n,d)
+        for j = 1:d
+            b = S.base[j]
+            for i = 1:n
+                val = zero(Float32)
+                expansion = digits(i, base = b)
+                L = length(expansion)
+                val = zero(Float32)
+                for k = 1:L
+                    val += expansion[k]*float(b)^(-(k-1)-1)
+                end
+                x[i,j] = val
+            end
+        end
+        #Resizing
+        # x∈[0,1], so affine transform column-wise
+        @inbounds for c = 1:d
+            x[:,c] = (ub[c]-lb[c])*x[:,c] .+ lb[c]
         end
         return x
     end
