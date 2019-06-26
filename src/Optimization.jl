@@ -87,7 +87,6 @@ function SRBF(lb,ub,surr::AbstractSurrogate,maxiters::Int,sample_type::SamplingA
 
             #3)Evaluate merit function in the sampled points
 
-            #PROBLEMS WITH VECTORIZED FUNCTION
             evaluation_of_merit_function = zeros(float(eltype(surr.x[1])),num_new_samples,1)
             @inbounds for r = 1:num_new_samples
                 evaluation_of_merit_function[r] = merit_function(new_sample[r],w,surr,s_max,s_min,d_max,d_min,box_size)
@@ -339,7 +338,7 @@ function LCBS(lb,ub,krig::Kriging,maxiters::Int,
     for i = 1:maxiters
         d = length(krig.x)
         new_sample = sample(num_new_samples,lb,ub,sample_type)
-        evaluations = zeros(eltype(krig.x[1]), num_new_samples)
+        evaluations = zeros(eltype(krig.x[1]),num_new_samples)
         for j = 1:num_new_samples
             evaluations[j] = krig(new_sample[j]) +
                              k*sqrt(std_error_at_point(krig,new_sample[j]))
