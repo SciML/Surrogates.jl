@@ -108,7 +108,7 @@ Constructor for type Kriging.
 
 """
 function Kriging(x,y,p::Number)
-    theta = 1
+    theta = 1.0
     mu,b,sigma,inverse_of_R = _calc_kriging_coeffs(x,y,p,theta)
     Kriging(x,y,p,theta,mu,b,sigma,inverse_of_R)
 end
