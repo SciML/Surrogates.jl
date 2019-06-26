@@ -41,6 +41,8 @@ function SRBF(lb,ub,surr::AbstractSurrogate,maxiters::Int,sample_type::SamplingA
     box_size = lb-ub
     success = 0
     failures = 0
+    dtol = 1e-3*norm(ub-lb)
+    d = length(surr.x)
     @inbounds for k = 1:maxiters
         for w in Iterators.cycle(w_range)
 
@@ -87,19 +89,45 @@ function SRBF(lb,ub,surr::AbstractSurrogate,maxiters::Int,sample_type::SamplingA
 
             #3)Evaluate merit function in the sampled points
 
-            evaluation_of_merit_function = zeros(float(eltype(surr.x[1])),num_new_samples,1)
+
+            evaluation_of_merit_function = zeros(float(eltype(surr.x[1])),num_new_samples)
             @inbounds for r = 1:num_new_samples
                 evaluation_of_merit_function[r] = merit_function(new_sample[r],w,surr,s_max,s_min,d_max,d_min,box_size)
             end
+            new_addition = false
+            adaptive_point_x = Tuple{}
+            diff_x = zeros(eltype(surr.x[1]),d)
+            while new_addition == false
+                #find minimum
+                new_min_y = minimum(evaluation_of_merit_function)
+                min_index = argmin(evaluation_of_merit_function)
+                new_min_x = new_sample[min_index]
+                for l = 1:d
+                    diff_x[l] = norm(surr.x[l] .- new_min_x)
+                end
+                bit_x = diff_x .> dtol
+                #new_min_x has to have some distance from krig.x
+                if false in bit_x
+                    #The new_point is not actually that new, discard it!
 
-            #4) Find minimum of merit function = adaptive point
-            adaptive_point_x = new_sample[argmin(evaluation_of_merit_function)]
+                    deleteat!(evaluation_of_merit_function,min_index[1])
+                    deleteat!(new_sample,min_index)
+
+                    if length(new_sample) == 0
+                        println("Out of sampling points")
+                        return
+                    end
+                else
+                    new_addition = true
+                    adaptive_point_x = Tuple(new_min_x)
+                end
+            end
 
             #4) Evaluate objective function at adaptive point
             adaptive_point_y = obj(adaptive_point_x)
 
             #5) Update surrogate with (adaptive_point,objective(adaptive_point)
-            add_point!(surr,Tuple(adaptive_point_x),adaptive_point_y)
+            add_point!(surr,adaptive_point_x,adaptive_point_y)
 
             #6) How to go on?
             if surr(adaptive_point_x) < incumbent_value
@@ -167,6 +195,7 @@ function SRBF(lb::Number,ub::Number,surr::AbstractSurrogate,maxiters::Int,
     box_size = lb-ub
     success = 0
     failures = 0
+    dtol = 1e-3*norm(ub-lb)
     @inbounds for k = 1:maxiters
         for w in Iterators.cycle(w_range)
 
@@ -208,9 +237,30 @@ function SRBF(lb::Number,ub::Number,surr::AbstractSurrogate,maxiters::Int,
             #3) Evaluate merit function in the sampled points
             evaluation_of_merit_function = merit_function.(new_sample,w,surr,s_max,s_min,d_max,d_min,box_size)
 
-            #4) Find minimum of merit function = adaptive point
-            adaptive_point_x = new_sample[argmin(evaluation_of_merit_function)]
+            new_addition = false
+            adaptive_point_x = zero(eltype(new_sample[1]));
+            while new_addition == false
+                #find minimum
+                new_min_y = minimum(evaluation_of_merit_function)
+                min_index = argmin(evaluation_of_merit_function)
+                new_min_x = new_sample[min_index]
 
+                diff_x = abs.(surr.x .- new_min_x)
+                bit_x = diff_x .> dtol
+                #new_min_x has to have some distance from krig.x
+                if false in bit_x
+                    #The new_point is not actually that new, discard it!
+                    deleteat!(evaluation_of_merit_function,min_index)
+                    deleteat!(new_sample,min_index)
+                    if length(new_sample) == 0
+                        println("Out of sampling points")
+                        return
+                    end
+                else
+                new_addition = true
+                adaptive_point_x = new_min_x
+                end
+            end
             #4) Evaluate objective function at adaptive point
             adaptive_point_y = obj(adaptive_point_x)
 
