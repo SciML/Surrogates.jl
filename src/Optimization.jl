@@ -321,3 +321,64 @@ function LCBS(lb::Number,ub::Number,krig::Kriging,maxiters::Int,
         end
     end
 end
+
+"""
+LCBS(lb,ub,surr::Kriging,maxiters::Int,
+      sample_type::SamplingAlgorithm,num_new_samples::Int,obj::Function))
+
+Implementation of Lower Confidence Bound (LCB), goal is to minimize:
+LCB(x) := E[x] - k * sqrt(Var[x]), default value of k = 2
+https://pysot.readthedocs.io/en/latest/options.html#strategy
+"""
+function LCBS(lb,ub,krig::Kriging,maxiters::Int,
+             sample_type::SamplingAlgorithm,num_new_samples::Int,obj::Function)
+
+    #Default value
+    k = 2.0
+    dtol = 1e-3 * norm(ub-lb)
+    for i = 1:maxiters
+        d = length(krig.x)
+        new_sample = sample(num_new_samples,lb,ub,sample_type)
+        evaluations = zeros(eltype(krig.x[1]), num_new_samples)
+        for j = 1:num_new_samples
+            evaluations[j] = krig(new_sample[j]) +
+                             k*sqrt(std_error_at_point(krig,new_sample[j]))
+        end
+
+        new_addition = false
+        min_add_x = Tuple{}
+        min_add_y = zero(eltype(krig.y[1]));
+        diff_x = zeros(eltype(krig.x[1]),d)
+        while new_addition == false
+            #find minimum
+            new_min_y = minimum(evaluations)
+            min_index = argmin(evaluations)
+            new_min_x = new_sample[min_index]
+            for l = 1:d
+                diff_x[l] = norm(krig.x[l] .- new_min_x)
+            end
+            bit_x = diff_x .> dtol
+            #new_min_x has to have some distance from krig.x
+            if false in bit_x
+                #The new_point is not actually that new, discard it!
+                deleteat!(evaluations,min_index)
+                deleteat!(new_sample,min_index)
+
+                if length(new_sample) == 0
+                    println("Out of sampling points")
+                    return
+                end
+             else
+                new_addition = true
+                min_add_x = new_min_x
+                min_add_y = new_min_y
+            end
+        end
+        if min_add_y < 1e-6*(maximum(krig.y) - minimum(krig.y))
+            return
+        else
+            min_add_y = obj(min_add_x) # I actually add the objc function at that point
+            add_point!(krig,Tuple(min_add_x),min_add_y)
+        end
+    end
+end
