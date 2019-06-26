@@ -3,10 +3,15 @@ using LinearAlgebra
 
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
 #######SRBF############
 
 >>>>>>> LCBStrategy
+=======
+
+#######SRBF############
+>>>>>>> 86c41c5a7f92ade0d4a275bc2a530baee20f3bc6
 ##### 1D #####
 
 objective_function = x -> 2*x+1
