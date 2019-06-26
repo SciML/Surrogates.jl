@@ -296,14 +296,13 @@ function LCBS(lb::Number,ub::Number,krig::Kriging,maxiters::Int,
             new_min_x = new_sample[min_index]
 
             diff_x = abs.(krig.x .- new_min_x)
-            diff_y = abs.(krig.y .- new_min_y)
             bit_x = diff_x .> dtol
-            bit_y = diff_y .> dtol
-            #min_x and min_y different than dtol
-            if (false in bit_x) || (false in bit_y)
+            #new_min_x has to have some distance from krig.x
+            if false in bit_x
                 #The new_point is not actually that new, discard it!
                 deleteat!(evaluations,min_index)
                 deleteat!(new_sample,min_index)
+
                 if length(new_sample) == 0
                     println("Out of sampling points")
                     return
