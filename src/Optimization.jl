@@ -45,7 +45,6 @@ function SRBF(lb,ub,surr::AbstractSurrogate,maxiters::Int,sample_type::SamplingA
     d = length(surr.x)
     @inbounds for k = 1:maxiters
         for w in Iterators.cycle(w_range)
-
             #1) Sample near incumbent (the 2 fraction is arbitrary here)
             incumbent_value = minimum(surr.y)
             incumbent_x = surr.x[argmin(surr.y)]
@@ -151,13 +150,19 @@ function SRBF(lb,ub,surr::AbstractSurrogate,maxiters::Int,sample_type::SamplingA
 
             if success == 3
                 scale = scale*2
+                if scale > 0.8*norm(ub-lb)
+                    println("Exsting, scale too big")
+                    return
+                end
                 #check bounds
+                #=
                 @inbounds for q = 1:length(lb)
                     if lb[q]*scale < lb[q] || ub[q]*scale > ub[q]
                         println("Exiting, searched the whole box")
                         return
                     end
                 end
+                =#
                 success = 0
                 failure = 0
             end
@@ -202,8 +207,8 @@ function SRBF(lb::Number,ub::Number,surr::AbstractSurrogate,maxiters::Int,
             incumbent_value = minimum(surr.y)
             incumbent_x = surr.x[argmin(surr.y)]
 
-            new_lb = incumbent_x-scale*norm(incumbent_x-lb)/2
-            new_ub = incumbent_x+scale*norm(incumbent_x-ub)/2
+            new_lb = incumbent_x-scale*norm(incumbent_x-lb)
+            new_ub = incumbent_x+scale*norm(incumbent_x-ub)
             if new_lb < lb
                 new_lb = lb
             end
@@ -290,8 +295,8 @@ function SRBF(lb::Number,ub::Number,surr::AbstractSurrogate,maxiters::Int,
             if success == 3
                 scale = scale*2
                 #check bounds cant go more than [a,b]
-                if lb*scale < lb || ub*scale > ub
-                    println("Exiting, searched the whole box")
+                if scale > 0.8*norm(ub-lb)
+                    println("Exiting,scale too big")
                     return
                 end
                 success = 0
