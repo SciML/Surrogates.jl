@@ -3,9 +3,7 @@ using LinearAlgebra
 
 #######SRBF############
 
-#=
 ##### 1D #####
-
 objective_function = x -> 2*x+1
 x = [2.5,4.0,6.0]
 y = [6.0,9.0,13.0]
@@ -21,38 +19,38 @@ b = 6
 
 my_k = Kriging(x,y,p)
 SRBF(a,b,my_k,50,SobolSample(),50,objective_function)
-println(my_k.x)
+
 #Using RadialBasis
 my_rad = RadialBasis(x,y,a,b,z->norm(z),1)
 SRBF(a,b,my_rad,10,UniformSample(),10,objective_function)
-println(my_rad.x)
-=#
+
+
+
+
 ##### ND #####
 
 objective_function_ND = z -> 3*norm(z)+1
-x = [(1.1,1.1),(3.0,3.5),(5.2,5.7)]
+x = [(1.4,1.4),(3.0,3.5),(5.2,5.7)]
 y = objective_function_ND.(x)
-p = [1.2,1.2]
-theta = [2.0,2.0]
+p = [2.0,2.0]
+theta = [1.0,1.0]
 lb = [1.0,1.0]
 ub = [6.0,6.0]
 
 #Kriging
 
-
 my_k_ND = Kriging(x,y,p,theta)
 SRBF(lb,ub,my_k_ND,10,UniformSample(),10,objective_function_ND)
-println(my_k_ND.x)
 
 #Radials
 
-#=
 bounds = [[1.0,6.0],[1.0,6.0]]
 my_rad_ND = RadialBasis(x,y,bounds,z->norm(z),1)
-SRBF(lb,ub,my_rad_ND,10,UniformSample(),10,objective_function_ND)
-=#
+SRBF(lb,ub,my_rad_ND,10,UniformSample(),100,objective_function_ND)
+
+
 ####### LCBS #########
-#=
+
 ######1D######
 objective_function = x -> 2*x+1
 x = [2.0,4.0,6.0]
@@ -77,5 +75,3 @@ ub = [6.0,6.0]
 #Kriging
 my_k_ND = Kriging(x,y,p,theta)
 LCBS(lb,ub,my_k_ND,10,UniformSample(),10,objective_function_ND)
-
-=#

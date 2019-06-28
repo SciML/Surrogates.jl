@@ -43,14 +43,13 @@ function SRBF(lb,ub,surr::AbstractSurrogate,maxiters::Int,sample_type::SamplingA
     failures = 0
     dtol = 1e-3*norm(ub-lb)
     d = length(surr.x)
-    @inbounds for k = 1:maxiters
-        for w in Iterators.cycle(w_range)
-            #1) Sample near incumbent (the 2 fraction is arbitrary here)
+    for w in Iterators.cycle(w_range)
+        for k = 1:maxiters
             incumbent_value = minimum(surr.y)
             incumbent_x = surr.x[argmin(surr.y)]
 
-            new_lb = incumbent_x .- scale*norm(incumbent_x .-lb)
-            new_ub = incumbent_x .+ scale*norm(incumbent_x .-lb)
+            new_lb = incumbent_x .- 3*scale*norm(incumbent_x .-lb)
+            new_ub = incumbent_x .+ 3*scale*norm(incumbent_x .-ub)
 
             @inbounds for i = 1:length(new_lb)
                 if new_lb[i] < lb[i]
@@ -154,15 +153,6 @@ function SRBF(lb,ub,surr::AbstractSurrogate,maxiters::Int,sample_type::SamplingA
                     println("Exsting, scale too big")
                     return
                 end
-                #check bounds
-                #=
-                @inbounds for q = 1:length(lb)
-                    if lb[q]*scale < lb[q] || ub[q]*scale > ub[q]
-                        println("Exiting, searched the whole box")
-                        return
-                    end
-                end
-                =#
                 success = 0
                 failure = 0
             end
@@ -200,9 +190,8 @@ function SRBF(lb::Number,ub::Number,surr::AbstractSurrogate,maxiters::Int,
     success = 0
     failures = 0
     dtol = 1e-3*norm(ub-lb)
-    @inbounds for k = 1:maxiters
-        for w in Iterators.cycle(w_range)
-
+    for w in Iterators.cycle(w_range)
+        for k = 1:maxiters
             #1) Sample near incumbent (the 2 fraction is arbitrary here)
             incumbent_value = minimum(surr.y)
             incumbent_x = surr.x[argmin(surr.y)]
