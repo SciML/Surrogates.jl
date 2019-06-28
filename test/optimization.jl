@@ -32,7 +32,7 @@ SRBF(a,b,my_rad,10,UniformSample(),10,objective_function)
 objective_function_ND = z -> 3*norm(z)+1
 x = [(1.4,1.4),(3.0,3.5),(5.2,5.7)]
 y = objective_function_ND.(x)
-p = [2.0,2.0]
+p = [1.5,1.5]
 theta = [1.0,1.0]
 lb = [1.0,1.0]
 ub = [6.0,6.0]
