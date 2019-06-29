@@ -1,6 +1,8 @@
 using Surrogates
 using LinearAlgebra
 
+
+#=
 #######SRBF############
 
 ##### 1D #####
@@ -75,3 +77,18 @@ ub = [6.0,6.0]
 #Kriging
 my_k_ND = Kriging(x,y,p,theta)
 LCBS(lb,ub,my_k_ND,10,UniformSample(),10,objective_function_ND)
+=#
+
+##### EI ######
+
+###1D###
+objective_function = x -> 2*x+1
+x = [2.0,4.0,6.0]
+y = [5.0,9.0,13.0]
+p = 2
+a = 2
+b = 6
+my_k = Kriging(x,y,p)
+EI(a,b,my_k,100,SobolSample(),100,objective_function)
+
+###ND###
