@@ -151,7 +151,7 @@ function SRBF(lb,ub,surr::AbstractSurrogate,maxiters::Int,sample_type::SamplingA
             if success == 3
                 scale = scale*2
                 if scale > 0.8*norm(ub-lb)
-                    println("Exsting, scale too big")
+                    println("Exiting, scale too big")
                     return
                 end
                 success = 0
