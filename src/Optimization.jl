@@ -429,6 +429,7 @@ end
 
 function EI(lb::Number,ub::Number,krig::Kriging,maxiters::Int,
             sample_type::SamplingAlgorithm,num_new_samples::Int,obj::Function)
+
         dtol = 1e-3*norm(ub-lb)
         eps = 0.01
         for i = 1:maxiters
@@ -439,7 +440,7 @@ function EI(lb::Number,ub::Number,krig::Kriging,maxiters::Int,
             new_x_max = zero(eltype(krig.x[1]))
             new_y_max = zero(eltype(krig.x[1]))
             while point_found == false
-                for j = 1:num_new_samples
+                for j = 1:length(new_sample)
                     std = std_error_at_point(krig,new_sample[j])
                     u = krig(new_sample[j])
                     if abs(std) > 1e-6
@@ -473,5 +474,60 @@ function EI(lb::Number,ub::Number,krig::Kriging,maxiters::Int,
                 return
             end
             add_point!(krig,new_x_max,obj(new_x_max))
+        end
+end
+
+
+function EI(lb,ub,krig::Kriging,maxiters::Int,
+            sample_type::SamplingAlgorithm,num_new_samples::Int,obj::Function)
+
+        dtol = 1e-3*norm(ub-lb)
+        eps = 0.01
+        for i = 1:maxiters
+            d = length(krig.x)
+            new_sample = sample(num_new_samples,lb,ub,sample_type)
+            f_max = maximum(krig.y)
+            evaluations = zeros(eltype(krig.x[1]),num_new_samples)
+            point_found = false
+            new_x_max = zero(eltype(krig.x[1]))
+            new_y_max = zero(eltype(krig.x[1]))
+            diff_x = zeros(eltype(krig.x[1]),d)
+            while point_found == false
+                for j = 1:length(new_sample)
+                    std = std_error_at_point(krig,new_sample[j])
+                    u = krig(new_sample[j])
+                    if abs(std) > 1e-6
+                        z = (u - f_max - eps)/std
+                    else
+                        z = 0
+                    end
+                    evaluations[j] = (u-f_max-eps)*cdf(Normal(),z) + std*pdf(Normal(),z)
+                end
+                index_max = argmax(evaluations)
+                x_new = new_sample[index_max]
+                y_new = maximum(evaluations)
+                for l = 1:d
+                    diff_x[l] = norm(krig.x[l] .- x_new)
+                end
+                bit_x = diff_x .> dtol
+                #new_min_x has to have some distance from krig.x
+                if false in bit_x
+                    #The new_point is not actually that new, discard it!
+                    deleteat!(evaluations,index_max)
+                    deleteat!(new_sample,index_max)
+                    if length(new_sample) == 0
+                        println("Out of sampling points")
+                        return
+                    end
+                 else
+                    point_found = true
+                    new_x_max = x_new
+                    new_y_max = y_new
+                end
+            end
+            if new_y_max < 1e-6*norm(maximum(krig.y)-minimum(krig.y))
+                return
+            end
+            add_point!(krig,Tuple(new_x_max),obj(new_x_max))
         end
 end
