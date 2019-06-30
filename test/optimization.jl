@@ -58,7 +58,7 @@ surrogate_optimize(objective_function_ND,SRBF(),lb,ub,my_rad_ND,UniformSample())
 objective_function = x -> 2*x+1
 x = [2.0,4.0,6.0]
 y = [5.0,9.0,13.0]
-p = 2
+p = 1.8
 a = 2
 b = 6
 my_k = Kriging(x,y,p)
