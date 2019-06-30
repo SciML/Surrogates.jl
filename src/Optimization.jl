@@ -1,6 +1,11 @@
 using LinearAlgebra
 using Distributions
 
+abstract type SurrogateOptimizationAlgorithm end
+struct SRBF <: SurrogateOptimizationAlgorithm end
+struct LCBS <: SurrogateOptimizationAlgorithm end
+struct EI <: SurrogateOptimizationAlgorithm end
+
 function merit_function(point,w,surr::AbstractSurrogate,s_max,s_min,d_max,d_min,box_size)
     if length(point)==1
         D_x = box_size+1
@@ -23,14 +28,12 @@ function merit_function(point,w,surr::AbstractSurrogate,s_max,s_min,d_max,d_min,
     end
 end
 
+
 """
-SRBF(lb,ub,surr::AbstractSurrogate,
-             maxiters::Int,
-             sample_type::SamplingAlgorithm,num_new_samples::Int)
-Finds minimum of objective function while sampling the AbstractSurrogate at
-the same time.
+SRBF ND:
+surrogate_optimize(obj::Function,::SRBF,lb,ub,surr::AbstractSurrogate,sample_type::SamplingAlgorithm;maxiters=100,num_new_samples=100)
 """
-function SRBF(lb,ub,surr::AbstractSurrogate,maxiters::Int,sample_type::SamplingAlgorithm,num_new_samples::Int,obj::Function)
+function surrogate_optimize(obj::Function,::SRBF,lb,ub,surr::AbstractSurrogate,sample_type::SamplingAlgorithm;maxiters=100,num_new_samples=100)
 #Suggested by:
 #https://www.mathworks.com/help/gads/surrogate-optimization-algorithm.html
     scale = 0.2
@@ -173,14 +176,10 @@ function SRBF(lb,ub,surr::AbstractSurrogate,maxiters::Int,sample_type::SamplingA
 end
 
 """
-SRBF(lb::Number,ub::Number,surr::AbstractSurrogate,
-             maxiters::Int,
-             sample_type::SamplingAlgorithm,num_new_samples::Int)
-Finds minimum of objective function while sampling the AbstractSurrogate at
-the same time.
+SRBF 1D:
+surrogate_optimize(obj::Function,::SRBF,lb::Number,ub::Number,surr::AbstractSurrogate,sample_type::SamplingAlgorithm;maxiters=100,num_new_samples=100)
 """
-function SRBF(lb::Number,ub::Number,surr::AbstractSurrogate,maxiters::Int,
-                      sample_type::SamplingAlgorithm,num_new_samples::Int,obj::Function)
+function surrogate_optimize(obj::Function,::SRBF,lb::Number,ub::Number,surr::AbstractSurrogate,sample_type::SamplingAlgorithm;maxiters=100,num_new_samples=100)
 #Suggested by:
 #https://www.mathworks.com/help/gads/surrogate-optimization-algorithm.html
     scale = 0.2
@@ -308,16 +307,13 @@ function SRBF(lb::Number,ub::Number,surr::AbstractSurrogate,maxiters::Int,
 end
 
 """
-LCBS(lb::Number,ub::Number,surr::Kriging,maxiters::Int,
-      sample_type::SamplingAlgorithm,num_new_samples::Int,obj::Function))
-
+LCBS 1D
 Implementation of Lower Confidence Bound (LCB), goal is to minimize:
 LCB(x) := E[x] - k * sqrt(Var[x]), default value of k = 2
 https://pysot.readthedocs.io/en/latest/options.html#strategy
+surrogate_optimize(obj::Function,::LCBS,lb::Number,ub::Number,krig::Kriging,sample_type::SamplingAlgorithm;maxiters=100,num_new_samples=100)
 """
-function LCBS(lb::Number,ub::Number,krig::Kriging,maxiters::Int,
-             sample_type::SamplingAlgorithm,num_new_samples::Int,obj::Function)
-
+function surrogate_optimize(obj::Function,::LCBS,lb::Number,ub::Number,krig::Kriging,sample_type::SamplingAlgorithm;maxiters=100,num_new_samples=100)
     #Default value
     k = 2.0
     dtol = 1e-3 * norm(ub-lb)
@@ -366,16 +362,13 @@ function LCBS(lb::Number,ub::Number,krig::Kriging,maxiters::Int,
 end
 
 """
-LCBS(lb,ub,surr::Kriging,maxiters::Int,
-      sample_type::SamplingAlgorithm,num_new_samples::Int,obj::Function))
-
+LCBS ND
 Implementation of Lower Confidence Bound (LCB), goal is to minimize:
 LCB(x) := E[x] - k * sqrt(Var[x]), default value of k = 2
 https://pysot.readthedocs.io/en/latest/options.html#strategy
+surrogate_optimize(obj::Function,::LCBS,lb,ub,krig::Kriging,sample_type::SamplingAlgorithm;maxiters=100,num_new_samples=100)
 """
-function LCBS(lb,ub,krig::Kriging,maxiters::Int,
-             sample_type::SamplingAlgorithm,num_new_samples::Int,obj::Function)
-
+function surrogate_optimize(obj::Function,::LCBS,lb,ub,krig::Kriging,sample_type::SamplingAlgorithm;maxiters=100,num_new_samples=100)
     #Default value
     k = 2.0
     dtol = 1e-3 * norm(ub-lb)
@@ -426,10 +419,11 @@ function LCBS(lb,ub,krig::Kriging,maxiters::Int,
     end
 end
 
-
-function EI(lb::Number,ub::Number,krig::Kriging,maxiters::Int,
-            sample_type::SamplingAlgorithm,num_new_samples::Int,obj::Function)
-
+"""
+Expected improvement method 1D
+surrogate_optimize(obj::Function,::EI,lb::Number,ub::Number,krig::Kriging,sample_type::SamplingAlgorithm;maxiters=100,num_new_samples=100)
+"""
+function surrogate_optimize(obj::Function,::EI,lb::Number,ub::Number,krig::Kriging,sample_type::SamplingAlgorithm;maxiters=100,num_new_samples=100)
         dtol = 1e-3*norm(ub-lb)
         eps = 0.01
         for i = 1:maxiters
@@ -477,10 +471,11 @@ function EI(lb::Number,ub::Number,krig::Kriging,maxiters::Int,
         end
 end
 
-
-function EI(lb,ub,krig::Kriging,maxiters::Int,
-            sample_type::SamplingAlgorithm,num_new_samples::Int,obj::Function)
-
+"""
+Expected improvement method ND
+surrogate_optimize(obj::Function,::EI,lb,ub,krig::Kriging,sample_type::SamplingAlgorithm;maxiters=100,num_new_samples=100)
+"""
+function surrogate_optimize(obj::Function,::EI,lb,ub,krig::Kriging,sample_type::SamplingAlgorithm;maxiters=100,num_new_samples=100)
         dtol = 1e-3*norm(ub-lb)
         eps = 0.01
         for i = 1:maxiters
