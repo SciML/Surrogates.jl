@@ -1,10 +1,10 @@
 using LinearAlgebra
 using Distributions
 
-abstract type OptimizationAlgorithm end
-struct SRBF <: OptimizationAlgorithm end
-struct LCB <: OptimizationAlgorithm end
-struct EI <: OptimizationAlgorithm end
+abstract type SurrogateOptimizationAlgorithm end
+struct SRBF <: SurrogateOptimizationAlgorithm end
+struct LCBS <: SurrogateOptimizationAlgorithm end
+struct EI <: SurrogateOptimizationAlgorithm end
 
 function merit_function(point,w,surr::AbstractSurrogate,s_max,s_min,d_max,d_min,box_size)
     if length(point)==1
@@ -30,9 +30,10 @@ end
 
 
 """
-SRBF ND
+SRBF ND:
+surrogate_optimize(obj::Function,::SRBF,lb,ub,surr::AbstractSurrogate,sample_type::SamplingAlgorithm;maxiters=100,num_new_samples=100)
 """
-function surrogate_optimize(obj::Function,::SRBF,lb,ub,surr::AbstractSurrogate,sample_type::SamplingAlgorithm,maxiters::Int,num_new_samples::Int)
+function surrogate_optimize(obj::Function,::SRBF,lb,ub,surr::AbstractSurrogate,sample_type::SamplingAlgorithm;maxiters=100,num_new_samples=100)
 #Suggested by:
 #https://www.mathworks.com/help/gads/surrogate-optimization-algorithm.html
     scale = 0.2
@@ -175,9 +176,10 @@ function surrogate_optimize(obj::Function,::SRBF,lb,ub,surr::AbstractSurrogate,s
 end
 
 """
-SRBF 1D
+SRBF 1D:
+surrogate_optimize(obj::Function,::SRBF,lb::Number,ub::Number,surr::AbstractSurrogate,sample_type::SamplingAlgorithm;maxiters=100,num_new_samples=100)
 """
-function surrogate_optimize(obj::Function,::SRBF,lb::Number,ub::Number,surr::AbstractSurrogate,sample_type::SamplingAlgorithm,maxiters::Int,num_new_samples::Int)
+function surrogate_optimize(obj::Function,::SRBF,lb::Number,ub::Number,surr::AbstractSurrogate,sample_type::SamplingAlgorithm;maxiters=100,num_new_samples=100)
 #Suggested by:
 #https://www.mathworks.com/help/gads/surrogate-optimization-algorithm.html
     scale = 0.2
@@ -309,8 +311,9 @@ LCBS 1D
 Implementation of Lower Confidence Bound (LCB), goal is to minimize:
 LCB(x) := E[x] - k * sqrt(Var[x]), default value of k = 2
 https://pysot.readthedocs.io/en/latest/options.html#strategy
+surrogate_optimize(obj::Function,::LCBS,lb::Number,ub::Number,krig::Kriging,sample_type::SamplingAlgorithm;maxiters=100,num_new_samples=100)
 """
-function surrogate_optimize(obj::Function,::LCBS,lb::Number,ub::Number,krig::Kriging,sample_type::SamplingAlgorithm,maxiters::Int,num_new_samples::Int)
+function surrogate_optimize(obj::Function,::LCBS,lb::Number,ub::Number,krig::Kriging,sample_type::SamplingAlgorithm;maxiters=100,num_new_samples=100)
     #Default value
     k = 2.0
     dtol = 1e-3 * norm(ub-lb)
@@ -363,8 +366,9 @@ LCBS ND
 Implementation of Lower Confidence Bound (LCB), goal is to minimize:
 LCB(x) := E[x] - k * sqrt(Var[x]), default value of k = 2
 https://pysot.readthedocs.io/en/latest/options.html#strategy
+surrogate_optimize(obj::Function,::LCBS,lb,ub,krig::Kriging,sample_type::SamplingAlgorithm;maxiters=100,num_new_samples=100)
 """
-function surrogate_optimize(obj::Function,::LCBS,lb,ub,krig::Kriging,sample_type::SamplingAlgorithm,maxiters::Int,num_new_samples::Int)
+function surrogate_optimize(obj::Function,::LCBS,lb,ub,krig::Kriging,sample_type::SamplingAlgorithm;maxiters=100,num_new_samples=100)
     #Default value
     k = 2.0
     dtol = 1e-3 * norm(ub-lb)
@@ -417,8 +421,9 @@ end
 
 """
 Expected improvement method 1D
+surrogate_optimize(obj::Function,::EI,lb::Number,ub::Number,krig::Kriging,sample_type::SamplingAlgorithm;maxiters=100,num_new_samples=100)
 """
-function surrogate_optimize(obj::Function,::EI,lb::Number,ub::Number,krig::Kriging,sample_type::SamplingAlgorithm,maxiters::Int,num_new_samples::Int)
+function surrogate_optimize(obj::Function,::EI,lb::Number,ub::Number,krig::Kriging,sample_type::SamplingAlgorithm;maxiters=100,num_new_samples=100)
         dtol = 1e-3*norm(ub-lb)
         eps = 0.01
         for i = 1:maxiters
@@ -468,8 +473,9 @@ end
 
 """
 Expected improvement method ND
+surrogate_optimize(obj::Function,::EI,lb,ub,krig::Kriging,sample_type::SamplingAlgorithm;maxiters=100,num_new_samples=100)
 """
-function surrogate_optimize(obj::Function,::EI,lb::Number,ub::Number,krig::Kriging,sample_type::SamplingAlgorithm,maxiters::Int,num_new_samples::Int)
+function surrogate_optimize(obj::Function,::EI,lb,ub,krig::Kriging,sample_type::SamplingAlgorithm;maxiters=100,num_new_samples=100)
         dtol = 1e-3*norm(ub-lb)
         eps = 0.01
         for i = 1:maxiters

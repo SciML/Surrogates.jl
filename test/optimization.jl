@@ -20,11 +20,11 @@ b = 6
 #Using Kriging
 
 my_k = Kriging(x,y,p)
-SRBF(a,b,my_k,50,SobolSample(),50,objective_function)
+surrogate_optimize(objective_function,SRBF(),a,b,my_k,UniformSample())
 
 #Using RadialBasis
 my_rad = RadialBasis(x,y,a,b,z->norm(z),1)
-SRBF(a,b,my_rad,10,UniformSample(),10,objective_function)
+surrogate_optimize(objective_function,SRBF(),a,b,my_rad,UniformSample())
 
 
 
@@ -42,13 +42,14 @@ ub = [6.0,6.0]
 #Kriging
 
 my_k_ND = Kriging(x,y,p,theta)
-SRBF(lb,ub,my_k_ND,10,UniformSample(),10,objective_function_ND)
+surrogate_optimize(objective_function_ND,SRBF(),lb,ub,my_k_ND,UniformSample())
 
 #Radials
 
 bounds = [[1.0,6.0],[1.0,6.0]]
 my_rad_ND = RadialBasis(x,y,bounds,z->norm(z),1)
-SRBF(lb,ub,my_rad_ND,10,UniformSample(),100,objective_function_ND)
+surrogate_optimize(objective_function_ND,SRBF(),lb,ub,my_rad_ND,UniformSample())
+
 
 
 ####### LCBS #########
@@ -61,8 +62,7 @@ p = 2
 a = 2
 b = 6
 my_k = Kriging(x,y,p)
-LCBS(a,b,my_k,10,SobolSample(),10,objective_function)
-
+surrogate_optimize(objective_function,LCBS(),a,b,my_k,UniformSample())
 
 
 ##### ND #####
@@ -76,7 +76,7 @@ ub = [6.0,6.0]
 
 #Kriging
 my_k_ND = Kriging(x,y,p,theta)
-LCBS(lb,ub,my_k_ND,10,UniformSample(),10,objective_function_ND)
+surrogate_optimize(objective_function_ND,LCBS(),lb,ub,my_k_ND,UniformSample())
 
 
 ##### EI ######
@@ -90,7 +90,7 @@ p = 2
 a = 2
 b = 6
 my_k = Kriging(x,y,p)
-EI(a,b,my_k,100,SobolSample(),100,objective_function)
+surrogate_optimize(objective_function,EI(),a,b,my_k,UniformSample(),maxiters=200,num_new_samples=155)
 
 
 ###ND###
@@ -105,5 +105,4 @@ ub = [6.0,6.0]
 
 #Kriging
 my_k_ND = Kriging(x,y,p,theta)
-EI(lb,ub,my_k_ND,100,UniformSample(),100,objective_function_ND)
-println(my_k_ND.x)
+surrogate_optimize(objective_function_ND,EI(),lb,ub,my_k_ND,UniformSample())

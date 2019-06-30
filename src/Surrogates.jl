@@ -13,7 +13,7 @@ include("Sampling.jl")
 include("Optimization.jl")
 
 export Kriging, RadialBasis, add_point!, current_estimate, std_error_at_point
-export sample, SamplingAlgorithm, GridSample, UniformSample, SobolSample, LatinHypercubeSample, LowDiscrepancySample
-export OptimizationAlgorithm,SRBF,LCB,EI
+export sample, GridSample, UniformSample, SobolSample, LatinHypercubeSample, LowDiscrepancySample
+export SRBF,LCBS,EI,surrogate_optimize
 
 end
