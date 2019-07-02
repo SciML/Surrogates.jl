@@ -5,6 +5,12 @@ abstract type SurrogateOptimizationAlgorithm end
 struct SRBF <: SurrogateOptimizationAlgorithm end
 struct LCBS <: SurrogateOptimizationAlgorithm end
 struct EI <: SurrogateOptimizationAlgorithm end
+struct DYCORS{S,SM,TS,TF} <: SurrogateOptimizationAlgorithm
+    sigma::S
+    sigma_min::SM
+    t_success::TS
+    t_fail::TF
+end
 
 function merit_function(point,w,surr::AbstractSurrogate,s_max,s_min,d_max,d_min,box_size)
     if length(point)==1
@@ -525,4 +531,103 @@ function surrogate_optimize(obj::Function,::EI,lb,ub,krig::Kriging,sample_type::
             end
             add_point!(krig,Tuple(new_x_max),obj(new_x_max))
         end
+end
+
+
+
+function adjust_step_size(sigma_n,sigma_min,C_success,t_success,C_fail,t_fail)
+    if C_success >= t_success
+        sigma_new = 2*sigma_n
+        C_success = 0
+    end
+    if C_fail >= t_fail
+        sigma_new = max(sigma_n/2,sigma_min)
+        C_fail = 0
+    end
+    return sigma_new,C_success,C_fail
+end
+
+function select_evaluation_point_1D(new_points,surr::AbstractSurrogate,numb_iters,maxiters)
+    v = [0.3,0.5,0.8,0.95]
+    k = 4
+    if mod(maxiters-1,4) != 0
+        w_nR = v[mod(maxiters-1,4)]
+    else
+        w_nR = v[4]
+    end
+    w_nD = 1 - w_nR
+
+    l = length(new_points)
+    evaluations = zeros(eltype(surr.y[1]),l)
+    for i = 1:l
+        evaluations[i] = surr(new_points[i])
+    end
+    s_max = maximim(evaluations)
+    s_min = minimum(evaluations)
+    V_nr = zeros(eltype(surr.y[1]),l)
+    for i = 1:l
+        if abs(s_max-s_min) <= 10e-6
+            V_nR[i] = 1.0
+        else
+            V_nR[i] = (evaluations[i] - s_min)(s_max-s_min)
+        end
+    end
+    delta_n = zeros(eltype(surr.y[1]),l)
+    delta = zeros(eltype(surr_y[1]),l)
+    #Determine minimum distance #TO FINISH
+    for j = 1:l
+        for i = 1:n
+            delta[j] = norm(new_poins[j]-surr.x[i])
+        end
+        delta_n[j] = minimum(delta)
+    end
+
+    #Compute score V_nD
+    #MISSING
+
+
+    #Compute weighted score
+    W_n = w_nR*V_nR + w_nD*V_nD
+
+    return new_points[argminim(W_n)]
+end
+"""
+surrogate_optimize(obj::Function,::DYCORS,lb::Number,ub::Number,surr::AbstractSurrogate,sample_type::SamplingAlgorithm;maxiters=100,num_new_samples=100)
+
+DYCORS optimization method, following closely: Combining radial basis function
+surrogates and dynamic coordinate search in high-dimensional expensive black-box optimzation".
+"""
+function surrogate_optimize(obj::Function,::DYCORS,lb::Number,ub::Number,surr::AbstractSurrogate,sample_type::SamplingAlgorithm;maxiters=100,num_new_samples=100)
+    x_best = argmin(surr.y)
+    y_best = minimum(surr.y)
+    sigma_n = EI.sigma
+    d = length(lb)
+    for k = 1:maxiters
+        p_select = min(20/d,1)*(1-log(n))/log(maxiters-1)
+        #GENERATE OMEGA_N
+
+        # x_new = select_evaluation_point_1D(...)
+
+        #compute f(x_n+1)
+
+        #Update counters
+        if f(x_new) < y_best
+            C_success = C_succes + 1
+            C_fail = 0
+        else
+            C_fail = C_fail + 1
+            C_succes = 0
+        end
+
+        #Adjust step size
+        sigma_n,C_succes,C_fail = adjust_step_size(...)
+
+        #need to check if no tollerance is needed
+        if f(x_new) < y_best
+            x_best = x_new
+            y_best = obj(x_new)
+            add_point!(surr,x_best,y_best)
+        end
+    end
+    return x_best,y_best
 end
