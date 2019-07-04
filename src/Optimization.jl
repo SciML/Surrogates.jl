@@ -574,7 +574,9 @@ function select_evaluation_point_1D(new_points,surr::AbstractSurrogate,numb_iter
     end
     delta_n = zeros(eltype(surr.y[1]),l)
     delta = zeros(eltype(surr_y[1]),l)
-    #Determine minimum distance #TO FINISH
+
+    
+    #Determine minimum distance #TO FINISH TODO
     for j = 1:l
         for i = 1:n
             delta[j] = norm(new_poins[j]-surr.x[i])
@@ -583,7 +585,7 @@ function select_evaluation_point_1D(new_points,surr::AbstractSurrogate,numb_iter
     end
 
     #Compute score V_nD
-    #MISSING
+    #MISSING TODO
 
 
     #Compute weighted score
@@ -600,18 +602,25 @@ surrogates and dynamic coordinate search in high-dimensional expensive black-box
 function surrogate_optimize(obj::Function,::DYCORS,lb::Number,ub::Number,surr::AbstractSurrogate,sample_type::SamplingAlgorithm;maxiters=100,num_new_samples=100)
     x_best = argmin(surr.y)
     y_best = minimum(surr.y)
-    sigma_n = EI.sigma
+    sigma_n = DYCORS.sigma
+    sigma_min = DYCORS.sigma_min
+    t_success = DYCORS.t_success
+    t_fail = DYCORS.t_fail
+    C_success = 0
+    C_fail = 0
     d = length(lb)
     for k = 1:maxiters
         p_select = min(20/d,1)*(1-log(n))/log(maxiters-1)
-        #GENERATE OMEGA_N
+        #GENERATE OMEGA_N TODO
 
-        # x_new = select_evaluation_point_1D(...)
+
+        # x_new = select_evaluation_point_1D(...)TODO
 
         #compute f(x_n+1)
+        f_new = obj(x_new)
 
         #Update counters
-        if f(x_new) < y_best
+        if f_new < y_best
             C_success = C_succes + 1
             C_fail = 0
         else
@@ -619,13 +628,11 @@ function surrogate_optimize(obj::Function,::DYCORS,lb::Number,ub::Number,surr::A
             C_succes = 0
         end
 
-        #Adjust step size
-        sigma_n,C_succes,C_fail = adjust_step_size(...)
+        sigma_n,C_succes,C_fail = adjust_step_size(sigma_n,sigma_min,C_success,t_success,C_fail,t_fail)
 
-        #need to check if no tollerance is needed
-        if f(x_new) < y_best
+        if f_new < y_best
             x_best = x_new
-            y_best = obj(x_new)
+            y_best = f_new
             add_point!(surr,x_best,y_best)
         end
     end
