@@ -6,10 +6,10 @@ struct SRBF <: SurrogateOptimizationAlgorithm end
 struct LCBS <: SurrogateOptimizationAlgorithm end
 struct EI <: SurrogateOptimizationAlgorithm end
 struct DYCORS{S,SM,TS,TF} <: SurrogateOptimizationAlgorithm
-    sigma::S
-    sigma_min::SM
-    t_success::TS
-    t_fail::TF
+    sigma::S #Inital stepsize
+    sigma_min::SM #Mininum stepsize
+    t_success::TS #threshold of successuful findings
+    t_fail::TF #threshold of unsuccesful findings
 end
 
 function merit_function(point,w,surr::AbstractSurrogate,s_max,s_min,d_max,d_min,box_size)
@@ -575,7 +575,7 @@ function select_evaluation_point_1D(new_points,surr::AbstractSurrogate,numb_iter
     delta_n = zeros(eltype(surr.y[1]),l)
     delta = zeros(eltype(surr_y[1]),l)
 
-    
+
     #Determine minimum distance #TO FINISH TODO
     for j = 1:l
         for i = 1:n
@@ -611,15 +611,26 @@ function surrogate_optimize(obj::Function,::DYCORS,lb::Number,ub::Number,surr::A
     d = length(lb)
     for k = 1:maxiters
         p_select = min(20/d,1)*(1-log(n))/log(maxiters-1)
-        #GENERATE OMEGA_N TODO
+        # In 1D I_perturb is always equal to one, no need to sample
+        d = 1
+        I_perturb = d
+        new_points = zeros(eltype(surr.x[1]),num_new_samples)
+        for i = 1:num_new_samples
+            new_points[i] = x_best + rand(Normal(0,sigma_n))
+            if new_points[i] > ub
+                #reflection
+                new_points[i] = maximum(surr.x) - norm(new_points[i] - maximum(surr.x))
+            end
+            if new_points[i] < lb
+                #reflection
+                new_points[i] = minimum(surr.x) + norm(new_points[i]-minimum(surr.x))
+            end
+        end
+        
+        x_new = select_evaluation_point_1D(new_points,surr,k,maxiters)
 
-
-        # x_new = select_evaluation_point_1D(...)TODO
-
-        #compute f(x_n+1)
         f_new = obj(x_new)
 
-        #Update counters
         if f_new < y_best
             C_success = C_succes + 1
             C_fail = 0
@@ -636,5 +647,4 @@ function surrogate_optimize(obj::Function,::DYCORS,lb::Number,ub::Number,surr::A
             add_point!(surr,x_best,y_best)
         end
     end
-    return x_best,y_best
 end
