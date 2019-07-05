@@ -564,7 +564,7 @@ function select_evaluation_point_1D(new_points,surr::AbstractSurrogate,numb_iter
     end
     s_max = maximim(evaluations)
     s_min = minimum(evaluations)
-    V_nr = zeros(eltype(surr.y[1]),l)
+    V_nR = zeros(eltype(surr.y[1]),l)
     for i = 1:l
         if abs(s_max-s_min) <= 10e-6
             V_nR[i] = 1.0
@@ -572,21 +572,25 @@ function select_evaluation_point_1D(new_points,surr::AbstractSurrogate,numb_iter
             V_nR[i] = (evaluations[i] - s_min)(s_max-s_min)
         end
     end
-    delta_n = zeros(eltype(surr.y[1]),l)
-    delta = zeros(eltype(surr_y[1]),l)
-
-
-    #Determine minimum distance #TO FINISH TODO
-    for j = 1:l
-        for i = 1:n
-            delta[j] = norm(new_poins[j]-surr.x[i])
-        end
-        delta_n[j] = minimum(delta)
-    end
 
     #Compute score V_nD
-    #MISSING TODO
+    V_nD = zeros(eltype(surr.y[1]),l)
+    delta_n_x = zeros(eltype(surr.x[1]),l)
+    delta = zeros(eltype(surr.x[1]),n)
+    for j = 1:l
+        for i = 1:n
+            delta[i] = norm(new_poins[j]-surr.x[i])
+        end
+        delta_n_x[j] = minimum(delta)
+    end
 
+    for i = 1:l
+        if abs(delta_n_max-delta_n_min) <= 10e-6
+            V_nD[i] = 1.0
+        else
+            V_nD[i] = (delta_n_max - delta_n_x[i])/(delta_n_max-delta_n_min)
+        end
+    end
 
     #Compute weighted score
     W_n = w_nR*V_nR + w_nD*V_nD
@@ -617,16 +621,18 @@ function surrogate_optimize(obj::Function,::DYCORS,lb::Number,ub::Number,surr::A
         new_points = zeros(eltype(surr.x[1]),num_new_samples)
         for i = 1:num_new_samples
             new_points[i] = x_best + rand(Normal(0,sigma_n))
-            if new_points[i] > ub
-                #reflection
-                new_points[i] = maximum(surr.x) - norm(new_points[i] - maximum(surr.x))
-            end
-            if new_points[i] < lb
-                #reflection
-                new_points[i] = minimum(surr.x) + norm(new_points[i]-minimum(surr.x))
+            while new_points[i] < lb || new_points[i] > ub
+                if new_points[i] > ub
+                    #reflection
+                    new_points[i] = maximum(surr.x) - norm(new_points[i] - maximum(surr.x))
+                end
+                if new_points[i] < lb
+                    #reflection
+                    new_points[i] = minimum(surr.x) + norm(new_points[i]-minimum(surr.x))
+                end
             end
         end
-        
+
         x_new = select_evaluation_point_1D(new_points,surr,k,maxiters)
 
         f_new = obj(x_new)
