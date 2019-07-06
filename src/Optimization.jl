@@ -596,7 +596,7 @@ end
 """
 surrogate_optimize(obj::Function,::DYCORS,lb::Number,ub::Number,surr::AbstractSurrogate,sample_type::SamplingAlgorithm;maxiters=100,num_new_samples=100)
 
-DYCORS optimization method, following closely: Combining radial basis function
+DYCORS optimization method in 1D, following closely: Combining radial basis function
 surrogates and dynamic coordinate search in high-dimensional expensive black-box optimzation".
 """
 function surrogate_optimize(obj::Function,::DYCORS,lb::Number,ub::Number,surr::AbstractSurrogate,sample_type::SamplingAlgorithm;maxiters=100,num_new_samples=100)
@@ -629,6 +629,70 @@ function surrogate_optimize(obj::Function,::DYCORS,lb::Number,ub::Number,surr::A
             end
         end
 
+        x_new = select_evaluation_point_1D(new_points,surr,k,maxiters)
+
+        f_new = obj(x_new)
+
+        if f_new < y_best
+            C_success = C_success + 1
+            C_fail = 0
+        else
+            C_fail = C_fail + 1
+            C_success = 0
+        end
+
+        sigma_n,C_success,C_fail = adjust_step_size(sigma_n,sigma_min,C_success,t_success,C_fail,t_fail)
+
+        if f_new < y_best
+            x_best = x_new
+            y_best = f_new
+            add_point!(surr,x_best,y_best)
+        end
+    end
+end
+
+"""
+surrogate_optimize(obj::Function,::DYCORS,lb,ub,surr::AbstractSurrogate,sample_type::SamplingAlgorithm;maxiters=100,num_new_samples=100)
+
+DYCORS optimization method in ND, following closely: Combining radial basis function
+surrogates and dynamic coordinate search in high-dimensional expensive black-box optimzation".
+"""
+function surrogate_optimize(obj::Function,::DYCORS,lb,ub,surr::AbstractSurrogate,sample_type::SamplingAlgorithm;maxiters=100,num_new_samples=100)
+    x_best = argmin(surr.y)
+    y_best = minimum(surr.y)
+    sigma_n = 0.2*norm(ub-lb)
+    d = length(lb)
+    sigma_min = 0.2*(0.5)^6*norm(ub-lb)
+    t_success = 3
+    t_fail = max(d,5)
+    C_success = 0
+    C_fail = 0
+    for k = 1:maxiters
+        p_select = min(20/d,1)*(1-log(k))/log(maxiters-1)
+        # PERTURBATION TODO
+        #=
+        d = 1
+        I_perturb = d
+        new_points = zeros(eltype(surr.x[1]),num_new_samples)
+        =#
+
+
+        #CHANGE THIS TO MAKE IT WORK FOR ND VERSION AS WELL TODO
+        for i = 1:num_new_samples
+            new_points[i] = x_best + rand(Normal(0,sigma_n))
+            while new_points[i] < lb || new_points[i] > ub
+                if new_points[i] > ub
+                    #reflection
+                    new_points[i] = maximum(surr.x) - norm(new_points[i] - maximum(surr.x))
+                end
+                if new_points[i] < lb
+                    #reflection
+                    new_points[i] = minimum(surr.x) + norm(new_points[i]-minimum(surr.x))
+                end
+            end
+        end
+
+        #ND version TODO
         x_new = select_evaluation_point_1D(new_points,surr,k,maxiters)
 
         f_new = obj(x_new)
