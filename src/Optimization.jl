@@ -5,12 +5,7 @@ abstract type SurrogateOptimizationAlgorithm end
 struct SRBF <: SurrogateOptimizationAlgorithm end
 struct LCBS <: SurrogateOptimizationAlgorithm end
 struct EI <: SurrogateOptimizationAlgorithm end
-struct DYCORS{S,SM,TS,TF} <: SurrogateOptimizationAlgorithm
-    sigma::S
-    sigma_min::SM
-    t_success::TS
-    t_fail::TF
-end
+struct DYCORS <: SurrogateOptimizationAlgorithm end
 
 function merit_function(point,w,surr::AbstractSurrogate,s_max,s_min,d_max,d_min,box_size)
     if length(point)==1
@@ -537,19 +532,20 @@ end
 
 function adjust_step_size(sigma_n,sigma_min,C_success,t_success,C_fail,t_fail)
     if C_success >= t_success
-        sigma_new = 2*sigma_n
+        sigma_n = 2*sigma_n
         C_success = 0
     end
     if C_fail >= t_fail
-        sigma_new = max(sigma_n/2,sigma_min)
+        sigma_n = max(sigma_n/2,sigma_min)
         C_fail = 0
     end
-    return sigma_new,C_success,C_fail
+    return sigma_n,C_success,C_fail
 end
 
 function select_evaluation_point_1D(new_points,surr::AbstractSurrogate,numb_iters,maxiters)
     v = [0.3,0.5,0.8,0.95]
     k = 4
+    n = length(surr.x)
     if mod(maxiters-1,4) != 0
         w_nR = v[mod(maxiters-1,4)]
     else
@@ -562,36 +558,40 @@ function select_evaluation_point_1D(new_points,surr::AbstractSurrogate,numb_iter
     for i = 1:l
         evaluations[i] = surr(new_points[i])
     end
-    s_max = maximim(evaluations)
+    s_max = maximum(evaluations)
     s_min = minimum(evaluations)
-    V_nr = zeros(eltype(surr.y[1]),l)
+    V_nR = zeros(eltype(surr.y[1]),l)
     for i = 1:l
         if abs(s_max-s_min) <= 10e-6
             V_nR[i] = 1.0
         else
-            V_nR[i] = (evaluations[i] - s_min)(s_max-s_min)
+            V_nR[i] = (evaluations[i] - s_min)/(s_max-s_min)
         end
-    end
-    delta_n = zeros(eltype(surr.y[1]),l)
-    delta = zeros(eltype(surr_y[1]),l)
-
-    
-    #Determine minimum distance #TO FINISH TODO
-    for j = 1:l
-        for i = 1:n
-            delta[j] = norm(new_poins[j]-surr.x[i])
-        end
-        delta_n[j] = minimum(delta)
     end
 
     #Compute score V_nD
-    #MISSING TODO
-
+    V_nD = zeros(eltype(surr.y[1]),l)
+    delta_n_x = zeros(eltype(surr.x[1]),l)
+    delta = zeros(eltype(surr.x[1]),n)
+    for j = 1:l
+        for i = 1:n
+            delta[i] = norm(new_points[j]-surr.x[i])
+        end
+        delta_n_x[j] = minimum(delta)
+    end
+    delta_n_max = maximum(delta_n_x)
+    delta_n_min = minimum(delta_n_x)
+    for i = 1:l
+        if abs(delta_n_max-delta_n_min) <= 10e-6
+            V_nD[i] = 1.0
+        else
+            V_nD[i] = (delta_n_max - delta_n_x[i])/(delta_n_max-delta_n_min)
+        end
+    end
 
     #Compute weighted score
     W_n = w_nR*V_nR + w_nD*V_nD
-
-    return new_points[argminim(W_n)]
+    return new_points[argmin(W_n)]
 end
 """
 surrogate_optimize(obj::Function,::DYCORS,lb::Number,ub::Number,surr::AbstractSurrogate,sample_type::SamplingAlgorithm;maxiters=100,num_new_samples=100)
@@ -602,33 +602,46 @@ surrogates and dynamic coordinate search in high-dimensional expensive black-box
 function surrogate_optimize(obj::Function,::DYCORS,lb::Number,ub::Number,surr::AbstractSurrogate,sample_type::SamplingAlgorithm;maxiters=100,num_new_samples=100)
     x_best = argmin(surr.y)
     y_best = minimum(surr.y)
-    sigma_n = DYCORS.sigma
-    sigma_min = DYCORS.sigma_min
-    t_success = DYCORS.t_success
-    t_fail = DYCORS.t_fail
+    sigma_n = 0.2*norm(ub-lb)
+    d = length(lb)
+    sigma_min = 0.2*(0.5)^6*norm(ub-lb)
+    t_success = 3
+    t_fail = max(d,5)
     C_success = 0
     C_fail = 0
-    d = length(lb)
     for k = 1:maxiters
-        p_select = min(20/d,1)*(1-log(n))/log(maxiters-1)
-        #GENERATE OMEGA_N TODO
+        p_select = min(20/d,1)*(1-log(k))/log(maxiters-1)
+        # In 1D I_perturb is always equal to one, no need to sample
+        d = 1
+        I_perturb = d
+        new_points = zeros(eltype(surr.x[1]),num_new_samples)
+        for i = 1:num_new_samples
+            new_points[i] = x_best + rand(Normal(0,sigma_n))
+            while new_points[i] < lb || new_points[i] > ub
+                if new_points[i] > ub
+                    #reflection
+                    new_points[i] = maximum(surr.x) - norm(new_points[i] - maximum(surr.x))
+                end
+                if new_points[i] < lb
+                    #reflection
+                    new_points[i] = minimum(surr.x) + norm(new_points[i]-minimum(surr.x))
+                end
+            end
+        end
 
+        x_new = select_evaluation_point_1D(new_points,surr,k,maxiters)
 
-        # x_new = select_evaluation_point_1D(...)TODO
-
-        #compute f(x_n+1)
         f_new = obj(x_new)
 
-        #Update counters
         if f_new < y_best
-            C_success = C_succes + 1
+            C_success = C_success + 1
             C_fail = 0
         else
             C_fail = C_fail + 1
-            C_succes = 0
+            C_success = 0
         end
 
-        sigma_n,C_succes,C_fail = adjust_step_size(sigma_n,sigma_min,C_success,t_success,C_fail,t_fail)
+        sigma_n,C_success,C_fail = adjust_step_size(sigma_n,sigma_min,C_success,t_success,C_fail,t_fail)
 
         if f_new < y_best
             x_best = x_new
@@ -636,5 +649,4 @@ function surrogate_optimize(obj::Function,::DYCORS,lb::Number,ub::Number,surr::A
             add_point!(surr,x_best,y_best)
         end
     end
-    return x_best,y_best
 end
