@@ -720,8 +720,6 @@ function surrogate_optimize(obj::Function,::DYCORS,lb,ub,surr::AbstractSurrogate
     C_fail = 0
     @inbounds for k = 1:maxiters
         p_select = min(20/d,1)*(1-log(k))/log(maxiters-1)
-        # PERTURBATION
-        #y_{n,j}
         new_points = zeros(eltype(surr.x[1]),num_new_samples,d)
         for j = 1:num_new_samples
             w = sample(d,0,1,sample_type)
@@ -754,8 +752,8 @@ function surrogate_optimize(obj::Function,::DYCORS,lb,ub,surr::AbstractSurrogate
 
         #ND version
         x_new = select_evaluation_point_ND(new_points,surr,k,maxiters)
-
         f_new = obj(x_new)
+
 
         if f_new < y_best
             C_success = C_success + 1

@@ -126,11 +126,10 @@ surrogate_optimize(objective_function,DYCORS(),lb,ub,my_rad_DYCORS1,UniformSampl
 surrogate_optimize(objective_function,DYCORS(),lb,ub,my_k_DYCORS1,UniformSample())
 
 
-
-#ND#
+#ND# # RADIALS ND PROBLEM
 
 objective_function_ND = z -> 2*norm(z)+1
-x = [(1.2,3.0),(3.0,3.5),(5.2,5.7)]
+x = [(1.1,1.2),(3.0,3.5),(5.2,5.7)]
 y = objective_function_ND.(x)
 p = [1.8,1.8]
 theta = [2.0,2.0]
@@ -138,6 +137,8 @@ lb = [1.0,1.0]
 ub = [6.0,6.0]
 bounds = [[1.0,6.0],[1.0,6.0]]
 my_k_DYCORSN = Kriging(x,y,p,theta)
-my_rad_DYCORSN = RadialBasis(x,y,bounds,z->norm(z),1)
-surrogate_optimize(objective_function_ND,DYCORS(),lb,ub,my_rad_DYCORSN,UniformSample())
 surrogate_optimize(objective_function_ND,DYCORS(),lb,ub,my_k_DYCORSN,UniformSample())
+
+#my_rad_DYCORSN = RadialBasis(x,y,bounds,z->norm(z),1)
+#surrogate_optimize(objective_function_ND,DYCORS(),lb,ub,my_rad_DYCORSN,UniformSample())
+#println(my_rad_DYCORSN.x)
