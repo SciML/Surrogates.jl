@@ -662,7 +662,7 @@ function select_evaluation_point_ND(new_points,surr::AbstractSurrogate,numb_iter
     end
     w_nD = 1 - w_nR
 
-    l = length(new_points)
+    l = size(new_points,1)
     evaluations = zeros(eltype(surr.y[1]),l)
     for i = 1:l
         evaluations[i] = surr(Tuple(new_points[i,:]))
@@ -699,7 +699,7 @@ function select_evaluation_point_ND(new_points,surr::AbstractSurrogate,numb_iter
     end
     #Compute weighted score
     W_n = w_nR*V_nR + w_nD*V_nD
-    return new_points[argmin(W_n)]
+    return new_points[argmin(W_n),:]
 end
 
 """
@@ -725,11 +725,11 @@ function surrogate_optimize(obj::Function,::DYCORS,lb,ub,surr::AbstractSurrogate
         new_points = zeros(eltype(surr.x[1]),num_new_samples,d)
         for j = 1:num_new_samples
             w = sample(d,0,1,sample_type)
-            I_pertub = w .< p_select
-            if ~(true in I_pertub)
+            I_perturb = w .< p_select
+            if ~(true in I_perturb)
                 I_perturb = rand(1:d)
             end
-            I_perturb = Int(I_perturb)
+            I_perturb = Int.(I_perturb)
             for i = 1:d
                 if I_perturb[i] == 1
                     new_points[j,i] = x_best[i] + rand(Normal(0,sigma_n))
@@ -746,7 +746,7 @@ function surrogate_optimize(obj::Function,::DYCORS,lb,ub,surr::AbstractSurrogate
                         new_points[i,j] = maximum(surr.x)[j] - norm(new_points[i,j] - maximum(surr.x)[j])
                     end
                     if new_points[i,j] < lb[j]
-                        new_points[i][j] = minimum(surr.x)[j] + norm(new_points[i]-minimum(surr.x)[j])
+                        new_points[i,j] = minimum(surr.x)[j] + norm(new_points[i]-minimum(surr.x)[j])
                     end
                 end
             end

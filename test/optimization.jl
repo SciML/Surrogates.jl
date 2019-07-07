@@ -2,7 +2,7 @@ using Surrogates
 using LinearAlgebra
 
 
-#=
+
 #######SRBF############
 
 ##### 1D #####
@@ -108,12 +108,12 @@ my_k_ND = Kriging(x,y,p,theta)
 surrogate_optimize(objective_function_ND,EI(),lb,ub,my_k_ND,UniformSample())
 
 
-=#
+
 
 ## DYCORS ##
 
 #1D#
-#=
+
 objective_function = x -> 3*x+1
 x = [2.3,4.0,6.0]
 y = [3*2.3+1,13.0,19.0]
@@ -122,18 +122,20 @@ lb = 2.0
 ub = 6.0
 my_k = Kriging(x,y,p)
 my_rad = RadialBasis(x,y,lb,ub,z->norm(z),1)
-surrogate_optimize(objective_function,DYCORS(),lb,ub,my_k,UniformSample())
 surrogate_optimize(objective_function,DYCORS(),lb,ub,my_rad,UniformSample())
-=#
+surrogate_optimize(objective_function,DYCORS(),lb,ub,my_k,UniformSample())
 
-#2D#
+#ND#
 
 objective_function_ND = z -> 3*norm(z)+1
 x = [(1.2,3.0),(3.0,3.5),(5.2,5.7)]
 y = objective_function_ND.(x)
-p = [1.2,1.2]
+p = [1.8,1.8]
 theta = [2.0,2.0]
 lb = [1.0,1.0]
 ub = [6.0,6.0]
+bounds = [[1.0,6.0],[1.0,6.0]]
 my_k_ND = Kriging(x,y,p,theta)
+my_rad_ND = RadialBasis(x,y,bounds,z->norm(z),1)
+surrogate_optimize(objective_function_ND,DYCORS(),lb,ub,my_rad_ND,UniformSample())
 surrogate_optimize(objective_function_ND,DYCORS(),lb,ub,my_k_ND,UniformSample())
