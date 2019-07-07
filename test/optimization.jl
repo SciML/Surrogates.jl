@@ -115,16 +115,19 @@ surrogate_optimize(objective_function_ND,EI(),lb,ub,my_k_ND,UniformSample())
 #1D#
 #=
 objective_function = x -> 3*x+1
-x = [2.5,4.0,6.0]
-y = [6.0,9.0,13.0]
-p = 1.5
+x = [2.3,4.0,6.0]
+y = [3*2.3+1,13.0,19.0]
+p = 2.0
 lb = 2.0
 ub = 6.0
 my_k = Kriging(x,y,p)
+my_rad = RadialBasis(x,y,lb,ub,z->norm(z),1)
 surrogate_optimize(objective_function,DYCORS(),lb,ub,my_k,UniformSample())
+surrogate_optimize(objective_function,DYCORS(),lb,ub,my_rad,UniformSample())
 =#
 
 #2D#
+
 objective_function_ND = z -> 3*norm(z)+1
 x = [(1.2,3.0),(3.0,3.5),(5.2,5.7)]
 y = objective_function_ND.(x)
