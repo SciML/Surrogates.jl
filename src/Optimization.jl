@@ -590,6 +590,7 @@ function select_evaluation_point_1D(new_points,surr::AbstractSurrogate,numb_iter
     end
 
     #Compute weighted score
+    println("QUI")
     W_n = w_nR*V_nR + w_nD*V_nD
     return new_points[argmin(W_n)]
 end
@@ -609,7 +610,7 @@ function surrogate_optimize(obj::Function,::DYCORS,lb::Number,ub::Number,surr::A
     t_fail = max(d,5)
     C_success = 0
     C_fail = 0
-    @inbounds for k = 1:maxiters
+    for k = 1:maxiters
         p_select = min(20/d,1)*(1-log(k))/log(maxiters-1)
         # In 1D I_perturb is always equal to one, no need to sample
         d = 1
