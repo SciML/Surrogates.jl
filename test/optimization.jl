@@ -5,7 +5,7 @@ using LinearAlgebra
 
 #######SRBF############
 
-#=
+
 
 ##### 1D #####
 
@@ -108,12 +108,12 @@ ub = [6.0,6.0]
 my_k_E1N = Kriging(x,y,p,theta)
 surrogate_optimize(objective_function_ND,EI(),lb,ub,my_k_E1N,UniformSample())
 
-=#
+
 
 ## DYCORS ##
 
 #1D#
-#=
+
 objective_function = x -> 3*x+1
 x = [2.1,2.5,4.0,6.0]
 y = objective_function.(x)
@@ -125,7 +125,7 @@ my_rad_DYCORS1 = RadialBasis(x,y,lb,ub,z->norm(z),1)
 
 surrogate_optimize(objective_function,DYCORS(),lb,ub,my_rad_DYCORS1,UniformSample())
 surrogate_optimize(objective_function,DYCORS(),lb,ub,my_k_DYCORS1,UniformSample())
-=#
+
 
 #ND#
 
