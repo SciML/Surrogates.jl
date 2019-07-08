@@ -590,7 +590,6 @@ function select_evaluation_point_1D(new_points,surr::AbstractSurrogate,numb_iter
     end
 
     #Compute weighted score
-    println("QUI")
     W_n = w_nR*V_nR + w_nD*V_nD
     return new_points[argmin(W_n)]
 end
@@ -601,7 +600,7 @@ DYCORS optimization method in 1D, following closely: Combining radial basis func
 surrogates and dynamic coordinate search in high-dimensional expensive black-box optimzation".
 """
 function surrogate_optimize(obj::Function,::DYCORS,lb::Number,ub::Number,surr::AbstractSurrogate,sample_type::SamplingAlgorithm;maxiters=100,num_new_samples=100)
-    x_best = surr.x[argmin(surr.y)]
+    x_best = argmin(surr.y)
     y_best = minimum(surr.y)
     sigma_n = 0.2*norm(ub-lb)
     d = length(lb)
@@ -629,7 +628,9 @@ function surrogate_optimize(obj::Function,::DYCORS,lb::Number,ub::Number,surr::A
                 end
             end
         end
+
         x_new = select_evaluation_point_1D(new_points,surr,k,maxiters)
+
         f_new = obj(x_new)
 
         if f_new < y_best
@@ -699,6 +700,7 @@ function select_evaluation_point_ND(new_points,surr::AbstractSurrogate,numb_iter
         end
     end
     #Compute weighted score
+    println("QUI")
     W_n = w_nR*V_nR + w_nD*V_nD
     return new_points[argmin(W_n),:]
 end
