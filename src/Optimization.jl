@@ -718,14 +718,15 @@ function surrogate_optimize(obj::Function,::DYCORS,lb,ub,surr::AbstractSurrogate
     t_fail = max(d,5)
     C_success = 0
     C_fail = 0
-    @inbounds for k = 1:maxiters
+    for k = 1:maxiters
         p_select = min(20/d,1)*(1-log(k))/log(maxiters-1)
         new_points = zeros(eltype(surr.x[1]),num_new_samples,d)
         for j = 1:num_new_samples
             w = sample(d,0,1,sample_type)
             I_perturb = w .< p_select
             if ~(true in I_perturb)
-                I_perturb = rand(1:d)
+                val = rand(1:d)
+                I_perturb = vcat(zeros(Int,val-1),1,zeros(Int,d-val))
             end
             I_perturb = Int.(I_perturb)
             for i = 1:d
@@ -735,6 +736,7 @@ function surrogate_optimize(obj::Function,::DYCORS,lb,ub,surr::AbstractSurrogate
                     new_points[j,i] = x_best[i]
                 end
             end
+
         end
 
         for i = 1:num_new_samples

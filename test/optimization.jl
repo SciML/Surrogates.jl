@@ -5,8 +5,6 @@ using LinearAlgebra
 
 #######SRBF############
 
-
-
 ##### 1D #####
 
 objective_function = x -> 2*x+1
@@ -137,7 +135,9 @@ theta = [2.0,2.0]
 lb = [1.0,1.0]
 ub = [6.0,6.0]
 bounds = [[1.0,6.0],[1.0,6.0]]
+
 my_k_DYCORSN = Kriging(x,y,p,theta)
 surrogate_optimize(objective_function_ND,DYCORS(),lb,ub,my_k_DYCORSN,UniformSample(),maxiters=30)
+
 my_rad_DYCORSN = RadialBasis(x,y,bounds,z->norm(z),1)
 surrogate_optimize(objective_function_ND,DYCORS(),lb,ub,my_rad_DYCORSN,UniformSample(),maxiters=30)
