@@ -110,16 +110,18 @@ surrogate_optimize(objective_function_ND,EI(),lb,ub,my_k_E1N,UniformSample())
 
 #1D#
 
+
 objective_function = x -> 3*x+1
 x = [2.1,2.5,4.0,6.0]
 y = objective_function.(x)
 p = 1.9
 lb = 2.0
 ub = 6.0
-#my_k_DYCORS1 = Kriging(x,y,p)
+
+my_k_DYCORS1 = Kriging(x,y,p)
+surrogate_optimize(objective_function,DYCORS(),lb,ub,my_k_DYCORS1,UniformSample())
+
 my_rad_DYCORS1 = RadialBasis(x,y,lb,ub,z->norm(z),1)
-#surrogate_optimize(objective_function,DYCORS(),lb,ub,my_k_DYCORS1,UniformSample())
-#println(my_k_DYCORS1.x)
 surrogate_optimize(objective_function,DYCORS(),lb,ub,my_rad_DYCORS1,UniformSample())
 
 
@@ -138,9 +140,5 @@ bounds = [[1.0,6.0],[1.0,6.0]]
 my_k_DYCORSN = Kriging(x,y,p,theta)
 surrogate_optimize(objective_function_ND,DYCORS(),lb,ub,my_k_DYCORSN,UniformSample(),maxiters=30)
 
-
-#=
 my_rad_DYCORSN = RadialBasis(x,y,bounds,z->norm(z),1)
 surrogate_optimize(objective_function_ND,DYCORS(),lb,ub,my_rad_DYCORSN,UniformSample(),maxiters=30)
-println(my_rad_DYCORSN.x)
-=#
