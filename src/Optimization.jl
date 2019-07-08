@@ -555,6 +555,7 @@ function select_evaluation_point_1D(new_points,surr::AbstractSurrogate,numb_iter
 
     l = length(new_points)
     evaluations = zeros(eltype(surr.y[1]),l)
+
     for i = 1:l
         evaluations[i] = surr(new_points[i])
     end
@@ -630,7 +631,6 @@ function surrogate_optimize(obj::Function,::DYCORS,lb::Number,ub::Number,surr::A
         end
 
         x_new = select_evaluation_point_1D(new_points,surr,k,maxiters)
-
         f_new = obj(x_new)
 
         if f_new < y_best
@@ -700,7 +700,6 @@ function select_evaluation_point_ND(new_points,surr::AbstractSurrogate,numb_iter
         end
     end
     #Compute weighted score
-    println("QUI")
     W_n = w_nR*V_nR + w_nD*V_nD
     return new_points[argmin(W_n),:]
 end
