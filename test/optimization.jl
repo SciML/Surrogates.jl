@@ -1,6 +1,7 @@
 using Surrogates
 using LinearAlgebra
 
+#=
 
 #######SRBF############
 
@@ -142,3 +143,13 @@ surrogate_optimize(objective_function_ND,DYCORS(),lb,ub,my_k_DYCORSN,UniformSamp
 
 my_rad_DYCORSN = RadialBasis(x,y,bounds,z->norm(z),1)
 surrogate_optimize(objective_function_ND,DYCORS(),lb,ub,my_rad_DYCORSN,UniformSample(),maxiters=30)
+
+=#
+
+### SOP ###
+# 1D
+
+
+
+
+# ND

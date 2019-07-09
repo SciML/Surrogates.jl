@@ -14,6 +14,6 @@ include("Optimization.jl")
 
 export Kriging, RadialBasis, add_point!, current_estimate, std_error_at_point
 export sample, GridSample, UniformSample, SobolSample, LatinHypercubeSample, LowDiscrepancySample
-export SRBF,LCBS,EI,DYCORS,surrogate_optimize
+export SRBF,LCBS,EI,DYCORS,SOP,surrogate_optimize
 
 end

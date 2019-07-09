@@ -2,10 +2,12 @@ using LinearAlgebra
 using Distributions
 
 abstract type SurrogateOptimizationAlgorithm end
+
 struct SRBF <: SurrogateOptimizationAlgorithm end
 struct LCBS <: SurrogateOptimizationAlgorithm end
 struct EI <: SurrogateOptimizationAlgorithm end
 struct DYCORS <: SurrogateOptimizationAlgorithm end
+struct SOP <: SurrogateOptimizationAlgorithm end
 
 function merit_function(point,w,surr::AbstractSurrogate,s_max,s_min,d_max,d_min,box_size)
     if length(point)==1
@@ -775,4 +777,72 @@ function surrogate_optimize(obj::Function,::DYCORS,lb,ub,surrn::AbstractSurrogat
             add_point!(surrn,Tuple(x_best),y_best)
         end
     end
+end
+
+
+
+"""
+surrogate_optimize(obj::Function,::DYCORS,lb::Number,ub::Number,surr::AbstractSurrogate,sample_type::SamplingAlgorithm;maxiters=100,num_new_samples=100)
+
+SOP Surrogate optimization method, following closely the following papers:
+
+    -SOP: parallel surrogate global optimization with Pareto center selection for computationally expensive single objective problems by Tipaluck Krityakierne
+    - Multiobjective Optimization Using Evolutionary Algorithms by Kalyan Deb
+"""
+function surrogate_optimize(obj::Function,::SOP,lb::Number,ub::Number,surrSOP::AbstractSurrogate,sample_type::SamplingAlgorithm;maxiters=100,num_new_samples=100)
+    d = length(lb)
+    N_cond = min(500*d,5000)
+    r_init = 0.2*norm(ub-lb)
+    N_fail = 3
+    N_tenure = 5
+    tau = 10^-5
+
+    for k = 1:maxiters
+
+        ##### P CENTERS ######
+
+        #S(x) set of points already evaluated
+        #Rank points in S with:
+        #1) Non dominated sorting NSGAS
+        #2) Objective function value f(x_1) < f(x_i) < f(x_n)
+
+        #3) Use the ranked points to find centers:
+            #3a)x_i tabu?
+            #3b)x_i too close to previous centers
+
+        #3abis, how a point is tabu?
+        # Tabu points are evaluted points such that for N_iterations did
+        #not induce an improvement in the exploration exploitation, that is:
+        #HI_i < tau -> x_i failure -> r_init = r_init/2
+        #Point removed from tabu list if it has been in tabu
+        #list for more than N_tenure times
+
+
+
+
+        ##### CANDIDATE SEARCH #####
+
+        #Using phi(n) just like DYCORS, merit function = surrogate
+
+
+        # ADAPTIVE LEARNING
+        #OK
+
+
+
+    end
+
+end
+
+
+"""
+surrogate_optimize(obj::Function,::DYCORS,lb::Number,ub::Number,surr::AbstractSurrogate,sample_type::SamplingAlgorithm;maxiters=100,num_new_samples=100)
+
+SOP Surrogate optimization method, following closely the following papers:
+
+    -SOP: parallel surrogate global optimization with Pareto center selection for computationally expensive single objective problems by Tipaluck Krityakierne
+    - Multiobjective Optimization Using Evolutionary Algorithms by Kalyan Deb
+"""
+function surrogate_optimize(obj::Function,::SOP,lb::Number,ub::Number,surrSOP::AbstractSurrogate,sample_type::SamplingAlgorithm;maxiters=100,num_new_samples=100)
+
 end
