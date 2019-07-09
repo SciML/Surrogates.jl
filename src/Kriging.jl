@@ -67,7 +67,7 @@ mutable struct Kriging{X,Y,P,T,M,B,S,R} <: AbstractSurrogate
      n = length(k.x)
      prediction = zero(eltype(k.x))
      r = zeros(float(eltype(k.x)),n,1)
-     @inbounds for i = 1:n
+     for i = 1:n
          prediction = prediction + k.b[i]*phi(val-k.x[i])
          r[i] = phi(val - k.x[i])
      end
