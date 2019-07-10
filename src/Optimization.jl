@@ -7,7 +7,9 @@ struct SRBF <: SurrogateOptimizationAlgorithm end
 struct LCBS <: SurrogateOptimizationAlgorithm end
 struct EI <: SurrogateOptimizationAlgorithm end
 struct DYCORS <: SurrogateOptimizationAlgorithm end
-struct SOP <: SurrogateOptimizationAlgorithm end
+struct SOP{P} <: SurrogateOptimizationAlgorithm
+    P::P
+end
 
 function merit_function(point,w,surr::AbstractSurrogate,s_max,s_min,d_max,d_min,box_size)
     if length(point)==1
@@ -789,18 +791,37 @@ SOP Surrogate optimization method, following closely the following papers:
     -SOP: parallel surrogate global optimization with Pareto center selection for computationally expensive single objective problems by Tipaluck Krityakierne
     - Multiobjective Optimization Using Evolutionary Algorithms by Kalyan Deb
 """
-function surrogate_optimize(obj::Function,::SOP,lb::Number,ub::Number,surrSOP::AbstractSurrogate,sample_type::SamplingAlgorithm;maxiters=100,num_new_samples=100)
+function surrogate_optimize(obj::Function,sop1::SOP,lb::Number,ub::Number,surrSOP::AbstractSurrogate,sample_type::SamplingAlgorithm;maxiters=100,num_new_samples=100)
     d = length(lb)
     N_cond = min(500*d,5000)
     r_init = 0.2*norm(ub-lb)
     N_fail = 3
     N_tenure = 5
     tau = 10^-5
-
+    num_P = sop1.P
+    P_big = surrSOP.y
+    tabu = []
+    N_tenures = []
     for k = 1:maxiters
 
-        ##### P CENTERS ######
+        N_tenures .+= 1
+        #deleting points that have been in tabu for too long
+        del = N_tenures .> N_tenure
+        for i = length(del)
+            if del[i]
+                del[i] = i
+            end
+        end
+        deleteat!(N_tenures,del)
+        deleteat!(tabu,del)
 
+
+        ##### P CENTERS ######
+        P_new = []
+        r_init = 0.2*norm(ub-lb)*ones(num_P)
+        failures = zeros(num_P)
+
+        while length(P_new) < num_P
         #S(x) set of points already evaluated
         #Rank points in S with:
         #1) Non dominated sorting NSGAS
@@ -816,17 +837,44 @@ function surrogate_optimize(obj::Function,::SOP,lb::Number,ub::Number,surrSOP::A
         #HI_i < tau -> x_i failure -> r_init = r_init/2
         #Point removed from tabu list if it has been in tabu
         #list for more than N_tenure times
-
-
-
+        end
 
         ##### CANDIDATE SEARCH #####
 
-        #Using phi(n) just like DYCORS, merit function = surrogate
+        #THIS WILL BE PARALLELIZED IN THE FUTURE
+        best_of_each = zeros(eltype(surrSOP.x[1]),num_P,2)
+        for i = 1:num_P
+            N_candidates = zeros(eltype(surrSOP.x[1]),num_new_samples)
+            #Using phi(n) just like DYCORS, merit function = surrogate
+            #Like in DYCORS, I_perturb = 1 always
+            evaluations = zeros(eltype(surrSOP.y[1]),num_new_samples)
+            for j = 1:num_new_samples
+                a = lb - P[i]
+                b = ub - P[i]
+                N_candidates[j] = P[i] + rand(TruncatedNormal(0,r_init[i],a,b))
+                evaluations = surrSOP(N_candidates)
+            end
+            x_best = N_candidates[argmin(evaluations)]
+            y_best = minimum(evaluations)
+            best_of_each[i,1] = x_best
+            best_of_each[i,2] = y_best
+        end
 
+        for i:num_P
+            if (HV_i < tau)
+                #P_i is failure
+                r_init[i] = r_init[i]/2
+                failures[i] += 1
+                if failures[i] > N_fail
+                    push!(tabu,P_new[i])
+                end
+            else
+                #P_i is success
+                #Adaptive_learning
+                add_point!(surrSOP,best_of_each[i,1],best_of_each[i,2])
+                append!(P_big,best_of_each[i,1])
+        end
 
-        # ADAPTIVE LEARNING
-        #OK
 
 
 
