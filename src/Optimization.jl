@@ -824,24 +824,23 @@ function surrogate_optimize(obj::Function,sop1::SOP,lb::Number,ub::Number,surrSO
         while length(P_new) < num_P
         #S(x) set of points already evaluated
         #Rank points in S with:
-        #1) Non dominated sorting NSGAS
+        #1) Non dominated sorting NSGAS #TODO NSGAS NON DOMINATED SORTING
         #2) Objective function value f(x_1) < f(x_i) < f(x_n)
 
         #3) Use the ranked points to find centers:
             #3a)x_i tabu?
             #3b)x_i too close to previous centers
+        #IF CONDTION 3.A AND 3.B ARE SATISFIED I CAN ADD THE POINT AS CENTER
 
-        #3abis, how a point is tabu?
-        # Tabu points are evaluted points such that for N_iterations did
-        #not induce an improvement in the exploration exploitation, that is:
-        #HI_i < tau -> x_i failure -> r_init = r_init/2
-        #Point removed from tabu list if it has been in tabu
-        #list for more than N_tenure times
+        # IF I HAVE EXAMINED ALL THE POINTS IN THE RANKED LIST BUT THE NUMBER
+        # OF SELECTED POINTS IS STILL LESS THAN NUM_P I REXAMINE EVERYTHING JUST
+        #USING THE RADIUS RULE
+
+        #IF I STILL HAVE LESS THAN P, I double down on some centers iteratively
         end
 
-        ##### CANDIDATE SEARCH #####
 
-        #THIS WILL BE PARALLELIZED IN THE FUTURE
+        #2.3 Candidate search
         best_of_each = zeros(eltype(surrSOP.x[1]),num_P,2)
         for i = 1:num_P
             N_candidates = zeros(eltype(surrSOP.x[1]),num_new_samples)
@@ -860,8 +859,9 @@ function surrogate_optimize(obj::Function,sop1::SOP,lb::Number,ub::Number,surrSO
             best_of_each[i,2] = y_best
         end
 
+        #2.4 Adaptive learning and tabu archive
         for i:num_P
-            if (HV_i < tau)
+            if (HV_i < tau) #TODO HV_I
                 #P_i is failure
                 r_init[i] = r_init[i]/2
                 failures[i] += 1
@@ -874,9 +874,6 @@ function surrogate_optimize(obj::Function,sop1::SOP,lb::Number,ub::Number,surrSO
                 add_point!(surrSOP,best_of_each[i,1],best_of_each[i,2])
                 append!(P_big,best_of_each[i,1])
         end
-
-
-
 
     end
 
