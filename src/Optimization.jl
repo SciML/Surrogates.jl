@@ -846,22 +846,49 @@ function surrogate_optimize(obj::Function,sop1::SOP,lb::Number,ub::Number,surrSO
         for i = 1:length(Front)
             ranked_fronts_connected = vcat(ranked_fronts,Front[i])
         end
-        for i = 1:length(ranked_fronts)
-            if (true in abs(ranked_fronts_connected.-tabu) .< tau) || (true in abs(ranked_fronts_connected.-P_big) <. tau)
-                deleteat!(ranked_fronts_connected,i)
+
+        centers_full = 0
+        i = 1
+        while i <= length(ranked_fronts_connected) && centers_full == 0
+            if (true in abs(ranked_fronts_connected[i].-tabu) .< tau) || (true in abs(ranked_fronts_connected[i].-P_big) <. tau)
+                skip
             else
-                push!(centers,x)
+                push!(centers,ranked_fronts_connected[i])
+                if length(centers) == num_P
+                    centers_full = 1
+                end
             end
+            i = i + 1
         end
 
-
+        # These two if's are for extreme cases which:
         # IF I HAVE EXAMINED ALL THE POINTS IN THE RANKED LIST BUT THE NUMBER
         # OF SELECTED POINTS IS STILL LESS THAN NUM_P I REXAMINE EVERYTHING JUST
         #USING THE RADIUS RULE
-
-        #IF I STILL HAVE LESS THAN P, I double down on some centers iteratively
+        if length(centers) < num_P
+            i = 1
+            while i <= length(ranked_fronts_connected) && centers_full == 0
+                if true in abs(ranked_fronts_connected[i].-P_big) <. tau
+                    skip
+                else
+                    push!(centers,ranked_fronts_connected[i])
+                    if length(centers) == num_P
+                        centers_full = 1
+                    end
+                end
+                i = i + 1
+            end
         end
 
+        #IF I STILL HAVE LESS THAN P, I double down on some centers iteratively
+        if length(centers) < num_P
+            i = 1
+            while i <= length(ranked_fronts_connected)
+                push!(centers,ranked_fronts_connected[i])
+                if length(centers) == num_P
+                    centers_full = 1
+                end
+            end
 
         #2.3 Candidate search
         best_of_each = zeros(eltype(surrSOP.x[1]),num_P,2)
