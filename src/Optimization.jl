@@ -782,6 +782,18 @@ function surrogate_optimize(obj::Function,::DYCORS,lb,ub,surrn::AbstractSurrogat
 end
 
 
+function II_tier_ranking_1D(D::Dict,srg)
+    for i = 1:length(D)
+        x_pos = []
+        for j = 1:length(D[i])
+            push!(x_pos,findall(x->(x-D[i][j])<10^-5),srg.X)
+        end
+        y = srg.y[x_pos]
+        p = sortperm(y)
+        D[i] = D[i][p]
+    end
+    return D
+end
 
 """
 surrogate_optimize(obj::Function,::DYCORS,lb::Number,ub::Number,surr::AbstractSurrogate,sample_type::SamplingAlgorithm;maxiters=100,num_new_samples=100)
@@ -799,9 +811,10 @@ function surrogate_optimize(obj::Function,sop1::SOP,lb::Number,ub::Number,surrSO
     N_tenure = 5
     tau = 10^-5
     num_P = sop1.P
-    P_big = surrSOP.y
     tabu = []
+    P_big = surrSOP.y
     N_tenures = []
+    r_init_global = []
     for k = 1:maxiters
 
         N_tenures .+= 1
@@ -814,23 +827,33 @@ function surrogate_optimize(obj::Function,sop1::SOP,lb::Number,ub::Number,surrSO
         end
         deleteat!(N_tenures,del)
         deleteat!(tabu,del)
+        deleteat!(r_init_global,del)
 
 
         ##### P CENTERS ######
-        P_new = []
+        centers = []
+        Fronts = Dict()
         r_init = 0.2*norm(ub-lb)*ones(num_P)
         failures = zeros(num_P)
 
-        while length(P_new) < num_P
         #S(x) set of points already evaluated
         #Rank points in S with:
         #1) Non dominated sorting NSGAS #TODO NSGAS NON DOMINATED SORTING
-        #2) Objective function value f(x_1) < f(x_i) < f(x_n)
 
-        #3) Use the ranked points to find centers:
-            #3a)x_i tabu?
-            #3b)x_i too close to previous centers
-        #IF CONDTION 3.A AND 3.B ARE SATISFIED I CAN ADD THE POINT AS CENTER
+        #2) Second tier ranking
+        Fronts = II_tier_ranking_1D(P_new,surrSOP)
+        ranked_fronts = []
+        for i = 1:length(Front)
+            ranked_fronts_connected = vcat(ranked_fronts,Front[i])
+        end
+        for i = 1:length(ranked_fronts)
+            if (true in abs(ranked_fronts_connected.-tabu) .< tau) || (true in abs(ranked_fronts_connected.-P_big) <. tau)
+                deleteat!(ranked_fronts_connected,i)
+            else
+                push!(centers,x)
+            end
+        end
+
 
         # IF I HAVE EXAMINED ALL THE POINTS IN THE RANKED LIST BUT THE NUMBER
         # OF SELECTED POINTS IS STILL LESS THAN NUM_P I REXAMINE EVERYTHING JUST
@@ -867,6 +890,8 @@ function surrogate_optimize(obj::Function,sop1::SOP,lb::Number,ub::Number,surrSO
                 failures[i] += 1
                 if failures[i] > N_fail
                     push!(tabu,P_new[i])
+                    push!(r_init_global,r_init[i])
+                    push!(N_tenures,0)
                 end
             else
                 #P_i is success
