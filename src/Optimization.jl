@@ -742,7 +742,6 @@ function surrogate_optimize(obj::Function,::DYCORS,lb,ub,surrn::AbstractSurrogat
                     new_points[j,i] = x_best[i]
                 end
             end
-
         end
 
         for i = 1:num_new_samples
@@ -781,6 +780,34 @@ function surrogate_optimize(obj::Function,::DYCORS,lb,ub,surrn::AbstractSurrogat
     end
 end
 
+
+function obj2_1D(value,points)
+    min = +Inf
+    filter!(x->abs(x-value)>10^-5,points)
+    for i = 1:length(points)
+        new_val = norm(points[i]-value)
+        if new_val < min
+            min = new_val
+        end
+    end
+    return min
+end
+
+function I_tier_ranking_1D(P_big,surrSOP,obj1::Function)
+    fronts = Dict()
+    while length(P_big) > 0
+        i = 1
+        #front
+        F = []
+        #Find front
+        #TODO
+
+
+        #Add front to fronts
+        fronts[i] = F
+        i = i + 1
+    end
+end
 
 function II_tier_ranking_1D(D::Dict,srg)
     for i = 1:length(D)
@@ -832,19 +859,17 @@ function surrogate_optimize(obj::Function,sop1::SOP,lb::Number,ub::Number,surrSO
 
         ##### P CENTERS ######
         centers = []
-        Fronts = Dict()
         r_init = 0.2*norm(ub-lb)*ones(num_P)
         failures = zeros(num_P)
 
         #S(x) set of points already evaluated
         #Rank points in S with:
-        #1) Non dominated sorting NSGAS #TODO NSGAS NON DOMINATED SORTING
-
+        #1) Non dominated sorting
+        Fronts_I = I_tier_ranking_1D(P_big,surrSOP)
         #2) Second tier ranking
-        Fronts = II_tier_ranking_1D(P_new,surrSOP)
-        ranked_fronts = []
-        for i = 1:length(Front)
-            ranked_fronts_connected = vcat(ranked_fronts,Front[i])
+        Fronts = II_tier_ranking_1D(Fronts_I,surrSOP)
+        for i = 1:length(Front)-1
+            ranked_fronts_connected = vcat(Fronts[i],Front[i+1])
         end
 
         centers_full = 0
@@ -900,7 +925,7 @@ function surrogate_optimize(obj::Function,sop1::SOP,lb::Number,ub::Number,surrSO
             for j = 1:num_new_samples
                 a = lb - P[i]
                 b = ub - P[i]
-                N_candidates[j] = P[i] + rand(TruncatedNormal(0,r_init[i],a,b))
+                N_candidates[j] = centers[i] + rand(TruncatedNormal(0,r_init[i],a,b))
                 evaluations = surrSOP(N_candidates)
             end
             x_best = N_candidates[argmin(evaluations)]
