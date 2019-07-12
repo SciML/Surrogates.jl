@@ -851,9 +851,10 @@ function II_tier_ranking_1D(D::Dict,srg)
     return D
 end
 
-function Hypervolume_Pareto_improving()
-
-    return improvement
+function Hypervolume_Pareto_improving_1D(x_i,S)
+    max_i = maximum(S)
+    max_f = maximum(push!(S,x_i))
+    return max_f - max_i
 end
 """
 surrogate_optimize(obj::Function,::DYCORS,lb::Number,ub::Number,surr::AbstractSurrogate,sample_type::SamplingAlgorithm;maxiters=100,num_new_samples=100)
@@ -967,7 +968,8 @@ function surrogate_optimize(obj::Function,sop1::SOP,lb::Number,ub::Number,surrSO
 
         #2.4 Adaptive learning and tabu archive
         for i:num_P
-            if (Hypervolume_Pareto_improving(center[i])< tau) #TODO HV_I
+            #1D it is just the length of the interval
+            if (Hypervolume_Pareto_improving_1D(best_of_each[i,1],Fronts[i])< tau)
                 #P_i is failure
                 r_init[i] = r_init[i]/2
                 failures[i] += 1
