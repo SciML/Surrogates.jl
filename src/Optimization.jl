@@ -793,20 +793,49 @@ function obj2_1D(value,points)
     return min
 end
 
-function I_tier_ranking_1D(P_big,surrSOP,obj1::Function)
-    fronts = Dict()
-    while length(P_big) > 0
-        i = 1
-        #front
+function I_tier_ranking_1D(P,surrSOP::AbstractSurrogate)
+    #obj1 = objective_function
+    #obj2 = obj2_1D
+    Fronts = Dict()
+    i = 1
+    while true
         F = []
-        #Find front
-        #TODO
+        for p in P
+            n_p = 0
+            for q in P
+                #I use equality with floats because p and q are in surrSOP.x
+                #for sure at this stage
+                p_index = findall(e->e==p,surrSOP.x)
+                val1_p = surrSOP.y[p_index]
+                val2_p = obj2_1D(p,P)
+                q_index = findall(e->e==q,surrSOP.x)
+                val1_q = obj1(q_index)
+                val2_q = obj2_1D(q,P)
+                p_dominates_q = (val1_p < val1_q || abs(val1_p-val1_q) <= 10^-5) &&
+                                (val2_p < val2_q || abs(val2_p-val2_q) <= 10^-5) &&
+                                ((val1_p < val1_q) || (val2_p < val2_q))
 
-
-        #Add front to fronts
-        fronts[i] = F
-        i = i + 1
+                q_dominates_p = (val1_p < val1_q || abs(val1_p-val1_q) < 10^-5) &&
+                                (val2_p < val2_q || abs(val2_p-val2_q) < 10^-5) &&
+                                ((val1_p < val1_q) || (val2_p < val2_q))
+                if q_dominates_p
+                    n_p += 1
+                end
+            end
+            if n_p == 0
+                # no individual dominates p
+                push!(F,p)
+            end
+        end
+        if length(F) > 0
+            Fronts[i] = F
+            setdiff!(P,F)
+            i = i+1
+        else
+            return Fronts
+        end
     end
+    return Fronts
 end
 
 function II_tier_ranking_1D(D::Dict,srg)
@@ -822,6 +851,10 @@ function II_tier_ranking_1D(D::Dict,srg)
     return D
 end
 
+function Hypervolume_Pareto_improving()
+
+    return improvement
+end
 """
 surrogate_optimize(obj::Function,::DYCORS,lb::Number,ub::Number,surr::AbstractSurrogate,sample_type::SamplingAlgorithm;maxiters=100,num_new_samples=100)
 
@@ -886,10 +919,8 @@ function surrogate_optimize(obj::Function,sop1::SOP,lb::Number,ub::Number,surrSO
             i = i + 1
         end
 
-        # These two if's are for extreme cases which:
-        # IF I HAVE EXAMINED ALL THE POINTS IN THE RANKED LIST BUT THE NUMBER
-        # OF SELECTED POINTS IS STILL LESS THAN NUM_P I REXAMINE EVERYTHING JUST
-        #USING THE RADIUS RULE
+        # I examined all the points in the ranked list but num_selected < num_p
+        # I just iterate again using only radius rule
         if length(centers) < num_P
             i = 1
             while i <= length(ranked_fronts_connected) && centers_full == 0
@@ -905,7 +936,7 @@ function surrogate_optimize(obj::Function,sop1::SOP,lb::Number,ub::Number,surrSO
             end
         end
 
-        #IF I STILL HAVE LESS THAN P, I double down on some centers iteratively
+        #If I still have num_selected < num_P, I double down on some centers iteratively
         if length(centers) < num_P
             i = 1
             while i <= length(ranked_fronts_connected)
@@ -936,7 +967,7 @@ function surrogate_optimize(obj::Function,sop1::SOP,lb::Number,ub::Number,surrSO
 
         #2.4 Adaptive learning and tabu archive
         for i:num_P
-            if (HV_i < tau) #TODO HV_I
+            if (Hypervolume_Pareto_improving(center[i])< tau) #TODO HV_I
                 #P_i is failure
                 r_init[i] = r_init[i]/2
                 failures[i] += 1
@@ -965,6 +996,6 @@ SOP Surrogate optimization method, following closely the following papers:
     -SOP: parallel surrogate global optimization with Pareto center selection for computationally expensive single objective problems by Tipaluck Krityakierne
     - Multiobjective Optimization Using Evolutionary Algorithms by Kalyan Deb
 """
-function surrogate_optimize(obj::Function,::SOP,lb::Number,ub::Number,surrSOP::AbstractSurrogate,sample_type::SamplingAlgorithm;maxiters=100,num_new_samples=100)
+function surrogate_optimize(obj::Function,::SOP,lb,ub,surrSOP::AbstractSurrogate,sample_type::SamplingAlgorithm;maxiters=100,num_new_samples=100)
 
 end
