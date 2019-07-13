@@ -913,11 +913,24 @@ function surrogate_optimize(obj::Function,sop1::SOP,lb::Number,ub::Number,surrSO
             end
         end
         ranked_list = eltype(surrSOP.x[1]).(ranked_list)
-        ooo
+
         centers_full = 0
         i = 1
         while i <= length(ranked_list) && centers_full == 0
-            if (true in abs.(ranked_list - tabu) .< tau) || (true in abs.(ranked_list - centers_global) .< tau)
+            flag = 0
+            for j = 1:length(ranked_list)
+                for k = 1:length(tabu)
+                    if abs(ranked_list[j]-tabu[k]) < tau
+                        flag = 1
+                    end
+                end
+                for l = 1:length(centers_global)
+                    if abs(ranked_list[j]-centers_global[l]) < tau
+                        flag = 1
+                    end
+                end
+            end
+            if flag == 1
                 skip
             else
                 push!(C,ranked_list[i])
@@ -927,14 +940,21 @@ function surrogate_optimize(obj::Function,sop1::SOP,lb::Number,ub::Number,surrSO
             end
             i = i + 1
         end
-        oo
 
         # I examined all the points in the ranked list but num_selected < num_p
         # I just iterate again using only radius rule
         if length(C) < num_P
             i = 1
             while i <= length(ranked_list) && centers_full == 0
-                if true in abs(centers_global .- ranked_list[i]) .< tau
+                flag = 0
+                for j = 1:length(ranked_list)
+                    for k = 1:length(centers_global)
+                        if abs(centers_global[i] - ranked_list[i]) < tau
+                            flag = 1
+                        end
+                    end
+                end
+                if flag == 1
                     skip
                 else
                     push!(C,ranked_list[i])
@@ -968,9 +988,9 @@ function surrogate_optimize(obj::Function,sop1::SOP,lb::Number,ub::Number,surrSO
             #Like in DYCORS, I_perturb = 1 always
             evaluations = zeros(eltype(surrSOP.y[1]),num_new_samples)
             for j = 1:num_new_samples
-                a = lb - P[i]
-                b = ub - P[i]
-                N_candidates[j] = centers[i] + rand(TruncatedNormal(0,r_centers[i],a,b))
+                a = lb - C[i]
+                b = ub - C[i]
+                N_candidates[j] = C[i] + rand(TruncatedNormal(0,r_centers[i],a,b))
                 evaluations[j] = surrSOP(N_candidates[j])
             end
             x_best = N_candidates[argmin(evaluations)]
@@ -981,7 +1001,7 @@ function surrogate_optimize(obj::Function,sop1::SOP,lb::Number,ub::Number,surrSO
 
         #new_points[i] now contains:
         #[x_1,y_1; x_2,y_2,...,x_{num_new_samples},y_{num_new_samples}]
-
+        #OK UNTIL HERE#
 
         #2.4 Adaptive learning and tabu archive
         for i=1:num_P
