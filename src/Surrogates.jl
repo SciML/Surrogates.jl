@@ -1,5 +1,4 @@
 module Surrogates
-
 using LinearAlgebra
 using Distributions
 using Sobol

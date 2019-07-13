@@ -1,6 +1,5 @@
 using Surrogates
 using LinearAlgebra
-
 #=
 
 #######SRBF############
@@ -156,6 +155,6 @@ lb = 2.0
 ub = 6.0
 num_centers = 2
 my_k_SOP1 = Kriging(x,y,p)
-surrogate_optimize(objective_function_ND,SOP(num_centers),lb,ub,my_rad_DYCORSN,UniformSample(),maxiters=30)
+surrogate_optimize(objective_function,SOP(num_centers),lb,ub,my_k_SOP1,LatinHypercubeSample(),maxiters=30)
 
 # ND

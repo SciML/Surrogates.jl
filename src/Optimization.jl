@@ -8,7 +8,7 @@ struct LCBS <: SurrogateOptimizationAlgorithm end
 struct EI <: SurrogateOptimizationAlgorithm end
 struct DYCORS <: SurrogateOptimizationAlgorithm end
 struct SOP{P} <: SurrogateOptimizationAlgorithm
-    P::P
+    p::P
 end
 
 function merit_function(point,w,surr::AbstractSurrogate,s_max,s_min,d_max,d_min,box_size)
@@ -783,9 +783,9 @@ end
 
 function obj2_1D(value,points)
     min = +Inf
-    filter!(x->abs(x-value)>10^-5,points)
-    for i = 1:length(points)
-        new_val = norm(points[i]-value)
+    my_p = filter(x->abs(x-value)>10^-5,points)
+    for i = 1:length(my_p)
+        new_val = norm(my_p[i]-value)
         if new_val < min
             min = new_val
         end
@@ -800,16 +800,18 @@ function I_tier_ranking_1D(P,surrSOP::AbstractSurrogate)
     i = 1
     while true
         F = []
+        j = 1
         for p in P
             n_p = 0
+            k = 1
             for q in P
                 #I use equality with floats because p and q are in surrSOP.x
                 #for sure at this stage
-                p_index = findall(e->e==p,surrSOP.x)
+                p_index = j
+                q_index = k
                 val1_p = surrSOP.y[p_index]
                 val2_p = obj2_1D(p,P)
-                q_index = findall(e->e==q,surrSOP.x)
-                val1_q = obj1(q_index)
+                val1_q = surrSOP.y[q_index]
                 val2_q = obj2_1D(q,P)
                 p_dominates_q = (val1_p < val1_q || abs(val1_p-val1_q) <= 10^-5) &&
                                 (val2_p < val2_q || abs(val2_p-val2_q) <= 10^-5) &&
@@ -821,32 +823,34 @@ function I_tier_ranking_1D(P,surrSOP::AbstractSurrogate)
                 if q_dominates_p
                     n_p += 1
                 end
+                k = k + 1
             end
-            if n_p == 0
-                # no individual dominates p
-                push!(F,p)
-            end
+        if n_p == 0
+            # no individual dominates p
+            push!(F,p)
+        end
+        j = j + 1
         end
         if length(F) > 0
             Fronts[i] = F
-            setdiff!(P,F)
-            i = i+1
+            P = setdiff(P,F)
+            i = i + 1
         else
             return Fronts
         end
     end
-    return Fronts
+    return F
 end
 
-function II_tier_ranking_1D(D::Dict,srg)
+function II_tier_ranking_1D(D::Dict,srg::AbstractSurrogate)
     for i = 1:length(D)
-        x_pos = []
+        pos = []
+        yn = []
         for j = 1:length(D[i])
-            push!(x_pos,findall(x->(x-D[i][j])<10^-5),srg.X)
+            push!(pos,findall(e->e==D[i][j],srg.x))
+            push!(yn,srg.y[pos[j]])
         end
-        y = srg.y[x_pos]
-        p = sortperm(y)
-        D[i] = D[i][p]
+        D[i] = D[i][sortperm(D[i])]
     end
     return D
 end
@@ -863,33 +867,33 @@ SOP Surrogate optimization method, following closely the following papers:
 
     -SOP: parallel surrogate global optimization with Pareto center selection for computationally expensive single objective problems by Tipaluck Krityakierne
     - Multiobjective Optimization Using Evolutionary Algorithms by Kalyan Deb
+#Suggested number of new_samples = min(500*d,5000)
 """
 function surrogate_optimize(obj::Function,sop1::SOP,lb::Number,ub::Number,surrSOP::AbstractSurrogate,sample_type::SamplingAlgorithm;maxiters=100,num_new_samples=100)
     d = length(lb)
-    N_cond = min(500*d,5000)
     N_fail = 3
     N_tenure = 5
     tau = 10^-5
-    num_P = sop1.P
-    centers_global = surrSOP.y
-    r_centers_global = 0.2*norm(ub-lb)*ones(length(surrSOP.y))
-    N_failures_global = zeros(length(surrSOP.y))
+    num_P = sop1.p
+    centers_global = surrSOP.x
+    r_centers_global = 0.2*norm(ub-lb)*ones(length(surrSOP.x))
+    N_failures_global = zeros(length(surrSOP.x))
     tabu = []
     N_tenures_tabu = []
-
     for k = 1:maxiters
-
-
-        N_tenures .+= 1
+        N_tenures_tabu .+= 1
         #deleting points that have been in tabu for too long
         del = N_tenures_tabu .> N_tenure
-        for i = length(del)
-            if del[i]
-                del[i] = i
+
+        if length(del) > 0
+            for i = length(del)
+                if del[i]
+                    del[i] = i
+                end
             end
+            deleteat!(N_tenures_tabu,del)
+            deleteat!(tabu,del)
         end
-        deleteat!(N_tenures_tabu,del)
-        deleteat!(tabu,del)
 
 
         ##### P CENTERS ######
@@ -898,17 +902,22 @@ function surrogate_optimize(obj::Function,sop1::SOP,lb::Number,ub::Number,surrSO
         #S(x) set of points already evaluated
         #Rank points in S with:
         #1) Non dominated sorting
-        Fronts_I = I_tier_ranking_1D(P_big,surrSOP)
+        Fronts_I = I_tier_ranking_1D(centers_global,surrSOP)
+
         #2) Second tier ranking
         Fronts = II_tier_ranking_1D(Fronts_I,surrSOP)
-        for i = 1:length(Front)-1
-            ranked_list = vcat(Fronts[i],Front[i+1])
+        ranked_list = []
+        for i = 1:length(Fronts)
+            for j = 1:length(Fronts[i])
+                push!(ranked_list,Fronts[i][j])
+            end
         end
-
+        ranked_list = eltype(surrSOP.x[1]).(ranked_list)
+        ooo
         centers_full = 0
         i = 1
         while i <= length(ranked_list) && centers_full == 0
-            if (true in abs(ranked_list[i].-tabu) .< tau) || (true in abs(ranked_list[i].-P_big) <. tau)
+            if (true in abs.(ranked_list - tabu) .< tau) || (true in abs.(ranked_list - centers_global) .< tau)
                 skip
             else
                 push!(C,ranked_list[i])
@@ -918,13 +927,14 @@ function surrogate_optimize(obj::Function,sop1::SOP,lb::Number,ub::Number,surrSO
             end
             i = i + 1
         end
+        oo
 
         # I examined all the points in the ranked list but num_selected < num_p
         # I just iterate again using only radius rule
         if length(C) < num_P
             i = 1
             while i <= length(ranked_list) && centers_full == 0
-                if true in abs(ranked_list[i].-P_big) <. tau
+                if true in abs(centers_global .- ranked_list[i]) .< tau
                     skip
                 else
                     push!(C,ranked_list[i])
@@ -945,6 +955,7 @@ function surrogate_optimize(obj::Function,sop1::SOP,lb::Number,ub::Number,surrSO
                     centers_full = 1
                 end
             end
+        end
 
         #Here I have selected C = [] containing the centers
         r_centers = 0.2*norm(ub-lb)*ones(num_P)
@@ -973,7 +984,7 @@ function surrogate_optimize(obj::Function,sop1::SOP,lb::Number,ub::Number,surrSO
 
 
         #2.4 Adaptive learning and tabu archive
-        for i:num_P
+        for i=1:num_P
             if new_points[i,1] in centers_global
                 r_centers[i] = r_centers_global[i]
                 N_failures[i] = N_failures_global[i]
@@ -994,11 +1005,10 @@ function surrogate_optimize(obj::Function,sop1::SOP,lb::Number,ub::Number,surrSO
                 push!(r_centers_global,r_centers[i])
                 push!(N_failures_global,N_faiulures[i])
                 add_point!(surrSOP,new_points[i,1],new_points[i,2])
-
+            end
         end
     end
 end
-
 
 """
 surrogate_optimize(obj::Function,::DYCORS,lb::Number,ub::Number,surr::AbstractSurrogate,sample_type::SamplingAlgorithm;maxiters=100,num_new_samples=100)
