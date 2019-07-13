@@ -1002,7 +1002,6 @@ function surrogate_optimize(obj::Function,sop1::SOP,lb::Number,ub::Number,surrSO
         #new_points[i] now contains:
         #[x_1,y_1; x_2,y_2,...,x_{num_new_samples},y_{num_new_samples}]
         #OK UNTIL HERE#
-
         #2.4 Adaptive learning and tabu archive
         for i=1:num_P
             if new_points[i,1] in centers_global
@@ -1010,22 +1009,24 @@ function surrogate_optimize(obj::Function,sop1::SOP,lb::Number,ub::Number,surrSO
                 N_failures[i] = N_failures_global[i]
             end
             #1D it is just the length of the interval
-            if (Hypervolume_Pareto_improving_1D(best_of_each[i,1],Fronts[1])<tau)
+            #println(Hypervolume_Pareto_improving_1D(new_points[i,1],Fronts[1]))
+            #=
+            if (Hypervolume_Pareto_improving_1D(new_points[i,1],Fronts[1])<tau)
                 #failure
                 r_centers[i] = r_centers[i]/2
                 N_failures[i] += 1
-                if failures[i] > N_fail
+                if N_failures[i] > N_fail
                     push!(tabu,C[i])
                     push!(N_tenures_tabu,0)
                 end
             else
+            =#
                 #P_i is success
                 #Adaptive_learning
-                push!(centers_global,new_points[i,1])
-                push!(r_centers_global,r_centers[i])
-                push!(N_failures_global,N_faiulures[i])
                 add_point!(surrSOP,new_points[i,1],new_points[i,2])
-            end
+                push!(r_centers_global,r_centers[i])
+                push!(N_failures_global,N_failures[i])
+            #end
         end
     end
 end
