@@ -867,34 +867,33 @@ SOP Surrogate optimization method, following closely the following papers:
 function surrogate_optimize(obj::Function,sop1::SOP,lb::Number,ub::Number,surrSOP::AbstractSurrogate,sample_type::SamplingAlgorithm;maxiters=100,num_new_samples=100)
     d = length(lb)
     N_cond = min(500*d,5000)
-    r_init = 0.2*norm(ub-lb)
     N_fail = 3
     N_tenure = 5
     tau = 10^-5
     num_P = sop1.P
+    centers_global = surrSOP.y
+    r_centers_global = 0.2*norm(ub-lb)*ones(length(surrSOP.y))
+    N_failures_global = zeros(length(surrSOP.y))
     tabu = []
-    P_big = surrSOP.y
-    N_tenures = []
-    r_init_global = []
+    N_tenures_tabu = []
+
     for k = 1:maxiters
+
 
         N_tenures .+= 1
         #deleting points that have been in tabu for too long
-        del = N_tenures .> N_tenure
+        del = N_tenures_tabu .> N_tenure
         for i = length(del)
             if del[i]
                 del[i] = i
             end
         end
-        deleteat!(N_tenures,del)
+        deleteat!(N_tenures_tabu,del)
         deleteat!(tabu,del)
-        deleteat!(r_init_global,del)
 
 
         ##### P CENTERS ######
-        centers = []
-        r_init = 0.2*norm(ub-lb)*ones(num_P)
-        failures = zeros(num_P)
+        C = []
 
         #S(x) set of points already evaluated
         #Rank points in S with:
@@ -903,17 +902,17 @@ function surrogate_optimize(obj::Function,sop1::SOP,lb::Number,ub::Number,surrSO
         #2) Second tier ranking
         Fronts = II_tier_ranking_1D(Fronts_I,surrSOP)
         for i = 1:length(Front)-1
-            ranked_fronts_connected = vcat(Fronts[i],Front[i+1])
+            ranked_list = vcat(Fronts[i],Front[i+1])
         end
 
         centers_full = 0
         i = 1
-        while i <= length(ranked_fronts_connected) && centers_full == 0
-            if (true in abs(ranked_fronts_connected[i].-tabu) .< tau) || (true in abs(ranked_fronts_connected[i].-P_big) <. tau)
+        while i <= length(ranked_list) && centers_full == 0
+            if (true in abs(ranked_list[i].-tabu) .< tau) || (true in abs(ranked_list[i].-P_big) <. tau)
                 skip
             else
-                push!(centers,ranked_fronts_connected[i])
-                if length(centers) == num_P
+                push!(C,ranked_list[i])
+                if length(C) == num_P
                     centers_full = 1
                 end
             end
@@ -922,14 +921,14 @@ function surrogate_optimize(obj::Function,sop1::SOP,lb::Number,ub::Number,surrSO
 
         # I examined all the points in the ranked list but num_selected < num_p
         # I just iterate again using only radius rule
-        if length(centers) < num_P
+        if length(C) < num_P
             i = 1
-            while i <= length(ranked_fronts_connected) && centers_full == 0
-                if true in abs(ranked_fronts_connected[i].-P_big) <. tau
+            while i <= length(ranked_list) && centers_full == 0
+                if true in abs(ranked_list[i].-P_big) <. tau
                     skip
                 else
-                    push!(centers,ranked_fronts_connected[i])
-                    if length(centers) == num_P
+                    push!(C,ranked_list[i])
+                    if length(C) == num_P
                         centers_full = 1
                     end
                 end
@@ -938,17 +937,20 @@ function surrogate_optimize(obj::Function,sop1::SOP,lb::Number,ub::Number,surrSO
         end
 
         #If I still have num_selected < num_P, I double down on some centers iteratively
-        if length(centers) < num_P
+        if length(C) < num_P
             i = 1
-            while i <= length(ranked_fronts_connected)
-                push!(centers,ranked_fronts_connected[i])
-                if length(centers) == num_P
+            while i <= length(ranked_list)
+                push!(C,ranked_list[i])
+                if length(C) == num_P
                     centers_full = 1
                 end
             end
 
+        #Here I have selected C = [] containing the centers
+        r_centers = 0.2*norm(ub-lb)*ones(num_P)
+        N_failures = zeros(num_P)
         #2.3 Candidate search
-        best_of_each = zeros(eltype(surrSOP.x[1]),num_P,2)
+        new_points = zeros(eltype(surrSOP.x[1]),num_P,2)
         for i = 1:num_P
             N_candidates = zeros(eltype(surrSOP.x[1]),num_new_samples)
             #Using phi(n) just like DYCORS, merit function = surrogate
@@ -957,36 +959,44 @@ function surrogate_optimize(obj::Function,sop1::SOP,lb::Number,ub::Number,surrSO
             for j = 1:num_new_samples
                 a = lb - P[i]
                 b = ub - P[i]
-                N_candidates[j] = centers[i] + rand(TruncatedNormal(0,r_init[i],a,b))
-                evaluations = surrSOP(N_candidates)
+                N_candidates[j] = centers[i] + rand(TruncatedNormal(0,r_centers[i],a,b))
+                evaluations[j] = surrSOP(N_candidates[j])
             end
             x_best = N_candidates[argmin(evaluations)]
             y_best = minimum(evaluations)
-            best_of_each[i,1] = x_best
-            best_of_each[i,2] = y_best
+            new_points[i,1] = x_best
+            new_points[i,2] = y_best
         end
+
+        #new_points[i] now contains:
+        #[x_1,y_1; x_2,y_2,...,x_{num_new_samples},y_{num_new_samples}]
+
 
         #2.4 Adaptive learning and tabu archive
         for i:num_P
+            if new_points[i,1] in centers_global
+                r_centers[i] = r_centers_global[i]
+                N_failures[i] = N_failures_global[i]
+            end
             #1D it is just the length of the interval
-            if (Hypervolume_Pareto_improving_1D(best_of_each[i,1],Fronts[i])< tau)
-                #P_i is failure
-                r_init[i] = r_init[i]/2
-                failures[i] += 1
+            if (Hypervolume_Pareto_improving_1D(best_of_each[i,1],Fronts[1])<tau)
+                #failure
+                r_centers[i] = r_centers[i]/2
+                N_failures[i] += 1
                 if failures[i] > N_fail
-                    push!(tabu,P_new[i])
-                    push!(r_init_global,r_init[i])
-                    push!(N_tenures,0)
+                    push!(tabu,C[i])
+                    push!(N_tenures_tabu,0)
                 end
             else
                 #P_i is success
                 #Adaptive_learning
-                add_point!(surrSOP,best_of_each[i,1],best_of_each[i,2])
-                append!(P_big,best_of_each[i,1])
+                push!(centers_global,new_points[i,1])
+                push!(r_centers_global,r_centers[i])
+                push!(N_failures_global,N_faiulures[i])
+                add_point!(surrSOP,new_points[i,1],new_points[i,2])
+
         end
-
     end
-
 end
 
 

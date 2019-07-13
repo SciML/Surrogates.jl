@@ -149,12 +149,12 @@ surrogate_optimize(objective_function_ND,DYCORS(),lb,ub,my_rad_DYCORSN,UniformSa
 # 1D
 
 objective_function = x -> 3*x+1
-x = sample(100,2.0,6.0,UniformSample())
+x = sample(10,2.0,6.0,LatinHypercubeSample())
 y = objective_function.(x)
 p = 1.9
 lb = 2.0
 ub = 6.0
-num_centers = 5
+num_centers = 2
 my_k_SOP1 = Kriging(x,y,p)
 surrogate_optimize(objective_function_ND,SOP(num_centers),lb,ub,my_rad_DYCORSN,UniformSample(),maxiters=30)
 
