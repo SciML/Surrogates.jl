@@ -118,3 +118,27 @@ function add_point!(loba::LobacheskySurrogate,x_new,y_new)
     end
     nothing
 end
+
+#Integral
+function _phi_int1D(point,n)
+    res = zero(eltype(point))
+    for k = 0:n
+        c = sqrt(n/3)*point + (n - 2*k)
+        if c > 0
+            res = res + (-1)^k*binomial(n,k)*c^n
+        end
+    end
+    res *= 1/(2^n*factorial(n))
+end
+
+function lobachesky_integral(loba::LobacheskySurrogate,lb::Number,ub::Number)
+    val = zero(eltype(loba.y[1]))
+    n = length(loba.x)
+    for i = 1:n
+        a = loba.alpha*(ub - loba.x[i])
+        b = loba.alpha*(lb - loba.x[i])
+        int = 1/loba.alpha*(_phi_int1D(a,loba.n) - _phi_int1D(b,loba.n))
+        val = val + loba.coeff[i]*int
+    end
+    return val
+end

@@ -14,6 +14,10 @@ val = my_loba(3.83)
 add_point!(my_loba,3.7,12.1)
 add_point!(my_loba,[1.23,3.45],[5.20,109.67])
 
+#1D Integral
+int = lobachesky_integral(my_loba,a,b)
+
+
 #ND
 obj = x -> 3*norm(x) + 1
 lb = [0.0,0.0]
