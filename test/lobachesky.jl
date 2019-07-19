@@ -15,8 +15,7 @@ add_point!(my_loba,3.7,12.1)
 add_point!(my_loba,[1.23,3.45],[5.20,109.67])
 
 #1D Integral
-int = lobachesky_integral(my_loba,a,b)
-
+int_1D = lobachesky_integral(my_loba,a,b)
 
 #ND
 obj = x -> 3*norm(x) + 1
@@ -29,3 +28,5 @@ y = obj.(x)
 my_loba_ND = LobacheskySurrogate(x,y,alpha,n,lb,ub)
 add_point!(my_loba_ND,[2.0,4.2],4.65188)
 add_point!(my_loba_ND,[[2.0, 3.0],[5.4,3.3]],[2.236,6.328])
+#ND integral
+int_1D = lobachesky_integral(my_loba_ND,lb,ub)

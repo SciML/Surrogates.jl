@@ -142,3 +142,28 @@ function lobachesky_integral(loba::LobacheskySurrogate,lb::Number,ub::Number)
     end
     return val
 end
+
+function lobachesky_d_integrals(loba::LobacheskySurrogate,lb,ub,d::Int)
+    val = zero(eltype(loba.y[1]))
+    n = length(loba.x)
+    for l = 1:n
+        a = loba.alpha*(ub[d] - loba.x[l][d])
+        b = loba.alpha*(lb[d] - loba.x[l][d])
+        int = 1/loba.alpha*(_phi_int1D(a,loba.n) - _phi_int1D(b,loba.n))
+        val = val + loba.coeff[l]*int
+    end
+    return val
+end
+
+function lobachesky_integral(loba::LobacheskySurrogate,lb,ub)
+    d = length(lb)
+    val = zero(eltype(loba.y[1]))
+    I = 1.0
+    for j = 1:length(loba.x)
+        for i = 1:d
+            I *= lobachesky_d_integrals(loba::LobacheskySurrogate,lb,ub,i)
+        end
+        val = val + loba.coeff[j]*I
+    end
+    return val
+end
