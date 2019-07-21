@@ -34,8 +34,7 @@ x = sample(3200,lb,ub,SobolSample())
 y = obj.(x)
 my_loba_ND = LobacheskySurrogate(x,y,alpha,n,lb,ub)
 
-#ND integral still bug
-
+#ND
 int_ND = lobachesky_integral(my_loba_ND,lb,ub)
 int = hcubature(obj,lb,ub)
 int_val_true = int[1]-int[2]
