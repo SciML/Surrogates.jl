@@ -8,10 +8,7 @@ mutable struct LobacheskySurrogate{X,Y,A,N,L,U,C} <: AbstractSurrogate
     coeff::C
 end
 
-
-
 function phi_nj1D(point,x,alpha,n)
-    #phi = f_n*(alpha*(x - x_j))
     val = zero(eltype(x[1]))
     for k = 0:n
         a = sqrt(n/3)*alpha*(point-x) + (n - 2*k)
@@ -119,8 +116,8 @@ function add_point!(loba::LobacheskySurrogate,x_new,y_new)
     nothing
 end
 
-#Integrals
-function _phi_int1D(point,n)
+#Lobachesky integrals
+function _phi_int(point,n)
     res = zero(eltype(point))
     for k = 0:n
         c = sqrt(n/3)*point + (n - 2*k)
@@ -137,37 +134,21 @@ function lobachesky_integral(loba::LobacheskySurrogate,lb::Number,ub::Number)
     for i = 1:n
         a = loba.alpha*(ub - loba.x[i])
         b = loba.alpha*(lb - loba.x[i])
-        int = 1/loba.alpha*(_phi_int1D(a,loba.n) - _phi_int1D(b,loba.n))
+        int = 1/loba.alpha*(_phi_int(a,loba.n) - _phi_int(b,loba.n))
         val = val + loba.coeff[i]*int
     end
     return val
 end
 
-#=
-function lobachesky_d_integrals(loba::LobacheskySurrogate,lb,ub,d::Int)
-    val = zero(eltype(loba.y[1]))
-    n = length(loba.x)
-    for l = 1:n
-        a = loba.alpha*(ub[d] - loba.x[l][d])
-        b = loba.alpha*(lb[d] - loba.x[l][d])
-        int = 1/loba.alpha*(_phi_int1D(a,loba.n) - _phi_int1D(b,loba.n))
-        val = val + loba.coeff[l]*int
-    end
-    return val
-end
-=#
-
 function lobachesky_integral(loba::LobacheskySurrogate,lb,ub)
     d = length(lb)
     val = zero(eltype(loba.y[1]))
-    I = 1.0
     for j = 1:length(loba.x)
+        I = 1.0
         for i = 1:d
             upper = loba.alpha*(ub[i] - loba.x[j][i])
             lower = loba.alpha*(lb[i] - loba.x[j][i])
-            c = _phi_int1D(upper,loba.n)
-            d = _phi_int1D(lower,loba.n)
-            I = I*(1/loba.alpha*(c - d))
+            I *= 1/loba.alpha*(_phi_int(upper,loba.n) - _phi_int(lower,loba.n))
         end
         val = val + loba.coeff[j]*I
     end
