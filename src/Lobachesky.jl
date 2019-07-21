@@ -119,7 +119,7 @@ function add_point!(loba::LobacheskySurrogate,x_new,y_new)
     nothing
 end
 
-#Integral
+#Integrals
 function _phi_int1D(point,n)
     res = zero(eltype(point))
     for k = 0:n
@@ -143,6 +143,7 @@ function lobachesky_integral(loba::LobacheskySurrogate,lb::Number,ub::Number)
     return val
 end
 
+#=
 function lobachesky_d_integrals(loba::LobacheskySurrogate,lb,ub,d::Int)
     val = zero(eltype(loba.y[1]))
     n = length(loba.x)
@@ -154,6 +155,7 @@ function lobachesky_d_integrals(loba::LobacheskySurrogate,lb,ub,d::Int)
     end
     return val
 end
+=#
 
 function lobachesky_integral(loba::LobacheskySurrogate,lb,ub)
     d = length(lb)
@@ -161,7 +163,11 @@ function lobachesky_integral(loba::LobacheskySurrogate,lb,ub)
     I = 1.0
     for j = 1:length(loba.x)
         for i = 1:d
-            I *= lobachesky_d_integrals(loba::LobacheskySurrogate,lb,ub,i)
+            upper = loba.alpha*(ub[i] - loba.x[j][i])
+            lower = loba.alpha*(lb[i] - loba.x[j][i])
+            c = _phi_int1D(upper,loba.n)
+            d = _phi_int1D(lower,loba.n)
+            I = I*(1/loba.alpha*(c - d))
         end
         val = val + loba.coeff[j]*I
     end
