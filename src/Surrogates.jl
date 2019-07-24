@@ -6,9 +6,9 @@ using GLM
 using Distributions
 using Sobol
 using LatinHypercubeSampling
+using LIBSVM
 
 abstract type AbstractSurrogate <: Function end
-
 include("Radials.jl")
 include("Kriging.jl")
 include("Sampling.jl")
