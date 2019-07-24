@@ -1,5 +1,3 @@
-using XGBoost
-
 mutable struct RandomForestSurrogate{X,Y,B,L,U}
     x::X
     y::Y

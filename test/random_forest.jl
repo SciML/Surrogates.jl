@@ -1,5 +1,4 @@
 using Surrogates
-using XGBoost
 
 #1D
 obj_1D = x -> 3*x+1
