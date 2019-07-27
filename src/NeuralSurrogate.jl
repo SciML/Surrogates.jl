@@ -39,3 +39,8 @@ function add_point!(my_n::NeuralSurrogate,x_new,y_new)
     end
     nothing
 end
+
+
+function NeuralSurrogate(x,y,lb,ub,model,loss,opt,n_echos)
+    
+end
