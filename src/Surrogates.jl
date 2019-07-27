@@ -6,7 +6,7 @@ using GLM
 using Distributions
 using Sobol
 using LatinHypercubeSampling
-
+using Flux
 abstract type AbstractSurrogate <: Function end
 
 include("Radials.jl")
@@ -15,9 +15,12 @@ include("Sampling.jl")
 include("Optimization.jl")
 include("Lobachesky.jl")
 include("LinearSurrogate.jl")
+include("NeuralSurrogate.jl")
+
 export Kriging, RadialBasis, add_point!, current_estimate, std_error_at_point
 export sample, GridSample, UniformSample, SobolSample, LatinHypercubeSample, LowDiscrepancySample
 export SRBF,LCBS,EI,DYCORS,surrogate_optimize
 export LobacheskySurrogate, lobachesky_integral
 export LinearSurrogate
+export NeuralSurrogate
 end

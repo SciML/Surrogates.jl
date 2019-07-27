@@ -7,3 +7,4 @@ using Surrogates
 @testset "Optimization" begin include("optimization.jl") end
 @testset "LinearSurrogate" begin include("linearSurrogate.jl") end
 @testset "Lobachesky" begin include("lobachesky.jl") end
+@testset "NeuralSurrogate" begin include("NeuralSurrogate.jl") end
