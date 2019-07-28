@@ -7,4 +7,5 @@ using Surrogates
 @testset "Optimization" begin include("optimization.jl") end
 @testset "LinearSurrogate" begin include("linearSurrogate.jl") end
 @testset "Lobachesky" begin include("lobachesky.jl") end
+@testset "RandomForestSurrogate" begin include("random_forest.jl") end
 @testset "SVMSurrogate" begin include("SVMSurrogate.jl") end
