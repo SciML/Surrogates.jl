@@ -9,3 +9,4 @@ using Surrogates
 @testset "Lobachesky" begin include("lobachesky.jl") end
 @testset "RandomForestSurrogate" begin include("random_forest.jl") end
 @testset "SVMSurrogate" begin include("SVMSurrogate.jl") end
+@testset "NeuralSurrogate" begin include("neuralSurrogate.jl") end
