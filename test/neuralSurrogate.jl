@@ -3,6 +3,7 @@ using Flux
 using Flux: @epochs
 
 #1D
+#=
 a = 0.0
 b = 10.0
 obj_1D = x -> 2*x+3
@@ -15,19 +16,18 @@ n_echos = 1
 my_neural = NeuralSurrogate(x,y,a,b,model,loss,opt,n_echos)
 add_point!(my_neural,8.5,20.0)
 add_point!(my_neural,[3.2,3.5],[7.4,8.0])
-
+=#
 #ND
-X = sample(100,[0.,0.],[5.,5.], SobolSample())
-obj(x) = x[1]*x[2];
-Y = obj.(X)
-X = vcat(map(x->x', X)...)
-data = []
-for i in 1:size(X,1)
-    push!(data, (X[i,:], Y[i]))
-end
+lb = [0.0,0.0]
+ub = [5.0,5.0]
+x = sample(5,lb,ub, SobolSample())
+obj_ND(x) = x[1]*x[2];
+y = obj_ND.(x)
 model = Chain(Dense(2,1))
 loss(x, y) = Flux.mse(model(x), y)
 opt = Descent(0.01)
+n_echos = 1
 ps = Flux.params(model)
-@epochs 10 Flux.train!(loss, ps, data, opt)
-println(model([3.5, 1.4]))
+my_neural = NeuralSurrogate(x,y,lb,ub,model,ps,loss,opt,n_echos)
+my_neural([3.5, 1.4])
+add_point!()
