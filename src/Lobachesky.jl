@@ -103,15 +103,9 @@ function add_point!(loba::LobacheskySurrogate,x_new,y_new)
         loba.coeff = _calc_loba_coeff1D(loba.x,loba.y,loba.alpha,loba.n)
     else
         #ND
-        if length(x_new[1]) == 1
-            push!(loba.x,x_new)
-            push!(loba.y,y_new)
-            loba.coeff = _calc_loba_coeffND(loba.x,loba.y,loba.alpha,loba.n)
-        else
-            loba.x = vcat(loba.x,x_new)
-            loba.y = vcat(loba.y,y_new)
-            loba.coeff = _calc_loba_coeffND(loba.x,loba.y,loba.alpha,loba.n)
-        end
+        loba.x = vcat(loba.x,x_new)
+        loba.y = vcat(loba.y,y_new)
+        loba.coeff = _calc_loba_coeffND(loba.x,loba.y,loba.alpha,loba.n)
     end
     nothing
 end
