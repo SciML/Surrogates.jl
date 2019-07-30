@@ -48,7 +48,12 @@ function surrogate_optimize(obj::Function,::SRBF,lb,ub,surr::AbstractSurrogate,s
     failures = 0
     dtol = 1e-3*norm(ub-lb)
     d = length(surr.x)
+    num_of_iterations = 0
     for w in Iterators.cycle(w_range)
+        num_of_iterations += 1
+        if num_of_iterations == maxiters
+            return
+        end
         for k = 1:maxiters
             incumbent_value = minimum(surr.y)
             incumbent_x = surr.x[argmin(surr.y)]
@@ -191,7 +196,12 @@ function surrogate_optimize(obj::Function,::SRBF,lb::Number,ub::Number,surr::Abs
     success = 0
     failures = 0
     dtol = 1e-3*norm(ub-lb)
+    num_of_iterations = 0
     for w in Iterators.cycle(w_range)
+        num_of_iterations += 1
+        if num_of_iterations == maxiters
+            return
+        end
         for k = 1:maxiters
             #1) Sample near incumbent (the 2 fraction is arbitrary here)
             incumbent_value = minimum(surr.y)

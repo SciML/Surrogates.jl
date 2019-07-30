@@ -5,7 +5,7 @@ using QuadGK
 using Cubature
 
 #1D
-#=
+
 obj = x -> 3*x + log(x)
 a = 1.0
 b = 4.0

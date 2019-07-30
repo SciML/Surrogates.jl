@@ -55,7 +55,14 @@ my_loba_ND = LobacheskySurrogate(x,y,alpha,n,lb,ub)
 surrogate_optimize(objective_function_ND,SRBF(),lb,ub,my_loba_ND,UniformSample())
 
 #Linear
-
+lb = [1.0,1.0]
+ub = [6.0,6.0]
+s = sample(500,lb,ub,SobolSample())
+x = Tuple.(s)
+objective_function_ND = z -> 3*norm(z)+1
+y = objective_function_ND.(x)
+my_linear_ND = LinearSurrogate(x,y,lb,ub)
+surrogate_optimize(objective_function_ND,SRBF(),lb,ub,my_linear_ND,SobolSample(),maxiters=15)
 
 #Neural
 
