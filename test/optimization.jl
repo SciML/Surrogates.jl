@@ -64,10 +64,20 @@ y = objective_function_ND.(x)
 my_linear_ND = LinearSurrogate(x,y,lb,ub)
 surrogate_optimize(objective_function_ND,SRBF(),lb,ub,my_linear_ND,SobolSample(),maxiters=15)
 
+#SVM
+lb = [1.0,1.0]
+ub = [6.0,6.0]
+s = sample(5,lb,ub,SobolSample())
+x = Tuple.(s)
+objective_function_ND = z -> 3*norm(z)+1
+y = objective_function_ND.(x)
+my_SVM_ND = SVMSurrogate(x,y,lb,ub)
+surrogate_optimize(objective_function_ND,SRBF(),lb,ub,my_SVM_ND,SobolSample(),maxiters=15)
+
+
 #Neural
 
 
-#SVM
 
 
 #Random Forest

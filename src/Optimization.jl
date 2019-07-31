@@ -71,9 +71,8 @@ function surrogate_optimize(obj::Function,::SRBF,lb,ub,surr::AbstractSurrogate,s
                     new_ub[i] = ub[i]
                 end
             end
-            new_sample = sample(num_new_samples,new_lb,new_ub,sample_type)
 
-            #2) Create  merit function
+            new_sample = sample(num_new_samples,new_lb,new_ub,sample_type)
             s = zeros(eltype(surr.x[1]),num_new_samples)
             for j = 1:num_new_samples
                 s[j] = surr(new_sample[j])
