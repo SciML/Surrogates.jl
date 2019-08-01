@@ -1,7 +1,7 @@
 using Surrogates
 
 #1D
-#=
+
 obj_1D = x-> 2*x+1
 a = 0.0
 b = 10.0
@@ -11,7 +11,7 @@ my_svm_1D = SVMSurrogate(x,y,a,b)
 val = my_svm_1D(5.0)
 add_point!(my_svm_1D,3.1,7.2)
 add_point!(my_svm_1D,[3.2,3.5],[7.4,8.0])
-=#
+
 #ND
 obj_N = x -> x[1]^2*x[2]
 lb = [0.0,0.0]

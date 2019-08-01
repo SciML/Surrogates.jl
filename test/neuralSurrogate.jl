@@ -12,8 +12,7 @@ model = Chain(Dense(1,1))
 loss(x, y) = Flux.mse(model(x), y)
 opt = Descent(0.01)
 n_echos = 1
-ps = Flux.params(model)
-my_neural = NeuralSurrogate(x,y,a,b,model,ps,loss,opt,n_echos)
+my_neural = NeuralSurrogate(x,y,a,b,model,loss,opt,n_echos)
 add_point!(my_neural,8.5,20.0)
 add_point!(my_neural,[3.2,3.5],[7.4,8.0])
 

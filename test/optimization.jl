@@ -74,19 +74,25 @@ y = objective_function_ND.(x)
 my_SVM_ND = SVMSurrogate(x,y,lb,ub)
 surrogate_optimize(objective_function_ND,SRBF(),lb,ub,my_SVM_ND,SobolSample(),maxiters=15)
 
-
 #Neural
 
 
 
 
 #Random Forest
+lb = [1.0,1.0]
+ub = [6.0,6.0]
+s = sample(5,lb,ub,SobolSample())
+x = Tuple.(s)
+objective_function_ND = z -> 3*norm(z)+1
+y = objective_function_ND.(x)
+num_round = 2
+my_forest_ND_SRBF = RandomForestSurrogate(x,y,lb,ub,num_round)
+surrogate_optimize(objective_function_ND,SRBF(),lb,ub,my_forest_ND_SRBF,SobolSample(),maxiters=15)
+
 
 
 #=
-
-
-
 ####### LCBS #########
 ######1D######
 objective_function = x -> 2*x+1
