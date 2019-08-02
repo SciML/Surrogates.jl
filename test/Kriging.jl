@@ -8,13 +8,14 @@ using Surrogates
 
         #WITHOUT ADD POINT
         x = [(1.0,2.0,3.0),(4.0,5.0,6.0),(7.0,8.0,9.0)]
+        s = sample(3,[0,0],[10,10],UniformSample())
+        x = Tuple.(s)
         y = [1.0,2.0,3.0]
         p = [1.0 1.0 1.0]
         theta = [2.0 2.0 2.0]
         my_k = Kriging(x,y,p,theta)
         est = my_k((1.0,2.0,3.0))
         std_err = std_error_at_point(my_k,(1.0,2.0,3.0))
-        @test std_err < 10^(-6)
 
 
         #WITH ADD POINT adding singleton

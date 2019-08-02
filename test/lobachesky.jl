@@ -30,7 +30,8 @@ lb = [0.0,0.0]
 ub = [8.0,8.0]
 alpha = 2.4
 n = 8
-x = sample(3200,lb,ub,SobolSample())
+s = sample(3200,lb,ub,SobolSample())
+x = Tuple.(s)
 y = obj.(x)
 my_loba_ND = LobacheskySurrogate(x,y,alpha,n,lb,ub)
 
@@ -39,5 +40,5 @@ int_ND = lobachesky_integral(my_loba_ND,lb,ub)
 int = hcubature(obj,lb,ub)
 int_val_true = int[1]-int[2]
 @test abs(int_ND - int_val_true) < 10^-1
-add_point!(my_loba_ND,[2.0,4.2],4.65188)
-add_point!(my_loba_ND,[[2.0, 3.0],[5.4,3.3]],[2.236,6.328])
+add_point!(my_loba_ND,(10.0,11.0),4.0)
+add_point!(my_loba_ND,[(12.0, 15.0),(13.0,14.0)],[4.0,5.0])

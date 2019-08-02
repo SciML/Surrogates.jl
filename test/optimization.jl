@@ -1,6 +1,7 @@
 using Surrogates
 using LinearAlgebra
-
+using Flux
+using Flux: @epochs
 
 #######SRBF############
 
@@ -18,7 +19,6 @@ a = 2
 b = 6
 
 #Using Kriging
-
 my_k_SRBF1 = Kriging(x,y,p)
 surrogate_optimize(objective_function,SRBF(),a,b,my_k_SRBF1,UniformSample())
 
@@ -26,9 +26,7 @@ surrogate_optimize(objective_function,SRBF(),a,b,my_k_SRBF1,UniformSample())
 my_rad_SRBF1 = RadialBasis(x,y,a,b,z->norm(z),1)
 surrogate_optimize(objective_function,SRBF(),a,b,my_rad_SRBF1,UniformSample())
 
-
 ##### ND #####
-
 objective_function_ND = z -> 3*norm(z)+1
 x = [(1.4,1.4),(3.0,3.5),(5.2,5.7)]
 y = objective_function_ND.(x)
@@ -48,10 +46,63 @@ bounds = [[1.0,6.0],[1.0,6.0]]
 my_rad_SRBFN = RadialBasis(x,y,bounds,z->norm(z),1)
 surrogate_optimize(objective_function_ND,SRBF(),lb,ub,my_rad_SRBFN,UniformSample())
 
+# Lobachesky
+s = sample(5,lb,ub,UniformSample())
+x = Tuple.(s)
+y = objective_function_ND.(x)
+alpha = 2.0
+n = 4
+my_loba_ND = LobacheskySurrogate(x,y,alpha,n,lb,ub)
+surrogate_optimize(objective_function_ND,SRBF(),lb,ub,my_loba_ND,UniformSample())
+
+#Linear
+lb = [1.0,1.0]
+ub = [6.0,6.0]
+s = sample(500,lb,ub,SobolSample())
+x = Tuple.(s)
+objective_function_ND = z -> 3*norm(z)+1
+y = objective_function_ND.(x)
+my_linear_ND = LinearSurrogate(x,y,lb,ub)
+surrogate_optimize(objective_function_ND,SRBF(),lb,ub,my_linear_ND,SobolSample(),maxiters=15)
+
+#SVM
+lb = [1.0,1.0]
+ub = [6.0,6.0]
+s = sample(5,lb,ub,SobolSample())
+x = Tuple.(s)
+objective_function_ND = z -> 3*norm(z)+1
+y = objective_function_ND.(x)
+my_SVM_ND = SVMSurrogate(x,y,lb,ub)
+surrogate_optimize(objective_function_ND,SRBF(),lb,ub,my_SVM_ND,SobolSample(),maxiters=15)
+
+#Neural
+lb = [1.0,1.0]
+ub = [6.0,6.0]
+s = sample(5,lb,ub,SobolSample())
+x = Tuple.(s)
+objective_function_ND = z -> 3*norm(z)+1
+y = objective_function_ND.(x)
+model = Chain(Dense(2,1))
+loss(x, y) = Flux.mse(model(x), y)
+opt = Descent(0.01)
+n_echos = 1
+my_neural_ND_neural = NeuralSurrogate(x,y,lb,ub,model,loss,opt,n_echos)
+surrogate_optimize(objective_function_ND,SRBF(),lb,ub,my_neural_ND_neural,SobolSample(),maxiters=15)
+
+#Random Forest
+lb = [1.0,1.0]
+ub = [6.0,6.0]
+s = sample(5,lb,ub,SobolSample())
+x = Tuple.(s)
+objective_function_ND = z -> 3*norm(z)+1
+y = objective_function_ND.(x)
+num_round = 2
+my_forest_ND_SRBF = RandomForestSurrogate(x,y,lb,ub,num_round)
+surrogate_optimize(objective_function_ND,SRBF(),lb,ub,my_forest_ND_SRBF,SobolSample(),maxiters=15)
+
 
 
 ####### LCBS #########
-
 ######1D######
 objective_function = x -> 2*x+1
 x = [2.0,4.0,6.0]
