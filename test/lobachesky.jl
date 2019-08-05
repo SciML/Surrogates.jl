@@ -30,8 +30,7 @@ lb = [0.0,0.0]
 ub = [8.0,8.0]
 alpha = 2.4
 n = 8
-s = sample(3200,lb,ub,SobolSample())
-x = Tuple.(s)
+x = sample(3200,lb,ub,SobolSample())
 y = obj.(x)
 my_loba_ND = LobacheskySurrogate(x,y,alpha,n,lb,ub)
 

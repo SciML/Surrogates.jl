@@ -15,8 +15,7 @@ add_point!(my_forest_1D,[7.0,8.0],obj_1D.([7.0,8.0]))
 #ND
 lb = [0.0,0.0]
 ub = [10.0,10.0]
-s = sample(5,lb,ub,SobolSample())
-x = Tuple.(s)
+x = sample(5,lb,ub,SobolSample())
 obj_ND = x -> x[1] * x[2]^2
 y = obj_ND.(x)
 my_forest_ND = RandomForestSurrogate(x,y,lb,ub,num_round)

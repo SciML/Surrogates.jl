@@ -13,8 +13,7 @@ add_point!(my_linear_surr_1D,[5.0,6.0],[8.3,9.7])
 #ND
 lb = [0.0,0.0]
 ub = [10.0,10.0]
-s = sample(5,lb,ub,SobolSample())
-x = Tuple.(s)
+x = sample(5,lb,ub,SobolSample())
 y = [4.0,5.0,6.0,7.0,8.0]
 my_linear_ND = LinearSurrogate(x,y,lb,ub)
 add_point!(my_linear_ND,(10.0,11.0),9.0)
