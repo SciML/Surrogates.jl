@@ -47,8 +47,7 @@ my_rad_SRBFN = RadialBasis(x,y,bounds,z->norm(z),1)
 surrogate_optimize(objective_function_ND,SRBF(),lb,ub,my_rad_SRBFN,UniformSample())
 
 # Lobachesky
-s = sample(5,lb,ub,UniformSample())
-x = Tuple.(s)
+x = sample(5,lb,ub,UniformSample())
 y = objective_function_ND.(x)
 alpha = 2.0
 n = 4
@@ -58,8 +57,7 @@ surrogate_optimize(objective_function_ND,SRBF(),lb,ub,my_loba_ND,UniformSample()
 #Linear
 lb = [1.0,1.0]
 ub = [6.0,6.0]
-s = sample(500,lb,ub,SobolSample())
-x = Tuple.(s)
+x = sample(500,lb,ub,SobolSample())
 objective_function_ND = z -> 3*norm(z)+1
 y = objective_function_ND.(x)
 my_linear_ND = LinearSurrogate(x,y,lb,ub)
@@ -68,8 +66,7 @@ surrogate_optimize(objective_function_ND,SRBF(),lb,ub,my_linear_ND,SobolSample()
 #SVM
 lb = [1.0,1.0]
 ub = [6.0,6.0]
-s = sample(5,lb,ub,SobolSample())
-x = Tuple.(s)
+x = sample(5,lb,ub,SobolSample())
 objective_function_ND = z -> 3*norm(z)+1
 y = objective_function_ND.(x)
 my_SVM_ND = SVMSurrogate(x,y,lb,ub)
@@ -78,8 +75,7 @@ surrogate_optimize(objective_function_ND,SRBF(),lb,ub,my_SVM_ND,SobolSample(),ma
 #Neural
 lb = [1.0,1.0]
 ub = [6.0,6.0]
-s = sample(5,lb,ub,SobolSample())
-x = Tuple.(s)
+x = sample(5,lb,ub,SobolSample())
 objective_function_ND = z -> 3*norm(z)+1
 y = objective_function_ND.(x)
 model = Chain(Dense(2,1))
@@ -92,8 +88,7 @@ surrogate_optimize(objective_function_ND,SRBF(),lb,ub,my_neural_ND_neural,SobolS
 #Random Forest
 lb = [1.0,1.0]
 ub = [6.0,6.0]
-s = sample(5,lb,ub,SobolSample())
-x = Tuple.(s)
+x = sample(5,lb,ub,SobolSample())
 objective_function_ND = z -> 3*norm(z)+1
 y = objective_function_ND.(x)
 num_round = 2
