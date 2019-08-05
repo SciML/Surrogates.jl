@@ -16,8 +16,7 @@ add_point!(my_svm_1D,[3.2,3.5],[7.4,8.0])
 obj_N = x -> x[1]^2*x[2]
 lb = [0.0,0.0]
 ub = [10.0,10.0]
-s = sample(100,lb,ub,UniformSample())
-x = Tuple.(s)
+x = sample(100,lb,ub,UniformSample())
 y = obj_N.(x)
 my_svm_ND = SVMSurrogate(x,y,lb,ub)
 val = my_svm_ND((5.0,1.2))

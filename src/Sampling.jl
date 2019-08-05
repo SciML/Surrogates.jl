@@ -16,7 +16,7 @@ function sample(n,lb,ub,S::GridSample)
     else
         d = length(lb)
         x = [[rand(lb[j]:dx[j]:ub[j]) for j = 1:d] for i in 1:n]
-        return x
+        return Tuple.(x)
     end
 end
 
@@ -30,7 +30,7 @@ function sample(n,lb,ub,::UniformSample)
     else
         d = length(lb)
         x = [[rand(Uniform(lb[j],ub[j])) for j in 1:d] for i in 1:n]
-        return x
+        return Tuple.(x)
     end
 end
 
@@ -45,7 +45,7 @@ function sample(n,lb,ub,::SobolSample)
     if lb isa Number
         return [next!(s)[1] for i = 1:n]
     else
-        return [next!(s) for i = 1:n]
+        return Tuple.([next!(s) for i = 1:n])
     end
 end
 
@@ -66,7 +66,7 @@ function sample(n,lb,ub,::LatinHypercubeSample)
         @inbounds for c = 1:d
             x[:,c] = (ub[c]-lb[c])*x[:,c]/n .+ lb[c]
         end
-        return x
+        return Tuple.(x)
     end
 end
 
@@ -115,6 +115,6 @@ function sample(n,lb,ub,S::LowDiscrepancySample)
         @inbounds for c = 1:d
             x[:,c] = (ub[c]-lb[c])*x[:,c] .+ lb[c]
         end
-        return x
+        return Tuple.(x)
     end
 end

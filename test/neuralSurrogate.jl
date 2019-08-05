@@ -22,8 +22,7 @@ println(val)
 
 lb = [0.0,0.0]
 ub = [5.0,5.0]
-s = sample(5,lb,ub, SobolSample())
-x = Tuple.(s)
+x = sample(5,lb,ub, SobolSample())
 obj_ND_neural(x) = x[1]*x[2];
 y = obj_ND_neural.(x)
 model = Chain(Dense(2,1))
