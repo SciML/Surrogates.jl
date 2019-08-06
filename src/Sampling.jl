@@ -1,14 +1,31 @@
 abstract type SamplingAlgorithm end
+
+"""
+GridSample{T}
+
+T is the step dx for lb:dx:ub
+"""
 struct GridSample{T} <: SamplingAlgorithm
     dx::T
 end
 struct UniformSample <: SamplingAlgorithm end
 struct SobolSample <: SamplingAlgorithm end
 struct LatinHypercubeSample <: SamplingAlgorithm end
+"""
+LowDiscrepancySample{T}
+
+T is the base for the sequence
+"""
 struct LowDiscrepancySample{T} <: SamplingAlgorithm
     base::T
 end
 
+"""
+sample(n,lb,ub,S::GridSample)
+
+Returns a tuple containing numbers in a grid.
+
+"""
 function sample(n,lb,ub,S::GridSample)
     dx = S.dx
     if lb isa Number
@@ -22,7 +39,8 @@ end
 
 """
 sample(n,lb,ub,::UniformRandom)
-returns a nxd Array containing uniform random numbers
+
+Returns a Tuple containig uniform random numbers.
 """
 function sample(n,lb,ub,::UniformSample)
     if lb isa Number
@@ -37,7 +55,7 @@ end
 """
 sample(n,lb,ub,::SobolSampling)
 
-Sobol
+Returns a Tuple containig Sobol sequences.
 """
 function sample(n,lb,ub,::SobolSample)
     s = SobolSeq(lb,ub)
@@ -52,7 +70,7 @@ end
 """
 sample(n,lb,ub,::LatinHypercube)
 
-Latin hypercube sapling
+Returns a Tuple containig LatinHypercube sequences.
 """
 function sample(n,lb,ub,::LatinHypercubeSample)
     d = length(lb)
@@ -74,7 +92,9 @@ end
 """
 sample(n,lb,ub,S::LowDiscrepancySample)
 
-LowDiscrepancySample for different bases.
+Low discrepancy sample:
+- Dimension 1: Van der corput sequence
+- Dimension > 1: Halton sequence
 If dimension d > 1, every bases must be coprime with each other.
 """
 function sample(n,lb,ub,S::LowDiscrepancySample)

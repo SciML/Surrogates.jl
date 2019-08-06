@@ -34,8 +34,10 @@ The available optimization methods are:
 
 
 # Installation
-At the moment you need to fork the repository on GitHub: https://github.com/JuliaDiffEq/Surrogates.jl
-In the very near future I plan on registering it.
+In the REPL:
+```
+]add https://github.com/JuliaDiffEq/Surrogates.jl
+```
 
 # Quick example
 ```

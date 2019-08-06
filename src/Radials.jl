@@ -66,9 +66,7 @@ end
 """
     RadialBasis(x,y,a::Number,b::Number,phi::Function,q::Int)
 
-Constructor for RadialBasis type
-
-#Arguments:
+Constructor for RadialBasis surrogate
 - (x,y): sampled points
 - '(a,b)': interval of interest
 -'phi': radial basis of choice
@@ -102,16 +100,14 @@ function _calc_coeffs(x,y,a,b,phi,q)
 end
 
 """
-    RadialBasis(x,y,bounds,phi::Function,q::Int)
+RadialBasis(x,y,bounds,phi::Function,q::Int)
 
-    Constructor for RadialBasis type.
+Constructor for RadialBasis surrogate
 
-#Arguments:
-- 'new_value': array at which you want to find the approximation
 - (x,y): sampled points
-- 'bounds': region of interest of the form  [[a,b],[c,d],...,[w,z]]
--'phi': radial basis of choice
--'q': number of polynomial elements
+- bounds: region of interest of the form [[a,b],[c,d],...,[w,z]]
+- phi: radial basis of choice
+- q: number of polynomial elements
 """
 function RadialBasis(x,y,bounds,phi::Function,q::Int)
     coeff = _calc_coeffs(x,y,bounds,phi,q)

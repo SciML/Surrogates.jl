@@ -15,7 +15,12 @@ end
 function (rndfor::RandomForestSurrogate)(val::Number)
     return XGBoost.predict(rndfor.bst,reshape([val],1,1))
 end
+"""
+RandomForestSurrogate(x,y,lb,ub,num_round)
 
+Build Random forest surrogate. num_round is the number of trees.
+
+"""
 function RandomForestSurrogate(x,y,lb,ub,num_round)
     X = Array{Float64,2}(undef,length(x),length(x[1]))
     for j = 1:length(x)

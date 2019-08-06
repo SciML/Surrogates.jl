@@ -17,6 +17,11 @@ function (svmsurr::SVMSurrogate)(val::Number)
     return LIBSVM.predict(svmsurr.model,[val])
 end
 
+"""
+SVMSurrogate(x,y,lb,ub)
+
+Builds SVM surrogate.
+"""
 function SVMSurrogate(x,y,lb,ub)
     X = Array{Float64,2}(undef,length(x),length(x[1]))
     for j = 1:length(x)

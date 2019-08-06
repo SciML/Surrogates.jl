@@ -5,7 +5,7 @@ makedocs(
     "index.md"
     "User guide" => [
         "Samples" => "samples.md",
-        "Surrogates" => "surrogates.md",
+        "Surrogates" => "surrogate.md",
         "Optimization" => "optimizations.md"
         ]
     "Tutorials" => "tutorials.md"
