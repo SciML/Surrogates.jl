@@ -16,7 +16,6 @@ my_radial_basis = RadialBasis(x,y,lb,ub,thin_plate_spline,q)
 #I want an approximation at 5.4
 approx = my_radial_basis(5.4)
 ```
-
 Let's now see an example in 2D.
 ```
 using Surrogates
@@ -60,7 +59,6 @@ Let's now optimize the Kriging surrogate using Lower confidence bound method, th
 surrogate_optimize(f,LCBS(),a,b,my_krig,UniformSample())
 ```
 ## Lobachesky integral
-
 The Lobachesky surrogate has the nice feature of having a closed formula for its
 integral, which is something that other surrogates are missing.
 Let's compare it with QuadGK.

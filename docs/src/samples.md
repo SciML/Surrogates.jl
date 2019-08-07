@@ -37,6 +37,7 @@ sample(n,lb,ub,S::LowDiscrepancySample)
 ## Adding a new sampling method
 
 Adding a new sampling method is a two step process:
+
 1. Add a new SamplingAlgorithm type
 2. Overload the sample function with the new type.
 

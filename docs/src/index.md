@@ -4,12 +4,14 @@ A surrogate model is an approximation method that mimics the behavior of a compu
 expensive simulation. In more mathematical terms: suppose we are attempting to optimize a function
 ``\; f(p)``, but each calculation of ``\; f`` is very expensive. It may be the case we need to solve a PDE for each point or use advanced numerical linear algebra machinery which is usually costly. The idea is then to develop a surrogate model ``\; g`` which approximates ``\; f`` by training on previous data collected from evaluations of ``\; f``.
 The construction of a surrogate model can be seen as a three steps process:
+
 - Sample selection
 - Construction of the surrogate model
 - Surrogate optimization
 
 The sampling methods are super important for the behaviour of the Surrogate.
 At the moment they are:
+
 - Grid sample
 - Uniform sample
 - Sobol sample
@@ -17,6 +19,7 @@ At the moment they are:
 - Low discrepancy sample
 
 The available surrogates are:
+
 - Linear
 - Radial Basis
 - Kriging
@@ -27,6 +30,7 @@ The available surrogates are:
 After the Surrogate is built, we need to optimize it with respect to some objective function.
 That is, simultaneously looking for a minimum **and** sampling the most unknown region.  
 The available optimization methods are:
+
 - Stochastic RBF (SRBF)
 - Lower confidence bound strategy (LCBS)
 - Expected improvement (EI)

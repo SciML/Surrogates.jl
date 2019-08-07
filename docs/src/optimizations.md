@@ -1,4 +1,5 @@
 # Optimization techniques
+
 * SRBF
 ```@docs
 surrogate_optimize(obj::Function,::SRBF,lb,ub,surr::AbstractSurrogate,sample_type::SamplingAlgorithm;maxiters=100,num_new_samples=100)

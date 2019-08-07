@@ -1,6 +1,7 @@
 # Surrogate
 Every surrogate has a different definition depending on the parameters needed.
 However, they have in common:
+
 1. ```add_point!(::AbstractSurrogate,x_new,y_new)```
 2. ```AbstractSurrogate(value)```
 The first function adds a sample point to the surrogate, thus changing the internal
@@ -45,6 +46,7 @@ NeuralSurrogate(x,y,lb,ub,model,loss,opt,n_echos)
 # Creating another surrogate
 It's great that you want to add another surrogate to the library!
 You will need to:
+
 1. Define a new mutable struct and a constructor function
 2. Define add\_point!(your\_surrogate::AbstactSurrogate,x\_new,y\_new)
 3. Define your\_surrogate(value) for the approximation
