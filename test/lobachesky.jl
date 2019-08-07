@@ -5,7 +5,6 @@ using QuadGK
 using Cubature
 
 #1D
-
 obj = x -> 3*x + log(x)
 a = 1.0
 b = 4.0
@@ -28,7 +27,7 @@ add_point!(my_loba,[1.23,3.45],[5.20,109.67])
 obj = x -> x[1] + log(x[2])
 lb = [0.0,0.0]
 ub = [8.0,8.0]
-alpha = 2.4
+alpha = [2.4,2.4]
 n = 8
 x = sample(3200,lb,ub,SobolSample())
 y = obj.(x)

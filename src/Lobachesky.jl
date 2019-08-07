@@ -57,7 +57,7 @@ function phi_njND(point,x,alpha,n)
     s = 1.0
     d = length(x)
     for h = 1:d
-        a = phi_nj1D(point[h],x[h],alpha,n)
+        a = phi_nj1D(point[h],x[h],alpha[h],n)
         s = s*a
     end
     return s
@@ -80,9 +80,6 @@ LobacheskySurrogate(x,y,alpha,n::Int,lb,ub)
 Build the Lobachesky surrogate with parameters alpha and n.
 """
 function LobacheskySurrogate(x,y,alpha,n::Int,lb,ub)
-    if alpha > 4 || alpha < 0
-        error("Alpha must be between 0 and 4")
-    end
     if n % 2 != 0
         error("Parameter n must be even")
     end
@@ -150,9 +147,9 @@ function lobachesky_integral(loba::LobacheskySurrogate,lb,ub)
     for j = 1:length(loba.x)
         I = 1.0
         for i = 1:d
-            upper = loba.alpha*(ub[i] - loba.x[j][i])
-            lower = loba.alpha*(lb[i] - loba.x[j][i])
-            I *= 1/loba.alpha*(_phi_int(upper,loba.n) - _phi_int(lower,loba.n))
+            upper = loba.alpha[i]*(ub[i] - loba.x[j][i])
+            lower = loba.alpha[i]*(lb[i] - loba.x[j][i])
+            I *= 1/loba.alpha[i]*(_phi_int(upper,loba.n) - _phi_int(lower,loba.n))
         end
         val = val + loba.coeff[j]*I
     end
