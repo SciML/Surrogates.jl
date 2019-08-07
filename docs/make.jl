@@ -12,3 +12,8 @@ makedocs(
     "Contributing" => "contributing.md"
     ]
 )
+
+
+deploydocs(
+   repo = "github.com/JuliaDiffEq/Surrogates.jl.git",
+)
