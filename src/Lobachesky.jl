@@ -74,7 +74,11 @@ function _calc_loba_coeffND(x,y,alpha,n)
     Sym = Symmetric(D,:U)
     return Sym\y
 end
+"""
+LobacheskySurrogate(x,y,alpha,n::Int,lb,ub)
 
+Build the Lobachesky surrogate with parameters alpha and n.
+"""
 function LobacheskySurrogate(x,y,alpha,n::Int,lb,ub)
     if alpha > 4 || alpha < 0
         error("Alpha must be between 0 and 4")
@@ -134,6 +138,12 @@ function lobachesky_integral(loba::LobacheskySurrogate,lb::Number,ub::Number)
     return val
 end
 
+"""
+lobachesky_integral(loba::LobacheskySurrogate,lb,ub)
+
+Calculates the integral of the Lobachesky surrogate, which has a closed form.
+
+"""
 function lobachesky_integral(loba::LobacheskySurrogate,lb,ub)
     d = length(lb)
     val = zero(eltype(loba.y[1]))

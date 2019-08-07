@@ -75,7 +75,14 @@ function add_point!(my_n::NeuralSurrogate,x_new,y_new)
     nothing
 end
 
+"""
+NeuralSurrogate(x,y,lb,ub,model,loss,opt,n_echos)
 
+- model: Flux layers
+- loss: loss function
+- opt: optimization function
+
+"""
 function NeuralSurrogate(x,y,lb,ub,model,loss,opt,n_echos)
     X = Array{Float64,2}(undef,length(x),length(x[1]))
     for j = 1:length(x)

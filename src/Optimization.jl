@@ -30,13 +30,36 @@ function merit_function(point,w,surr::AbstractSurrogate,s_max,s_min,d_max,d_min,
 end
 
 
+
+
 """
-SRBF ND:
-surrogate_optimize(obj::Function,::SRBF,lb,ub,surr::AbstractSurrogate,sample_type::SamplingAlgorithm;maxiters=100,num_new_samples=100)
+The main idea is to pick the new evaluations from a set of candidate points where each candidate point is generated as an N(0, sigma^2)
+distributed perturbation from the current best solution.
+The value of sigma is modified based on progress and follows the same logic as
+in many trust region methods; we increase sigma if we make a lot of progress
+(the surrogate is accurate) and decrease sigma when we aren’t able to make progress
+(the surrogate model is inaccurate).
+More details about how sigma is updated is given in the original papers.
+
+After generating the candidate points we predict their objective function value
+and compute the minimum distance to previously evaluated point.
+Let the candidate points be denoted by C and let the function value predictions
+be s(x\\_i) and the distance values be d(x\\_i), both rescaled through a
+linear transformation to the interval [0,1]. This is done to put the values on
+the same scale.
+The next point selected for evaluation is the candidate point x that minimizes
+the weighted-distance merit function:
+
+``merit(x) = ws(x) + (1-w)(1-d(x))``
+
+where `` 0 \\leq w \\leq 1 ``.
+That is, we want a small function value prediction and a large minimum distance
+from previously evalauted points.
+The weight w is commonly cycled between
+a few values to achieve both exploitation and exploration.
+When w is close to zero we do pure exploration while w close to 1 corresponds to explotation.
 """
 function surrogate_optimize(obj::Function,::SRBF,lb,ub,surr::AbstractSurrogate,sample_type::SamplingAlgorithm;maxiters=100,num_new_samples=100)
-#Suggested by:
-#https://www.mathworks.com/help/gads/surrogate-optimization-algorithm.html
     scale = 0.2
     success = 0
     failure = 0
@@ -317,11 +340,11 @@ function surrogate_optimize(obj::Function,::SRBF,lb::Number,ub::Number,surr::Abs
 end
 
 """
-LCBS 1D
-Implementation of Lower Confidence Bound (LCB), goal is to minimize:
-LCB(x) := E[x] - k * sqrt(Var[x]), default value of k = 2
-https://pysot.readthedocs.io/en/latest/options.html#strategy
-surrogate_optimize(obj::Function,::LCBS,lb::Number,ub::Number,krig::Kriging,sample_type::SamplingAlgorithm;maxiters=100,num_new_samples=100)
+This is an implementation of Lower Confidence Bound (LCB),
+a popular acquisition function in Bayesian optimization.
+Under a Gaussian process (GP) prior, the goal is to minimize:
+``LCB(x) := E[x] - k * \\sqrt{(V[x])}``
+default value ``k = 2``.
 """
 function surrogate_optimize(obj::Function,::LCBS,lb::Number,ub::Number,krig::Kriging,sample_type::SamplingAlgorithm;maxiters=100,num_new_samples=100)
     #Default value
@@ -372,11 +395,13 @@ function surrogate_optimize(obj::Function,::LCBS,lb::Number,ub::Number,krig::Kri
 end
 
 """
-LCBS ND
-Implementation of Lower Confidence Bound (LCB), goal is to minimize:
-LCB(x) := E[x] - k * sqrt(Var[x]), default value of k = 2
-https://pysot.readthedocs.io/en/latest/options.html#strategy
-surrogate_optimize(obj::Function,::LCBS,lb,ub,krig::Kriging,sample_type::SamplingAlgorithm;maxiters=100,num_new_samples=100)
+This is an implementation of Lower Confidence Bound (LCB),
+a popular acquisition function in Bayesian optimization.
+Under a Gaussian process (GP) prior, the goal is to minimize:
+
+``LCB(x) := E[x] - k * \\sqrt{(V[x])}``
+
+default value ``k = 2``.
 """
 function surrogate_optimize(obj::Function,::LCBS,lb,ub,krig::Kriging,sample_type::SamplingAlgorithm;maxiters=100,num_new_samples=100)
     #Default value
@@ -431,7 +456,6 @@ end
 
 """
 Expected improvement method 1D
-surrogate_optimize(obj::Function,::EI,lb::Number,ub::Number,krig::Kriging,sample_type::SamplingAlgorithm;maxiters=100,num_new_samples=100)
 """
 function surrogate_optimize(obj::Function,::EI,lb::Number,ub::Number,krig::Kriging,sample_type::SamplingAlgorithm;maxiters=100,num_new_samples=100)
         dtol = 1e-3*norm(ub-lb)
@@ -482,8 +506,14 @@ function surrogate_optimize(obj::Function,::EI,lb::Number,ub::Number,krig::Krigi
 end
 
 """
-Expected improvement method ND
-surrogate_optimize(obj::Function,::EI,lb,ub,krig::Kriging,sample_type::SamplingAlgorithm;maxiters=100,num_new_samples=100)
+This is an implementation of Expected Improvement (EI),
+arguably the most popular acquisition function in Bayesian optimization.
+Under a Gaussian process (GP) prior, the goal is to
+maximize expected improvement:
+
+``EI(x) := E[max(f_{best}-f(x),0)``
+
+
 """
 function surrogate_optimize(obj::Function,::EI,lb,ub,krig::Kriging,sample_type::SamplingAlgorithm;maxiters=100,num_new_samples=100)
         dtol = 1e-3*norm(ub-lb)
@@ -714,10 +744,18 @@ function select_evaluation_point_ND(new_points,surrn::AbstractSurrogate,numb_ite
 end
 
 """
-surrogate_optimize(obj::Function,::DYCORS,lb,ub,surr::AbstractSurrogate,sample_type::SamplingAlgorithm;maxiters=100,num_new_samples=100)
+This is an implementation of the DYCORS strategy by Regis and Shoemaker:
 
-DYCORS optimization method in ND, following closely: Combining radial basis function
-surrogates and dynamic coordinate search in high-dimensional expensive black-box optimzation".
+Rommel G Regis and Christine A Shoemaker.
+Combining radial basis function surrogates and dynamic coordinate search in high-dimensional expensive black-box optimization.
+Engineering Optimization, 45(5): 529–555, 2013.
+
+This is an extension of the SRBF strategy that changes how the
+candidate points are generated. The main idea is that many objective
+functions depend only on a few directions so it may be advantageous to
+perturb only a few directions. In particular, we use a perturbation probability
+to perturb a given coordinate and decrease this probability after each function
+evaluation so fewer coordinates are perturbed later in the optimization.
 """
 function surrogate_optimize(obj::Function,::DYCORS,lb,ub,surrn::AbstractSurrogate,sample_type::SamplingAlgorithm;maxiters=100,num_new_samples=100)
     x_best = collect(surrn.x[argmin(surrn.y)])
