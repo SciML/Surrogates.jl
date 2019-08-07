@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Tutorials · Surrogates.jl</title><link href="https://cdnjs.cloudflare.com/ajax/libs/normalize/4.2.0/normalize.min.css" rel="stylesheet" type="text/css"/><link href="https://fonts.googleapis.com/css?family=Lato|Roboto+Mono" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.6.3/css/font-awesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/default.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL=".."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.2.0/require.min.js" data-main="../assets/documenter.js"></script><script src="../siteinfo.js"></script><script src="../../versions.js"></script><link href="../assets/documenter.css" rel="stylesheet" type="text/css"/></head><body><nav class="toc"><h1>Surrogates.jl</h1><select id="version-selector" onChange="window.location.href=this.value" style="visibility: hidden"></select><form class="search" id="search-form" action="../search/"><input id="search-query" name="q" type="text" placeholder="Search docs"/></form><ul><li><a class="toctext" href="../">Overview</a></li><li><span class="toctext">User guide</span><ul><li><a class="toctext" href="../samples/">Samples</a></li><li><a class="toctext" href="../surrogate/">Surrogates</a></li><li><a class="toctext" href="../optimizations/">Optimization</a></li></ul></li><li class="current"><a class="toctext" href>Tutorials</a><ul class="internal"><li><a class="toctext" href="#Surrogates-101-1">Surrogates 101</a></li><li><a class="toctext" href="#Kriging-standard-error-1">Kriging standard error</a></li><li><a class="toctext" href="#Lobachesky-integral-1">Lobachesky integral</a></li></ul></li><li><a class="toctext" href="../contributing/">Contributing</a></li></ul></nav><article id="docs"><header><nav><ul><li><a href>Tutorials</a></li></ul><a class="edit-page" href="https://github.com/JuliaDiffEq/Surrogates.jl/blob/master/docs/src/tutorials.md"><span class="fa"></span> Edit on GitHub</a></nav><hr/><div id="topbar"><span>Tutorials</span><a class="fa fa-bars" href="#"></a></div></header><h2><a class="nav-anchor" id="Surrogates-101-1" href="#Surrogates-101-1">Surrogates 101</a></h2><p>Let&#39;s start with something easy to get our hands dirty. I want to build a surrogate for <span>$f(x) = log(x)*x^2+x^3$</span>. Let&#39;s choose the radial basis surrogate.</p><pre><code class="language-none">using Surrogates
+f = x -&gt; log(x)*x^2+x^3
+lb = 1.0
+ub = 10.0
+x = sample(50,lb,ub,SobolSample())
+y = f.(x)
+thin_plate_spline = x -&gt; x^2*log(x)
+q = 2
+my_radial_basis = RadialBasis(x,y,lb,ub,thin_plate_spline,q)
+
+#I want an approximation at 5.4
+approx = my_radial_basis(5.4)</code></pre><p>Let&#39;s now see an example in 2D.</p><pre><code class="language-none">using Surrogates
+f = x -&gt; x[1]*x[2]
+lb = [1.0,2.0]
+ub = [10,8.5]
+x = sample(50,lb,ub,SobolSample())
+y = f.(x)
+thin_plate_spline = x -&gt; x^2*log(x)
+q = 2
+my_radial_basis = RadialBasis(x,y,[lb,ub],thin_plate_spline,q)
+
+#I want an approximation at (1.0,1.4)
+approx = my_radial_basis((1.0,1.4))</code></pre><h2><a class="nav-anchor" id="Kriging-standard-error-1" href="#Kriging-standard-error-1">Kriging standard error</a></h2><p>Let&#39;s now use the Kriging surrogate, which is a single output Gaussian process. This surrogate has a nice feature:not only it approximates the solution at a point, it also calculates the standard error at such point. Let&#39;s see an example:</p><pre><code class="language-none">using Surrogates
+f = x -&gt; exp(x)*x^2+x^3
+lb = 0.0
+ub = 10.0
+x = sample(100,lb,ub,UniformSample())
+y = f.(x)
+p = 1.9
+my_krig = Kriging(x,y,p)
+
+#I want an approximation at 5.4
+approx = my_radial_basis(5.4)
+
+#I want to find the standard error at 5.4
+std_err = std_error_at_point(my_krig,5.4)</code></pre><p>Let&#39;s now optimize the Kriging surrogate using Lower confidence bound method, this is just a one-liner:</p><pre><code class="language-none">surrogate_optimize(f,LCBS(),a,b,my_krig,UniformSample())</code></pre><h2><a class="nav-anchor" id="Lobachesky-integral-1" href="#Lobachesky-integral-1">Lobachesky integral</a></h2><p>The Lobachesky surrogate has the nice feature of having a closed formula for its integral, which is something that other surrogates are missing. Let&#39;s compare it with QuadGK.</p><pre><code class="language-none">using Surrogates
+using QuadGK
+obj = x -&gt; 3*x + log(x)
+a = 1.0
+b = 4.0
+x = sample(2000,a,b,SobolSample())
+y = obj.(x)
+alpha = 2.0
+n = 6
+my_loba = LobacheskySurrogate(x,y,alpha,n,a,b)
+
+#1D integral
+int_1D = lobachesky_integral(my_loba,a,b)
+int = quadgk(obj,a,b)
+int_val_true = int[1]-int[2]
+@test abs(int_1D - int_val_true) &lt; 10^-5</code></pre><footer><hr/><a class="previous" href="../optimizations/"><span class="direction">Previous</span><span class="title">Optimization</span></a><a class="next" href="../contributing/"><span class="direction">Next</span><span class="title">Contributing</span></a></footer></article></body></html>
