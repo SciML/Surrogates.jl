@@ -155,3 +155,41 @@ function lobachesky_integral(loba::LobacheskySurrogate,lb,ub)
     end
     return val
 end
+
+
+"""
+lobachesky_integrate_dimension(loba::LobacheskySurrogate,lb,ub,dimension)
+
+Integrating the surrogate on selected dimension dim
+
+"""
+function lobachesky_integrate_dimension(loba::LobacheskySurrogate,lb,ub,dim::Int)
+    gamma_d = zero(loba.coeff[1])
+    n = length(loba.x)
+    for i = 1:n
+        a = loba.alpha[dim]*(ub[dim] - loba.x[i][dim])
+        b = loba.alpha[dim]*(lb[dim] - loba.x[i][dim])
+        int = 1/loba.alpha[dim]*(_phi_int(a,loba.n) - _phi_int(b,loba.n))
+        gamma_d = gamma_d + loba.coeff[i]*int
+    end
+    new_coeff = loba.coeff .* gamma_d
+
+    if length(lb) == 2
+        # Integrating one dimension -> 1D
+        new_x = zeros(eltype(loba.x[1][1]),n)
+        for i = 1:n
+            new_x[i] = deleteat!(collect(loba.x[i]),dim)[1]
+        end
+    else
+        dummy = loba.x[1]
+        dummy = deleteat!(collect(dummy),dim)
+        new_x = typeof(Tuple(dummy))[]
+        for i = 1:n
+            push!(new_x,Tuple(deleteat!(collect(loba.x[i]),dim)))
+        end
+    end
+    new_lb = deleteat!(lb,dim)
+    new_ub = deleteat!(ub,dim)
+    new_loba = deleteat!(loba.alpha,dim)
+    return LobacheskySurrogate(new_x,loba.y,loba.alpha,loba.n,new_lb,new_ub,new_coeff)
+end
