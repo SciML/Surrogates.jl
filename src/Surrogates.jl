@@ -20,6 +20,7 @@ include("LinearSurrogate.jl")
 include("RandomForestSurrogate.jl")
 include("SVMSurrogate.jl")
 include("NeuralSurrogate.jl")
+include("InverseDistanceSurrogate.jl")
 
 export AbstractSurrogate, SamplingAlgorithm
 export Kriging, RadialBasis, add_point!, current_estimate, std_error_at_point
@@ -30,5 +31,6 @@ export LinearSurrogate
 export RandomForestSurrogate
 export SVMSurrogate
 export NeuralSurrogate
+export InverseDistanceSurrogate
 
 end

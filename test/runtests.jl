@@ -10,3 +10,4 @@ using Surrogates
 @testset "RandomForestSurrogate" begin include("random_forest.jl") end
 @testset "SVMSurrogate" begin include("SVMSurrogate.jl") end
 @testset "NeuralSurrogate" begin include("neuralSurrogate.jl") end
+@testset "InverseDistanceSurrogate" begin include("InverseDistanceSurrogate.jl") end 
