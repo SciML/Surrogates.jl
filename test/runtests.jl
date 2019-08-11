@@ -1,6 +1,7 @@
 using Test
 using Surrogates
 
+
 @testset "Radials.jl" begin include("Radials.jl") end
 @testset "Kriging.jl" begin include("Kriging.jl") end
 @testset "Sampling" begin include("sampling.jl") end
@@ -10,4 +11,4 @@ using Surrogates
 @testset "RandomForestSurrogate" begin include("random_forest.jl") end
 @testset "SVMSurrogate" begin include("SVMSurrogate.jl") end
 @testset "NeuralSurrogate" begin include("neuralSurrogate.jl") end
-@testset "InverseDistanceSurrogate" begin include("InverseDistanceSurrogate.jl") end 
+@testset "InverseDistanceSurrogate" begin include("inverseDistanceSurrogate.jl") end
