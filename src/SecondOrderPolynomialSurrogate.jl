@@ -13,11 +13,12 @@ end
 
 function SecondOrderPolynomialSurrogate(x,y,lb::Number,ub::Number)
     n = length(x)
-    X = ones(eltype(x[1]),n,3)
+    d = 1
+    X = ones(eltype(x[1]),n,3*d)
     X[:,2] = x
     X[:,3] = x.^2
     β = pinv(X'*X)*X'*y
-    return SecondOrderPolynomialSurrogate(X,y,β,lb,ub)
+    return SecondOrderPolynomialSurrogate(x,y,β,lb,ub)
 end
 
 function (sec_ord::SecondOrderPolynomialSurrogate)(val::Number)
@@ -27,7 +28,7 @@ end
 function SecondOrderPolynomialSurrogate(x,y,lb,ub)
     n = length(x)
     d = length(lb)
-    X = ones(eltype(x[1]),n,1+d+(d-1)+d)
+    X = ones(eltype(x[1]),n,3*d)
     for j = 1:d
         X[:,j+1] =[x[i][j] for i=1:n]
     end
@@ -39,7 +40,7 @@ function SecondOrderPolynomialSurrogate(x,y,lb,ub)
     end
     β = pinv(X'*X)*X'*y
 
-    return SecondOrderPolynomialSurrogate(X,y,β,lb,ub)
+    return SecondOrderPolynomialSurrogate(x,y,β,lb,ub)
 end
 
 function (my_second_ord::SecondOrderPolynomialSurrogate)(val)
@@ -55,22 +56,36 @@ function (my_second_ord::SecondOrderPolynomialSurrogate)(val)
     for j = 1:d
         X[j+2*d] = val[j]^2
     end
-    return X*my_second_ord.β
+    return (X*my_second_ord.β)[1]
 end
 
 function add_point!(my_second::SecondOrderPolynomialSurrogate,x_new,y_new)
-    if length(my_second.lb) == 1
+    d = length(my_second.lb)
+    if d == 1
         #1D
-        for j = 1:length(x_new)
-            new = [1 x_new[j] x_new[j]^2]
-            my_second.x = vcat(my_second.x,new)
-        end
+        my_second.x = vcat(my_second.x,x_new)
         my_second.y = vcat(my_second.y,y_new)
-        my_second.β = pinv(my_second.x'*my_second.x)*my_second.x'*my_second.y
+        n = length(my_second.x)
+        X = ones(eltype(my_second.x[1]),n,3*d)
+        X[:,2] = my_second.x
+        X[:,3] = my_second.x.^2
+        my_second.β = pinv(X'*X)*X'*my_second.y
     else
         #ND
+        my_second.x = vcat(my_second.x,x_new)
         my_second.y = vcat(my_second.y,y_new)
-        my_second.β = pinv(my_second.x'*my_second.x)*my_second.x'*my_second.y
+        n = length(my_second.x)
+        X = ones(eltype(my_second.x[1]),n,3*d)
+        for j = 1:d
+            X[:,j+1] =[my_second.x[i][j] for i=1:n]
+        end
+        for j = 1:d-1
+            X[:,j+d+1] = [my_second.x[i][j]*my_second.x[i][j+1] for i = 1:n]
+        end
+        for j = 1:d
+            X[:,j+2*d] = [my_second.x[i][j]^2 for i=1:n]
+        end
+        my_second.β = pinv(X'*X)*X'*my_second.y
     end
     nothing
 end
