@@ -8,9 +8,11 @@ T is the step dx for lb:dx:ub
 struct GridSample{T} <: SamplingAlgorithm
     dx::T
 end
+
 struct UniformSample <: SamplingAlgorithm end
 struct SobolSample <: SamplingAlgorithm end
 struct LatinHypercubeSample <: SamplingAlgorithm end
+
 """
 LowDiscrepancySample{T}
 
@@ -19,6 +21,17 @@ T is the base for the sequence
 struct LowDiscrepancySample{T} <: SamplingAlgorithm
     base::T
 end
+
+struct NormalSample{μ,σ} <: SamplingAlgorithm
+    μ::μ
+    σ::σ
+end
+
+struct CauchySample{μ,σ} <: SamplingAlgorithm
+    μ::μ
+    σ::σ
+end
+
 
 """
 sample(n,lb,ub,S::GridSample)
@@ -135,6 +148,34 @@ function sample(n,lb,ub,S::LowDiscrepancySample)
         @inbounds for c = 1:d
             x[:,c] = (ub[c]-lb[c])*x[:,c] .+ lb[c]
         end
+        return Tuple.(x)
+    end
+end
+
+"""
+sample(n,d,N::NormalSample)
+
+Returns a Tuple containig numbers normally distributed
+"""
+function sample(n,d,N::NormalSample)
+    if d == 1
+        return rand(Normal(N.μ,N.σ),n)
+    else
+        x = [[rand(Normal(N.μ,N.σ)) for j in 1:d] for i in 1:n]
+        return Tuple.(x)
+    end
+end
+
+"""
+sample(n,::CauchySample)
+
+Returns a Tuple containig numbers Cauchy distributed
+"""
+function sample(n,d,C::CauchySample)
+    if d == 1
+        return rand(Cauchy(C.μ,C.σ),n)
+    else
+        x = [[rand(Normal(C.μ,C.σ)) for j in 1:d] for i in 1:n]
         return Tuple.(x)
     end
 end
