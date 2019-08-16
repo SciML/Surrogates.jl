@@ -22,16 +22,7 @@ struct LowDiscrepancySample{T} <: SamplingAlgorithm
     base::T
 end
 
-struct NormalSample{μ,σ} <: SamplingAlgorithm
-    μ::μ
-    σ::σ
-end
-
-struct CauchySample{μ,σ} <: SamplingAlgorithm
-    μ::μ
-    σ::σ
-end
-
+struct RandomSample <: SamplingAlgorithm end
 
 """
 sample(n,lb,ub,S::GridSample)
@@ -153,29 +144,15 @@ function sample(n,lb,ub,S::LowDiscrepancySample)
 end
 
 """
-sample(n,d,N::NormalSample)
+sample(n,d,D::Distributio)
 
-Returns a Tuple containig numbers normally distributed
+Returns a Tuple containig numbers distributed as D
 """
-function sample(n,d,N::NormalSample)
+function sample(n,d,D::Distribution)
     if d == 1
-        return rand(Normal(N.μ,N.σ),n)
+        return rand(D,n)
     else
-        x = [[rand(Normal(N.μ,N.σ)) for j in 1:d] for i in 1:n]
-        return Tuple.(x)
-    end
-end
-
-"""
-sample(n,::CauchySample)
-
-Returns a Tuple containig numbers Cauchy distributed
-"""
-function sample(n,d,C::CauchySample)
-    if d == 1
-        return rand(Cauchy(C.μ,C.σ),n)
-    else
-        x = [[rand(Normal(C.μ,C.σ)) for j in 1:d] for i in 1:n]
+        x = [[rand(D) for j in 1:d] for i in 1:n]
         return Tuple.(x)
     end
 end
