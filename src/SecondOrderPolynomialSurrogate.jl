@@ -17,7 +17,7 @@ function SecondOrderPolynomialSurrogate(x,y,lb::Number,ub::Number)
     X = ones(eltype(x[1]),n,3*d)
     X[:,2] = x
     X[:,3] = x.^2
-    β = (X'*X)\(X'*y)
+    β = X\y
     return SecondOrderPolynomialSurrogate(x,y,β,lb,ub)
 end
 
@@ -38,7 +38,7 @@ function SecondOrderPolynomialSurrogate(x,y,lb,ub)
     for j = 1:d
         X[:,j+2*d] = [x[i][j]^2 for i=1:n]
     end
-    β = (X'*X)\(X'*y)
+    β = X\y
     return SecondOrderPolynomialSurrogate(x,y,β,lb,ub)
 end
 
@@ -68,7 +68,7 @@ function add_point!(my_second::SecondOrderPolynomialSurrogate,x_new,y_new)
         X = ones(eltype(my_second.x[1]),n,3*d)
         X[:,2] = my_second.x
         X[:,3] = my_second.x.^2
-        my_second.β = (X'*X)\(X'*my_second.y)
+        my_second.β = X\my_second.y
     else
         #ND
         my_second.x = vcat(my_second.x,x_new)
@@ -84,7 +84,7 @@ function add_point!(my_second::SecondOrderPolynomialSurrogate,x_new,y_new)
         for j = 1:d
             X[:,j+2*d] = [my_second.x[i][j]^2 for i=1:n]
         end
-        my_second.β = (X'*X)\(X'*my_second.y)
+        my_second.β = X\my_second.y
     end
     nothing
 end
