@@ -11,7 +11,6 @@ val = my_second_order_poly(5.0)
 add_point!(my_second_order_poly,5.0,238.86)
 add_point!(my_second_order_poly,[6.0,7.0],[722.84,2133.94])
 
-
 #ND
 lb = [0.0,0.0]
 ub = [10.0,10.0]
