@@ -48,7 +48,7 @@ p = 1.9
 my_krig = Kriging(x,y,p)
 
 #I want an approximation at 5.4
-approx = my_radial_basis(5.4)
+approx = my_krig(5.4)
 
 #I want to find the standard error at 5.4
 std_err = std_error_at_point(my_krig,5.4)
