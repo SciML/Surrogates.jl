@@ -31,7 +31,7 @@ p = 1.9
 my_krig = Kriging(x,y,p)
 
 #I want an approximation at 5.4
-approx = my_radial_basis(5.4)
+approx = my_krig(5.4)
 
 #I want to find the standard error at 5.4
 std_err = std_error_at_point(my_krig,5.4)</code></pre><p>Let&#39;s now optimize the Kriging surrogate using Lower confidence bound method, this is just a one-liner:</p><pre><code class="language-none">surrogate_optimize(f,LCBS(),a,b,my_krig,UniformSample())</code></pre><h2><a class="nav-anchor" id="Lobachesky-integral-1" href="#Lobachesky-integral-1">Lobachesky integral</a></h2><p>The Lobachesky surrogate has the nice feature of having a closed formula for its integral, which is something that other surrogates are missing. Let&#39;s compare it with QuadGK.</p><pre><code class="language-none">using Surrogates
