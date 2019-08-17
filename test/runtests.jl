@@ -12,3 +12,4 @@ using Surrogates
 @testset "SVMSurrogate" begin include("SVMSurrogate.jl") end
 @testset "NeuralSurrogate" begin include("neuralSurrogate.jl") end
 @testset "InverseDistanceSurrogate" begin include("inverseDistanceSurrogate.jl") end
+@testset "SecondOrderPolynomialSurrogate" begin include("secondOrderPolynomialSurrogate.jl") end

@@ -105,6 +105,15 @@ y = objective_function_ND.(x)
 my_inverse_ND = InverseDistanceSurrogate(x,y,p,lb,ub)
 surrogate_optimize(objective_function_ND,SRBF(),lb,ub,my_inverse_ND,SobolSample(),maxiters=15)
 
+#SecondOrderPolynomialSurrogate
+lb = [0.0,0.0]
+ub = [10.0,10.0]
+obj_ND = x -> log(x[1])*exp(x[2])
+x = sample(5,lb,ub,UniformSample())
+y = obj_ND.(x)
+my_second_order_poly_ND = SecondOrderPolynomialSurrogate(x,y,lb,ub)
+surrogate_optimize(obj_ND,SRBF(),lb,ub,my_second_order_poly_ND,SobolSample(),maxiters=15)
+
 ####### LCBS #########
 ######1D######
 objective_function = x -> 2*x+1
