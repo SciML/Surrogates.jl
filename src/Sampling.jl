@@ -8,9 +8,11 @@ T is the step dx for lb:dx:ub
 struct GridSample{T} <: SamplingAlgorithm
     dx::T
 end
+
 struct UniformSample <: SamplingAlgorithm end
 struct SobolSample <: SamplingAlgorithm end
 struct LatinHypercubeSample <: SamplingAlgorithm end
+
 """
 LowDiscrepancySample{T}
 
@@ -19,6 +21,8 @@ T is the base for the sequence
 struct LowDiscrepancySample{T} <: SamplingAlgorithm
     base::T
 end
+
+struct RandomSample <: SamplingAlgorithm end
 
 """
 sample(n,lb,ub,S::GridSample)
@@ -135,6 +139,20 @@ function sample(n,lb,ub,S::LowDiscrepancySample)
         @inbounds for c = 1:d
             x[:,c] = (ub[c]-lb[c])*x[:,c] .+ lb[c]
         end
+        return Tuple.(x)
+    end
+end
+
+"""
+sample(n,d,D::Distributio)
+
+Returns a Tuple containig numbers distributed as D
+"""
+function sample(n,d,D::Distribution)
+    if d == 1
+        return rand(D,n)
+    else
+        x = [[rand(D) for j in 1:d] for i in 1:n]
         return Tuple.(x)
     end
 end
