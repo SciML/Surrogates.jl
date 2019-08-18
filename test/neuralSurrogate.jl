@@ -16,7 +16,6 @@ my_neural = NeuralSurrogate(x,y,a,b,model,loss,opt,n_echos)
 add_point!(my_neural,8.5,20.0)
 add_point!(my_neural,[3.2,3.5],[7.4,8.0])
 val = my_neural(5.0)
-println(val)
 
 #ND
 

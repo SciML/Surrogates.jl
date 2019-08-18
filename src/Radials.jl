@@ -21,9 +21,9 @@ function (rad::RadialBasis)(val)
     q = rad.dim_poly
     central_point = zeros(eltype(rad.x[1]), d)
     sum = zero(eltype(rad.x[1]))
-    @inbounds for i = 1:d
-        central_point[i] = (rad.bounds[i][1]+rad.bounds[i][2])/2
-        sum += (rad.bounds[i][2]-rad.bounds[i][1])/2
+    for i = 1:d
+        central_point[i] = (rad.bounds[1][i]+rad.bounds[2][i])/2
+        sum += (rad.bounds[2][i]-rad.bounds[1][i])/2
     end
     half_diameter_domain = sum/d
     approx = zero(eltype(rad.x[1]))
@@ -57,7 +57,6 @@ end
 #=
 linear_basis_function = Basis(z->norm(z), 1)
 cubic_basis_function = Basis(z->norm(z)^3, 2)
-thinplate_basis_function = Basis(z->norm(z)^2*log(norm(z)),2)
 function multiquadric_basis_function(lambda)
     return Basis(z->sqrt(norm(z)^2 + lambda^2),1)
 end
@@ -119,12 +118,11 @@ function _calc_coeffs(x,y,bounds,phi,q)
     d = length(x[1])
     central_point = zeros(eltype(x[1]), d)
     sum = zero(eltype(x[1]))
-    @inbounds for i = 1:d
-        central_point[i] = (bounds[i][1]+bounds[i][2])/2
-        sum += (bounds[i][2]-bounds[i][1])/2
+    for i = 1:d
+        central_point[i] = (bounds[1][i]+bounds[2][i])/2
+        sum += (bounds[2][i]-bounds[1][i])/2
     end
     half_diameter_domain = sum/d
-
     size = n+q
     D = zeros(eltype(x[1]), size, size)
     d = zeros(eltype(x[1]),size)
