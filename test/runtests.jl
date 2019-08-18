@@ -2,8 +2,8 @@ using Test
 using Surrogates
 
 
-@testset "Radials.jl" begin include("Radials.jl") end
-@testset "Kriging.jl" begin include("Kriging.jl") end
+@testset "Radials.jl" begin include("radials.jl") end
+@testset "Kriging.jl" begin include("kriging.jl") end
 @testset "Sampling" begin include("sampling.jl") end
 @testset "Optimization" begin include("optimization.jl") end
 @testset "LinearSurrogate" begin include("linearSurrogate.jl") end
