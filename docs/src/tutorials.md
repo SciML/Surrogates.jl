@@ -26,7 +26,7 @@ x = sample(50,lb,ub,SobolSample())
 y = f.(x)
 #thin_plate_spline = x -> x^2*log(x)
 #q = 2
-thin_plate_spline = z -> norm(x)
+linear = z -> norm(x)
 q = 1
 my_radial_basis = RadialBasis(x,y,[lb,ub],thin_plate_spline,q)
 
