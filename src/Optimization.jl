@@ -906,6 +906,7 @@ function surrogate_optimize(obj::Function,sop1::SOP,lb::Number,ub::Number,surrSO
 
         #2) Second tier ranking
         Fronts = II_tier_ranking_1D(Fronts_I,surrSOP)
+        println(Fronts)
         ranked_list = []
         for i = 1:length(Fronts)
             for j = 1:length(Fronts[i])
@@ -1008,9 +1009,10 @@ function surrogate_optimize(obj::Function,sop1::SOP,lb::Number,ub::Number,surrSO
                 r_centers[i] = r_centers_global[i]
                 N_failures[i] = N_failures_global[i]
             end
-            #1D it is just the length of the interval
-            #println(Hypervolume_Pareto_improving_1D(new_points[i,1],Fronts[1]))
-            #=
+
+            f_1 = new_points[i,2]
+            f_2 = obj2_1D(f_1,surrSOP.x)
+
             if (Hypervolume_Pareto_improving_1D(new_points[i,1],Fronts[1])<tau)
                 #failure
                 r_centers[i] = r_centers[i]/2
@@ -1020,16 +1022,17 @@ function surrogate_optimize(obj::Function,sop1::SOP,lb::Number,ub::Number,surrSO
                     push!(N_tenures_tabu,0)
                 end
             else
-            =#
+
                 #P_i is success
                 #Adaptive_learning
                 add_point!(surrSOP,new_points[i,1],new_points[i,2])
                 push!(r_centers_global,r_centers[i])
                 push!(N_failures_global,N_failures[i])
-            #end
+            end
         end
     end
 end
+
 
 """
 surrogate_optimize(obj::Function,::DYCORS,lb::Number,ub::Number,surr::AbstractSurrogate,sample_type::SamplingAlgorithm;maxiters=100,num_new_samples=100)
