@@ -21,14 +21,12 @@ Let's now see an example in 2D.
 using Surrogates
 f = x -> x[1]*x[2]
 lb = [1.0,2.0]
-ub = [10,8.5]
+ub = [10.0,8.5]
 x = sample(50,lb,ub,SobolSample())
 y = f.(x)
-#thin_plate_spline = x -> x^2*log(x)
-#q = 2
 linear = z -> norm(x)
 q = 1
-my_radial_basis = RadialBasis(x,y,[lb,ub],thin_plate_spline,q)
+my_radial_basis = RadialBasis(x,y,[lb,ub],linear,q)
 
 #I want an approximation at (1.0,1.4)
 approx = my_radial_basis((1.0,1.4))
