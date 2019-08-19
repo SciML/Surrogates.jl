@@ -9,7 +9,7 @@
 
 A surrogate model is an approximation method that mimics the behavior of a computationally
 expensive simulation. In more mathematical terms: suppose we are attempting to optimize a function
-`f(p)`, but each calculation of `f` is very expensive. It may be the case we need to solve a PDE for each point or use advanced numerical linear algebra machinery which is usually costly. The idea is then to develop a surrogate model `g` which approximates `f` by training on previous data collected from evaluations of `f`.
+`f(p)`, but each calculation of `f` is very expensive. It may be the case we need to solve a PDE for each point or use advanced numerical linear algebra machine.add ry which is usually costly. The idea is then to develop a surrogate model `g` which approximates `f` by training on previous data collected from evaluations of `f`.
 The construction of a surrogate model can be seen as a three steps process:
 - Sample selection
 - Construction of the surrogate model
@@ -25,47 +25,8 @@ The construction of a surrogate model can be seen as a three steps process:
 - **Discourse forum:** <https://discourse.julialang.org/>
 - **Slack:** <https://julialang.slack.com> (get an invite from <https://slackinvite.julialang.org>)
 
-## Building Julia
+## Installing Surrogates package
 
-First, make sure you have all the [required
-dependencies](https://github.com/JuliaLang/julia/blob/master/doc/build/build.md#required-build-tools-and-external-libraries) installed.
-Then, acquire the source code by cloning the git repository:
+Using Pkg
 
-    git clone git://github.com/JuliaLang/julia.git
-
-By default you will be building the latest unstable version of
-Julia. However, most users should use the most recent stable version
-of Julia. You can get this version by changing to the Julia directory
-and running:
-
-    git checkout v1.1.1
-
-Now run `make` to build the `julia` executable.
-
-Building Julia requires 2GiB of disk space and approximately 4GiB of virtual memory.
-
-**Note:** The build process will fail badly if any of the build directory's parent directories have spaces or other shell meta-characters such as `$` or `:` in their names (this is due to a limitation in GNU make).
-
-Once it is built, you can run the `julia` executable after you enter your julia directory and run
-
-    ./julia
-
-Your first test of Julia determines whether your build is working
-properly. From the UNIX/Windows command prompt inside the `julia`
-source directory, type `make testall`. You should see output that
-lists a series of running tests; if they complete without error, you
-should be in good shape to start using Julia.
-
-You can read about [getting
-started](https://docs.julialang.org/en/v1/manual/getting-started/)
-in the manual.
-
-In case this default build path did not work, detailed build instructions
-are included in the [build documentation](https://github.com/JuliaLang/julia/blob/master/doc/build).
-
-### Uninstalling Julia
-
-Julia does not install anything outside the directory it was cloned
-into. Julia can be completely uninstalled by deleting this
-directory. Julia packages are installed in `~/.julia` by default, and
-can be uninstalled by deleting `~/.julia`.
+Pkg.add ("Surrogates")
