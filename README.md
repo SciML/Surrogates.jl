@@ -17,28 +17,30 @@ The construction of a surrogate model can be seen as a three steps process:
 
 ## ALL the currently available sampling methods: 
 
-- Random
+- Grid
 - Uniform 
 - Sobol
 - Latin Hypercube
-- Low Discrepancy 
+- Low Discrepancy
+- Random
 
 ## ALL the currently available surrogate models: 
 
 - Kriging
 - Radial Basis Function
-- Space Mapping
-- Gradient-Enhanced Kriging (GEK)
-- Polynomial Response Surfaces
-- Support Vector Machines
+- Linear
+- Second Order Polynomial
+- Support Vector Machines (SVM)
 - Artificial Neural Networks 
 - Random Forests
+- Lobachesky
+- Inverse-distance
 
 ## ALL the currently available optimization methods: 
 
 - SRBF
 - LCBS 
-- DYCOR
+- DYCORS
 - EI
 
 ## Installing Surrogates package
