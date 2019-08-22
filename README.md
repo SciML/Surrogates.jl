@@ -47,5 +47,5 @@ The construction of a surrogate model can be seen as a three steps process:
 
 ```julia
 using Pkg
-Pkg.add ("Surrogates")
+Pkg.add("Surrogates")
 ```
