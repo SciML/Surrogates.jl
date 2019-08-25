@@ -3,12 +3,13 @@ Response surfaces implementantion, following:
 "A Taxonomy of Global Optimization Methods Based on Response Surfaces"
 by DONALD R. JONES
 =#
-mutable struct RadialBasis{F,X,Y,B,C} <: AbstractSurrogate
+mutable struct RadialBasis{F,X,Y,L,U,C} <: AbstractSurrogate
     phi::F
     dim_poly::Int
     x::X
     y::Y
-    bounds::B
+    lb::L
+    ub::U
     coeff::C
 end
 
@@ -21,9 +22,9 @@ function (rad::RadialBasis)(val)
     q = rad.dim_poly
     central_point = zeros(eltype(rad.x[1]), d)
     sum = zero(eltype(rad.x[1]))
-    @inbounds for i = 1:d
-        central_point[i] = (rad.bounds[i][1]+rad.bounds[i][2])/2
-        sum += (rad.bounds[i][2]-rad.bounds[i][1])/2
+    for i = 1:d
+        central_point[i] = (rad.bounds[1][i]+rad.bounds[2][i])/2
+        sum += (rad.bounds[2][i]-rad.bounds[1][i])/2
     end
     half_diameter_domain = sum/d
     approx = zero(eltype(rad.x[1]))
@@ -57,20 +58,19 @@ end
 #=
 linear_basis_function = Basis(z->norm(z), 1)
 cubic_basis_function = Basis(z->norm(z)^3, 2)
-thinplate_basis_function = Basis(z->norm(z)^2*log(norm(z)),2)
 function multiquadric_basis_function(lambda)
     return Basis(z->sqrt(norm(z)^2 + lambda^2),1)
 end
 =#
 
 """
-    RadialBasis(x,y,a::Number,b::Number,phi::Function,q::Int)
+RadialBasis(x,y,a::Number,b::Number,phi::Function,q::Int)
 
 Constructor for RadialBasis surrogate
-- (x,y): sampled points
+- '(x,y)': sampled points
 - '(a,b)': interval of interest
--'phi': radial basis of choice
--'q': number of polynomial elements
+- 'phi': radial basis of choice
+- 'q': number of polynomial elements
 """
 function RadialBasis(x,y,a::Number,b::Number,phi::Function,q::Int)
     coeff = _calc_coeffs(x,y,a,b,phi,q)
@@ -100,7 +100,7 @@ function _calc_coeffs(x,y,a,b,phi,q)
 end
 
 """
-RadialBasis(x,y,bounds,phi::Function,q::Int)
+RadialBasis(x,y,lb,ub,phi::Function,q::Int)
 
 Constructor for RadialBasis surrogate
 
@@ -109,7 +109,8 @@ Constructor for RadialBasis surrogate
 - phi: radial basis of choice
 - q: number of polynomial elements
 """
-function RadialBasis(x,y,bounds,phi::Function,q::Int)
+function RadialBasis(x,y,lb,ub,phi::Function,q::Int)
+    bounds = hcat(lb,ub)
     coeff = _calc_coeffs(x,y,bounds,phi,q)
     RadialBasis(phi,q,x,y,bounds,coeff)
 end
@@ -119,12 +120,11 @@ function _calc_coeffs(x,y,bounds,phi,q)
     d = length(x[1])
     central_point = zeros(eltype(x[1]), d)
     sum = zero(eltype(x[1]))
-    @inbounds for i = 1:d
-        central_point[i] = (bounds[i][1]+bounds[i][2])/2
-        sum += (bounds[i][2]-bounds[i][1])/2
+    for i = 1:d
+        central_point[i] = (bounds[1][i]+bounds[2][i])/2
+        sum += (bounds[2][i]-bounds[1][i])/2
     end
     half_diameter_domain = sum/d
-
     size = n+q
     D = zeros(eltype(x[1]), size, size)
     d = zeros(eltype(x[1]),size)
@@ -150,10 +150,10 @@ end
 Returns the value at point vect[] of the alpha degree monomial centralized.
 
 #Arguments:
--'vect': vector of points i.e [x,y,...,w]
--'alpha': degree
--'half_diameter_domain': half diameter of the domain
--'central_point': central point in the domain
+- 'vect': vector of points i.e [x,y,...,w]
+- 'alpha': degree
+- 'half_diameter_domain': half diameter of the domain
+- 'central_point': central point in the domain
 """
 function centralized_monomial(vect,alpha,half_diameter_domain,central_point)
     mul = 1
