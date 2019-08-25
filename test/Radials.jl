@@ -44,7 +44,8 @@ x = [(1.0,2.0,3.0),(4.0,5.0,6.0),(7.0,8.0,9.0)]
 y = [4.0,5.0,6.0]
 lb = [0.0,3.0,6.0]
 ub = [4.0,7.0,10.0]
-my_rad = RadialBasis(x,y,lb,ub,,z->norm(z),1)
+my_rad = RadialBasis(x,y,lb,ub,z->norm(z),1)
+
 add_point!(my_rad,(9.0,10.0,11.0),10.0)
 est = my_rad((1.0,2.0,3.0))
 @test est ≈ 4.0
