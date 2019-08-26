@@ -43,10 +43,9 @@ surrogate_optimize(objective_function_ND,SRBF(),lb,ub,my_k_SRBFN,UniformSample()
 lb = [1.0,1.0]
 ub = [6.0,6.0]
 x = sample(5,lb,ub,SobolSample())
-bounds = [lb,ub]
 objective_function_ND = z -> 3*norm(z)+1
 y = objective_function_ND.(x)
-my_rad_SRBFN = RadialBasis(x,y,bounds,z->norm(z),1)
+my_rad_SRBFN = RadialBasis(x,y,lb,ub,z->norm(z),1)
 surrogate_optimize(objective_function_ND,SRBF(),lb,ub,my_rad_SRBFN,UniformSample())
 
 # Lobachesky
@@ -195,11 +194,10 @@ p = [1.5,1.5]
 theta = [2.0,2.0]
 lb = [1.0,1.0]
 ub = [6.0,6.0]
-bounds = [lb,ub]
 
 
 my_k_DYCORSN = Kriging(x,y,p,theta)
 surrogate_optimize(objective_function_ND,DYCORS(),lb,ub,my_k_DYCORSN,UniformSample(),maxiters=30)
 
-my_rad_DYCORSN = RadialBasis(x,y,bounds,z->norm(z),1)
+my_rad_DYCORSN = RadialBasis(x,y,lb,ub,z->norm(z),1)
 surrogate_optimize(objective_function_ND,DYCORS(),lb,ub,my_rad_DYCORSN,UniformSample(),maxiters=30)
