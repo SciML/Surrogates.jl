@@ -13,12 +13,12 @@ my_radial_basis = RadialBasis(x,y,lb,ub,thin_plate_spline,q)
 approx = my_radial_basis(5.4)</code></pre><p>Let&#39;s now see an example in 2D.</p><pre><code class="language-none">using Surrogates
 f = x -&gt; x[1]*x[2]
 lb = [1.0,2.0]
-ub = [10,8.5]
+ub = [10.0,8.5]
 x = sample(50,lb,ub,SobolSample())
 y = f.(x)
-thin_plate_spline = x -&gt; x^2*log(x)
-q = 2
-my_radial_basis = RadialBasis(x,y,[lb,ub],thin_plate_spline,q)
+linear = z -&gt; norm(x)
+q = 1
+my_radial_basis = RadialBasis(x,y,[lb,ub],linear,q)
 
 #I want an approximation at (1.0,1.4)
 approx = my_radial_basis((1.0,1.4))</code></pre><h2><a class="nav-anchor" id="Kriging-standard-error-1" href="#Kriging-standard-error-1">Kriging standard error</a></h2><p>Let&#39;s now use the Kriging surrogate, which is a single output Gaussian process. This surrogate has a nice feature:not only it approximates the solution at a point, it also calculates the standard error at such point. Let&#39;s see an example:</p><pre><code class="language-none">using Surrogates
