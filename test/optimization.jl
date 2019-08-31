@@ -148,7 +148,7 @@ surrogate_optimize(objective_function_ND,DYCORS(),lb,ub,my_rad_DYCORSN,UniformSa
 # 1D
 
 objective_function = x -> 3*x+1
-x = sample(100,1.0,6.0,SobolSample())
+x = sample(5,1.0,6.0,SobolSample())
 y = objective_function.(x)
 p = 1.9
 lb = 1.0

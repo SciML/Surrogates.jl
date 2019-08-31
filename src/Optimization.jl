@@ -783,7 +783,7 @@ end
 
 function obj2_1D(value,points)
     min = +Inf
-    my_p = filter(x->abs(x-value)>10^-5,points)
+    my_p = filter(x->abs(x-value)>10^-6,points)
     for i = 1:length(my_p)
         new_val = norm(my_p[i]-value)
         if new_val < min
@@ -796,7 +796,7 @@ end
 function I_tier_ranking_1D(P,surrSOP::AbstractSurrogate)
     #obj1 = objective_function
     #obj2 = obj2_1D
-    Fronts = Dict()
+    Fronts = Dict{Int,Array{eltype(surrSOP.x[1]),1}}()
     i = 1
     while true
         F = []
@@ -855,13 +855,27 @@ function II_tier_ranking_1D(D::Dict,srg::AbstractSurrogate)
     return D
 end
 
-function Hypervolume_Pareto_improving_1D(x_i,S)
-    max_i = maximum(S)
-    max_f = maximum(push!(S,x_i))
-    return max_f - max_i
+function Hypervolume_Pareto_improving_1D(f1_new,f2_new,Pareto_set)
+    if size(Pareto_set,1) == 1
+        return 0.0
+    else
+        v_ref = [maximum(Pareto_set[:,1]),maximum(Pareto_set[:,2])]
+        y_s = sort(Pareto_set[:,2])
+        area_before = zero(eltype(f1_new))
+        for j = 1:length(y_s)
+            area_before += Pareto_set
+        end
+
+        #do rectangles
+
+
+    #AREA AFTER
+    add f1_new and f2_new to pareto
+        AREA()
+    return area_after - area_before
 end
 """
-surrogate_optimize(obj::Function,::DYCORS,lb::Number,ub::Number,surr::AbstractSurrogate,sample_type::SamplingAlgorithm;maxiters=100,num_new_samples=100)
+surrogate_optimize(obj::Function,::SOP,lb::Number,ub::Number,surr::AbstractSurrogate,sample_type::SamplingAlgorithm;maxiters=100,num_new_samples=100)
 
 SOP Surrogate optimization method, following closely the following papers:
 
@@ -903,10 +917,8 @@ function surrogate_optimize(obj::Function,sop1::SOP,lb::Number,ub::Number,surrSO
         #Rank points in S with:
         #1) Non dominated sorting
         Fronts_I = I_tier_ranking_1D(centers_global,surrSOP)
-
         #2) Second tier ranking
         Fronts = II_tier_ranking_1D(Fronts_I,surrSOP)
-        println(Fronts)
         ranked_list = []
         for i = 1:length(Fronts)
             for j = 1:length(Fronts[i])
@@ -1002,7 +1014,8 @@ function surrogate_optimize(obj::Function,sop1::SOP,lb::Number,ub::Number,surrSO
 
         #new_points[i] now contains:
         #[x_1,y_1; x_2,y_2,...,x_{num_new_samples},y_{num_new_samples}]
-        #OK UNTIL HERE#
+
+
         #2.4 Adaptive learning and tabu archive
         for i=1:num_P
             if new_points[i,1] in centers_global
@@ -1010,10 +1023,19 @@ function surrogate_optimize(obj::Function,sop1::SOP,lb::Number,ub::Number,surrSO
                 N_failures[i] = N_failures_global[i]
             end
 
-            f_1 = new_points[i,2]
+            f_1 = new_points[i,1]
             f_2 = obj2_1D(f_1,surrSOP.x)
 
-            if (Hypervolume_Pareto_improving_1D(new_points[i,1],Fronts[1])<tau)
+            l = length(Fronts[1])
+            Pareto_set = zeros(eltype(surrSOP.x[1]),l,2)
+
+            for j = 1:l
+                val = obj2_1D(Fronts[1][j],surrSOP.x)
+                Pareto_set[j,1] = Fronts[1][j]
+                Pareto_set[j,2] = val
+            end
+
+            if (Hypervolume_Pareto_improving_1D(f_1,f_2,Pareto_set)<tau)
                 #failure
                 r_centers[i] = r_centers[i]/2
                 N_failures[i] += 1
@@ -1031,17 +1053,4 @@ function surrogate_optimize(obj::Function,sop1::SOP,lb::Number,ub::Number,surrSO
             end
         end
     end
-end
-
-
-"""
-surrogate_optimize(obj::Function,::DYCORS,lb::Number,ub::Number,surr::AbstractSurrogate,sample_type::SamplingAlgorithm;maxiters=100,num_new_samples=100)
-
-SOP Surrogate optimization method, following closely the following papers:
-
-    -SOP: parallel surrogate global optimization with Pareto center selection for computationally expensive single objective problems by Tipaluck Krityakierne
-    - Multiobjective Optimization Using Evolutionary Algorithms by Kalyan Deb
-"""
-function surrogate_optimize(obj::Function,::SOP,lb,ub,surrSOP::AbstractSurrogate,sample_type::SamplingAlgorithm;maxiters=100,num_new_samples=100)
-
 end
