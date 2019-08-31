@@ -14,3 +14,38 @@ The construction of a surrogate model can be seen as a three steps process:
 - Sample selection
 - Construction of the surrogate model
 - Surrogate optimization
+
+## ALL the currently available sampling methods: 
+
+- Grid
+- Uniform 
+- Sobol
+- Latin Hypercube
+- Low Discrepancy
+- Random
+
+## ALL the currently available surrogate models: 
+
+- Kriging
+- Radial Basis Function
+- Linear
+- Second Order Polynomial
+- Support Vector Machines (SVM)
+- Artificial Neural Networks 
+- Random Forests
+- Lobachesky
+- Inverse-distance
+
+## ALL the currently available optimization methods: 
+
+- SRBF
+- LCBS 
+- DYCORS
+- EI
+
+## Installing Surrogates package
+
+```julia
+using Pkg
+Pkg.add("Surrogates")
+```
