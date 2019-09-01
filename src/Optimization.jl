@@ -855,25 +855,38 @@ function II_tier_ranking_1D(D::Dict,srg::AbstractSurrogate)
     return D
 end
 
-function Hypervolume_Pareto_improving_1D(f1_new,f2_new,Pareto_set)
+function Hypervolume_Pareto_improving(f1_new,f2_new,Pareto_set)
     if size(Pareto_set,1) == 1
-        return 0.0
-    else
-        v_ref = [maximum(Pareto_set[:,1]),maximum(Pareto_set[:,2])]
-        y_s = sort(Pareto_set[:,2])
         area_before = zero(eltype(f1_new))
-        for j = 1:length(y_s)
-            area_before += Pareto_set
+    else
+        my_p = Pareto_set
+        #Area before
+        v_ref = [maximum(Pareto_set[:,1]),maximum(Pareto_set[:,2])]
+        my_p = vcat(my_p,v_ref)
+        v = sortperm(my_p[:,2])
+        my_p[:,1] = my_p[:,1][v]
+        my_p[:,2] = my_p[:,2][v]
+        area_before = zero(eltype(f1_new))
+        for j = 1:length(v)-1
+            area_before += (my_p[j+1,2]-my_p[j,2])*(v_ref[1]-my_p[j])
         end
-
-        #do rectangles
-
-
-    #AREA AFTER
-    add f1_new and f2_new to pareto
-        AREA()
+    end
+    #Area after
+    Pareto_set = vcat(Pareto_set,[f1_new f2_new])
+    v_ref = [maximum(Pareto_set[:,1]) maximum(Pareto_set[:,2])]
+    Pareto_set = vcat(Pareto_set,v_ref)
+    v = sortperm(Pareto_set[:,2])
+    Pareto_set[:,1] = Pareto_set[:,1][v]
+    Pareto_set[:,2] = Pareto_set[:,2][v]
+    area_after = zero(eltype(f1_new))
+    for j = 1:length(v)-1
+        area_after += (Pareto_set[j+1,2]-Pareto_set[j,2])*(v_ref[1]-Pareto_set[j])
+    end
     return area_after - area_before
 end
+
+
+
 """
 surrogate_optimize(obj::Function,::SOP,lb::Number,ub::Number,surr::AbstractSurrogate,sample_type::SamplingAlgorithm;maxiters=100,num_new_samples=100)
 
@@ -987,6 +1000,7 @@ function surrogate_optimize(obj::Function,sop1::SOP,lb::Number,ub::Number,surrSO
                 if length(C) == num_P
                     centers_full = 1
                 end
+                i = i + 1
             end
         end
 
@@ -1034,8 +1048,7 @@ function surrogate_optimize(obj::Function,sop1::SOP,lb::Number,ub::Number,surrSO
                 Pareto_set[j,1] = Fronts[1][j]
                 Pareto_set[j,2] = val
             end
-
-            if (Hypervolume_Pareto_improving_1D(f_1,f_2,Pareto_set)<tau)
+            if (Hypervolume_Pareto_improving(f_1,f_2,Pareto_set)<tau)
                 #failure
                 r_centers[i] = r_centers[i]/2
                 N_failures[i] += 1
@@ -1044,7 +1057,6 @@ function surrogate_optimize(obj::Function,sop1::SOP,lb::Number,ub::Number,surrSO
                     push!(N_tenures_tabu,0)
                 end
             else
-
                 #P_i is success
                 #Adaptive_learning
                 add_point!(surrSOP,new_points[i,1],new_points[i,2])
