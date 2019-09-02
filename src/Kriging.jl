@@ -134,16 +134,14 @@ end
 """
     Kriging(x,y,p,theta)
 
-Constructor for type Kriging.
+Constructor for Kriging surrogate.
 
-#Arguments:
--''(x,y)': sampled points
--'p': array of values between 0 and 2 modelling the
-   smoothness of the function being approximated in the i-th variable,
-    0-> rough  2-> C^infinity
--'theta': array of values bigger than 0 modellig how much the function is
+- (x,y): sampled points
+- p: array of values 0<=p<2 modelling the
+     smoothness of the function being approximated in the i-th variable.
+     low p -> rough, high p -> smooth
+- theta: array of values > 0 modellig how much the function is
           changing in the i-th variable
-
 """
 function Kriging(x,y,p,theta)
     mu,b,sigma,inverse_of_R = _calc_kriging_coeffs(x,y,p,theta)

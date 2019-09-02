@@ -1,14 +1,35 @@
 abstract type SamplingAlgorithm end
+
+"""
+GridSample{T}
+
+T is the step dx for lb:dx:ub
+"""
 struct GridSample{T} <: SamplingAlgorithm
     dx::T
 end
+
 struct UniformSample <: SamplingAlgorithm end
 struct SobolSample <: SamplingAlgorithm end
 struct LatinHypercubeSample <: SamplingAlgorithm end
+
+"""
+LowDiscrepancySample{T}
+
+T is the base for the sequence
+"""
 struct LowDiscrepancySample{T} <: SamplingAlgorithm
     base::T
 end
 
+struct RandomSample <: SamplingAlgorithm end
+
+"""
+sample(n,lb,ub,S::GridSample)
+
+Returns a tuple containing numbers in a grid.
+
+"""
 function sample(n,lb,ub,S::GridSample)
     dx = S.dx
     if lb isa Number
@@ -16,13 +37,14 @@ function sample(n,lb,ub,S::GridSample)
     else
         d = length(lb)
         x = [[rand(lb[j]:dx[j]:ub[j]) for j = 1:d] for i in 1:n]
-        return x
+        return Tuple.(x)
     end
 end
 
 """
 sample(n,lb,ub,::UniformRandom)
-returns a nxd Array containing uniform random numbers
+
+Returns a Tuple containig uniform random numbers.
 """
 function sample(n,lb,ub,::UniformSample)
     if lb isa Number
@@ -30,14 +52,14 @@ function sample(n,lb,ub,::UniformSample)
     else
         d = length(lb)
         x = [[rand(Uniform(lb[j],ub[j])) for j in 1:d] for i in 1:n]
-        return x
+        return Tuple.(x)
     end
 end
 
 """
 sample(n,lb,ub,::SobolSampling)
 
-Sobol
+Returns a Tuple containig Sobol sequences.
 """
 function sample(n,lb,ub,::SobolSample)
     s = SobolSeq(lb,ub)
@@ -45,14 +67,14 @@ function sample(n,lb,ub,::SobolSample)
     if lb isa Number
         return [next!(s)[1] for i = 1:n]
     else
-        return [next!(s) for i = 1:n]
+        return Tuple.([next!(s) for i = 1:n])
     end
 end
 
 """
 sample(n,lb,ub,::LatinHypercube)
 
-Latin hypercube sapling
+Returns a Tuple containig LatinHypercube sequences.
 """
 function sample(n,lb,ub,::LatinHypercubeSample)
     d = length(lb)
@@ -66,7 +88,7 @@ function sample(n,lb,ub,::LatinHypercubeSample)
         @inbounds for c = 1:d
             x[:,c] = (ub[c]-lb[c])*x[:,c]/n .+ lb[c]
         end
-        return x
+        return Tuple.(x)
     end
 end
 
@@ -74,7 +96,9 @@ end
 """
 sample(n,lb,ub,S::LowDiscrepancySample)
 
-LowDiscrepancySample for different bases.
+Low discrepancy sample:
+- Dimension 1: Van der corput sequence
+- Dimension > 1: Halton sequence
 If dimension d > 1, every bases must be coprime with each other.
 """
 function sample(n,lb,ub,S::LowDiscrepancySample)
@@ -115,6 +139,20 @@ function sample(n,lb,ub,S::LowDiscrepancySample)
         @inbounds for c = 1:d
             x[:,c] = (ub[c]-lb[c])*x[:,c] .+ lb[c]
         end
-        return x
+        return Tuple.(x)
+    end
+end
+
+"""
+sample(n,d,D::Distributio)
+
+Returns a Tuple containig numbers distributed as D
+"""
+function sample(n,d,D::Distribution)
+    if d == 1
+        return rand(D,n)
+    else
+        x = [[rand(D) for j in 1:d] for i in 1:n]
+        return Tuple.(x)
     end
 end
