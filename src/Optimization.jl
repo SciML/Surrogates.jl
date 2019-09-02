@@ -945,8 +945,8 @@ function surrogate_optimize(obj::Function,sop1::SOP,lb::Number,ub::Number,surrSO
         while i <= length(ranked_list) && centers_full == 0
             flag = 0
             for j = 1:length(ranked_list)
-                for k = 1:length(tabu)
-                    if abs(ranked_list[j]-tabu[k]) < tau
+                for m = 1:length(tabu)
+                    if abs(ranked_list[j]-tabu[m]) < tau
                         flag = 1
                     end
                 end
@@ -974,8 +974,8 @@ function surrogate_optimize(obj::Function,sop1::SOP,lb::Number,ub::Number,surrSO
             while i <= length(ranked_list) && centers_full == 0
                 flag = 0
                 for j = 1:length(ranked_list)
-                    for k = 1:length(centers_global)
-                        if abs(centers_global[i] - ranked_list[i]) < tau
+                    for m = 1:length(centers_global)
+                        if abs(centers_global[j] - ranked_list[m]) < tau
                             flag = 1
                         end
                     end
