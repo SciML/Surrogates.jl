@@ -2,10 +2,14 @@ using LinearAlgebra
 using Distributions
 
 abstract type SurrogateOptimizationAlgorithm end
+
 struct SRBF <: SurrogateOptimizationAlgorithm end
 struct LCBS <: SurrogateOptimizationAlgorithm end
 struct EI <: SurrogateOptimizationAlgorithm end
 struct DYCORS <: SurrogateOptimizationAlgorithm end
+struct SOP{P} <: SurrogateOptimizationAlgorithm
+    p::P
+end
 
 function merit_function(point,w,surr::AbstractSurrogate,s_max,s_min,d_max,d_min,box_size)
     if length(point)==1
@@ -785,7 +789,6 @@ function surrogate_optimize(obj::Function,::DYCORS,lb,ub,surrn::AbstractSurrogat
                     new_points[j,i] = x_best[i]
                 end
             end
-
         end
 
         for i = 1:num_new_samples
@@ -820,6 +823,293 @@ function surrogate_optimize(obj::Function,::DYCORS,lb,ub,surrn::AbstractSurrogat
             x_best = x_new
             y_best = f_new
             add_point!(surrn,Tuple(x_best),y_best)
+        end
+    end
+end
+
+
+function obj2_1D(value,points)
+    min = +Inf
+    my_p = filter(x->abs(x-value)>10^-6,points)
+    for i = 1:length(my_p)
+        new_val = norm(my_p[i]-value)
+        if new_val < min
+            min = new_val
+        end
+    end
+    return min
+end
+
+function I_tier_ranking_1D(P,surrSOP::AbstractSurrogate)
+    #obj1 = objective_function
+    #obj2 = obj2_1D
+    Fronts = Dict{Int,Array{eltype(surrSOP.x[1]),1}}()
+    i = 1
+    while true
+        F = []
+        j = 1
+        for p in P
+            n_p = 0
+            k = 1
+            for q in P
+                #I use equality with floats because p and q are in surrSOP.x
+                #for sure at this stage
+                p_index = j
+                q_index = k
+                val1_p = surrSOP.y[p_index]
+                val2_p = obj2_1D(p,P)
+                val1_q = surrSOP.y[q_index]
+                val2_q = obj2_1D(q,P)
+                p_dominates_q = (val1_p < val1_q || abs(val1_p-val1_q) <= 10^-5) &&
+                                (val2_p < val2_q || abs(val2_p-val2_q) <= 10^-5) &&
+                                ((val1_p < val1_q) || (val2_p < val2_q))
+
+                q_dominates_p = (val1_p < val1_q || abs(val1_p-val1_q) < 10^-5) &&
+                                (val2_p < val2_q || abs(val2_p-val2_q) < 10^-5) &&
+                                ((val1_p < val1_q) || (val2_p < val2_q))
+                if q_dominates_p
+                    n_p += 1
+                end
+                k = k + 1
+            end
+        if n_p == 0
+            # no individual dominates p
+            push!(F,p)
+        end
+        j = j + 1
+        end
+        if length(F) > 0
+            Fronts[i] = F
+            P = setdiff(P,F)
+            i = i + 1
+        else
+            return Fronts
+        end
+    end
+    return F
+end
+
+function II_tier_ranking_1D(D::Dict,srg::AbstractSurrogate)
+    for i = 1:length(D)
+        pos = []
+        yn = []
+        for j = 1:length(D[i])
+            push!(pos,findall(e->e==D[i][j],srg.x))
+            push!(yn,srg.y[pos[j]])
+        end
+        D[i] = D[i][sortperm(D[i])]
+    end
+    return D
+end
+
+function Hypervolume_Pareto_improving(f1_new,f2_new,Pareto_set)
+    if size(Pareto_set,1) == 1
+        area_before = zero(eltype(f1_new))
+    else
+        my_p = Pareto_set
+        #Area before
+        v_ref = [maximum(Pareto_set[:,1]),maximum(Pareto_set[:,2])]
+        my_p = vcat(my_p,v_ref)
+        v = sortperm(my_p[:,2])
+        my_p[:,1] = my_p[:,1][v]
+        my_p[:,2] = my_p[:,2][v]
+        area_before = zero(eltype(f1_new))
+        for j = 1:length(v)-1
+            area_before += (my_p[j+1,2]-my_p[j,2])*(v_ref[1]-my_p[j])
+        end
+    end
+    #Area after
+    Pareto_set = vcat(Pareto_set,[f1_new f2_new])
+    v_ref = [maximum(Pareto_set[:,1]) maximum(Pareto_set[:,2])]
+    Pareto_set = vcat(Pareto_set,v_ref)
+    v = sortperm(Pareto_set[:,2])
+    Pareto_set[:,1] = Pareto_set[:,1][v]
+    Pareto_set[:,2] = Pareto_set[:,2][v]
+    area_after = zero(eltype(f1_new))
+    for j = 1:length(v)-1
+        area_after += (Pareto_set[j+1,2]-Pareto_set[j,2])*(v_ref[1]-Pareto_set[j])
+    end
+    return area_after - area_before
+end
+
+
+
+"""
+surrogate_optimize(obj::Function,::SOP,lb::Number,ub::Number,surr::AbstractSurrogate,sample_type::SamplingAlgorithm;maxiters=100,num_new_samples=100)
+
+SOP Surrogate optimization method, following closely the following papers:
+
+    -SOP: parallel surrogate global optimization with Pareto center selection for computationally expensive single objective problems by Tipaluck Krityakierne
+    - Multiobjective Optimization Using Evolutionary Algorithms by Kalyan Deb
+#Suggested number of new_samples = min(500*d,5000)
+"""
+function surrogate_optimize(obj::Function,sop1::SOP,lb::Number,ub::Number,surrSOP::AbstractSurrogate,sample_type::SamplingAlgorithm;maxiters=100,num_new_samples=100)
+    d = length(lb)
+    N_fail = 3
+    N_tenure = 5
+    tau = 10^-5
+    num_P = sop1.p
+    centers_global = surrSOP.x
+    r_centers_global = 0.2*norm(ub-lb)*ones(length(surrSOP.x))
+    N_failures_global = zeros(length(surrSOP.x))
+    tabu = []
+    N_tenures_tabu = []
+    for k = 1:maxiters
+        N_tenures_tabu .+= 1
+        #deleting points that have been in tabu for too long
+        del = N_tenures_tabu .> N_tenure
+
+        if length(del) > 0
+            for i = length(del)
+                if del[i]
+                    del[i] = i
+                end
+            end
+            deleteat!(N_tenures_tabu,del)
+            deleteat!(tabu,del)
+        end
+
+
+        ##### P CENTERS ######
+        C = []
+
+        #S(x) set of points already evaluated
+        #Rank points in S with:
+        #1) Non dominated sorting
+        Fronts_I = I_tier_ranking_1D(centers_global,surrSOP)
+        #2) Second tier ranking
+        Fronts = II_tier_ranking_1D(Fronts_I,surrSOP)
+        ranked_list = []
+        for i = 1:length(Fronts)
+            for j = 1:length(Fronts[i])
+                push!(ranked_list,Fronts[i][j])
+            end
+        end
+        ranked_list = eltype(surrSOP.x[1]).(ranked_list)
+
+        centers_full = 0
+        i = 1
+        while i <= length(ranked_list) && centers_full == 0
+            flag = 0
+            for j = 1:length(ranked_list)
+                for m = 1:length(tabu)
+                    if abs(ranked_list[j]-tabu[m]) < tau
+                        flag = 1
+                    end
+                end
+                for l = 1:length(centers_global)
+                    if abs(ranked_list[j]-centers_global[l]) < tau
+                        flag = 1
+                    end
+                end
+            end
+            if flag == 1
+                skip
+            else
+                push!(C,ranked_list[i])
+                if length(C) == num_P
+                    centers_full = 1
+                end
+            end
+            i = i + 1
+        end
+
+        # I examined all the points in the ranked list but num_selected < num_p
+        # I just iterate again using only radius rule
+        if length(C) < num_P
+            i = 1
+            while i <= length(ranked_list) && centers_full == 0
+                flag = 0
+                for j = 1:length(ranked_list)
+                    for m = 1:length(centers_global)
+                        if abs(centers_global[j] - ranked_list[m]) < tau
+                            flag = 1
+                        end
+                    end
+                end
+                if flag == 1
+                    skip
+                else
+                    push!(C,ranked_list[i])
+                    if length(C) == num_P
+                        centers_full = 1
+                    end
+                end
+                i = i + 1
+            end
+        end
+
+        #If I still have num_selected < num_P, I double down on some centers iteratively
+        if length(C) < num_P
+            i = 1
+            while i <= length(ranked_list)
+                push!(C,ranked_list[i])
+                if length(C) == num_P
+                    centers_full = 1
+                end
+                i = i + 1
+            end
+        end
+
+        #Here I have selected C = [] containing the centers
+        r_centers = 0.2*norm(ub-lb)*ones(num_P)
+        N_failures = zeros(num_P)
+        #2.3 Candidate search
+        new_points = zeros(eltype(surrSOP.x[1]),num_P,2)
+        for i = 1:num_P
+            N_candidates = zeros(eltype(surrSOP.x[1]),num_new_samples)
+            #Using phi(n) just like DYCORS, merit function = surrogate
+            #Like in DYCORS, I_perturb = 1 always
+            evaluations = zeros(eltype(surrSOP.y[1]),num_new_samples)
+            for j = 1:num_new_samples
+                a = lb - C[i]
+                b = ub - C[i]
+                N_candidates[j] = C[i] + rand(TruncatedNormal(0,r_centers[i],a,b))
+                evaluations[j] = surrSOP(N_candidates[j])
+            end
+            x_best = N_candidates[argmin(evaluations)]
+            y_best = minimum(evaluations)
+            new_points[i,1] = x_best
+            new_points[i,2] = y_best
+        end
+
+        #new_points[i] now contains:
+        #[x_1,y_1; x_2,y_2,...,x_{num_new_samples},y_{num_new_samples}]
+
+
+        #2.4 Adaptive learning and tabu archive
+        for i=1:num_P
+            if new_points[i,1] in centers_global
+                r_centers[i] = r_centers_global[i]
+                N_failures[i] = N_failures_global[i]
+            end
+
+            f_1 = new_points[i,1]
+            f_2 = obj2_1D(f_1,surrSOP.x)
+
+            l = length(Fronts[1])
+            Pareto_set = zeros(eltype(surrSOP.x[1]),l,2)
+
+            for j = 1:l
+                val = obj2_1D(Fronts[1][j],surrSOP.x)
+                Pareto_set[j,1] = Fronts[1][j]
+                Pareto_set[j,2] = val
+            end
+            if (Hypervolume_Pareto_improving(f_1,f_2,Pareto_set)<tau)
+                #failure
+                r_centers[i] = r_centers[i]/2
+                N_failures[i] += 1
+                if N_failures[i] > N_fail
+                    push!(tabu,C[i])
+                    push!(N_tenures_tabu,0)
+                end
+            else
+                #P_i is success
+                #Adaptive_learning
+                add_point!(surrSOP,new_points[i,1],new_points[i,2])
+                push!(r_centers_global,r_centers[i])
+                push!(N_failures_global,N_failures[i])
+            end
         end
     end
 end
