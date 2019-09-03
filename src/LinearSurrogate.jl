@@ -59,7 +59,7 @@ Builds a linear surrogate using GLM.jl
 
 """
 function LinearSurrogate(x,y,lb,ub)
-    X = Array{Float64,2}(undef,length(x),length(x[1]))
+    X = Array{eltype(x[1]),2}(undef,length(x),length(x[1]))
     for j = 1:length(x)
         X[j,:] = vec(collect(x[j]))
     end
