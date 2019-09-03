@@ -22,13 +22,11 @@ mutable struct Kriging{X,Y,P,T,M,B,S,R} <: AbstractSurrogate
      prediction = zero(eltype(k.x[1]))
      n = length(k.x)
      d = length(k.x[1])
-     r = zeros(float(eltype(k.x[1])),n,1)
      @inbounds for i = 1:n
          sum = zero(eltype(k.x[1]))
          for l = 1:d
              sum = sum + k.theta[l]*norm(val[l]-k.x[i][l])^(k.p[l])
          end
-         r[i] = exp(-sum)
          prediction = prediction + k.b[i]*exp(-sum)
      end
      prediction = k.mu + prediction
@@ -41,7 +39,7 @@ mutable struct Kriging{X,Y,P,T,M,B,S,R} <: AbstractSurrogate
  function std_error_at_point(k::Kriging,val)
      n = length(k.x)
      d = length(k.x[1])
-     r = zeros(float(eltype(k.x[1])),n,1)
+     r = zeros(eltype(k.x[1]),n,1)
      @inbounds for i = 1:n
          sum = zero(eltype(k.x[1]))
          for l = 1:d
@@ -49,7 +47,7 @@ mutable struct Kriging{X,Y,P,T,M,B,S,R} <: AbstractSurrogate
          end
          r[i] = exp(-sum)
      end
-     one = ones(n,1)
+     one = ones(eltype(k.x[1]),n,1)
      one_t = one'
      a = r'*k.inverse_of_R*r
      a = a[1]
@@ -63,13 +61,11 @@ mutable struct Kriging{X,Y,P,T,M,B,S,R} <: AbstractSurrogate
  Gives the current estimate for 'val' with respect to the Kriging object k.
  """
  function (k::Kriging)(val::Number)
-     phi(z) = exp(-(abs(z))^k.p)
+     phi = z -> exp(-(abs(z))^k.p)
      n = length(k.x)
-     prediction = zero(eltype(k.x))
-     r = zeros(float(eltype(k.x)),n,1)
+     prediction = zero(eltype(k.x[1]))
      for i = 1:n
          prediction = prediction + k.b[i]*phi(val-k.x[i])
-         r[i] = phi(val - k.x[i])
      end
      prediction = k.mu + prediction
      return prediction
@@ -81,11 +77,11 @@ mutable struct Kriging{X,Y,P,T,M,B,S,R} <: AbstractSurrogate
 function std_error_at_point(k::Kriging,val::Number)
     phi(z) = exp(-(abs(z))^k.p)
     n = length(k.x)
-    r = zeros(float(eltype(k.x)),n,1)
+    r = zeros(eltype(k.x[1]),n,1)
     @inbounds for i = 1:n
         r[i] = phi(val - k.x[i])
     end
-    one = ones(n,1)
+    one = ones(eltype(k.x[1]),n,1)
     one_t = one'
     a = r'*k.inverse_of_R*r
     a = a[1]
@@ -108,21 +104,20 @@ Constructor for type Kriging.
 
 """
 function Kriging(x,y,p::Number)
+    mu,b,sigma,inverse_of_R = _calc_kriging_coeffs(x,y,p)
     theta = 1.0
-    mu,b,sigma,inverse_of_R = _calc_kriging_coeffs(x,y,p,theta)
     Kriging(x,y,p,theta,mu,b,sigma,inverse_of_R)
 end
 
-function _calc_kriging_coeffs(x,y,p::Number,theta)
+function _calc_kriging_coeffs(x,y,p::Number)
     n = length(x)
-    R = zeros(float(eltype(x)), n, n)
+    R = zeros(eltype(x[1]), n, n)
     @inbounds for i = 1:n
         for j = 1:n
-            R[i,j] = exp(-theta*abs(x[i]-x[j])^p)
+            R[i,j] = exp(-abs(x[i]-x[j])^p)
         end
     end
-
-    one = ones(n,1)
+    one = ones(eltype(x[1]),n,1)
     one_t = one'
     inverse_of_R = inv(R)
     mu = (one_t*inverse_of_R*y)/(one_t*inverse_of_R*one)

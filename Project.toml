@@ -18,6 +18,7 @@ XGBoost = "009559a3-9522-5dbb-924b-0b6ed2b22bb9"
 [extras]
 Cubature = "667455a9-e2ce-5579-9412-b964f529a492"
 QuadGK = "1fd47b50-473d-5c70-9696-f719f8f3bcdc"
+ForwardDiff = "f6369f11-7733-5829-9624-2563aa707210"
 
 [targets]
-test = ["QuadGK", "Cubature"]
+test = ["QuadGK", "Cubature", "ForwardDiff"]
