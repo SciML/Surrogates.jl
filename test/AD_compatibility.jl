@@ -121,10 +121,11 @@ g([2.0,5.0])
 #Random forest C-library no AD
 
 #Second order polynomial
+#=
 my_second = SecondOrderPolynomialSurrogate(x,y,lb,ub)
 g = x -> ForwardDiff.gradient(my_second,x)
 g([2.0,5.0])
-
+=#
 #SVM problem in predict C library no AD
 
 ### Tracker ###
