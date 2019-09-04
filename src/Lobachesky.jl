@@ -56,6 +56,7 @@ end
 function phi_njND(point,x,alpha,n)
     s = 1.0
     d = length(x)
+    println()
     for h = 1:d
         a = phi_nj1D(point[h],x[h],alpha[h],n)
         s = s*a
