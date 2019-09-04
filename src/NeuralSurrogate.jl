@@ -51,7 +51,7 @@ function add_point!(my_n::NeuralSurrogate,x_new,y_new)
         n = length(my_n.x)
         d = length(my_n.x[1])
         tot_dim = n + dim_new
-        X = Array{Float64,2}(undef,tot_dim,d)
+        X = Array{eltype(my_n.x[1]),2}(undef,tot_dim,d)
         data = Tuple{Array{eltype(X[1]),1},eltype(my_n.y[1])}[]
         for j = 1:n
             X[j,:] = vec(collect(my_n.x[j]))
