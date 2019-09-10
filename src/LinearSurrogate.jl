@@ -49,7 +49,7 @@ function add_point!(my_linear::LinearSurrogate,new_x,new_y)
 end
 
 function (lin::LinearSurrogate)(val)
-    return vec(collect(val))'*lin.coeff
+    return lin.coeff'*[val...]
 end
 
 """
@@ -59,10 +59,17 @@ Builds a linear surrogate using GLM.jl
 
 """
 function LinearSurrogate(x,y,lb,ub)
+    #X = Array{eltype(x[1]),2}(undef,length(x),length(x[1]))
+    #=
     X = Array{eltype(x[1]),2}(undef,length(x),length(x[1]))
     for j = 1:length(x)
         X[j,:] = vec(collect(x[j]))
     end
+    =#
+    T = collect(reshape(collect(Base.Iterators.flatten(x)), (length(x[1]),length(x)))')
+    #T = transpose(reshape(reinterpret(eltype(x[1]), x), length(x[1]), length(x)))
+    X = Array{eltype(x[1]),2}(undef,length(x),length(x[1]))
+    X = copy(T)
     ols = lm(X,y)
     return LinearSurrogate(x,y,coef(ols),lb,ub)
 end
