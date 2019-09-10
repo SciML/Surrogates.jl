@@ -19,14 +19,22 @@ function (inverSurr::InverseDistanceSurrogate)(val)
     if val in inverSurr.x
         return inverSurr.y[findall(x->x==val,inverSurr.x)[1]]
     else
-        num = zero(eltype(inverSurr.y[1]))
-        den = zero(eltype(inverSurr.y[1]))
-        for i = 1:length(inverSurr.x)
-            βᵢ = norm(val .- inverSurr.x[i])^(-inverSurr.p)
-            num += inverSurr.y[i]*βᵢ
-            den += βᵢ
+        if length(inverSurr.lb) == 1
+            num = false * inverSurr.y[1]
+            den = false * inverSurr.y[1]
+            for i = 1:length(inverSurr.x)
+                βᵢ = norm(collect(val) - collect(inverSurr.x[i]))^(-inverSurr.p)
+                num += inverSurr.y[i]*βᵢ
+                den += βᵢ
+            end
+            return num/den
+        else
+            f = (val,inv) -> norm(val .- collect(inv))^(-inverSurr.p)
+            βᵢ = f.(Ref(val),inverSurr.x)
+            num = inverSurr.y'*βᵢ
+            den = sum(βᵢ)
+            return num/den
         end
-        return num/den
     end
 end
 

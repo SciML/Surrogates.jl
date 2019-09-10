@@ -121,11 +121,10 @@ g([2.0,5.0])
 #Random forest C-library no AD
 
 #Second order polynomial
-#=
 my_second = SecondOrderPolynomialSurrogate(x,y,lb,ub)
 g = x -> ForwardDiff.gradient(my_second,x)
 g([2.0,5.0])
-=#
+
 #SVM problem in predict C library no AD
 
 ### Tracker ###
@@ -199,7 +198,6 @@ g(5.0)
 =#
 
 
-
 #ND
 
 lb = [0.0,0.0]
@@ -227,20 +225,15 @@ g([2.0,5.0])
 =#
 
 #Linear Surrogate
-#=
 my_linear = LinearSurrogate(x,y,lb,ub)
 g = x -> Tracker.gradient(my_linear,x)
 g([2.0,5.0])
-=#
-
 
 #Inverse Distance
-#=
 p = 1.4
 my_inverse = InverseDistanceSurrogate(x,y,p,lb,ub)
 g = x -> Tracker.gradient(my_inverse,x)
 g([2.0,5.0])
-=#
 
 #Lobachesky
 #=
