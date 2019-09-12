@@ -19,18 +19,8 @@ mutable struct Kriging{X,Y,P,T,M,B,S,R} <: AbstractSurrogate
  Gives the current estimate for array 'val' with respect to the Kriging object k.
  """
  function (k::Kriging)(val)
-     prediction = zero(eltype(k.x[1]))
-     n = length(k.x)
-     d = length(k.x[1])
-     @inbounds for i = 1:n
-         sum = zero(eltype(k.x[1]))
-         for l = 1:d
-             sum = sum + k.theta[l]*norm(val[l]-k.x[i][l])^(k.p[l])
-         end
-         prediction = prediction + k.b[i]*exp(-sum)
-     end
-     prediction = k.mu + prediction
-     return prediction
+     val = tuple(val...)
+     return k.mu + sum(k.b[i] * exp(-sum(dot(k.theta, norm.(val .- k.x[i]).^(k.p)))) for i in eachindex(k.x))
  end
 
  """
