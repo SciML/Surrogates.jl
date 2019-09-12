@@ -235,13 +235,12 @@ g = x -> Tracker.gradient(my_inverse,x)
 g([2.0,5.0])
 
 #Lobachesky
-#=
 alpha = [1.4,1.4]
 n = 4
 my_loba_ND = LobacheskySurrogate(x,y,alpha,n,lb,ub)
 g = x -> Tracker.gradient(my_loba_ND,x)
 g([2.0,5.0])
-=#
+
 
 #Neural Surrogate Need ForwardDiff2
 

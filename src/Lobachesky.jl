@@ -88,12 +88,8 @@ function LobacheskySurrogate(x,y,alpha,n::Int,lb,ub)
 end
 
 function (loba::LobacheskySurrogate)(val)
-    val = collect(val)
-    res = zero(eltype(loba.y[1]))
-    for j = 1:length(loba.x)
-        res = res + loba.coeff[j]*phi_njND(val,loba.x[j],loba.alpha,loba.n)
-    end
-    return res
+    p = [phi_njND(val,loba.x[j],loba.alpha,loba.n) for j=1:length(loba.x)]
+    return loba.coeff'*p
 end
 
 function add_point!(loba::LobacheskySurrogate,x_new,y_new)

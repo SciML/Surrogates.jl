@@ -33,7 +33,7 @@ n = 8
 x = sample(3200,lb,ub,SobolSample())
 y = obj.(x)
 my_loba_ND = LobacheskySurrogate(x,y,alpha,n,lb,ub)
-
+pred = my_loba_ND((1.0,2.0))
 #ND
 
 int_ND = lobachesky_integral(my_loba_ND,lb,ub)
