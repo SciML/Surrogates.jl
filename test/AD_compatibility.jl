@@ -92,8 +92,8 @@ g = x -> ForwardDiff.gradient(my_rad,x)
 g([2.0,5.0])
 
 #Kriging
-theta = [2.0,2.0,2.0]
-p = [1.9,1.9,1.9]
+theta = [2.0,2.0]
+p = [1.9,1.9]
 my_krig = Kriging(x,y,p,theta)
 g = x -> ForwardDiff.gradient(my_krig,x)
 g([2.0,5.0])
@@ -216,13 +216,12 @@ Tracker.gradient(my_rad,[2.0 5.0])
 =#
 
 #Kriging
-#=
-theta = [2.0,2.0,2.0]
-p = [1.9,1.9,1.9]
+theta = [2.0,2.0]
+p = [1.9,1.9]
 my_krig = Kriging(x,y,p,theta)
 g = x -> Tracker.gradient(my_krig,x)
 g([2.0,5.0])
-=#
+
 
 #Linear Surrogate
 my_linear = LinearSurrogate(x,y,lb,ub)
