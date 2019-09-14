@@ -16,23 +16,13 @@ end
 Calculates current estimate of array value 'val' with respect to RadialBasis object.
 """
 function (rad::RadialBasis)(val)
+    val = tuple(val...)
     n = length(rad.x)
     d = length(rad.x[1])
-    q = rad.dim_poly
-    central_point = zeros(eltype(rad.x[1]), d)
-    sum = zero(eltype(rad.x[1]))
-    for i = 1:d
-        central_point[i] = (rad.bounds[1][i]+rad.bounds[2][i])/2
-        sum += (rad.bounds[2][i]-rad.bounds[1][i])/2
-    end
-    half_diameter_domain = sum/d
-    approx = zero(eltype(rad.x[1]))
-    for i = 1:n
-        approx = approx + rad.coeff[i]*rad.phi(val .- rad.x[i])
-    end
-    for i = n+1:n+q
-        approx = approx + rad.coeff[i]*centralized_monomial(val,n+1-i,half_diameter_domain,central_point)
-    end
+    my_sum = Base.sum((rad.bounds[2][k]-rad.bounds[1][k])/2 for k = 1:d)
+    half_diameter_domain = my_sum/d
+    approx = sum(rad.coeff[i]*rad.phi(val .- rad.x[i]) for i = 1:n) +
+             sum(rad.coeff[j]*centralized_monomial(val,n+1-j,half_diameter_domain,(rad.bounds[1][j-n]+rad.bounds[2][j-n])/2) for j = (n+1):(n+rad.dim_poly))
     return approx
 end
 

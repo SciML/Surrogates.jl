@@ -208,12 +208,10 @@ f = x -> x[1]*x[2]^2
 y = f.(x)
 
 #Radials
-#=
 my_rad = RadialBasis(x,y,[lb,ub],z->norm(z),2)
-#g = x ->
-Tracker.gradient(my_rad,[2.0 5.0])
-#g([2.0,5.0])
-=#
+g = x -> Tracker.gradient(my_rad,x)
+g([2.0,5.0])
+
 
 #Kriging
 theta = [2.0,2.0]
