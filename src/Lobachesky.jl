@@ -9,11 +9,15 @@ mutable struct LobacheskySurrogate{X,Y,A,N,L,U,C} <: AbstractSurrogate
 end
 
 function phi_nj1D(point,x,alpha,n)
-    val = zero(eltype(x[1]))
-    for k = 0:n
-        a = sqrt(n/3)*alpha*(point-x) + (n - 2*k)
+    val = false * x[1]
+    for l = 0:n
+        a = sqrt(n/3)*alpha*(point-x) + (n - 2*l)
         if a > 0
-            val = val +(-1)^k*binomial(n,k)*a^(n-1)
+            if l % 2 == 0
+                val += binomial(n,l)*a^(n-1)
+            else
+                val -= binomial(n,l)*a^(n-1)
+            end
         end
     end
     val *= sqrt(n/3)/(2^n*factorial(n-1))
@@ -46,11 +50,13 @@ function LobacheskySurrogate(x,y,alpha,n::Int,lb::Number,ub::Number)
 end
 
 function (loba::LobacheskySurrogate)(val::Number)
+    #=
     res = zero(eltype(loba.y[1]))
     for j = 1:length(loba.x)
         res = res + loba.coeff[j]*phi_nj1D(val,loba.x[j],loba.alpha,loba.n)
     end
-    return res
+    =#
+    return sum(loba.coeff[j]*phi_nj1D(val,loba.x[j],loba.alpha,loba.n) for j = 1:length(loba.x))
 end
 
 function phi_njND(point,x,alpha,n)
