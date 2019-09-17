@@ -24,8 +24,7 @@ function (inverSurr::InverseDistanceSurrogate)(val)
             den = sum(norm(val .- inverSurr.x[i])^(-inverSurr.p) for i = 1:length(inverSurr.x))
             return num/den
         else
-            f = (val,inv) -> norm(val .- collect(inv))^(-inverSurr.p)
-            βᵢ = f.(Ref(val),inverSurr.x)
+            βᵢ = [norm(val .- inverSurr.x[i]) for i = 1:length(inverSurr.x)]
             num = inverSurr.y'*βᵢ
             den = sum(βᵢ)
             return num/den

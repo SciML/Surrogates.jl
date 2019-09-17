@@ -16,7 +16,6 @@ end
 Calculates current estimate of array value 'val' with respect to RadialBasis object.
 """
 function (rad::RadialBasis)(val)
-    val = tuple(val...)
     n = length(rad.x)
     d = length(rad.x[1])
     my_sum = Base.sum((rad.bounds[2][k]-rad.bounds[1][k])/2 for k = 1:d)
