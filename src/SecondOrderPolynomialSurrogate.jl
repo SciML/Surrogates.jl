@@ -45,17 +45,8 @@ end
 function (my_second_ord::SecondOrderPolynomialSurrogate)(val)
     #just create the val vector as X and multiply
     d = length(val)
-    X = ones(eltype(val[1]),1,3*d)
-    for j = 1:d
-        X[j+1] = val[j]
-    end
-    for j = 1:d-1
-        X[j+d+1] = val[j]*val[j+1]
-    end
-    for j = 1:d
-        X[j+2*d] = val[j]^2
-    end
-    return (X*my_second_ord.β)[1]
+    X = [[one(eltype(val[1]))]; [val[j] for j =1:d]; [val[j]*val[j+1] for j = 1:d-1]; [val[j]^2 for j = 1:d]]
+    return my_second_ord.β'*X
 end
 
 function add_point!(my_second::SecondOrderPolynomialSurrogate,x_new,y_new)

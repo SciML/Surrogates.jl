@@ -50,23 +50,11 @@ function LobacheskySurrogate(x,y,alpha,n::Int,lb::Number,ub::Number)
 end
 
 function (loba::LobacheskySurrogate)(val::Number)
-    #=
-    res = zero(eltype(loba.y[1]))
-    for j = 1:length(loba.x)
-        res = res + loba.coeff[j]*phi_nj1D(val,loba.x[j],loba.alpha,loba.n)
-    end
-    =#
     return sum(loba.coeff[j]*phi_nj1D(val,loba.x[j],loba.alpha,loba.n) for j = 1:length(loba.x))
 end
 
 function phi_njND(point,x,alpha,n)
-    s = 1.0
-    d = length(x)
-    for h = 1:d
-        a = phi_nj1D(point[h],x[h],alpha[h],n)
-        s = s*a
-    end
-    return s
+    return prod(phi_nj1D(point[h],x[h],alpha[h],n) for h = 1:length(x))
 end
 
 function _calc_loba_coeffND(x,y,alpha,n)
