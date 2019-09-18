@@ -99,6 +99,6 @@ function NeuralSurrogate(x,y,lb,ub,model,loss,opt,n_echos)
 end
 
 function (my_neural::NeuralSurrogate)(val)
-    v = collect(val)
-    return Tracker.data(first(my_neural.model(reshape(v,length(v),1))))
+    v = [val...]
+    Tracker.data(first(my_neural.model(v)))
 end
