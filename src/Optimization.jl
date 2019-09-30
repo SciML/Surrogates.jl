@@ -196,7 +196,7 @@ function surrogate_optimize(obj::Function,::SRBF,lb,ub,surr::AbstractSurrogate,s
                     println("Exiting, too narrow")
                     return
                 end
-                sucess = 0
+                success = 0
                 failure = 0
             end
         end
