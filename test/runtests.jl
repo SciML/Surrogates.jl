@@ -1,7 +1,6 @@
 using Test
 using Surrogates
 
-
 @testset "Radials.jl" begin include("Radials.jl") end
 @testset "Kriging.jl" begin include("Kriging.jl") end
 @testset "Sampling" begin include("sampling.jl") end
@@ -13,3 +12,4 @@ using Surrogates
 @testset "NeuralSurrogate" begin include("neuralSurrogate.jl") end
 @testset "InverseDistanceSurrogate" begin include("inverseDistanceSurrogate.jl") end
 @testset "SecondOrderPolynomialSurrogate" begin include("secondOrderPolynomialSurrogate.jl") end
+@testset "AD_Compatibility" begin include("AD_compatibility.jl") end
