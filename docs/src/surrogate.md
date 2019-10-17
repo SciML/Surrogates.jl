@@ -73,7 +73,7 @@ function add_point!(NewSurrogate,x\_new,y\_new)
   nothing
 end
 
-function NewSurrogate(value)
-  return NewSurrogate.coeff*value + NewSurrogate.alpha
+function (s::NewSurrogate)(value)
+  return s.coeff*value + s.alpha
 end
 ```
