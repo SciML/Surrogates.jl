@@ -18,6 +18,8 @@ XGBoost = "009559a3-9522-5dbb-924b-0b6ed2b22bb9"
 
 [compat]
 Distributions = "0.21"
+Tracker = "0.2"
+LatinHypercubeSampling = "1.2"
 julia = "1"
 
 [extras]
