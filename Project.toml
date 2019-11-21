@@ -17,6 +17,7 @@ Tracker = "9f7883ad-71c0-57eb-9f7f-b5c9e6d3789c"
 XGBoost = "009559a3-9522-5dbb-924b-0b6ed2b22bb9"
 
 [compat]
+Flux = "0.9"
 julia = "1"
 
 [extras]
@@ -27,4 +28,4 @@ Tracker = "9f7883ad-71c0-57eb-9f7f-b5c9e6d3789c"
 Zygote = "e88e6eb3-aa80-5325-afca-941959d7151f"
 
 [targets]
-test = ["QuadGK", "Cubature", "ForwardDiff", "Tracker","Zygote"]
+test = ["QuadGK", "Cubature", "ForwardDiff", "Tracker", "Zygote"]
