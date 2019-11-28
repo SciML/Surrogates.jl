@@ -32,7 +32,8 @@ function SVMSurrogate(x,y,lb,ub)
 end
 
 function (svmsurr::SVMSurrogate)(val)
-    return LIBSVM.predict(svmsurr.model,reshape(collect(val),1,2))[1]
+    n = length(val)
+    return LIBSVM.predict(svmsurr.model,reshape(collect(val),1,n))[1]
 end
 
 function add_point!(svmsurr::SVMSurrogate,x_new,y_new)

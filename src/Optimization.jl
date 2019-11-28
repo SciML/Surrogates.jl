@@ -79,7 +79,8 @@ function surrogate_optimize(obj::Function,::SRBF,lb,ub,surr::AbstractSurrogate,s
     for w in Iterators.cycle(w_range)
         num_of_iterations += 1
         if num_of_iterations == maxiters
-            return
+            index = argmin(surr.y)
+            return (surr.x[index],surr.y[index])
         end
         for k = 1:maxiters
             incumbent_value = minimum(surr.y)
@@ -148,7 +149,8 @@ function surrogate_optimize(obj::Function,::SRBF,lb,ub,surr::AbstractSurrogate,s
 
                     if length(new_sample) == 0
                         println("Out of sampling points")
-                        return
+                        index = argmin(surr.y)
+                        return (surr.x[index],surr.y[index])
                     end
                 else
                     new_addition = true
@@ -187,7 +189,8 @@ function surrogate_optimize(obj::Function,::SRBF,lb,ub,surr::AbstractSurrogate,s
                 scale = scale*2
                 if scale > 0.8*norm(ub-lb)
                     println("Exiting, scale too big")
-                    return
+                    index = argmin(surr.y)
+                    return (surr.x[index],surr.y[index])
                 end
                 success = 0
                 failure = 0
@@ -198,7 +201,8 @@ function surrogate_optimize(obj::Function,::SRBF,lb,ub,surr::AbstractSurrogate,s
                 #check bounds and go on only if > 1e-5*interval
                 if scale < 1e-5
                     println("Exiting, too narrow")
-                    return
+                    index = argmin(surr.y)
+                    return (surr.x[index],surr.y[index])
                 end
                 success = 0
                 failure = 0
@@ -226,7 +230,8 @@ function surrogate_optimize(obj::Function,::SRBF,lb::Number,ub::Number,surr::Abs
     for w in Iterators.cycle(w_range)
         num_of_iterations += 1
         if num_of_iterations == maxiters
-            return
+            index = argmin(surr.y)
+            return (surr.x[index],surr.y[index])
         end
         for k = 1:maxiters
             #1) Sample near incumbent (the 2 fraction is arbitrary here)
@@ -284,7 +289,8 @@ function surrogate_optimize(obj::Function,::SRBF,lb::Number,ub::Number,surr::Abs
                     deleteat!(new_sample,min_index)
                     if length(new_sample) == 0
                         println("Out of sampling points")
-                        return
+                        index = argmin(surr.y)
+                        return (surr.x[index],surr.y[index])
                     end
                 else
                 new_addition = true
@@ -323,7 +329,8 @@ function surrogate_optimize(obj::Function,::SRBF,lb::Number,ub::Number,surr::Abs
                 #check bounds cant go more than [a,b]
                 if scale > 0.8*norm(ub-lb)
                     println("Exiting,scale too big")
-                    return
+                    index = argmin(surr.y)
+                    return (surr.x[index],surr.y[index])
                 end
                 success = 0
                 failure = 0
@@ -334,7 +341,8 @@ function surrogate_optimize(obj::Function,::SRBF,lb::Number,ub::Number,surr::Abs
                 #check bounds and go on only if > 1e-5*interval
                 if scale < 1e-5
                     println("Exiting, too narrow")
-                    return
+                    index = argmin(surr.y)
+                    return (surr.x[index],surr.y[index])
                 end
                 sucess = 0
                 failure = 0
@@ -381,7 +389,8 @@ function surrogate_optimize(obj::Function,::LCBS,lb::Number,ub::Number,krig::Kri
 
                 if length(new_sample) == 0
                     println("Out of sampling points")
-                    return
+                    index = argmin(krig.y)
+                    return (krig.x[index],krig.y[index])
                 end
              else
                 new_addition = true
@@ -441,7 +450,8 @@ function surrogate_optimize(obj::Function,::LCBS,lb,ub,krig::Kriging,sample_type
 
                 if length(new_sample) == 0
                     println("Out of sampling points")
-                    return
+                    index = argmin(krig.y)
+                    return (krig.x[index],krig.y[index])
                 end
              else
                 new_addition = true
@@ -450,7 +460,8 @@ function surrogate_optimize(obj::Function,::LCBS,lb,ub,krig::Kriging,sample_type
             end
         end
         if min_add_y < 1e-6*(maximum(krig.y) - minimum(krig.y))
-            return
+            index = argmin(krig.y)
+            return (krig.x[index],krig.y[index])
         else
             min_add_y = obj(min_add_x) # I actually add the objc function at that point
             add_point!(krig,Tuple(min_add_x),min_add_y)
@@ -494,7 +505,8 @@ function surrogate_optimize(obj::Function,::EI,lb::Number,ub::Number,krig::Krigi
                     deleteat!(new_sample,index_max)
                     if length(new_sample) == 0
                         println("Out of sampling points")
-                        return
+                        index = argmin(krig.y)
+                        return (krig.x[index],krig.y[index])
                     end
                  else
                     point_found = true
@@ -503,7 +515,8 @@ function surrogate_optimize(obj::Function,::EI,lb::Number,ub::Number,krig::Krigi
                 end
             end
             if new_y_max < 1e-6*norm(maximum(krig.y)-minimum(krig.y))
-                return
+                index = argmin(krig.y)
+                return (krig.x[index],krig.y[index])
             end
             add_point!(krig,new_x_max,obj(new_x_max))
         end
@@ -556,7 +569,8 @@ function surrogate_optimize(obj::Function,::EI,lb,ub,krig::Kriging,sample_type::
                     deleteat!(new_sample,index_max)
                     if length(new_sample) == 0
                         println("Out of sampling points")
-                        return
+                        index = argmin(krig.y)
+                        return (krig.x[index],krig.y[index])
                     end
                  else
                     point_found = true
@@ -565,7 +579,8 @@ function surrogate_optimize(obj::Function,::EI,lb,ub,krig::Kriging,sample_type::
                 end
             end
             if new_y_max < 1e-6*norm(maximum(krig.y)-minimum(krig.y))
-                return
+                index = argmin(krig.y)
+                return (krig.x[index],krig.y[index])
             end
             add_point!(krig,Tuple(new_x_max),obj(new_x_max))
         end
@@ -692,6 +707,8 @@ function surrogate_optimize(obj::Function,::DYCORS,lb::Number,ub::Number,surr1::
             add_point!(surr1,x_best,y_best)
         end
     end
+    index = argmin(surr1.y)
+    return (surr1.x[index],surr1.y[index])
 end
 
 
@@ -825,6 +842,8 @@ function surrogate_optimize(obj::Function,::DYCORS,lb,ub,surrn::AbstractSurrogat
             add_point!(surrn,Tuple(x_best),y_best)
         end
     end
+    index = argmin(surrn.y)
+    return (surrn.x[index],surrn.y[index])
 end
 
 
@@ -1112,4 +1131,6 @@ function surrogate_optimize(obj::Function,sop1::SOP,lb::Number,ub::Number,surrSO
             end
         end
     end
+    index = argmin(surrSOP.y)
+    return (surrSOP.x[index],surrSOP.y[index])
 end
