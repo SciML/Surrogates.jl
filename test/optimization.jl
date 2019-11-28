@@ -37,7 +37,8 @@ theta = [1.0,1.0]
 #Kriging
 
 my_k_SRBFN = Kriging(x,y,p,theta)
-surrogate_optimize(objective_function_ND,SRBF(),lb,ub,my_k_SRBFN,UniformSample())
+#Every optimization method now returns the y_min and its position
+x_min, y_min = surrogate_optimize(objective_function_ND,SRBF(),lb,ub,my_k_SRBFN,UniformSample())
 
 #Radials
 lb = [1.0,1.0]
