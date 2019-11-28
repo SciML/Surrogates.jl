@@ -1,7 +1,7 @@
 name = "Surrogates"
 uuid = "6fc51010-71bc-11e9-0e15-a3fcc6593c49"
 authors = ["ludoro <ludovicobessi@gmail.com>"]
-version = "0.1.0"
+version = "0.1.1"
 
 [deps]
 DataFrames = "a93c6f00-e57d-5684-b7b6-d8193f3e46c0"
