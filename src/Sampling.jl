@@ -83,11 +83,12 @@ function sample(n,lb,ub,::LatinHypercubeSample)
         # x∈[0,n], so affine transform
         return @. (ub-lb) * x/(n) + lb
     else
-        x = float(LHCoptim(n,d,1)[1])
+        lib_out = float(LHCoptim(n,d,1)[1])
         # x∈[0,n], so affine transform column-wise
         @inbounds for c = 1:d
-            x[:,c] = (ub[c]-lb[c])*x[:,c]/n .+ lb[c]
+            lib_out[:,c] = (ub[c]-lb[c])*lib_out[:,c]/n .+ lb[c]
         end
+        x = [lib_out[i,:] for i = 1:n]
         return Tuple.(x)
     end
 end
@@ -139,12 +140,14 @@ function sample(n,lb,ub,S::LowDiscrepancySample)
         @inbounds for c = 1:d
             x[:,c] = (ub[c]-lb[c])*x[:,c] .+ lb[c]
         end
-        return Tuple.(x)
+
+        y = [x[i,:] for i = 1:n]
+        return Tuple.(y)
     end
 end
 
 """
-sample(n,d,D::Distributio)
+sample(n,d,D::Distribution)
 
 Returns a Tuple containig numbers distributed as D
 """
