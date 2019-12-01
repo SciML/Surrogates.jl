@@ -18,7 +18,7 @@ XGBoost = "009559a3-9522-5dbb-924b-0b6ed2b22bb9"
 [compat]
 DataFrames = "0.19"
 Distributions = "0.21"
-Flux = "0.9"
+Flux = "0.10"
 GLM = "1.3"
 LIBSVM = "0.3"
 LatinHypercubeSampling = "1.2"
