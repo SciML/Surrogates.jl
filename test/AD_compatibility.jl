@@ -3,7 +3,7 @@ using ForwardDiff
 using LinearAlgebra
 using Flux
 using Flux: @epochs
-using Flux.Tracker
+using Tracker
 using Zygote
 #using Zygote: @nograd
 
