@@ -7,7 +7,9 @@ using Sobol
 using LatinHypercubeSampling
 using XGBoost
 using LIBSVM
-using Flux
+using Flux, Tracker
+using Flux: @epochs
+
 
 abstract type AbstractSurrogate <: Function end
 include("Radials.jl")

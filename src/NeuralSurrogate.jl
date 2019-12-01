@@ -1,5 +1,5 @@
 using Flux
-using Flux: @epochs
+
 mutable struct NeuralSurrogate{X,Y,M,L,O,P,N,A,U} <: AbstractSurrogate
     x::X
     y::Y
@@ -24,7 +24,8 @@ function NeuralSurrogate(x,y,lb::Number,ub::Number,model,loss,opt,n_echos)
 end
 
 function (my_neural::NeuralSurrogate)(val::Number)
-    return Tracker.data(first(my_neural.model([val])))
+    out =  first(my_neural.model([val]))
+    out isa TrackedReal ? Tracker.data(out) : out
 end
 
 function add_point!(my_n::NeuralSurrogate,x_new,y_new)
@@ -100,5 +101,6 @@ end
 
 function (my_neural::NeuralSurrogate)(val)
     v = [val...]
-    Tracker.data(first(my_neural.model(v)))
+    out = first(my_neural.model(v))
+    out isa TrackedReal ? Tracker.data(out) : out
 end
