@@ -520,6 +520,7 @@ function surrogate_optimize(obj::Function,::EI,lb::Number,ub::Number,krig::Krigi
             end
             add_point!(krig,new_x_max,obj(new_x_max))
         end
+        println("Completed maximum number of iterations")
 end
 
 """
@@ -584,6 +585,7 @@ function surrogate_optimize(obj::Function,::EI,lb,ub,krig::Kriging,sample_type::
             end
             add_point!(krig,Tuple(new_x_max),obj(new_x_max))
         end
+        println("Completed maximum number of iterations")
 end
 
 
