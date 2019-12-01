@@ -24,7 +24,7 @@ function NeuralSurrogate(x,y,lb::Number,ub::Number,model,loss,opt,n_echos)
 end
 
 function (my_neural::NeuralSurrogate)(val::Number)
-    return Tracker.data(first(my_neural.model([val])))
+    return first(my_neural.model([val]))
 end
 
 function add_point!(my_n::NeuralSurrogate,x_new,y_new)
@@ -100,5 +100,5 @@ end
 
 function (my_neural::NeuralSurrogate)(val)
     v = [val...]
-    Tracker.data(first(my_neural.model(v)))
+    first(my_neural.model(v))
 end
