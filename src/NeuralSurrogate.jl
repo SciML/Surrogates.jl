@@ -25,7 +25,7 @@ end
 
 function (my_neural::NeuralSurrogate)(val::Number)
     out =  first(my_neural.model([val]))
-    out isa TrackedReal ? Tracker.data(out) : out
+    out isa Tracker.TrackedReal ? Tracker.data(out) : out
 end
 
 function add_point!(my_n::NeuralSurrogate,x_new,y_new)
@@ -102,5 +102,5 @@ end
 function (my_neural::NeuralSurrogate)(val)
     v = [val...]
     out = first(my_neural.model(v))
-    out isa TrackedReal ? Tracker.data(out) : out
+    out isa Tracker.TrackedReal ? Tracker.data(out) : out
 end
