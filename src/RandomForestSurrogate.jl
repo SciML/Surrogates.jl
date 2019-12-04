@@ -31,7 +31,7 @@ function RandomForestSurrogate(x,y,lb,ub,num_round)
 end
 
 function (rndfor::RandomForestSurrogate)(val)
-    return XGBoost.predict(rndfor.bst,reshape(collect(val),1,2))[1]
+    return XGBoost.predict(rndfor.bst,reshape(collect(val),1,length(val)))[1]
 end
 
 function add_point!(rndfor::RandomForestSurrogate,x_new,y_new)
