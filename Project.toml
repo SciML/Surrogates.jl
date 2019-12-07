@@ -16,7 +16,7 @@ Tracker = "9f7883ad-71c0-57eb-9f7f-b5c9e6d3789c"
 XGBoost = "009559a3-9522-5dbb-924b-0b6ed2b22bb9"
 
 [compat]
-DataFrames = "0.19"
+DataFrames = "0.19, 0.20"
 Distributions = "0.21"
 Flux = "0.9, 0.10"
 GLM = "1.3"
