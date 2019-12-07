@@ -101,7 +101,7 @@ function RadialBasis(x, y, bounds, phi::Function, q::Int)
     return RadialBasis(phi, q, x, y, bounds, coeff)
 end
 
-function _calc_coeffs(x,y,bounds,phi,q)
+function _calc_coeffs(x, y, bounds, phi, q)
     n = length(x)
     d = length(x[1])
     central_point = zeros(eltype(x[1]), d)
@@ -143,7 +143,7 @@ Returns the value at point vect[] of the alpha degree monomial centralized.
 """
 function centralized_monomial(vect,alpha,mean_half_diameter,central_point)
     if iszero(alpha) return one(eltype(vect)) end
-    centralized_product = prod(vect .- central_point)
+    centralized_product = prod(vect[i] - central_point[i] for i in length(vect))
     return (centralized_product / mean_half_diameter)^alpha
 end
 
