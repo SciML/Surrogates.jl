@@ -20,9 +20,9 @@ function (rad::RadialBasis)(val)
     d = length(rad.x[1])
     q = rad.dim_poly
     lb, ub = rad.bounds
-    sum_half_diameter = sum((rad.bounds[2][k]-rad.bounds[1][k])/2 for k = 1:d)
+    sum_half_diameter = sum((ub[k]-lb[k])/2 for k = 1:d)
     mean_half_diameter = sum_half_diameter/d
-    central_point = (lb .+ ub) ./ 2
+    central_point = _center_bounds(first(rad.x), lb, ub)
     approx = sum(rad.coeff[i]*rad.phi(val .- rad.x[i]) for i = 1:n)
     for k = 1:q
         approx += rad.coeff[n+k]*centralized_monomial(val, k-1, mean_half_diameter, central_point)
@@ -33,6 +33,9 @@ end
 function _scaled_chebyshev(x, k, lb, ub)
     return cos(k*acos(-1 + 2*(x-lb)/(ub-lb)))
 end
+
+_center_bounds(x::Tuple, lb, ub) = ntuple(i -> (ub[i] - lb[i])/2, length(x))
+_center_bounds(x, lb, ub) = (ub .- lb) ./ 2
 
 """
 Calculates current estimate of value 'val' with respect to RadialBasis object.
@@ -104,12 +107,9 @@ end
 function _calc_coeffs(x, y, bounds, phi, q)
     n = length(x)
     d = length(x[1])
-    central_point = zeros(eltype(x[1]), d)
-    sum_half_diameter = zero(eltype(x[1]))
-    for i = 1:d
-        central_point[i] = (bounds[1][i]+bounds[2][i])/2
-        sum_half_diameter += (bounds[2][i]-bounds[1][i])/2
-    end
+    lb, ub = bounds
+    central_point = _center_bounds(first(x), lb, ub)
+    sum_half_diameter = sum((ub[k]-lb[k])/2 for k = 1:d)
     mean_half_diameter = sum_half_diameter / d
     m = n+q
     D = zeros(eltype(x[1]), m, m)
@@ -143,7 +143,7 @@ Returns the value at point vect[] of the alpha degree monomial centralized.
 """
 function centralized_monomial(vect,alpha,mean_half_diameter,central_point)
     if iszero(alpha) return one(eltype(vect)) end
-    centralized_product = prod(vect[i] - central_point[i] for i in length(vect))
+    centralized_product = prod(vect .- central_point)
     return (centralized_product / mean_half_diameter)^alpha
 end
 
