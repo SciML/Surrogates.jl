@@ -18,12 +18,24 @@ Calculates current estimate of array value 'val' with respect to RadialBasis obj
 function (rad::RadialBasis)(val)
     n = length(rad.x)
     d = length(rad.x[1])
-    my_sum = Base.sum((rad.bounds[2][k]-rad.bounds[1][k])/2 for k = 1:d)
-    half_diameter_domain = my_sum/d
-    approx = sum(rad.coeff[i]*rad.phi(val .- rad.x[i]) for i = 1:n) +
-             sum(rad.coeff[j]*centralized_monomial(val,n+1-j,half_diameter_domain,(rad.bounds[1][j-n]+rad.bounds[2][j-n])/2) for j = (n+1):(n+rad.dim_poly))
+    q = rad.dim_poly
+    lb, ub = rad.bounds
+    sum_half_diameter = sum((ub[k]-lb[k])/2 for k = 1:d)
+    mean_half_diameter = sum_half_diameter/d
+    central_point = _center_bounds(first(rad.x), lb, ub)
+    approx = sum(rad.coeff[i]*rad.phi(val .- rad.x[i]) for i = 1:n)
+    for k = 1:q
+        approx += rad.coeff[n+k]*centralized_monomial(val, k-1, mean_half_diameter, central_point)
+    end
     return approx
 end
+
+function _scaled_chebyshev(x, k, lb, ub)
+    return cos(k*acos(-1 + 2*(x-lb)/(ub-lb)))
+end
+
+_center_bounds(x::Tuple, lb, ub) = ntuple(i -> (ub[i] - lb[i])/2, length(x))
+_center_bounds(x, lb, ub) = (ub .- lb) ./ 2
 
 """
 Calculates current estimate of value 'val' with respect to RadialBasis object.
@@ -32,24 +44,14 @@ function (rad::RadialBasis)(val::Number)
     approx = zero(eltype(rad.x[1]))
     n = length(rad.x)
     q = rad.dim_poly
-    Chebyshev(x,k) = cos(k*acos(-1 + 2/(rad.bounds[2]-rad.bounds[1])*(x.-rad.bounds[1])))
     for i = 1:n
-        approx = approx + rad.coeff[i]*rad.phi(val .- rad.x[i])
+        approx += rad.coeff[i]*rad.phi(val .- rad.x[i])
     end
-    for i = n+1:n+q
-        approx = approx + rad.coeff[i]*Chebyshev(val,n+1-i)
+    for k = 1:q
+        approx += rad.coeff[n+k] * _scaled_chebyshev(val, k-1, rad.bounds[1], rad.bounds[2])
     end
     return approx
 end
-
-
-#=
-linear_basis_function = Basis(z->norm(z), 1)
-cubic_basis_function = Basis(z->norm(z)^3, 2)
-function multiquadric_basis_function(lambda)
-    return Basis(z->sqrt(norm(z)^2 + lambda^2),1)
-end
-=#
 
 """
     RadialBasis(x,y,a::Number,b::Number,phi::Function,q::Int)
@@ -60,31 +62,31 @@ Constructor for RadialBasis surrogate
 -'phi': radial basis of choice
 -'q': number of polynomial elements
 """
-function RadialBasis(x,y,a::Number,b::Number,phi::Function,q::Int)
-    coeff = _calc_coeffs(x,y,a,b,phi,q)
-    RadialBasis(phi,q,x,y,(a,b),coeff)
+function RadialBasis(x, y, lb::Number, ub::Number, phi::Function, q::Int)
+    coeff = _calc_coeffs(x, y, lb, ub, phi, q)
+    return RadialBasis(phi, q, x, y, (lb, ub), coeff)
 end
 
-function _calc_coeffs(x,y,a,b,phi,q)
-    Chebyshev(x,k) = cos(k*acos(-1 + 2/(b-a)*(x-a)))
+function _calc_coeffs(x, y, lb, ub, phi, q)
     n = length(x)
-    size = n+q
-    D = zeros(eltype(x[1]), size, size)
-    d = zeros(eltype(x[1]),size)
+    m = n + q
+    D = zeros(eltype(x[1]), m, m)
+    d = zeros(eltype(x[1]), m)
 
     @inbounds for i = 1:n
-        d[i] =  y[i]
+        d[i] = y[i]
         for j = 1:n
             D[i,j] = phi(x[i] .- x[j])
         end
-        if i < n + 1
-            for k = n+1:size
-                D[i,k] = Chebyshev(x[i],k)
+        if i <= n
+            for k = 1:q
+                D[i,n+k] = _scaled_chebyshev(x[i], k-1, lb, ub)
             end
         end
     end
-    Sym = Symmetric(D,:U)
-    coeff = Sym\d
+    D_sym = Symmetric(D, :U)
+    coeff = D_sym\d
+    return coeff
 end
 
 """
@@ -97,57 +99,52 @@ Constructor for RadialBasis surrogate
 - phi: radial basis of choice
 - q: number of polynomial elements
 """
-function RadialBasis(x,y,bounds,phi::Function,q::Int)
-    coeff = _calc_coeffs(x,y,bounds,phi,q)
-    RadialBasis(phi,q,x,y,bounds,coeff)
+function RadialBasis(x, y, bounds, phi::Function, q::Int)
+    coeff = _calc_coeffs(x, y, bounds, phi, q)
+    return RadialBasis(phi, q, x, y, bounds, coeff)
 end
 
-function _calc_coeffs(x,y,bounds,phi,q)
+function _calc_coeffs(x, y, bounds, phi, q)
     n = length(x)
     d = length(x[1])
-    central_point = zeros(eltype(x[1]), d)
-    sum = zero(eltype(x[1]))
-    for i = 1:d
-        central_point[i] = (bounds[1][i]+bounds[2][i])/2
-        sum += (bounds[2][i]-bounds[1][i])/2
-    end
-    half_diameter_domain = sum/d
-    size = n+q
-    D = zeros(eltype(x[1]), size, size)
-    d = zeros(eltype(x[1]),size)
+    lb, ub = bounds
+    central_point = _center_bounds(first(x), lb, ub)
+    sum_half_diameter = sum((ub[k]-lb[k])/2 for k = 1:d)
+    mean_half_diameter = sum_half_diameter / d
+    m = n+q
+    D = zeros(eltype(x[1]), m, m)
+    d = zeros(eltype(x[1]), m)
 
     @inbounds for i = 1:n
-        d[i] =  y[i]
+        d[i] = y[i]
         for j = 1:n
             D[i,j] = phi(x[i] .- x[j])
         end
         if i < n + 1
-            for k = n+1:size
-                D[i,k] = centralized_monomial(x[i],k,half_diameter_domain,central_point)
+            for k = 1:q
+                D[i,n+k] = centralized_monomial(x[i], k-1, mean_half_diameter, central_point)
             end
         end
     end
-    Sym = Symmetric(D,:U)
-    coeff = Sym\d
+    D_sym = Symmetric(D, :U)
+    return coeff = D_sym\d
 end
 
 """
-    centralized_monomial(vect,alpha,half_diameter_domain,central_point)
+    centralized_monomial(vect,alpha,mean_half_diameter,central_point)
 
 Returns the value at point vect[] of the alpha degree monomial centralized.
 
 #Arguments:
 -'vect': vector of points i.e [x,y,...,w]
 -'alpha': degree
--'half_diameter_domain': half diameter of the domain
+-'mean_half_diameter': half diameter of the domain
 -'central_point': central point in the domain
 """
-function centralized_monomial(vect,alpha,half_diameter_domain,central_point)
-    mul = 1
-    @inbounds for i = 1:length(vect)
-        mul *= vect[i]
-    end
-    return ((mul-norm(central_point))/(half_diameter_domain))^alpha
+function centralized_monomial(vect,alpha,mean_half_diameter,central_point)
+    if iszero(alpha) return one(eltype(vect)) end
+    centralized_product = prod(vect .- central_point)
+    return (centralized_product / mean_half_diameter)^alpha
 end
 
 """
