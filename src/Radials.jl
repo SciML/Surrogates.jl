@@ -13,9 +13,25 @@ mutable struct RadialBasis{F,X,Y,B,C} <: AbstractSurrogate
 end
 
 """
-Calculates current estimate of array value 'val' with respect to RadialBasis object.
+Calculates current estimate of value 'val' with respect to RadialBasis object.
 """
 function (rad::RadialBasis)(val)
+    approx = zero(first(rad.y))
+    return _approx_rbf(approx, val, rad)
+end
+
+function _approx_rbf(approx::Number, val::Number, rad)
+    n = length(rad.x)
+    q = rad.dim_poly
+    for i = 1:n
+        approx += rad.coeff[i] * rad.phi(val .- rad.x[i])
+    end
+    for k = 1:q
+        approx += rad.coeff[n+k] * _scaled_chebyshev(val, k-1, rad.bounds[1], rad.bounds[2])
+    end
+    return approx
+end
+function _approx_rbf(approx::Number, val, rad)
     n = length(rad.x)
     d = length(rad.x[1])
     q = rad.dim_poly
@@ -23,35 +39,46 @@ function (rad::RadialBasis)(val)
     sum_half_diameter = sum((ub[k]-lb[k])/2 for k = 1:d)
     mean_half_diameter = sum_half_diameter/d
     central_point = _center_bounds(first(rad.x), lb, ub)
-    approx = sum(rad.coeff[i]*rad.phi(val .- rad.x[i]) for i = 1:n)
+
+    approx = sum(rad.coeff[i] * rad.phi(val .- rad.x[i]) for i = 1:n)
     for k = 1:q
-        approx += rad.coeff[n+k]*centralized_monomial(val, k-1, mean_half_diameter, central_point)
+        approx += rad.coeff[n+k] .* centralized_monomial(val, k-1, mean_half_diameter, central_point)
     end
     return approx
 end
-
-function _scaled_chebyshev(x, k, lb, ub)
-    return cos(k*acos(-1 + 2*(x-lb)/(ub-lb)))
-end
-
-_center_bounds(x::Tuple, lb, ub) = ntuple(i -> (ub[i] - lb[i])/2, length(x))
-_center_bounds(x, lb, ub) = (ub .- lb) ./ 2
-
-"""
-Calculates current estimate of value 'val' with respect to RadialBasis object.
-"""
-function (rad::RadialBasis)(val::Number)
-    approx = zero(eltype(rad.x[1]))
+function _approx_rbf(approx, val::Number, rad)
     n = length(rad.x)
     q = rad.dim_poly
     for i = 1:n
-        approx += rad.coeff[i]*rad.phi(val .- rad.x[i])
+        approx += rad.coeff[i, :] * rad.phi(val .- rad.x[i])
+        @show approx
     end
     for k = 1:q
-        approx += rad.coeff[n+k] * _scaled_chebyshev(val, k-1, rad.bounds[1], rad.bounds[2])
+        approx += rad.coeff[n+k, :] * _scaled_chebyshev(val, k-1, rad.bounds[1], rad.bounds[2])
+        @show approx
     end
     return approx
 end
+function _approx_rbf(approx, val, rad)
+    n = length(rad.x)
+    d = length(rad.x[1])
+    q = rad.dim_poly
+    lb, ub = rad.bounds
+    sum_half_diameter = sum((ub[k]-lb[k])/2 for k = 1:d)
+    mean_half_diameter = sum_half_diameter/d
+    central_point = _center_bounds(first(rad.x), lb, ub)
+
+    @views approx += sum(rad.coeff[i, :] * rad.phi(val .- rad.x[i]) for i = 1:n)
+    for k = 1:q
+        @views approx .+= rad.coeff[n+k, :] .* centralized_monomial(val, k-1, mean_half_diameter, central_point)
+    end
+    return approx
+end
+
+_scaled_chebyshev(x, k, lb, ub) = cos(k*acos(-1 + 2*(x-lb)/(ub-lb)))
+_center_bounds(x::Tuple, lb, ub) = ntuple(i -> (ub[i] - lb[i])/2, length(x))
+_center_bounds(x, lb, ub) = (ub .- lb) ./ 2
+
 
 """
     RadialBasis(x,y,a::Number,b::Number,phi::Function,q::Int)
@@ -67,14 +94,29 @@ function RadialBasis(x, y, lb::Number, ub::Number, phi::Function, q::Int)
     return RadialBasis(phi, q, x, y, (lb, ub), coeff)
 end
 
-function _calc_coeffs(x, y, lb, ub, phi, q)
+"""
+RadialBasis(x,y,bounds,phi::Function,q::Int)
+
+Constructor for RadialBasis surrogate
+
+- (x,y): sampled points
+- bounds: region of interest of the form [[a,b],[c,d],...,[w,z]]
+- phi: radial basis of choice
+- q: number of polynomial elements
+"""
+function RadialBasis(x, y, bounds, phi::Function, q::Int)
+    coeff = _calc_coeffs(x, y, bounds[1], bounds[2], phi, q)
+    return RadialBasis(phi, q, x, y, bounds, coeff)
+end
+
+function _calc_coeffs(x, y, lb::Number, ub::Number, phi, q)
     n = length(x)
     m = n + q
     D = zeros(eltype(x[1]), m, m)
-    d = zeros(eltype(x[1]), m)
+    d = zeros(eltype(y[1]), m, length(y[1]))
 
     @inbounds for i = 1:n
-        d[i] = y[i]
+        d[i, :] .= y[i]
         for j = 1:n
             D[i,j] = phi(x[i] .- x[j])
         end
@@ -89,34 +131,18 @@ function _calc_coeffs(x, y, lb, ub, phi, q)
     return coeff
 end
 
-"""
-RadialBasis(x,y,bounds,phi::Function,q::Int)
-
-Constructor for RadialBasis surrogate
-
-- (x,y): sampled points
-- bounds: region of interest of the form [[a,b],[c,d],...,[w,z]]
-- phi: radial basis of choice
-- q: number of polynomial elements
-"""
-function RadialBasis(x, y, bounds, phi::Function, q::Int)
-    coeff = _calc_coeffs(x, y, bounds, phi, q)
-    return RadialBasis(phi, q, x, y, bounds, coeff)
-end
-
-function _calc_coeffs(x, y, bounds, phi, q)
+function _calc_coeffs(x, y, lb, ub, phi, q)
     n = length(x)
-    d = length(x[1])
-    lb, ub = bounds
+    nd = length(x[1])
     central_point = _center_bounds(first(x), lb, ub)
-    sum_half_diameter = sum((ub[k]-lb[k])/2 for k = 1:d)
-    mean_half_diameter = sum_half_diameter / d
+    sum_half_diameter = sum((ub[k]-lb[k])/2 for k = 1:nd)
+    mean_half_diameter = sum_half_diameter / nd
     m = n+q
     D = zeros(eltype(x[1]), m, m)
-    d = zeros(eltype(x[1]), m)
+    d = zeros(eltype(y[1]), m, length(y[1]))
 
     @inbounds for i = 1:n
-        d[i] = y[i]
+        d[i, :] .= y[i]
         for j = 1:n
             D[i,j] = phi(x[i] .- x[j])
         end
