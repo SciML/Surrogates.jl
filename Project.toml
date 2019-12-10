@@ -24,7 +24,7 @@ julia = "1"
 Cubature = "667455a9-e2ce-5579-9412-b964f529a492"
 Flux = "587475ba-b771-5e3f-ad9e-33799f191a9c"
 ForwardDiff = "f6369f11-7733-5829-9624-2563aa707210"
-LIBSVM = "b1bec4e5-fd48-53fe-b0cb-9723c09d164b"
+#LIBSVM = "b1bec4e5-fd48-53fe-b0cb-9723c09d164b"
 QuadGK = "1fd47b50-473d-5c70-9696-f719f8f3bcdc"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 Tracker = "9f7883ad-71c0-57eb-9f7f-b5c9e6d3789c"
@@ -32,4 +32,4 @@ XGBoost = "009559a3-9522-5dbb-924b-0b6ed2b22bb9"
 Zygote = "e88e6eb3-aa80-5325-afca-941959d7151f"
 
 [targets]
-test = ["Cubature", "Flux", "ForwardDiff", "LIBSVM", "QuadGK", "Test", "Tracker", "XGBoost", "Zygote"]
+test = ["Cubature", "Flux", "ForwardDiff", "QuadGK", "Test", "Tracker", "XGBoost", "Zygote"]
