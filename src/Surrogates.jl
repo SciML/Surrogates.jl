@@ -1,6 +1,5 @@
 module Surrogates
 using LinearAlgebra
-using DataFrames
 using GLM
 using Distributions
 using Sobol
