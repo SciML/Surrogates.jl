@@ -5,10 +5,10 @@ using GLM
 using Distributions
 using Sobol
 using LatinHypercubeSampling
-using XGBoost
+using Requires
 using LIBSVM
 using Flux, Tracker
-using Flux: @epochs
+
 
 
 abstract type AbstractSurrogate <: Function end
@@ -18,11 +18,35 @@ include("Sampling.jl")
 include("Optimization.jl")
 include("Lobachesky.jl")
 include("LinearSurrogate.jl")
-include("RandomForestSurrogate.jl")
-include("SVMSurrogate.jl")
-include("NeuralSurrogate.jl")
 include("InverseDistanceSurrogate.jl")
 include("SecondOrderPolynomialSurrogate.jl")
+
+remove_tracker(x) = x
+
+function __init__()
+    @requires XGBoost="009559a3-9522-5dbb-924b-0b6ed2b22bb9" begin
+        using XGBoost
+        include("SVMSurrogate.jl")
+    end
+
+    @requires Flux="587475ba-b771-5e3f-ad9e-33799f191a9c" begin
+        using Flux
+        using Flux: @epochs
+        include("NeuralSurrogate.jl")
+    end
+
+    @requires Tracker = "9f7883ad-71c0-57eb-9f7f-b5c9e6d3789c" begin
+        remove_tracker(x::TrackedReal) = Tracker.data(x)
+        remove_tracker(x::TrackedArray) = Tracker.data(x)
+    end
+
+    @requires LIBSVM="b1bec4e5-fd48-53fe-b0cb-9723c09d164b" begin
+        using LIBSVM
+        include("RandomForestSurrogate.jl")
+    end
+end
+
+
 
 export AbstractSurrogate, SamplingAlgorithm
 export Kriging, RadialBasis, add_point!, current_estimate, std_error_at_point
