@@ -28,17 +28,17 @@ LobacheskySurrogate(x,y,alpha,n::Int,lb,ub)
 lobachesky_integral(loba::LobacheskySurrogate,lb,ub)
 ```
 
-* Support vector machine surrogate
+* Support vector machine surrogate, requires `using LIBSVM`
 ```@docs
 SVMSurrogate(x,y,lb,ub)
 ```
 
-* Random forest surrogate
+* Random forest surrogate, requires `using XGBoost`
 ```@docs
 RandomForestSurrogate(x,y,lb,ub,num_round)
 ```
 
-* Neural network surrogate
+* Neural network surrogate, requires `using Flux`
 ```@docs
 NeuralSurrogate(x,y,lb,ub,model,loss,opt,n_echos)
 ```
