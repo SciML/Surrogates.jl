@@ -6,8 +6,6 @@ using Sobol
 using LatinHypercubeSampling
 using Requires
 
-
-
 abstract type AbstractSurrogate <: Function end
 include("Radials.jl")
 include("Kriging.jl")
@@ -23,7 +21,7 @@ remove_tracker(x) = x
 function __init__()
     @require XGBoost="009559a3-9522-5dbb-924b-0b6ed2b22bb9" begin
         using XGBoost
-        include("SVMSurrogate.jl")
+        include("RandomForestSurrogate.jl")
     end
 
     @require Flux="587475ba-b771-5e3f-ad9e-33799f191a9c" begin
@@ -39,7 +37,7 @@ function __init__()
 
     @require LIBSVM="b1bec4e5-fd48-53fe-b0cb-9723c09d164b" begin
         using LIBSVM
-        include("RandomForestSurrogate.jl")
+        include("SVMSurrogate.jl")
     end
 end
 
