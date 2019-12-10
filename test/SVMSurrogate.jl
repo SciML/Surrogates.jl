@@ -1,4 +1,4 @@
-using Surrogates
+using Surrogates, LIBSVM
 
 #1D
 
