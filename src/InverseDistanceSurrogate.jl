@@ -33,14 +33,14 @@ function (inverSurr::InverseDistanceSurrogate)(val)
 end
 
 function add_point!(inverSurr::InverseDistanceSurrogate,x_new,y_new)
-    if length(inverSurr.lb) == 1
+    if eltype(x_new) == eltype(inverSurr.x)
         #1D
         append!(inverSurr.x,x_new)
         append!(inverSurr.y,y_new)
     else
         #ND
-        inverSurr.x = vcat(inverSurr.x,x_new)
-        inverSurr.y = vcat(inverSurr.y,y_new)
+        push!(inverSurr.x, x_new)
+        push!(inverSurr.y, y_new)
     end
     nothing
 end
