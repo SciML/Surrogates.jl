@@ -35,13 +35,9 @@ function _construct_2nd_order_interp_matrix(x, x_el)
     end
     return X
 end
-function _construct_y_matrix(y, y_el::Number)
-    return y
-end
-function _construct_y_matrix(y, y_el)
-    Y = [y[i][j] for i=1:length(y), j=1:length(y_el)]
-    return Y
-end
+
+_construct_y_matrix(y, y_el::Number) = y
+_construct_y_matrix(y, y_el) = [y[i][j] for i=1:length(y), j=1:length(y_el)]
 
 function (my_second_ord::SecondOrderPolynomialSurrogate)(val)
     #just create the val vector as X and multiply
@@ -49,22 +45,17 @@ function (my_second_ord::SecondOrderPolynomialSurrogate)(val)
 
     y = my_second_ord.β[1, :]
     for j = 1:d
-        #X[j+1] = val[j]
         y += val[j]*my_second_ord.β[j+1, :]
     end
     for j = 1:d, k = 1:j-1
         idx = j + (k*(k-1)÷2)
         y += val[j] * val[end-k+1] * my_second_ord.β[1+d+idx, :]
-        #X[1+d+idx] = val[j]*val[end-k+1]
     end
     for j = 1:d
-        #X[j + 1 + d + d*(d-1)÷2] = val[j]^2
         y += val[j]^2 * my_second_ord.β[j+1+d+d*(d-1)÷2, :]
     end
     return _match_container(y, first(my_second_ord.y))
 end
-_match_container(y, y_el::Number) = first(y)
-_match_container(y, y_el) = y
 
 function add_point!(my_second::SecondOrderPolynomialSurrogate, x_new, y_new)
     if eltype(x_new) == eltype(my_second.x)
