@@ -30,10 +30,11 @@ mutable struct NeuralSurrogate{X,Y,M,L,O,P,N,A,U} <: AbstractSurrogate
 
  end
 
-function (my_neural::NeuralSurrogate)(val::Number)
-    out =  first(my_neural.model([val]))
-    remove_tracker(out)
-end
+ function (my_neural::NeuralSurrogate)(val)
+     v = [val...]
+     out = my_neural.model(v)
+     remove_tracker(out)
+ end
 
 function add_point!(my_n::NeuralSurrogate, x_new, y_new)
     if eltype(x_new) == eltype(my_n.x)
@@ -47,10 +48,4 @@ function add_point!(my_n::NeuralSurrogate, x_new, y_new)
     data = zip(X, my_n.y)
     @epochs my_n.n_echos Flux.train!(my_n.loss, my_n.ps, data, my_n.opt)
     nothing
-end
-
-function (my_neural::NeuralSurrogate)(val)
-    v = [val...]
-    out = my_neural.model(v)
-    remove_tracker(out)
 end
