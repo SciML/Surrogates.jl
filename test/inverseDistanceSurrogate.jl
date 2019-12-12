@@ -35,6 +35,7 @@ push!(x, 2.0)
 y  = f.(x)
 surrogate = InverseDistanceSurrogate(x, y, 1, lb, ub)
 @test surrogate(2.0) ≈ [4, 2]
+surrogate((0.0, 0.0))
 
 f  = x -> [x[1], x[2]^2]
 lb = [1.0, 2.0]
@@ -42,9 +43,10 @@ ub = [10.0, 8.5]
 x  = sample(20, lb, ub, SobolSample())
 push!(x, (1.0, 2.0))
 y  = f.(x)
-surrogate = InverseDistanceSurrogate(x, y, 1, lb, ub)
+surrogate = InverseDistanceSurrogate(x, y, 1.4, lb, ub)
 @test surrogate((1.0, 2.0)) ≈ [1, 4]
 x_new = (2.0, 2.0)
 y_new = f(x_new)
 add_point!(surrogate, x_new, y_new)
 @test surrogate(x_new) ≈ y_new
+surrogate((0.0, 0.0))

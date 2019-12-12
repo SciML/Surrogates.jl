@@ -294,10 +294,42 @@ g((2.0,5.0))
 
 #NN
 Zygote.refresh()
-model = Chain(Dense(2,1))
+model = Chain(Dense(2,1), sum)
 loss(x, y) = Flux.mse(model(x), y)
 opt = Descent(0.01)
 n_echos = 1
 my_neural = NeuralSurrogate(x,y,lb,ub,model,loss,opt,n_echos)
 g = x -> Zygote.gradient(my_neural,x)
 g((2.0,5.0))
+
+###### ND -> ND ######
+
+lb = [0.0, 0.0]
+ub = [10.0, 2.0]
+n = 5
+x = sample(n,lb,ub,SobolSample())
+f = x -> [x[1]^2, x[2]]
+y = f.(x)
+
+#NN
+Zygote.refresh()
+model = Chain(Dense(2,2))
+loss(x, y) = Flux.mse(model(x), y)
+opt = Descent(0.01)
+n_echos = 1
+my_neural = NeuralSurrogate(x,y,lb,ub,model,loss,opt,n_echos)
+Zygote.gradient(x -> sum(my_neural(x)), (2.0, 5.0))
+
+Zygote.refresh()
+my_rad = RadialBasis(x,y,[lb,ub],z->norm(z),1)
+Zygote.gradient(x -> sum(my_rad(x)), (2.0, 5.0))
+
+Zygote.refresh()
+p = 1.4
+my_inverse = InverseDistanceSurrogate(x,y,p,lb,ub)
+my_inverse((2.0, 5.0))
+Zygote.gradient(x -> sum(my_inverse(x)), (2.0, 5.0))
+
+Zygote.refresh()
+my_second = SecondOrderPolynomialSurrogate(x,y,lb,ub)
+Zygote.gradient(x -> sum(my_second(x)), (2.0, 5.0))

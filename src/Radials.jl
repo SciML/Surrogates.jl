@@ -68,7 +68,7 @@ function _approx_rbf(approx, val, rad)
 
     @views approx += sum(rad.coeff[i, :] * rad.phi(val .- rad.x[i]) for i = 1:n)
     for k = 1:q
-        @views approx .+= rad.coeff[n+k, :] .* centralized_monomial(val, k-1, mean_half_diameter, central_point)
+        @views approx += rad.coeff[n+k, :] .* centralized_monomial(val, k-1, mean_half_diameter, central_point)
     end
     return approx
 end

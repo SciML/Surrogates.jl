@@ -17,15 +17,15 @@ end
 
 function (inverSurr::InverseDistanceSurrogate)(val)
     if val in inverSurr.x
-        return inverSurr.y[findall(x->x==val,inverSurr.x)[1]]
+        return inverSurr.y[findfirst(x->x==val,inverSurr.x)]
     else
         if length(inverSurr.lb) == 1
             num = sum(inverSurr.y[i]*(norm(val .- inverSurr.x[i]))^(-inverSurr.p) for i = 1:length(inverSurr.x))
             den = sum(norm(val .- inverSurr.x[i])^(-inverSurr.p) for i = 1:length(inverSurr.x))
             return num/den
         else
-            βᵢ = [norm(val .- inverSurr.x[i]) for i = 1:length(inverSurr.x)]
-            num = inverSurr.y'*βᵢ
+            βᵢ = [norm(val .- inverSurr.x[i])^(-inverSurr.p) for i = 1:length(inverSurr.x)]
+            num = sum(inverSurr.y[i] * βᵢ[i] for i = 1:length(inverSurr.y))
             den = sum(βᵢ)
             return num/den
         end
