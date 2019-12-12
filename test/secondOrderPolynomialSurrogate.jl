@@ -32,8 +32,6 @@ push!(x, 2.0)
 y  = f.(x)
 surrogate = SecondOrderPolynomialSurrogate(x, y, lb, ub)
 # should be exact
-d = 1; val = 2
-surrogate.β
 @test surrogate.β ≈ [0 0; 0 1; 1 0]
 
 @test surrogate(2.0) ≈ [4, 2]

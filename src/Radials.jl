@@ -51,11 +51,9 @@ function _approx_rbf(approx, val::Number, rad)
     q = rad.dim_poly
     for i = 1:n
         approx += rad.coeff[i, :] * rad.phi(val .- rad.x[i])
-        @show approx
     end
     for k = 1:q
         approx += rad.coeff[n+k, :] * _scaled_chebyshev(val, k-1, rad.bounds[1], rad.bounds[2])
-        @show approx
     end
     return approx
 end
@@ -182,19 +180,10 @@ function add_point!(rad::RadialBasis,new_x,new_y)
     if (length(new_x) == 1 && length(new_x[1]) == 1) || ( length(new_x) > 1 && length(new_x[1]) == 1 && length(rad.bounds[1])>1)
         push!(rad.x,new_x)
         push!(rad.y,new_y)
-        if length(rad.bounds[1]) == 1
-            rad.coeff = _calc_coeffs(rad.x,rad.y,rad.bounds[1],rad.bounds[2],rad.phi,rad.dim_poly)
-        else
-            rad.coeff = _calc_coeffs(rad.x,rad.y,rad.bounds,rad.phi,rad.dim_poly)
-        end
     else
         append!(rad.x,new_x)
         append!(rad.y,new_y)
-        if length(rad.bounds[1]) == 1
-            rad.coeff = _calc_coeffs(rad.x,rad.y,rad.bounds[1],rad.bounds[2],rad.phi,rad.dim_poly)
-        else
-            rad.coeff = _calc_coeffs(rad.x,rad.y,rad.bounds,rad.phi,rad.dim_poly)
-        end
     end
+    rad.coeff = _calc_coeffs(rad.x,rad.y,rad.bounds[1],rad.bounds[2],rad.phi,rad.dim_poly)
     nothing
 end

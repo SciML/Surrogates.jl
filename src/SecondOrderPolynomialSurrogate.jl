@@ -28,7 +28,7 @@ function _construct_2nd_order_interp_matrix(x, x_el)
     end
     for i = 1:n, j = 1:d, k = 1:j
         idx = j + (k*(k-1)÷2)
-        X[i, 1+d+idx] = x[i][j]*x[i][k]
+        X[i, 1+d+idx] = x[i][j]*x[i][end-k+1]
     end
     for i = 1:n, j = 1:d
         X[i, j+1+d+d*(d-1)÷2] = x[i][j]^2
