@@ -33,3 +33,28 @@ my_neural((3.5, 1.49))
 my_neural([3.4,1.4])
 add_point!(my_neural,(3.5,1.4),4.9)
 add_point!(my_neural,[(3.5,1.4),(1.5,1.4),(1.3,1.2)],[1.3,1.4,1.5])
+
+# Multi-output #98
+f  = x -> [x^2, x]
+lb = 1.0
+ub = 10.0
+x  = sample(5, lb, ub, SobolSample())
+push!(x, 2.0)
+y  = f.(x)
+model = Chain(Dense(1,2))
+loss(x, y) = Flux.mse(model(x), y)
+surrogate = NeuralSurrogate(x,y,lb,ub,model,loss,opt,n_echos)
+
+f  = x -> [x[1], x[2]^2]
+lb = [1.0, 2.0]
+ub = [10.0, 8.5]
+x  = sample(20, lb, ub, SobolSample())
+push!(x, (1.0, 2.0))
+y  = f.(x)
+model = Chain(Dense(2,2))
+loss(x, y) = Flux.mse(model(x), y)
+surrogate = NeuralSurrogate(x,y,lb,ub,model,loss,opt,n_echos)
+surrogate((1.0, 2.0))
+x_new = (2.0, 2.0)
+y_new = f(x_new)
+add_point!(surrogate, x_new, y_new)
