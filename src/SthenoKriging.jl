@@ -22,11 +22,17 @@ provided as default. If there are multiple observation dimensions, a `Tuple` of 
 processes can be passed, otherwise the same process is used across all dimensions.
 - `σ²`=1e-18: Variance of the observation noise, default is equivalent to no noise
 """
-function SthenoKriging(x, y, gp=Stheno.GP(Stheno.EQ(), Stheno.GPC()), σ²=1e-18)
-    gp_posteriors = _prepare_gps(x, y, gp, σ²)
+function SthenoKriging(x, y, gp::Stheno.AbstractGP=Stheno.GP(Stheno.EQ(), Stheno.GPC()), σ²=1e-18)
+    gpc = gp.gpc
+    gps = ntuple(i -> Stheno.GP(Stheno.EQ(), gpc), length(y[1]))
 
-    return SthenoKriging(x, y, gp, σ², gp_posteriors)
+    return SthenoKriging(x, y, gps, σ²)
 end
+function SthenoKriging(x, y, gps, σ²=1e-18)
+    gp_posteriors = _prepare_gps(x, y, gps, σ²)
+    return SthenoKriging(x, y, gps, σ², gp_posteriors)
+end
+
 
 
 """
@@ -47,7 +53,7 @@ function std_error_at_point(k::SthenoKriging, x)
     X = Stheno.ColVecs([x[i] for i = 1:length(x), j = 1:1])
     nobs = length(k.y[1])
 
-    std_err = [sqrt(first(Stheno.cov(k.gp_posterior[i], X))) for i=1:nobs]
+    std_err = [sqrt(abs(first(Stheno.cov(k.gp_posterior[i], X)))) for i=1:nobs]
 
     return _match_container(std_err, first(k.y))
 end
@@ -60,13 +66,8 @@ Adds the new point(s) and its respective value(s) to the sample points, re-condi
 the surrogate on the updated values.
 """
 function add_point!(k::SthenoKriging, x_new, y_new)
-    if eltype(x_new) == eltype(k.x)
-        append!(k.x, x_new)
-        append!(k.y, y_new)
-    else
-        push!(k.x, x_new)
-        push!(k.y, y_new)
-    end
+    eltype(x_new) == eltype(k.x) ? append!(k.x, x_new) : push!(k.x, x_new)
+    eltype(y_new) == eltype(k.y) ? append!(k.y, y_new) : push!(k.y, y_new)
 
     k.gp_posterior = _prepare_gps(k.x, k.y, k.gp, k.Σy)
     return nothing
