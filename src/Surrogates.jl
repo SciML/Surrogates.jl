@@ -39,6 +39,11 @@ function __init__()
         using LIBSVM
         include("SVMSurrogate.jl")
     end
+
+    @require Stheno = "8188c328-b5d6-583d-959b-9690869a5511" begin
+        using Stheno
+        include("SthenoKriging.jl")
+    end
 end
 
 
