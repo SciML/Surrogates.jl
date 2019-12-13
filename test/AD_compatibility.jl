@@ -233,7 +233,7 @@ g(0.0)
 
 #NN
 Zygote.refresh()
-model = Chain(Dense(1,1))
+model = Chain(Dense(1,1), first)
 loss(x, y) = Flux.mse(model(x), y)
 opt = Descent(0.01)
 n_echos = 1
@@ -294,12 +294,12 @@ g((2.0,5.0))
 
 #NN
 Zygote.refresh()
-model = Chain(Dense(2,1), sum)
+model = Chain(Dense(2,1), first)
 loss(x, y) = Flux.mse(model(x), y)
 opt = Descent(0.01)
 n_echos = 1
 my_neural = NeuralSurrogate(x,y,lb,ub,model,loss,opt,n_echos)
-g = x -> Zygote.gradient(my_neural,x)
+g = x -> Zygote.gradient(my_neural, x)
 g((2.0,5.0))
 
 ###### ND -> ND ######
