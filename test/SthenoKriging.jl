@@ -24,6 +24,7 @@ using Test
     @test pred_std ≈ zero(y_pred) atol=1e-6
 
     @testset "AD" begin
+        Zygote.gradient(x -> my_k(x), 1.0)
     end
 
     @testset "Optimization" begin
@@ -51,6 +52,9 @@ end
     @test pred_std ≈ zero(y_pred) atol=1e-6
 
     @testset "AD" begin
+        g1 = Zygote.gradient(x -> my_k(x), (1.0, 1.0))[1]
+        g2 = Zygote.gradient(x -> my_k(x), [1.0, 1.0])[1]
+        @test [g1...] ≈ g2
     end
     @testset "Optimization" begin
     end
@@ -95,6 +99,7 @@ end
     @test pred_std ≈ zero(y_pred) atol=1e-6
 
     @testset "AD" begin
+        Zygote.gradient(x -> sum(my_k(x)), 1.0)
     end
 end
 
@@ -137,5 +142,8 @@ end
     @test pred_std ≈ zero(y_pred) atol=1e-6
 
     @testset "AD" begin
+        g1 = Zygote.gradient(x -> sum(my_k(x)), (1.1, 1.1))[1]
+        g2 = Zygote.gradient(x -> sum(my_k(x)), [1.1, 1.1])[1]
+        @test [g1...] ≈ g2
     end
 end

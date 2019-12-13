@@ -41,7 +41,7 @@ end
 Gives the mean predicted value for the `SthenoKriging` object.
 """
 function (k::SthenoKriging)(x)
-    X = Stheno.ColVecs([x[i] for i = 1:length(x), j = 1:1])
+    X = _query_to_colvec(x)
     nobs = length(k.y[1])
 
     ŷ = [first(Stheno.mean_vector(k.gp_posterior[i], X)) for i=1:nobs]
@@ -50,13 +50,16 @@ function (k::SthenoKriging)(x)
 end
 
 function std_error_at_point(k::SthenoKriging, x)
-    X = Stheno.ColVecs([x[i] for i = 1:length(x), j = 1:1])
+    X = _query_to_colvec(x)
     nobs = length(k.y[1])
 
     std_err = [sqrt(abs(first(Stheno.cov(k.gp_posterior[i], X)))) for i=1:nobs]
 
     return _match_container(std_err, first(k.y))
 end
+_query_to_colvec(x::Number) = Stheno.ColVecs(reshape([x], length(x), 1))
+_query_to_colvec(x::Tuple) = Stheno.ColVecs(reshape([x...], length(x), 1))
+_query_to_colvec(x) = Stheno.ColVecs(reshape(x, length(x), 1))
 
 
 """
