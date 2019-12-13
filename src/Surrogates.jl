@@ -7,6 +7,7 @@ using LatinHypercubeSampling
 using Requires
 
 abstract type AbstractSurrogate <: Function end
+include("utils.jl")
 include("Radials.jl")
 include("Kriging.jl")
 include("Sampling.jl")
@@ -16,7 +17,6 @@ include("LinearSurrogate.jl")
 include("InverseDistanceSurrogate.jl")
 include("SecondOrderPolynomialSurrogate.jl")
 
-remove_tracker(x) = x
 
 function __init__()
     @require XGBoost="009559a3-9522-5dbb-924b-0b6ed2b22bb9" begin
@@ -40,8 +40,6 @@ function __init__()
         include("SVMSurrogate.jl")
     end
 end
-
-
 
 export AbstractSurrogate, SamplingAlgorithm
 export Kriging, RadialBasis, add_point!, current_estimate, std_error_at_point
