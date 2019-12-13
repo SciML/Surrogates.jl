@@ -28,6 +28,14 @@ using Test
     end
 
     @testset "Optimization" begin
+        objective_function = x -> 2*x+1
+        x = [2.0,4.0,6.0]
+        y = [5.0,9.0,13.0]
+        p = 2
+        a = 2
+        b = 6
+        my_k_EI1 = SthenoKriging(x,y)
+        surrogate_optimize(objective_function,EI(),a,b,my_k_EI1,UniformSample(),maxiters=200,num_new_samples=155)
     end
 end
 
@@ -57,6 +65,15 @@ end
         @test [g1...] ≈ g2
     end
     @testset "Optimization" begin
+        objective_function_ND = z -> 3*hypot(z...)+1
+        x = [(1.2,3.0),(3.0,3.5),(5.2,5.7)]
+        y = objective_function_ND.(x)
+        theta = [2.0,2.0]
+        lb = [1.0,1.0]
+        ub = [6.0,6.0]
+
+        my_k_E1N = SthenoKriging(x,y)
+        surrogate_optimize(objective_function_ND,EI(),lb,ub,my_k_E1N,UniformSample())
     end
 end
 
