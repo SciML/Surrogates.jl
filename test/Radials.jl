@@ -97,3 +97,31 @@ y = f.(x)
 linear = z -> norm(z)
 my_radial_basis = RadialBasis(x, y, [lb, ub], linear, 0)
 @test my_radial_basis((1.0, 2.0)) ≈ 2
+
+# Multi-output #98
+f  = x -> [x^2, x]
+lb = 1.0
+ub = 10.0
+x  = sample(5, lb, ub, SobolSample())
+push!(x, 2.0)
+y  = f.(x)
+linear = z -> norm(z)
+my_radial_basis = RadialBasis(x, y, lb, ub, linear, 2)
+my_radial_basis(2.0)
+@test my_radial_basis(2.0) ≈ [4, 2]
+
+f  = x -> [x[1]*x[2], x[1]+x[2]^2]
+lb = [1.0, 2.0]
+ub = [10.0, 8.5]
+x  = sample(5, lb, ub, SobolSample())
+push!(x, (1.0, 2.0))
+y  = f.(x)
+linear = z -> norm(z)
+my_radial_basis = RadialBasis(x, y, [lb, ub], linear, 2)
+my_radial_basis((1.0, 2.0))
+@test my_radial_basis((1.0, 2.0)) ≈ [2, 5]
+
+x_new = (2.0, 2.0)
+y_new = f(x_new)
+add_point!(my_radial_basis, x_new, y_new)
+@test my_radial_basis(x_new) ≈ y_new
