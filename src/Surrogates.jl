@@ -31,8 +31,8 @@ function __init__()
     end
 
     @require Tracker = "9f7883ad-71c0-57eb-9f7f-b5c9e6d3789c" begin
-        remove_tracker(x::TrackedReal) = Tracker.data(x)
-        remove_tracker(x::TrackedArray) = Tracker.data(x)
+        remove_tracker(x::Tracker.TrackedReal) = Tracker.data(x)
+        remove_tracker(x::Tracker.TrackedArray) = Tracker.data(x)
     end
 
     @require LIBSVM="b1bec4e5-fd48-53fe-b0cb-9723c09d164b" begin
