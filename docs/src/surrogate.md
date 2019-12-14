@@ -22,6 +22,11 @@ RadialBasis(x,y,bounds,phi::Function,q::Int)
 Kriging(x,y,p,theta)
 ```
 
+* Kriging surrogate based on a Stheno backend
+```@docs
+SthenoKriging
+```
+
 * Lobachesky surrogate
 ```@docs
 LobacheskySurrogate(x,y,alpha,n::Int,lb,ub)
