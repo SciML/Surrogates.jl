@@ -13,4 +13,4 @@ using Surrogates
 @testset "InverseDistanceSurrogate" begin include("inverseDistanceSurrogate.jl") end
 @testset "SecondOrderPolynomialSurrogate" begin include("secondOrderPolynomialSurrogate.jl") end
 @testset "AD_Compatibility" begin include("AD_compatibility.jl") end
-@testset "SthenoKriging.jl" begin include("Kriging.jl") end
+@testset "SthenoKriging.jl" begin include("SthenoKriging.jl") end
