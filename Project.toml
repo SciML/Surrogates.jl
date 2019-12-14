@@ -28,6 +28,7 @@ Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 Tracker = "9f7883ad-71c0-57eb-9f7f-b5c9e6d3789c"
 XGBoost = "009559a3-9522-5dbb-924b-0b6ed2b22bb9"
 Zygote = "e88e6eb3-aa80-5325-afca-941959d7151f"
+Stheno = "8188c328-b5d6-583d-959b-9690869a5511"
 
 [targets]
-test = ["Cubature", "ForwardDiff", "Flux", "QuadGK", "Test", "Tracker", "XGBoost", "Zygote"]
+test = ["Cubature", "ForwardDiff", "Flux", "QuadGK", "Test", "Tracker", "XGBoost", "Zygote", "Stheno"]

@@ -8,7 +8,10 @@ makedocs(
         "Surrogates" => "surrogate.md",
         "Optimization" => "optimizations.md"
         ]
-    "Tutorials" => "tutorials.md"
+    "Tutorials" => [
+        "Basics" => "tutorials.md",
+        "Custom Kriging with Stheno" => "stheno.md"
+        ]
     "Contributing" => "contributing.md"
     ]
 )

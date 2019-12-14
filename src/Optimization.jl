@@ -358,7 +358,7 @@ Under a Gaussian process (GP) prior, the goal is to minimize:
 ``LCB(x) := E[x] - k * \\sqrt{(V[x])}``
 default value ``k = 2``.
 """
-function surrogate_optimize(obj::Function,::LCBS,lb::Number,ub::Number,krig::Kriging,sample_type::SamplingAlgorithm;maxiters=100,num_new_samples=100)
+function surrogate_optimize(obj::Function,::LCBS,lb::Number,ub::Number,krig,sample_type::SamplingAlgorithm;maxiters=100,num_new_samples=100)
     #Default value
     k = 2.0
     dtol = 1e-3 * norm(ub-lb)
@@ -416,7 +416,7 @@ Under a Gaussian process (GP) prior, the goal is to minimize:
 
 default value ``k = 2``.
 """
-function surrogate_optimize(obj::Function,::LCBS,lb,ub,krig::Kriging,sample_type::SamplingAlgorithm;maxiters=100,num_new_samples=100)
+function surrogate_optimize(obj::Function,::LCBS,lb,ub,krig,sample_type::SamplingAlgorithm;maxiters=100,num_new_samples=100)
     #Default value
     k = 2.0
     dtol = 1e-3 * norm(ub-lb)
@@ -472,7 +472,7 @@ end
 """
 Expected improvement method 1D
 """
-function surrogate_optimize(obj::Function,::EI,lb::Number,ub::Number,krig::Kriging,sample_type::SamplingAlgorithm;maxiters=100,num_new_samples=100)
+function surrogate_optimize(obj::Function,::EI,lb::Number,ub::Number,krig,sample_type::SamplingAlgorithm;maxiters=100,num_new_samples=100)
         dtol = 1e-3*norm(ub-lb)
         eps = 0.01
         for i = 1:maxiters
@@ -533,7 +533,7 @@ maximize expected improvement:
 
 
 """
-function surrogate_optimize(obj::Function,::EI,lb,ub,krig::Kriging,sample_type::SamplingAlgorithm;maxiters=100,num_new_samples=100)
+function surrogate_optimize(obj::Function,::EI,lb,ub,krig,sample_type::SamplingAlgorithm;maxiters=100,num_new_samples=100)
         dtol = 1e-3*norm(ub-lb)
         eps = 0.01
         for i = 1:maxiters

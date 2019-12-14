@@ -23,11 +23,14 @@ The available surrogates are:
 - Linear
 - Radial Basis
 - Kriging
+- Custom Kriging provided with Stheno
 - Neural Network
-- Support vector machine
+- Support Vector Machine
 - Random Forest
+- Second Order Polynomial
+- Inverse Distance
 
-After the Surrogate is built, we need to optimize it with respect to some objective function.
+After the surrogate is built, we need to optimize it with respect to some objective function.
 That is, simultaneously looking for a minimum **and** sampling the most unknown region.  
 The available optimization methods are:
 
@@ -36,11 +39,50 @@ The available optimization methods are:
 - Expected improvement (EI)
 - Dynamic coordinate search (DYCORS)
 
+## Multi-output Surrogates
+
+In certain situations, the function being modeled may have a multi-dimensional output space.
+In such a case, the surrogate models can take advantage of correlations between the
+observed output variables to obtain more accurate predictions.
+
+When constructing the original surrogate, each element of the passed `y` vector should
+itself be a vector. For example, the following `y` are all valid.
+
+```
+using Surrogates
+using StaticArrays
+
+x = sample(5, [0.0; 0.0], [1.0; 1.0], SobolSample())
+f_static = (x) -> StaticVector(x[1], log(x[2]*x[1]))
+f = (x) -> [x, log(x)/2]
+
+y = f_static.(x)
+y = f.(x)
+```
+
+Currently, the following are implemented as multi-output surrogates:
+
+- Radial Basis
+- Neural Network (via Flux)
+- Second Order Polynomial
+- Inverse Distance
+- Custom Kriging (via Stheno)
+
+## Gradients
+
+The surrogates implemented here are all automatically differentiable via Zygote. Because
+of this property, surrogates are useful models for processes which aren't explicitly
+differentiable, and can be used as layers in, for instance, Flux models.
 
 # Installation
-In the REPL:
+Surrogates is registered in the Julia General Registry. In the REPL:
 ```
-]add https://github.com/JuliaDiffEq/Surrogates.jl
+]add Surrogates
+```
+
+You can obtain the current master with:
+```
+]add https://github.com/JuliaDiffEq/Surrogates.jl#master
 ```
 
 # Quick example
