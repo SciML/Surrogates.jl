@@ -102,7 +102,8 @@ model = Chain(Dense(2, 20, relu), Dense(20, 1))
 loss(x, y) = Flux.mse(model(x), y)
 
 # Training of the neural network
-optimizer = Descent()  # Simple gradient descent. See Flux documentation for other options.
+learning_rate = 0.1
+optimizer = Descent(learning_rate)  # Simple gradient descent. See Flux documentation for other options.
 n_epochs = 50
 sgt = NeuralSurrogate(x_train, y_train, bounds..., model, loss, optimizer, n_epochs)
 
