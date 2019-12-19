@@ -80,3 +80,33 @@ int = quadgk(obj,a,b)
 int_val_true = int[1]-int[2]
 @test abs(int_1D - int_val_true) < 10^-5
 ```
+
+
+## Example of NeuralSurrogate
+Basic example of fitting a neural network on a simple function of two variables.
+```
+using Surrogates
+using Flux
+using Statistics
+
+f = x -> x[1]^2 + x[2]^2
+bounds = Float32[-1.0, -1.0], Float32[1.0, 1.0]
+# Flux models are in single precision by default.
+# Thus, single precision will also be used here for our training samples.
+
+x_train = sample(100, bounds..., SobolSample())
+y_train = f.(x_train)
+
+# Perceptron with one hidden layer of 20 neurons.
+model = Chain(Dense(2, 20, relu), Dense(20, 1))
+loss(x, y) = Flux.mse(model(x), y)
+
+# Training of the neural network
+optimizer = Descent()  # Simple gradient descent. See Flux documentation for other options.
+n_epochs = 50
+sgt = NeuralSurrogate(x_train, y_train, bounds..., model, loss, optimizer, n_epochs)
+
+# Testing the new model
+x_test = sample(30, bounds..., SobolSample())
+test_error = mean(abs2, sgt(x)[1] - f(x) for x in x_test)
+```
