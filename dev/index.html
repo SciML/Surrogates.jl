@@ -13,12 +13,14 @@ lb = 0.0
 ub = 10.0
 
 #Sampling
-x = Sample(num_samples,lb,ub,SobolSample())
+x = sample(num_samples,lb,ub,SobolSample())
 f = x-&gt; log(x)*x^2+x^3
 y = f.(x)
 
 #Creating surrogate
-my_lobachesky = LobacheskySurrogate(x,y,lb,ub)
+alpha = 2.0
+n = 6
+my_lobachesky = LobacheskySurrogate(x,y,alpha,n,lb,ub)
 
 #Approximanting value at 5.0
 value = my_lobachesky(5.0)
