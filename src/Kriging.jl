@@ -95,6 +95,10 @@ Constructor for type Kriging.
 
 """
 function Kriging(x,y,p::Number)
+    if length(x) != length(unique(x))
+        println("There exists a repetion in the samples, cannot build Kriging.")
+        return
+    end
     mu,b,sigma,inverse_of_R = _calc_kriging_coeffs(x,y,p)
     theta = 1.0
     Kriging(x,y,p,theta,mu,b,sigma,inverse_of_R)
@@ -130,6 +134,10 @@ Constructor for Kriging surrogate.
           changing in the i-th variable
 """
 function Kriging(x,y,p,theta)
+    if length(x) != length(unique(x))
+        println("There exists a repetion in the samples, cannot build Kriging.")
+        return
+    end
     mu,b,sigma,inverse_of_R = _calc_kriging_coeffs(x,y,p,theta)
     Kriging(x,y,p,theta,mu,b,sigma,inverse_of_R)
 end
@@ -166,6 +174,10 @@ Returns the updated Kriging model.
 
 """
 function add_point!(k::Kriging,new_x,new_y)
+    if new_x in k.x
+        println("Adding a sample that already exists, cannot build Kriging.")
+        return
+    end
     if (length(new_x) == 1 && length(new_x[1]) == 1) || ( length(new_x) > 1 && length(new_x[1]) == 1 && length(k.theta)>1)
         push!(k.x,new_x)
         push!(k.y,new_y)
