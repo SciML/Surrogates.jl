@@ -19,7 +19,6 @@ mutable struct NeuralSurrogate{X,Y,M,L,O,P,N,A,U} <: AbstractSurrogate
  - model: Flux layers
  - loss: loss function
  - opt: optimization function
-
  """
  function NeuralSurrogate(x,y,lb,ub,model,loss,opt,n_echos)
      X = vec.(collect.(x))
@@ -32,7 +31,11 @@ mutable struct NeuralSurrogate{X,Y,M,L,O,P,N,A,U} <: AbstractSurrogate
 
  function (my_neural::NeuralSurrogate)(val)
      v = [val...]
-     out = my_neural.model(v)
+     if length(my_neural.y[1]) == 1
+         out = my_neural.model(v)[1]
+     else
+         out = my_neural.model(v)
+     end
      remove_tracker(out)
  end
 

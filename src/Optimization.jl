@@ -356,7 +356,7 @@ This is an implementation of Lower Confidence Bound (LCB),
 a popular acquisition function in Bayesian optimization.
 Under a Gaussian process (GP) prior, the goal is to minimize:
 ``LCB(x) := E[x] - k * \\sqrt{(V[x])}``
-default value ``k = 2``.
+default value ``k = 2``. It can be called only on Kriging surrogate.
 """
 function surrogate_optimize(obj::Function,::LCBS,lb::Number,ub::Number,krig,sample_type::SamplingAlgorithm;maxiters=100,num_new_samples=100)
     #Default value
@@ -399,7 +399,8 @@ function surrogate_optimize(obj::Function,::LCBS,lb::Number,ub::Number,krig,samp
             end
         end
         if min_add_y < 1e-6*(maximum(krig.y) - minimum(krig.y))
-            return
+            index = argmin(krig.y)
+            return (krig.x[index],krig.y[index])
         else
             min_add_y = obj(min_add_x) # I actually add the objc function at that point
             add_point!(krig,min_add_x,min_add_y)
@@ -531,7 +532,7 @@ maximize expected improvement:
 
 ``EI(x) := E[max(f_{best}-f(x),0)``
 
-
+It can be called only on Kriging surrogate.
 """
 function surrogate_optimize(obj::Function,::EI,lb,ub,krig,sample_type::SamplingAlgorithm;maxiters=100,num_new_samples=100)
         dtol = 1e-3*norm(ub-lb)
@@ -654,10 +655,9 @@ function select_evaluation_point_1D(new_points1,surr1::AbstractSurrogate,numb_it
     W_n = w_nR*V_nR + w_nD*V_nD
     return new_points1[argmin(W_n)]
 end
-"""
-surrogate_optimize(obj::Function,::DYCORS,lb::Number,ub::Number,surr::AbstractSurrogate,sample_type::SamplingAlgorithm;maxiters=100,num_new_samples=100)
 
-DYCORS optimization method in 1D, following closely: Combining radial basis function
+"""
+DYCORS optimization method, following closely: Combining radial basis function
 surrogates and dynamic coordinate search in high-dimensional expensive black-box optimzation".
 """
 function surrogate_optimize(obj::Function,::DYCORS,lb::Number,ub::Number,surr1::AbstractSurrogate,sample_type::SamplingAlgorithm;maxiters=100,num_new_samples=100)
@@ -767,6 +767,8 @@ function select_evaluation_point_ND(new_points,surrn::AbstractSurrogate,numb_ite
 end
 
 """
+surrogate_optimize(obj::Function,::DYCORS,lb,ub,surrn::AbstractSurrogate,sample_type::SamplingAlgorithm;maxiters=100,num_new_samples=100)
+
 This is an implementation of the DYCORS strategy by Regis and Shoemaker:
 
 Rommel G Regis and Christine A Shoemaker.

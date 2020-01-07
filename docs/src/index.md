@@ -15,7 +15,7 @@ At the moment they are:
 - Grid sample
 - Uniform sample
 - Sobol sample
-- Latin Hypercupe sample
+- Latin Hypercube sample
 - Low discrepancy sample
 
 The available surrogates are:
@@ -25,7 +25,7 @@ The available surrogates are:
 - Kriging
 - Custom Kriging provided with Stheno
 - Neural Network
-- Support Vector Machine
+- Support Vector Machine (Waiting for update of LIBSVM)
 - Random Forest
 - Second Order Polynomial
 - Inverse Distance

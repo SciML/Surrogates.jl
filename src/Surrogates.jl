@@ -5,6 +5,7 @@ using Distributions
 using Sobol
 using LatinHypercubeSampling
 using Requires
+using Stheno
 
 abstract type AbstractSurrogate <: Function end
 include("utils.jl")
@@ -16,7 +17,6 @@ include("Lobachesky.jl")
 include("LinearSurrogate.jl")
 include("InverseDistanceSurrogate.jl")
 include("SecondOrderPolynomialSurrogate.jl")
-
 
 function __init__()
     @require XGBoost="009559a3-9522-5dbb-924b-0b6ed2b22bb9" begin

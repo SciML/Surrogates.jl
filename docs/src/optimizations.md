@@ -17,8 +17,10 @@ surrogate_optimize(obj::Function,::EI,lb,ub,krig,sample_type::SamplingAlgorithm;
 
 * DYCORS
 ```@docs
-surrogate_optimize(obj::Function,::DYCORS,lb,ub,krig,sample_type::SamplingAlgorithm;maxiters=100,num_new_samples=100)
+surrogate_optimize(obj::Function,::DYCORS,lb::Number,ub::Number,surr1::AbstractSurrogate,sample_type::SamplingAlgorithm;maxiters=100,num_new_samples=100)
+
 ```
+
 
 ## Adding another optimization method
 To add another optimization method, you just need to define a new

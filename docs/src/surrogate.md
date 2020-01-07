@@ -24,7 +24,7 @@ Kriging(x,y,p,theta)
 
 * Kriging surrogate based on a Stheno backend
 ```@docs
-SthenoKriging
+SthenoKriging(x, y, gp::Stheno.AbstractGP=Stheno.GP(Stheno.EQ(), Stheno.GPC()), σ²=1e-18)
 ```
 
 * Lobachesky surrogate

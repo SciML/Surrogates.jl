@@ -56,7 +56,7 @@ std_err = std_error_at_point(my_krig,5.4)
 
 Let's now optimize the Kriging surrogate using Lower confidence bound method, this is just a one-liner:
 ```
-surrogate_optimize(f,LCBS(),a,b,my_krig,UniformSample())
+x_min, y_min = surrogate_optimize(f,LCBS(),lb,ub,my_krig,UniformSample())
 ```
 ## Lobachesky integral
 The Lobachesky surrogate has the nice feature of having a closed formula for its
