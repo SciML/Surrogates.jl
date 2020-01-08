@@ -11,12 +11,13 @@ my_radial_basis = RadialBasis(x,y,lb,ub,thin_plate_spline,q)
 
 #I want an approximation at 5.4
 approx = my_radial_basis(5.4)</code></pre><p>Let&#39;s now see an example in 2D.</p><pre><code class="language-none">using Surrogates
+using LinearAlgebra
 f = x -&gt; x[1]*x[2]
 lb = [1.0,2.0]
 ub = [10.0,8.5]
 x = sample(50,lb,ub,SobolSample())
 y = f.(x)
-linear = z -&gt; norm(x)
+linear = x -&gt; norm(x)
 q = 1
 my_radial_basis = RadialBasis(x,y,[lb,ub],linear,q)
 
