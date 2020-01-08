@@ -19,12 +19,13 @@ approx = my_radial_basis(5.4)
 Let's now see an example in 2D.
 ```
 using Surrogates
+using LinearAlgebra
 f = x -> x[1]*x[2]
 lb = [1.0,2.0]
 ub = [10.0,8.5]
 x = sample(50,lb,ub,SobolSample())
 y = f.(x)
-linear = z -> norm(x)
+linear = x -> norm(x)
 q = 1
 my_radial_basis = RadialBasis(x,y,[lb,ub],linear,q)
 
