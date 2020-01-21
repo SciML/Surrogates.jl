@@ -1,5 +1,5 @@
 #=
-Response surfaces implementantion, following:
+Response surfaces implementation, following:
 "A Taxonomy of Global Optimization Methods Based on Response Surfaces"
 by DONALD R. JONES
 =#
@@ -10,24 +10,26 @@ mutable struct RadialBasis{F,X,Y,B,C} <: AbstractSurrogate
     y::Y
     bounds::B
     coeff::C
+    scale::Real
 end
 
 """
-    RadialBasis(x,y,a::Number,b::Number,phi::Function,q::Int)
+    RadialBasis(x,y,a::Number,b::Number,phi::Function,q::Int,scale::Real)
 
 Constructor for RadialBasis surrogate
 - (x,y): sampled points
-- '(a,b)': interval of interest
--'phi': radial basis of choice
--'q': number of polynomial elements
+- (a,b): interval of interest
+- phi: radial basis of choice
+- q: number of polynomial elements
+- scale: shape parameter
 """
-function RadialBasis(x, y, lb::Number, ub::Number, phi::Function, q::Int)
-    coeff = _calc_coeffs(x, y, lb, ub, phi, q)
-    return RadialBasis(phi, q, x, y, (lb, ub), coeff)
+function RadialBasis(x, y, lb::Number, ub::Number, phi::Function, q::Int, scale::Real=1.0)
+    coeff = _calc_coeffs(x, y, lb, ub, phi, q, scale)
+    return RadialBasis(phi, q, x, y, (lb, ub), coeff, scale)
 end
 
 """
-RadialBasis(x,y,bounds,phi::Function,q::Int)
+RadialBasis(x,y,bounds,phi::Function,q::Int,scale::Real)
 
 Constructor for RadialBasis surrogate
 
@@ -35,28 +37,53 @@ Constructor for RadialBasis surrogate
 - bounds: region of interest of the form [[a,b],[c,d],...,[w,z]]
 - phi: radial basis of choice
 - q: number of polynomial elements
+- scale: shape parameter
 """
-function RadialBasis(x, y, bounds, phi::Function, q::Int)
-    coeff = _calc_coeffs(x, y, bounds[1], bounds[2], phi, q)
-    return RadialBasis(phi, q, x, y, bounds, coeff)
+function RadialBasis(x, y, bounds, phi::Function, q::Int, scale::Real=1.0)
+    coeff = _calc_coeffs(x, y, bounds[1], bounds[2], phi, q, scale)
+    return RadialBasis(phi, q, x, y, bounds, coeff, scale)
 end
 
-function _calc_coeffs(x, y, lb, ub, phi, q)
-    D = _construct_rbf_interp_matrix(x, first(x), lb, ub, phi, q)
+"""
+RadialBasisSparse(x,y,bounds,phi::Function,scale::Number)
+
+Constructor for sparse positive definite RadialBasis surrogate
+
+- (x,y): sampled points
+- bounds: region of interest of the form [[a,b],[c,d],...,[w,z]]
+- phi: compactly supported positive definite function of choice
+- scale: shape parameter
+"""
+function RadialBasisSparse(x, y, bounds, phi::Function, scale::Real=1.0)
+    coeff = _calc_coeffs(x, y, phi, scale)
+    return RadialBasis(phi, 0, x, y, bounds, coeff, scale)
+end
+
+function _calc_coeffs(x, y, lb, ub, phi, q, scale)
+    D = _construct_rbf_interp_matrix(x, first(x), lb, ub, phi, q, scale)
     Y = _construct_rbf_y_matrix(y, first(y), length(y) + q)
 
     coeff = D \ Y
     return coeff
 end
 
-function _construct_rbf_interp_matrix(x, x_el::Number, lb, ub, phi, q)
+function _calc_coeffs(x, y, phi, scale)
+    D = _construct_rbf_interp_matrix(x, first(x), phi, scale)
+    Y = _construct_rbf_y_matrix(y, first(y), length(y))
+
+    coeff = D \ Y
+    
+    return coeff
+end
+
+function _construct_rbf_interp_matrix(x, x_el::Number, lb, ub, phi, q, scale)
     n = length(x)
     m = n + q
     D = zeros(eltype(x_el), m, m)
 
     @inbounds for i = 1:n
         for j = 1:n
-            D[i,j] = phi(x[i] .- x[j])
+            D[i,j] = phi((x[i] .- x[j]) / scale)
         end
         if i <= n
             for k = 1:q
@@ -68,7 +95,7 @@ function _construct_rbf_interp_matrix(x, x_el::Number, lb, ub, phi, q)
     return D_sym
 end
 
-function _construct_rbf_interp_matrix(x, x_el, lb, ub, phi, q)
+function _construct_rbf_interp_matrix(x, x_el, lb, ub, phi, q, scale)
     n = length(x)
     nd = length(x_el)
     central_point = _center_bounds(x_el, lb, ub)
@@ -79,7 +106,7 @@ function _construct_rbf_interp_matrix(x, x_el, lb, ub, phi, q)
 
     @inbounds for i = 1:n
         for j = 1:n
-            D[i,j] = phi(x[i] .- x[j])
+            D[i,j] = phi((x[i] .- x[j]) ./ scale)
         end
         if i < n + 1
             for k = 1:q
@@ -89,6 +116,23 @@ function _construct_rbf_interp_matrix(x, x_el, lb, ub, phi, q)
     end
     D_sym = Symmetric(D, :U)
     return D_sym
+end
+
+function _construct_rbf_interp_matrix(x, x_el, phi, scale)
+    m = length(x)
+    D = ExtendableSparseMatrix{Float64,Int}(m,m) 
+
+    @inbounds for i = 1:m
+        for j = 1:m
+            arg = (x[i] .- x[j]) / scale
+            if norm(arg)<=1.0
+                D[i,j] = phi(arg)
+            end
+        end
+    end
+
+    return D
+    
 end
 
 _construct_rbf_y_matrix(y, y_el::Number, m) = [i <= length(y) ? y[i] : zero(y_el) for i = 1:m]
@@ -124,7 +168,7 @@ function _approx_rbf(val::Number, rad)
     q = rad.dim_poly
     approx = zero(rad.coeff[1, :])
     for i = 1:n
-        approx += rad.coeff[i, :] * rad.phi(val .- rad.x[i])
+        approx += rad.coeff[i, :] * rad.phi( (val .- rad.x[i]) / rad.scale )
     end
     for k = 1:q
         approx += rad.coeff[n+k, :] * _scaled_chebyshev(val, k-1, rad.bounds[1], rad.bounds[2])
@@ -141,7 +185,7 @@ function _approx_rbf(val, rad)
     central_point = _center_bounds(first(rad.x), lb, ub)
 
     approx = zero(rad.coeff[1, :])
-    @views approx += sum(rad.coeff[i, :] * rad.phi(val .- rad.x[i]) for i = 1:n)
+    @views approx += sum(rad.coeff[i, :] * rad.phi( (val .- rad.x[i]) ./ rad.scale ) for i = 1:n)
     for k = 1:q
         @views approx += rad.coeff[n+k, :] .* centralized_monomial(val, k-1, mean_half_diameter, central_point)
     end
@@ -165,6 +209,6 @@ function add_point!(rad::RadialBasis,new_x,new_y)
         append!(rad.x,new_x)
         append!(rad.y,new_y)
     end
-    rad.coeff = _calc_coeffs(rad.x,rad.y,rad.bounds[1],rad.bounds[2],rad.phi,rad.dim_poly)
+    rad.coeff = _calc_coeffs(rad.x,rad.y,rad.bounds[1],rad.bounds[2],rad.phi,rad.dim_poly,rad.scale)
     nothing
 end

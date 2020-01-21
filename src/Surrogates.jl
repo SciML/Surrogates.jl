@@ -5,6 +5,8 @@ using Distributions
 using Sobol
 using LatinHypercubeSampling
 using Requires
+using SparseArrays
+using ExtendableSparse
 
 abstract type AbstractSurrogate <: Function end
 include("utils.jl")
@@ -47,7 +49,7 @@ function __init__()
 end
 
 export AbstractSurrogate, SamplingAlgorithm
-export Kriging, RadialBasis, add_point!, current_estimate, std_error_at_point
+export Kriging, RadialBasis, RadialBasisSparse, add_point!, current_estimate, std_error_at_point
 export sample, GridSample, UniformSample, SobolSample, LatinHypercubeSample, LowDiscrepancySample
 export RandomSample
 export SRBF,LCBS,EI,DYCORS,SOP,surrogate_optimize
