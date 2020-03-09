@@ -4,8 +4,9 @@ using GLM
 using Distributions
 using Sobol
 using LatinHypercubeSampling
-using Requires
 using Stheno
+using Requires
+
 
 abstract type AbstractSurrogate <: Function end
 include("utils.jl")
@@ -54,4 +55,5 @@ export SVMSurrogate
 export NeuralSurrogate
 export InverseDistanceSurrogate
 export SecondOrderPolynomialSurrogate
+export SthenoKriging
 end
