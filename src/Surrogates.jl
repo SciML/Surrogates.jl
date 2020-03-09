@@ -4,7 +4,9 @@ using GLM
 using Distributions
 using Sobol
 using LatinHypercubeSampling
+using Stheno
 using Requires
+
 
 abstract type AbstractSurrogate <: Function end
 include("utils.jl")
@@ -16,7 +18,7 @@ include("Lobachesky.jl")
 include("LinearSurrogate.jl")
 include("InverseDistanceSurrogate.jl")
 include("SecondOrderPolynomialSurrogate.jl")
-
+include("SthenoKriging.jl")
 
 function __init__()
     @require XGBoost="009559a3-9522-5dbb-924b-0b6ed2b22bb9" begin
@@ -39,11 +41,6 @@ function __init__()
         using LIBSVM
         include("SVMSurrogate.jl")
     end
-
-    @require Stheno = "8188c328-b5d6-583d-959b-9690869a5511" begin
-        using Stheno
-        include("SthenoKriging.jl")
-    end
 end
 
 export AbstractSurrogate, SamplingAlgorithm
@@ -58,4 +55,5 @@ export SVMSurrogate
 export NeuralSurrogate
 export InverseDistanceSurrogate
 export SecondOrderPolynomialSurrogate
+export SthenoKriging
 end

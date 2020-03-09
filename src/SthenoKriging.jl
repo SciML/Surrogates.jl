@@ -1,5 +1,3 @@
-export SthenoKriging
-
 mutable struct SthenoKriging{X, Y, GP, TΣy, GP_P} <: AbstractSurrogate
     x::X
     y::Y

@@ -1085,7 +1085,7 @@ function surrogate_optimize(obj::Function,sop1::SOP,lb::Number,ub::Number,surrSO
             for j = 1:num_new_samples
                 a = lb - C[i]
                 b = ub - C[i]
-                N_candidates[j] = C[i] + rand(TruncatedNormal(0,r_centers[i],a,b))
+                N_candidates[j] = C[i] + rand(truncated(Normal(0,r_centers[i]), a,b))
                 evaluations[j] = surrSOP(N_candidates[j])
             end
             x_best = N_candidates[argmin(evaluations)]
