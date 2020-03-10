@@ -1,3 +1,4 @@
+using XGBoost 
 mutable struct RandomForestSurrogate{X,Y,B,L,U,N} <: AbstractSurrogate
     x::X
     y::Y
@@ -15,6 +16,7 @@ end
 function (rndfor::RandomForestSurrogate)(val::Number)
     return XGBoost.predict(rndfor.bst,reshape([val],1,1))
 end
+
 """
 RandomForestSurrogate(x,y,lb,ub,num_round)
 

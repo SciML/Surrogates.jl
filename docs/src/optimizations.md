@@ -17,7 +17,7 @@ surrogate_optimize(obj::Function,::EI,lb,ub,krig,sample_type::SamplingAlgorithm;
 
 * DYCORS
 ```@docs
-surrogate_optimize(obj::Function,::DYCORS,lb,ub,krig,sample_type::SamplingAlgorithm;maxiters=100,num_new_samples=100)
+surrogate_optimize(obj::Function,::DYCORS,lb,ub,surrn::AbstractSurrogate,sample_type::SamplingAlgorithm;maxiters=100,num_new_samples=100)
 ```
 
 ## Adding another optimization method

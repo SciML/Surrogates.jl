@@ -7,7 +7,8 @@ mutable struct SthenoKriging{X, Y, GP, TΣy, GP_P} <: AbstractSurrogate
  end
 
  """
-     SthenoKriging(x::X, y::Y, GP::Stheno.GP=Stheno.GP(Stheno.EQ(), Stheno.GPC()), σ²=1e-18)
+
+ SthenoKriging(x::X, y::Y, GP::Stheno.GP=Stheno.GP(Stheno.EQ(), Stheno.GPC()), σ²=1e-18)
 
 Returns a Kriging (or Gaussian process) surrogate conditioned on the data points `x` and `y`.
 The `GP` is the base Gaussian process defined with Stheno.

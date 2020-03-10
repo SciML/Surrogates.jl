@@ -34,8 +34,8 @@ lobachesky_integral(loba::LobacheskySurrogate,lb,ub)
 ```
 
 * Support vector machine surrogate, requires `using LIBSVM`
-```@docs
-SVMSurrogate(x,y,lb,ub)
+```
+Currently unavailable due to problems with LIBSVM
 ```
 
 * Random forest surrogate, requires `using XGBoost`

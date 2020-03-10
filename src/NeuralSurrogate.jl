@@ -1,5 +1,5 @@
 using Flux
-
+using Flux: @epochs
 mutable struct NeuralSurrogate{X,Y,M,L,O,P,N,A,U} <: AbstractSurrogate
     x::X
     y::Y
