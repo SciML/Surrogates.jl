@@ -5,8 +5,6 @@ using Distributions
 using Sobol
 using LatinHypercubeSampling
 using Stheno
-using Requires
-
 
 abstract type AbstractSurrogate <: Function end
 include("utils.jl")
