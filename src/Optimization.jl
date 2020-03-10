@@ -654,11 +654,13 @@ function select_evaluation_point_1D(new_points1,surr1::AbstractSurrogate,numb_it
     W_n = w_nR*V_nR + w_nD*V_nD
     return new_points1[argmin(W_n)]
 end
+
 """
-surrogate_optimize(obj::Function,::DYCORS,lb::Number,ub::Number,surr::AbstractSurrogate,sample_type::SamplingAlgorithm;maxiters=100,num_new_samples=100)
+surrogate_optimize(obj::Function,::DYCORS,lb::Number,ub::Number,surr1::AbstractSurrogate,sample_type::SamplingAlgorithm;maxiters=100,num_new_samples=100)
 
 DYCORS optimization method in 1D, following closely: Combining radial basis function
 surrogates and dynamic coordinate search in high-dimensional expensive black-box optimzation".
+
 """
 function surrogate_optimize(obj::Function,::DYCORS,lb::Number,ub::Number,surr1::AbstractSurrogate,sample_type::SamplingAlgorithm;maxiters=100,num_new_samples=100)
     x_best = argmin(surr1.y)
@@ -767,6 +769,8 @@ function select_evaluation_point_ND(new_points,surrn::AbstractSurrogate,numb_ite
 end
 
 """
+surrogate_optimize(obj::Function,::DYCORS,lb::Number,ub::Number,surr1::AbstractSurrogate,sample_type::SamplingAlgorithm;maxiters=100,num_new_samples=100)
+
 This is an implementation of the DYCORS strategy by Regis and Shoemaker:
 
 Rommel G Regis and Christine A Shoemaker.

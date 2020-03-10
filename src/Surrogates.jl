@@ -19,29 +19,8 @@ include("LinearSurrogate.jl")
 include("InverseDistanceSurrogate.jl")
 include("SecondOrderPolynomialSurrogate.jl")
 include("SthenoKriging.jl")
-
-function __init__()
-    @require XGBoost="009559a3-9522-5dbb-924b-0b6ed2b22bb9" begin
-        using XGBoost
-        include("RandomForestSurrogate.jl")
-    end
-
-    @require Flux="587475ba-b771-5e3f-ad9e-33799f191a9c" begin
-        using Flux
-        using Flux: @epochs
-        include("NeuralSurrogate.jl")
-    end
-
-    @require Tracker = "9f7883ad-71c0-57eb-9f7f-b5c9e6d3789c" begin
-        remove_tracker(x::Tracker.TrackedReal) = Tracker.data(x)
-        remove_tracker(x::Tracker.TrackedArray) = Tracker.data(x)
-    end
-
-    @require LIBSVM="b1bec4e5-fd48-53fe-b0cb-9723c09d164b" begin
-        using LIBSVM
-        include("SVMSurrogate.jl")
-    end
-end
+include("RandomForestSurrogate.jl")
+include("NeuralSurrogate.jl")
 
 export AbstractSurrogate, SamplingAlgorithm
 export Kriging, RadialBasis, add_point!, current_estimate, std_error_at_point
