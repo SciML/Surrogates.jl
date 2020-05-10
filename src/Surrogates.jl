@@ -23,7 +23,7 @@ include("NeuralSurrogate.jl")
 export AbstractSurrogate, SamplingAlgorithm
 export Kriging, RadialBasis, add_point!, current_estimate, std_error_at_point
 export sample, GridSample, UniformSample, SobolSample, LatinHypercubeSample, LowDiscrepancySample
-export RandomSample
+export RandomSample, KroneckerSample
 export SRBF,LCBS,EI,DYCORS,SOP,surrogate_optimize
 export LobacheskySurrogate, lobachesky_integral, lobachesky_integrate_dimension
 export LinearSurrogate

@@ -24,6 +24,11 @@ end
 
 struct RandomSample <: SamplingAlgorithm end
 
+struct KroneckerSample{A,B} <: SamplingAlgorithm
+    alpha::A
+    s0::B
+end
+
 """
 sample(n,lb,ub,S::GridSample)
 
@@ -158,4 +163,40 @@ function sample(n,d,D::Distribution)
         x = [[rand(D) for j in 1:d] for i in 1:n]
         return Tuple.(x)
     end
+end
+
+
+"""
+sample(n,d,K::KroneckerSample)
+
+Returns a Tuple containing numbers following the Kronecker sample
+"""
+function sample(n,lb,ub,K::KroneckerSample)
+    d = length(lb)
+    alpha = K.alpha
+    s0 = K.s0
+    if d == 1
+        x = zeros(n)
+        @inbounds for i = 1:n
+            x[i] = (s0+i*alpha)%1
+        end
+        return @. (ub-lb) * x + lb
+    else
+        x = zeros(n,d)
+        @inbounds for j = 1:d
+            for i = 1:n
+                x[i,j] = (s0[j] + i*alpha[j])%i
+            end
+        end
+        #Resizing
+        # x∈[0,1], so affine transform column-wise
+        @inbounds for c = 1:d
+            x[:,c] = (ub[c]-lb[c])*x[:,c] .+ lb[c]
+        end
+
+        y = [x[i,:] for i = 1:n]
+        return Tuple.(y)
+    end
+
+
 end
