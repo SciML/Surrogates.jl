@@ -29,6 +29,9 @@ struct KroneckerSample{A,B} <: SamplingAlgorithm
     s0::B
 end
 
+struct GoldenSample <: SamplingAlgorithm end
+
+
 """
 sample(n,lb,ub,S::GridSample)
 
@@ -197,6 +200,35 @@ function sample(n,lb,ub,K::KroneckerSample)
         y = [x[i,:] for i = 1:n]
         return Tuple.(y)
     end
+end
 
-
+function sample(n,lb,ub,G::GoldenSample)
+    d = length(lb)
+    if d == 1
+        x = zeros(n)
+        g = (sqrt(5)+1)/2
+        a = 1.0/g
+        for i = 1:n
+            x[i] = (0.5+a*i)%1
+        end
+        return @. (ub-lb) * x + lb
+    else
+        x = zeros(n,d)
+        for j = 1:d
+            #Approximate solution of x^(d+1) = x + 1, a simple newton is good enough
+            y = 2.0
+            for s = 1:10
+                g = (1+y)^(1/(j+1))
+            end
+            a = 1.0/g
+            for i = 1:n
+                x[i,j] = (0.5+a*i)%1
+            end
+        end
+        @inbounds for c = 1:d
+            x[:,c] = (ub[c]-lb[c])*x[:,c] .+ lb[c]
+        end
+        y = [x[i,:] for i = 1:n]
+        return Tuple.(y)
+    end
 end
