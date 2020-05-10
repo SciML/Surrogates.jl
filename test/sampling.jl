@@ -15,7 +15,7 @@ Surrogates.sample(20,lb,ub,LowDiscrepancySample(10))
 Surrogates.sample(5,d,Cauchy())
 Surrogates.sample(5,d,Normal(0,4))
 Surrogates.sample(5,lb,ub,KroneckerSample(sqrt(2),0))
-
+Surrogates.sample(5,lb,ub,GoldenSample())
 #ND
 lb = [0.1,-0.5]
 ub = [1.0,20.0]
@@ -52,3 +52,6 @@ s = Surrogates.sample(n,d,Normal(3,5))
 
 #Kronecker
 Surrogates.sample(5,lb,ub,KroneckerSample([sqrt(2),3.1415],[0,0]))
+
+#Golden
+Surrogates.sample(5,lb,ub,GoldenSample())
