@@ -401,8 +401,11 @@ function surrogate_optimize(obj::Function,::LCBS,lb::Number,ub::Number,krig,samp
         if min_add_y < 1e-6*(maximum(krig.y) - minimum(krig.y))
             return
         else
-            min_add_y = obj(min_add_x) # I actually add the objc function at that point
-            add_point!(krig,min_add_x,min_add_y)
+            if (abs(min_add_y) == Inf || min_add_y == NaN)
+                println("New point being added is +Inf or NaN, skipping.\n")
+            else
+                add_point!(krig,Tuple(min_add_x),min_add_y)
+            end
         end
     end
 end
@@ -464,7 +467,11 @@ function surrogate_optimize(obj::Function,::LCBS,lb,ub,krig,sample_type::Samplin
             return (krig.x[index],krig.y[index])
         else
             min_add_y = obj(min_add_x) # I actually add the objc function at that point
-            add_point!(krig,Tuple(min_add_x),min_add_y)
+            if (abs(min_add_y) == Inf || min_add_y == NaN)
+                println("New point being added is +Inf or NaN, skipping.\n")
+            else
+                add_point!(krig,Tuple(min_add_x),min_add_y)
+            end
         end
     end
 end
