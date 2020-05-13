@@ -193,7 +193,7 @@ f = x -> x^2
 y = f.(x)
 
 #Radials
-my_rad = RadialBasis(x,y,lb,ub,x->norm(x),2)
+my_rad = RadialBasis(x,y,lb,ub,linearRadial)
 g = x -> my_rad'(x)
 g(5.0)
 
@@ -245,7 +245,7 @@ f = x -> x[1]*x[2]
 y = f.(x)
 
 #Radials
-my_rad = RadialBasis(x,y,[lb,ub],z->norm(z),2)
+my_rad = RadialBasis(x,y,lb,ub,linearRadial)
 g = x -> Zygote.gradient(my_rad,x)
 g((2.0,5.0))
 
@@ -308,7 +308,7 @@ n_echos = 1
 my_neural = NeuralSurrogate(x,y,lb,ub,model,loss,opt,n_echos)
 Zygote.gradient(x -> sum(my_neural(x)), (2.0, 5.0))
 
-my_rad = RadialBasis(x,y,[lb,ub],z->norm(z),1)
+my_rad = RadialBasis(x,y,lb,ub,linearRadial)
 Zygote.gradient(x -> sum(my_rad(x)), (2.0, 5.0))
 
 p = 1.4
