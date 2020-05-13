@@ -14,7 +14,7 @@ cubic = x -> x^3
 λ = 2.3
 multiquadr = x -> sqrt(x^2+λ^2)
 q = 1
-my_rad = RadialBasis(x, y, lb, ub, linear, q)
+my_rad = RadialBasis(x, y, lb, ub, linearRadial)
 est = my_rad(3.0)
 @test est ≈ 6.0
 add_point!(my_rad, 4.0, 10.0)
@@ -24,16 +24,18 @@ add_point!(my_rad,[3.2,3.3,3.4],[8.0,9.0,10.0])
 est = my_rad(3.0)
 @test est ≈ 6.0
 
-my_rad = RadialBasis(x, y, lb, ub, cubic, q)
+my_rad = RadialBasis(x, y, lb, ub, cubicRadial)
 q = 2
-my_rad = RadialBasis(x,y,lb,ub,multiquadr,q)
+my_rad = RadialBasis(x,y,lb,ub, multiquadricRadial)
 
 
 #ND
 x = [(1.0, 2.0, 3.0), (4.0, 5.0, 6.0), (7.0, 8.0, 9.0)]
 y = [4.0, 5.0, 6.0]
-bounds = [[0.0, 3.0, 6.0], [4.0, 7.0, 10.0]]
-my_rad = RadialBasis(x, y, bounds, z->norm(z), 1)
+lb = [0.0,3.0,6.0]
+ub = [4.0,7.0,10.0]
+#bounds = [[0.0, 3.0, 6.0], [4.0, 7.0, 10.0]]
+my_rad = RadialBasis(x, y, lb, ub, linearRadial)
 est = my_rad((1.0,2.0,3.0))
 @test est ≈ 4.0
 
@@ -41,8 +43,10 @@ est = my_rad((1.0,2.0,3.0))
 #WITH ADD_POINT, adding singleton
 x = [(1.0,2.0,3.0),(4.0,5.0,6.0),(7.0,8.0,9.0)]
 y = [4.0,5.0,6.0]
-bounds = [[0.0,3.0,6.0],[4.0,7.0,10.0]]
-my_rad = RadialBasis(x,y,bounds,z->norm(z),1)
+lb = [0.0,3.0,6.0]
+ub = [4.0,7.0,10.0]
+#bounds = [[0.0,3.0,6.0],[4.0,7.0,10.0]]
+my_rad = RadialBasis(x,y,lb,ub,linearRadial)
 add_point!(my_rad,(9.0,10.0,11.0),10.0)
 est = my_rad((1.0,2.0,3.0))
 @test est ≈ 4.0
@@ -50,28 +54,25 @@ est = my_rad((1.0,2.0,3.0))
 #WITH ADD_POINT, adding more
 x = [(1.0,2.0,3.0),(4.0,5.0,6.0),(7.0,8.0,9.0)]
 y = [4.0,5.0,6.0]
-bounds = [[0.0,3.0,6.0],[4.0,7.0,10.0]]
-my_rad = RadialBasis(x,y,bounds,z->norm(z),1)
+#bounds = [[0.0,3.0,6.0],[4.0,7.0,10.0]]
+lb = [0.0,3.0,6.0]
+ub = [4.0,7.0,10.0]
+my_rad = RadialBasis(x,y,lb,ub,linearRadial)
 add_point!(my_rad,[(9.0,10.0,11.0),(12.0,13.0,14.0)],[10.0,11.0])
 est = my_rad((1.0,2.0,3.0))
 @test est ≈ 4.0
 
 lb = [0.0,0.0,0.0]
 ub = [10.0,10.0,10.0]
-bounds = [lb,ub]
+#bounds = [lb,ub]
 x = [(1.0,2.0,3.0),(4.0,5.0,6.0),(7.0,8.0,9.0)]
 y = [4.0,5.0,6.0]
-linear = x -> norm(x)
-cubic = x -> norm(x)^3
-λ = 2.3
-multiquadr = x -> sqrt(norm(x)^2+λ^2)
-q = 1
-my_rad_ND = RadialBasis(x,y,bounds,linear,q)
+
+my_rad_ND = RadialBasis(x,y,lb,ub,linearRadial)
 add_point!(my_rad_ND,(3.5,4.5,1.2),18.9)
 add_point!(my_rad_ND,[(3.2,1.2,6.7),(3.4,9.5,7.4)],[25.72,239.0])
-my_rad_ND = RadialBasis(x,y,bounds,cubic,q)
-q = 2
-my_rad_ND = RadialBasis(x,y,bounds,multiquadr,q)
+my_rad_ND = RadialBasis(x,y,lb,ub,cubicRadial)
+my_rad_ND = RadialBasis(x,y,lb,ub,multiquadricRadial)
 prediction = my_rad_ND((1.0,1.0,1.0))
 
 # #100
@@ -81,10 +82,9 @@ ub = [10.0, 8.5]
 x = sample(500, lb, ub, SobolSample())
 push!(x, (1.0, 2.0))
 y = f.(x)
-linear = z -> norm(z)
-my_radial_basis = RadialBasis(x, y, [lb, ub], linear, 1)
+my_radial_basis = RadialBasis(x, y, lb, ub, linearRadial)
 @test my_radial_basis((1.0, 2.0)) ≈ 2
-my_radial_basis = RadialBasis(x, y, [lb, ub], linear, 5)
+my_radial_basis = RadialBasis(x, y, lb, ub, linearRadial)
 @test my_radial_basis((1.0, 2.0)) ≈ 2
 
 # #100
@@ -94,8 +94,7 @@ ub = [10.0, 8.5]
 x = sample(5, lb, ub, SobolSample())
 push!(x, (1.0, 2.0))
 y = f.(x)
-linear = z -> norm(z)
-my_radial_basis = RadialBasis(x, y, [lb, ub], linear, 0)
+my_radial_basis = RadialBasis(x, y, lb,ub, linearRadial)
 @test my_radial_basis((1.0, 2.0)) ≈ 2
 
 # Multi-output #98
@@ -105,8 +104,7 @@ ub = 10.0
 x  = sample(5, lb, ub, SobolSample())
 push!(x, 2.0)
 y  = f.(x)
-linear = z -> norm(z)
-my_radial_basis = RadialBasis(x, y, lb, ub, linear, 2)
+my_radial_basis = RadialBasis(x, y, lb, ub, linearRadial)
 my_radial_basis(2.0)
 @test my_radial_basis(2.0) ≈ [4, 2]
 
@@ -116,8 +114,7 @@ ub = [10.0, 8.5]
 x  = sample(5, lb, ub, SobolSample())
 push!(x, (1.0, 2.0))
 y  = f.(x)
-linear = z -> norm(z)
-my_radial_basis = RadialBasis(x, y, [lb, ub], linear, 2)
+my_radial_basis = RadialBasis(x, y, lb, ub, linearRadial)
 my_radial_basis((1.0, 2.0))
 @test my_radial_basis((1.0, 2.0)) ≈ [2, 5]
 

@@ -1,16 +1,24 @@
-#=
-Response surfaces implementantion, following:
-"A Taxonomy of Global Optimization Methods Based on Response Surfaces"
-by DONALD R. JONES
-=#
-mutable struct RadialBasis{F,X,Y,B,C} <: AbstractSurrogate
+using LinearAlgebra
+
+mutable struct RadialBasis{F,Q,X,Y,L,U,C} <: AbstractSurrogate
     phi::F
-    dim_poly::Int
+    dim_poly::Q
     x::X
     y::Y
-    bounds::B
+    lb::L
+    ub::U
     coeff::C
 end
+
+mutable struct RadialFunction{Q,P}
+    q::Q
+    phi::P
+end
+
+linearRadial = RadialFunction(0,z->norm(z))
+cubicRadial = RadialFunction(1,z->norm(z)^3)
+multiquadricRadial = RadialFunction(1,z->sqrt(norm(z)^2+1))
+thinplateRadial = RadialFunction(2,z->norm(z)^2*log(norm(z)))
 
 """
     RadialBasis(x,y,a::Number,b::Number,phi::Function,q::Int)
@@ -21,9 +29,11 @@ Constructor for RadialBasis surrogate
 -'phi': radial basis of choice
 -'q': number of polynomial elements
 """
-function RadialBasis(x, y, lb::Number, ub::Number, phi::Function, q::Int)
+function RadialBasis(x, y, lb::Number, ub::Number, rad::RadialFunction)
+    q = rad.q
+    phi = rad.phi
     coeff = _calc_coeffs(x, y, lb, ub, phi, q)
-    return RadialBasis(phi, q, x, y, (lb, ub), coeff)
+    return RadialBasis(phi, q, x, y, lb, ub, coeff)
 end
 
 """
@@ -36,15 +46,16 @@ Constructor for RadialBasis surrogate
 - phi: radial basis of choice
 - q: number of polynomial elements
 """
-function RadialBasis(x, y, bounds, phi::Function, q::Int)
-    coeff = _calc_coeffs(x, y, bounds[1], bounds[2], phi, q)
-    return RadialBasis(phi, q, x, y, bounds, coeff)
+function RadialBasis(x, y, lb, ub, rad::RadialFunction)
+    q = rad.q
+    phi = rad.phi
+    coeff = _calc_coeffs(x, y, lb, ub, phi, q)
+    return RadialBasis(phi, q, x, y, lb, ub, coeff)
 end
 
 function _calc_coeffs(x, y, lb, ub, phi, q)
     D = _construct_rbf_interp_matrix(x, first(x), lb, ub, phi, q)
     Y = _construct_rbf_y_matrix(y, first(y), length(y) + q)
-
     coeff = D \ Y
     return coeff
 end
@@ -122,12 +133,14 @@ end
 function _approx_rbf(val::Number, rad)
     n = length(rad.x)
     q = rad.dim_poly
+    lb = rad.lb
+    ub = rad.ub
     approx = zero(rad.coeff[1, :])
     for i = 1:n
         approx += rad.coeff[i, :] * rad.phi(val .- rad.x[i])
     end
     for k = 1:q
-        approx += rad.coeff[n+k, :] * _scaled_chebyshev(val, k-1, rad.bounds[1], rad.bounds[2])
+        approx += rad.coeff[n+k, :] * _scaled_chebyshev(val, k-1, lb, ub)
     end
     return approx
 end
@@ -135,7 +148,8 @@ function _approx_rbf(val, rad)
     n = length(rad.x)
     d = length(rad.x[1])
     q = rad.dim_poly
-    lb, ub = rad.bounds
+    lb = rad.lb
+    ub = rad.ub
     sum_half_diameter = sum((ub[k]-lb[k])/2 for k = 1:d)
     mean_half_diameter = sum_half_diameter/d
     central_point = _center_bounds(first(rad.x), lb, ub)
@@ -158,13 +172,13 @@ _center_bounds(x, lb, ub) = (ub .- lb) ./ 2
 Add new samples x and y and updates the coefficients. Return the new object radial.
 """
 function add_point!(rad::RadialBasis,new_x,new_y)
-    if (length(new_x) == 1 && length(new_x[1]) == 1) || ( length(new_x) > 1 && length(new_x[1]) == 1 && length(rad.bounds[1])>1)
+    if (length(new_x) == 1 && length(new_x[1]) == 1) || ( length(new_x) > 1 && length(new_x[1]) == 1 && length(rad.lb)>1)
         push!(rad.x,new_x)
         push!(rad.y,new_y)
     else
         append!(rad.x,new_x)
         append!(rad.y,new_y)
     end
-    rad.coeff = _calc_coeffs(rad.x,rad.y,rad.bounds[1],rad.bounds[2],rad.phi,rad.dim_poly)
+    rad.coeff = _calc_coeffs(rad.x,rad.y,rad.lb,rad.ub,rad.phi,rad.dim_poly)
     nothing
 end
