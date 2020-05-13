@@ -404,7 +404,7 @@ function surrogate_optimize(obj::Function,::LCBS,lb::Number,ub::Number,krig,samp
             if (abs(min_add_y) == Inf || min_add_y == NaN)
                 println("New point being added is +Inf or NaN, skipping.\n")
             else
-                add_point!(krig,Tuple(min_add_x),min_add_y)
+                add_point!(krig,min_add_x,min_add_y)
             end
         end
     end

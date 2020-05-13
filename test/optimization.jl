@@ -126,8 +126,8 @@ objective_function = x -> 2*x+1
 x = [2.0,4.0,6.0]
 y = [5.0,9.0,13.0]
 p = 1.8
-a = 2
-b = 6
+a = 2.0
+b = 6.0
 my_k_LCBS1 = Kriging(x,y,p)
 surrogate_optimize(objective_function,LCBS(),a,b,my_k_LCBS1,UniformSample())
 
