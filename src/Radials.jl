@@ -1,6 +1,6 @@
 using LinearAlgebra
 
-mutable struct RadialBasis{F,Q,X,Y,L,U,C} <: AbstractSurrogate
+mutable struct RadialBasis{F,Q,X,Y,L,U,C,S} <: AbstractSurrogate
     phi::F
     dim_poly::Q
     x::X
@@ -8,6 +8,7 @@ mutable struct RadialBasis{F,Q,X,Y,L,U,C} <: AbstractSurrogate
     lb::L
     ub::U
     coeff::C
+    scale_factor::S
 end
 
 mutable struct RadialFunction{Q,P}
@@ -21,53 +22,44 @@ multiquadricRadial = RadialFunction(1,z->sqrt(norm(z)^2+1))
 thinplateRadial = RadialFunction(2,z->norm(z)^2*log(norm(z)))
 
 """
-    RadialBasis(x,y,a::Number,b::Number,phi::Function,q::Int)
+    RadialBasis(x,y,a::Number,b::Number,rad::RadialFunction,scale::Real=1.0)
 
-Constructor for RadialBasis surrogate
-- (x,y): sampled points
-- '(a,b)': interval of interest
--'phi': radial basis of choice
--'q': number of polynomial elements
+Constructor for Radial basis surrogate.
 """
-function RadialBasis(x, y, lb::Number, ub::Number, rad::RadialFunction)
+function RadialBasis(x, y, lb::Number, ub::Number, rad::RadialFunction, scale_factor::Real=1.0)
     q = rad.q
     phi = rad.phi
-    coeff = _calc_coeffs(x, y, lb, ub, phi, q)
-    return RadialBasis(phi, q, x, y, lb, ub, coeff)
+    coeff = _calc_coeffs(x, y, lb, ub, phi, q,scale_factor)
+    return RadialBasis(phi, q, x, y, lb, ub, coeff,scale_factor)
 end
 
 """
-RadialBasis(x,y,bounds,phi::Function,q::Int)
+RadialBasis(x,y,lb,ub,rad::RadialFunction, scale_factor::Float = 1.0)
 
 Constructor for RadialBasis surrogate
-
-- (x,y): sampled points
-- bounds: region of interest of the form [[a,b],[c,d],...,[w,z]]
-- phi: radial basis of choice
-- q: number of polynomial elements
 """
-function RadialBasis(x, y, lb, ub, rad::RadialFunction)
+function RadialBasis(x, y, lb, ub, rad::RadialFunction, scale_factor::Real=1.0)
     q = rad.q
     phi = rad.phi
-    coeff = _calc_coeffs(x, y, lb, ub, phi, q)
-    return RadialBasis(phi, q, x, y, lb, ub, coeff)
+    coeff = _calc_coeffs(x, y, lb, ub, phi, q, scale_factor)
+    return RadialBasis(phi, q, x, y, lb, ub, coeff,scale_factor)
 end
 
-function _calc_coeffs(x, y, lb, ub, phi, q)
-    D = _construct_rbf_interp_matrix(x, first(x), lb, ub, phi, q)
+function _calc_coeffs(x, y, lb, ub, phi, q, scale_factor)
+    D = _construct_rbf_interp_matrix(x, first(x), lb, ub, phi, q, scale_factor)
     Y = _construct_rbf_y_matrix(y, first(y), length(y) + q)
     coeff = D \ Y
     return coeff
 end
 
-function _construct_rbf_interp_matrix(x, x_el::Number, lb, ub, phi, q)
+function _construct_rbf_interp_matrix(x, x_el::Number, lb, ub, phi, q, scale_factor)
     n = length(x)
     m = n + q
     D = zeros(eltype(x_el), m, m)
 
     @inbounds for i = 1:n
         for j = 1:n
-            D[i,j] = phi(x[i] .- x[j])
+            D[i,j] = phi( (x[i] .- x[j]) ./ scale_factor )
         end
         if i <= n
             for k = 1:q
@@ -79,7 +71,7 @@ function _construct_rbf_interp_matrix(x, x_el::Number, lb, ub, phi, q)
     return D_sym
 end
 
-function _construct_rbf_interp_matrix(x, x_el, lb, ub, phi, q)
+function _construct_rbf_interp_matrix(x, x_el, lb, ub, phi, q, scale_factor)
     n = length(x)
     nd = length(x_el)
     central_point = _center_bounds(x_el, lb, ub)
@@ -90,7 +82,7 @@ function _construct_rbf_interp_matrix(x, x_el, lb, ub, phi, q)
 
     @inbounds for i = 1:n
         for j = 1:n
-            D[i,j] = phi(x[i] .- x[j])
+            D[i,j] = phi( (x[i] .- x[j]) ./ scale_factor)
         end
         if i < n + 1
             for k = 1:q
@@ -137,7 +129,7 @@ function _approx_rbf(val::Number, rad)
     ub = rad.ub
     approx = zero(rad.coeff[1, :])
     for i = 1:n
-        approx += rad.coeff[i, :] * rad.phi(val .- rad.x[i])
+        approx += rad.coeff[i, :] * rad.phi( (val .- rad.x[i]) / rad.scale_factor)
     end
     for k = 1:q
         approx += rad.coeff[n+k, :] * _scaled_chebyshev(val, k-1, lb, ub)
@@ -155,7 +147,7 @@ function _approx_rbf(val, rad)
     central_point = _center_bounds(first(rad.x), lb, ub)
 
     approx = zero(rad.coeff[1, :])
-    @views approx += sum(rad.coeff[i, :] * rad.phi(val .- rad.x[i]) for i = 1:n)
+    @views approx += sum( rad.coeff[i, :] * rad.phi( (val .- rad.x[i]) ./rad.scale_factor) for i = 1:n)
     for k = 1:q
         @views approx += rad.coeff[n+k, :] .* centralized_monomial(val, k-1, mean_half_diameter, central_point)
     end
@@ -179,6 +171,6 @@ function add_point!(rad::RadialBasis,new_x,new_y)
         append!(rad.x,new_x)
         append!(rad.y,new_y)
     end
-    rad.coeff = _calc_coeffs(rad.x,rad.y,rad.lb,rad.ub,rad.phi,rad.dim_poly)
+    rad.coeff = _calc_coeffs(rad.x,rad.y,rad.lb,rad.ub,rad.phi,rad.dim_poly, rad.scale_factor)
     nothing
 end
