@@ -3,7 +3,6 @@ One dimensional Kriging method, following this paper:
 "A Taxonomy of Global Optimization Methods Based on Response Surfaces"
 by DONALD R. JONES
 =#
-
 mutable struct Kriging{X,Y,P,T,M,B,S,R} <: AbstractSurrogate
     x::X
     y::Y
@@ -84,7 +83,7 @@ end
 
 
 """
-    Kriging(x,y,p::Number)
+    Kriging(x,y,p::Number=1.0)
 
 Constructor for type Kriging.
 
@@ -92,9 +91,8 @@ Constructor for type Kriging.
 -(x,y): sampled points
 -'p': value between 0 and 2 modelling the
    smoothness of the function being approximated, 0-> rough  2-> C^infinity
-
 """
-function Kriging(x,y,p::Number)
+function Kriging(x,y,p::Number=1.0)
     if length(x) != length(unique(x))
         println("There exists a repetion in the samples, cannot build Kriging.")
         return
@@ -133,7 +131,7 @@ Constructor for Kriging surrogate.
 - theta: array of values > 0 modellig how much the function is
           changing in the i-th variable
 """
-function Kriging(x,y,p,theta)
+function Kriging(x,y,p=ones(length(x[1])),theta=ones(length(x[1])))
     if length(x) != length(unique(x))
         println("There exists a repetion in the samples, cannot build Kriging.")
         return
