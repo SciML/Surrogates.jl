@@ -15,6 +15,10 @@ mutable struct InverseDistanceSurrogate{X,Y,P,L,U} <: AbstractSurrogate
     ub::U
 end
 
+function InverseDistanceSurrogate(x,y,lb,ub;p::Number=1.0)
+    return InverseDistanceSurrogate(x,y,p,lb,ub)
+end
+
 function (inverSurr::InverseDistanceSurrogate)(val)
     if val in inverSurr.x
         return inverSurr.y[findfirst(x->x==val,inverSurr.x)]

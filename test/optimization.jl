@@ -107,9 +107,9 @@ lb = [1.0,1.0]
 ub = [6.0,6.0]
 x = sample(5,lb,ub,SobolSample())
 objective_function_ND = z -> 3*norm(z)+1
-p = 2.5
+my_p = 2.5
 y = objective_function_ND.(x)
-my_inverse_ND = InverseDistanceSurrogate(x,y,p,lb,ub)
+my_inverse_ND = InverseDistanceSurrogate(x,y,lb,ub,p=my_p)
 surrogate_optimize(objective_function_ND,SRBF(),lb,ub,my_inverse_ND,SobolSample(),maxiters=15)
 
 #SecondOrderPolynomialSurrogate
