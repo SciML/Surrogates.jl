@@ -198,8 +198,8 @@ g = x -> my_rad'(x)
 g(5.0)
 
 #Kriging
-p = 1.5
-my_krig = Kriging(x,y,p)
+my_p = 1.5
+my_krig = Kriging(x,y,lb,ub,p=my_p)
 g = x -> my_krig'(x)
 g(5.0)
 
@@ -250,9 +250,9 @@ g = x -> Zygote.gradient(my_rad,x)
 g((2.0,5.0))
 
 #Kriging
-theta = [2.0,2.0]
-p = [1.9,1.9]
-my_krig = Kriging(x,y,p,theta)
+my_theta = [2.0,2.0]
+my_p = [1.9,1.9]
+my_krig = Kriging(x,y,lb,ub,p=my_p,theta=my_theta)
 g = x -> Zygote.gradient(my_krig,x)
 g((2.0,5.0))
 

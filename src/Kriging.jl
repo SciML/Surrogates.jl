@@ -3,9 +3,11 @@ One dimensional Kriging method, following this paper:
 "A Taxonomy of Global Optimization Methods Based on Response Surfaces"
 by DONALD R. JONES
 =#
-mutable struct Kriging{X,Y,P,T,M,B,S,R} <: AbstractSurrogate
+mutable struct Kriging{X,Y,L,U,P,T,M,B,S,R} <: AbstractSurrogate
     x::X
     y::Y
+    lb::L
+    ub::U
     p::P
     theta::T
     mu::M
@@ -83,7 +85,7 @@ end
 
 
 """
-    Kriging(x,y,p::Number=1.0)
+    Kriging(x,y,lb::Number,ub::Number;p::Number=1.0)
 
 Constructor for type Kriging.
 
@@ -92,14 +94,14 @@ Constructor for type Kriging.
 -'p': value between 0 and 2 modelling the
    smoothness of the function being approximated, 0-> rough  2-> C^infinity
 """
-function Kriging(x,y,p::Number=1.0)
+function Kriging(x,y,lb::Number,ub::Number;p=1.0)
     if length(x) != length(unique(x))
         println("There exists a repetion in the samples, cannot build Kriging.")
         return
     end
     mu,b,sigma,inverse_of_R = _calc_kriging_coeffs(x,y,p)
     theta = 1.0
-    Kriging(x,y,p,theta,mu,b,sigma,inverse_of_R)
+    Kriging(x,y,lb,ub,p,theta,mu,b,sigma,inverse_of_R)
 end
 
 function _calc_kriging_coeffs(x,y,p::Number)
@@ -120,7 +122,7 @@ function _calc_kriging_coeffs(x,y,p::Number)
 end
 
 """
-    Kriging(x,y,p,theta)
+    Kriging(x,y,lb,ub;p=collect(one.(x[1])),theta=collect(one.(x[1])))
 
 Constructor for Kriging surrogate.
 
@@ -131,13 +133,13 @@ Constructor for Kriging surrogate.
 - theta: array of values > 0 modellig how much the function is
           changing in the i-th variable
 """
-function Kriging(x,y,p=ones(length(x[1])),theta=ones(length(x[1])))
+function Kriging(x,y,lb,ub;p=collect(one.(x[1])),theta=collect(one.(x[1])))
     if length(x) != length(unique(x))
         println("There exists a repetion in the samples, cannot build Kriging.")
         return
     end
     mu,b,sigma,inverse_of_R = _calc_kriging_coeffs(x,y,p,theta)
-    Kriging(x,y,p,theta,mu,b,sigma,inverse_of_R)
+    Kriging(x,y,lb,ub,p,theta,mu,b,sigma,inverse_of_R)
 end
 
 function _calc_kriging_coeffs(x,y,p,theta)
