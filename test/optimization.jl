@@ -6,6 +6,8 @@ using Flux: @epochs
 #######SRBF############
 
 ##### 1D #####
+lb = 0.0
+ub = 15.0
 objective_function = x -> 2*x+1
 x = [2.5,4.0,6.0]
 y = [6.0,9.0,13.0]
@@ -18,7 +20,7 @@ a = 2
 b = 6
 
 #Using Kriging
-my_k_SRBF1 = Kriging(x,y,p)
+my_k_SRBF1 = Kriging(x,y,lb,ub)
 surrogate_optimize(objective_function,SRBF(),a,b,my_k_SRBF1,UniformSample())
 
 #Using RadialBasis
@@ -36,7 +38,7 @@ theta = [1.0,1.0]
 
 #Kriging
 
-my_k_SRBFN = Kriging(x,y,p,theta)
+my_k_SRBFN = Kriging(x,y,lb,ub)
 #Every optimization method now returns the y_min and its position
 x_min, y_min = surrogate_optimize(objective_function_ND,SRBF(),lb,ub,my_k_SRBFN,UniformSample())
 
@@ -122,12 +124,14 @@ surrogate_optimize(obj_ND,SRBF(),lb,ub,my_second_order_poly_ND,SobolSample(),max
 ####### LCBS #########
 ######1D######
 objective_function = x -> 2*x+1
+lb = 0.0
+ub = 15.0
 x = [2.0,4.0,6.0]
 y = [5.0,9.0,13.0]
 p = 1.8
 a = 2.0
 b = 6.0
-my_k_LCBS1 = Kriging(x,y,p)
+my_k_LCBS1 = Kriging(x,y,lb,ub)
 surrogate_optimize(objective_function,LCBS(),a,b,my_k_LCBS1,UniformSample())
 
 
@@ -141,7 +145,7 @@ lb = [1.0,1.0]
 ub = [6.0,6.0]
 
 #Kriging
-my_k_LCBSN = Kriging(x,y,p,theta)
+my_k_LCBSN = Kriging(x,y,lb,ub)
 surrogate_optimize(objective_function_ND,LCBS(),lb,ub,my_k_LCBSN,UniformSample())
 
 
@@ -151,10 +155,12 @@ surrogate_optimize(objective_function_ND,LCBS(),lb,ub,my_k_LCBSN,UniformSample()
 objective_function = x -> 2*x+1
 x = [2.0,4.0,6.0]
 y = [5.0,9.0,13.0]
+lb = 0.0
+ub = 15.0
 p = 2
 a = 2
 b = 6
-my_k_EI1 = Kriging(x,y,p)
+my_k_EI1 = Kriging(x,y,lb,ub)
 surrogate_optimize(objective_function,EI(),a,b,my_k_EI1,UniformSample(),maxiters=200,num_new_samples=155)
 
 
@@ -168,7 +174,7 @@ lb = [1.0,1.0]
 ub = [6.0,6.0]
 
 #Kriging
-my_k_E1N = Kriging(x,y,p,theta)
+my_k_E1N = Kriging(x,y,lb,ub)
 surrogate_optimize(objective_function_ND,EI(),lb,ub,my_k_E1N,UniformSample())
 
 
@@ -182,7 +188,7 @@ p = 1.9
 lb = 2.0
 ub = 6.0
 
-my_k_DYCORS1 = Kriging(x,y,p)
+my_k_DYCORS1 = Kriging(x,y,lb,ub,p=1.9)
 surrogate_optimize(objective_function,DYCORS(),lb,ub,my_k_DYCORS1,UniformSample())
 
 my_rad_DYCORS1 = RadialBasis(x,y,lb,ub,linearRadial)
@@ -200,7 +206,7 @@ ub = [6.0,6.0]
 bounds = [lb,ub]
 
 
-my_k_DYCORSN = Kriging(x,y,p,theta)
+my_k_DYCORSN = Kriging(x,y,lb,ub)
 surrogate_optimize(objective_function_ND,DYCORS(),lb,ub,my_k_DYCORSN,UniformSample(),maxiters=30)
 
 my_rad_DYCORSN = RadialBasis(x,y,lb,ub,linearRadial)
@@ -217,5 +223,5 @@ p = 1.9
 lb = 1.0
 ub = 6.0
 num_centers = 2
-my_k_SOP1 = Kriging(x,y,p)
+my_k_SOP1 = Kriging(x,y,lb,ub,p=1.9)
 surrogate_optimize(objective_function,SOP(num_centers),lb,ub,my_k_SOP1,SobolSample(),maxiters=60)
