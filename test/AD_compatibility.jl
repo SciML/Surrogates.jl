@@ -209,8 +209,8 @@ g = x -> my_linear'(x)
 g(5.0)
 
 #Inverse distance
-p = 1.4
-my_inverse = InverseDistanceSurrogate(x,y,p,lb,ub)
+my_p = 1.4
+my_inverse = InverseDistanceSurrogate(x,y,lb,ub,p=my_p)
 g = x -> my_inverse'(x)
 g(5.0)
 
@@ -262,8 +262,8 @@ g = x -> Zygote.gradient(my_linear,x)
 g((2.0,5.0))
 
 #Inverse Distance
-p = 1.4
-my_inverse = InverseDistanceSurrogate(x,y,p,lb,ub)
+my_p = 1.4
+my_inverse = InverseDistanceSurrogate(x,y,lb,ub,p=my_p)
 g = x -> Zygote.gradient(my_inverse,x)
 g((2.0,5.0))
 
@@ -311,8 +311,8 @@ Zygote.gradient(x -> sum(my_neural(x)), (2.0, 5.0))
 my_rad = RadialBasis(x,y,lb,ub,linearRadial)
 Zygote.gradient(x -> sum(my_rad(x)), (2.0, 5.0))
 
-p = 1.4
-my_inverse = InverseDistanceSurrogate(x,y,p,lb,ub)
+my_p = 1.4
+my_inverse = InverseDistanceSurrogate(x,y,lb,ub,p=my_p)
 my_inverse((2.0, 5.0))
 Zygote.gradient(x -> sum(my_inverse(x)), (2.0, 5.0))
 
