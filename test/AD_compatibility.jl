@@ -227,11 +227,11 @@ g = x -> my_loba'(x)
 g(0.0)
 
 #NN
-model = Chain(Dense(1,1), first)
-loss(x, y) = Flux.mse(model(x), y)
-opt = Descent(0.01)
+my_model = Chain(Dense(1,1), first)
+my_loss(x, y) = Flux.mse(my_model(x), y)
+my_opt = Descent(0.01)
 n_echos = 1
-my_neural = NeuralSurrogate(x,y,lb,ub,model,loss,opt,n_echos)
+my_neural = NeuralSurrogate(x,y,lb,ub,model=my_model,loss=my_loss,opt=my_opt,n_echos=1)
 g = x->my_neural'(x)
 g(3.4)
 
@@ -283,11 +283,11 @@ g = x -> Zygote.gradient(my_second,x)
 g((2.0,5.0))
 
 #NN
-model = Chain(Dense(2,1), first)
-loss(x, y) = Flux.mse(model(x), y)
-opt = Descent(0.01)
+my_model = Chain(Dense(2,1), first)
+my_loss(x, y) = Flux.mse(my_model(x), y)
+my_opt = Descent(0.01)
 n_echos = 1
-my_neural = NeuralSurrogate(x,y,lb,ub,model,loss,opt,n_echos)
+my_neural = NeuralSurrogate(x,y,lb,ub,model=my_model,loss=my_loss,opt=my_opt,n_echos=1)
 g = x -> Zygote.gradient(my_neural, x)
 g((2.0,5.0))
 
@@ -301,11 +301,11 @@ f = x -> [x[1]^2, x[2]]
 y = f.(x)
 
 #NN
-model = Chain(Dense(2,2))
-loss(x, y) = Flux.mse(model(x), y)
-opt = Descent(0.01)
+my_model = Chain(Dense(2,2))
+my_loss(x, y) = Flux.mse(my_model(x), y)
+my_opt = Descent(0.01)
 n_echos = 1
-my_neural = NeuralSurrogate(x,y,lb,ub,model,loss,opt,n_echos)
+my_neural = NeuralSurrogate(x,y,lb,ub,model=my_model,loss=my_loss,opt=my_opt,n_echos=1)
 Zygote.gradient(x -> sum(my_neural(x)), (2.0, 5.0))
 
 my_rad = RadialBasis(x,y,lb,ub,rad = linearRadial)
