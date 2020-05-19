@@ -1,4 +1,4 @@
-using XGBoost 
+using XGBoost
 mutable struct RandomForestSurrogate{X,Y,B,L,U,N} <: AbstractSurrogate
     x::X
     y::Y
@@ -8,7 +8,7 @@ mutable struct RandomForestSurrogate{X,Y,B,L,U,N} <: AbstractSurrogate
     num_round::N
 end
 
-function RandomForestSurrogate(x,y,lb::Number,ub::Number,num_round)
+function RandomForestSurrogate(x,y,lb::Number,ub::Number; num_round::Int = 1)
     bst = xgboost(reshape(x,length(x),1), num_round, label = y)
     RandomForestSurrogate(x,y,bst,lb,ub,num_round)
 end
@@ -23,7 +23,7 @@ RandomForestSurrogate(x,y,lb,ub,num_round)
 Build Random forest surrogate. num_round is the number of trees.
 
 """
-function RandomForestSurrogate(x,y,lb,ub,num_round)
+function RandomForestSurrogate(x,y,lb,ub;num_round::Int = 1)
     X = Array{Float64,2}(undef,length(x),length(x[1]))
     for j = 1:length(x)
         X[j,:] = vec(collect(x[j]))

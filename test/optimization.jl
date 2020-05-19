@@ -99,7 +99,7 @@ x = sample(5,lb,ub,SobolSample())
 objective_function_ND = z -> 3*norm(z)+1
 y = objective_function_ND.(x)
 num_round = 2
-my_forest_ND_SRBF = RandomForestSurrogate(x,y,lb,ub,num_round)
+my_forest_ND_SRBF = RandomForestSurrogate(x,y,lb,ub,num_round=2)
 surrogate_optimize(objective_function_ND,SRBF(),lb,ub,my_forest_ND_SRBF,SobolSample(),maxiters=15)
 
 #Inverse distance surrogate
