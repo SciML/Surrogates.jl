@@ -88,7 +88,7 @@ model = Chain(Dense(2,1), first)
 loss(x, y) = Flux.mse(model(x), y)
 opt = Descent(0.01)
 n_echos = 1
-my_neural_ND_neural = NeuralSurrogate(x,y,lb,ub,model,loss,opt,n_echos)
+my_neural_ND_neural = NeuralSurrogate(x,y,lb,ub)
 surrogate_optimize(objective_function_ND,SRBF(),lb,ub,my_neural_ND_neural,SobolSample(),maxiters=15)
 
 #Random Forest

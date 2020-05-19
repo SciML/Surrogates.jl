@@ -21,13 +21,12 @@ mutable struct NeuralSurrogate{X,Y,M,L,O,P,N,A,U} <: AbstractSurrogate
  - opt: optimization function
 
  """
- function NeuralSurrogate(x,y,lb,ub,model,loss,opt,n_echos)
+ function NeuralSurrogate(x,y,lb,ub; model = Chain(Dense(length(x[1]),1), first), loss = (x,y) -> Flux.mse(model(x), y),opt = Descent(0.01),n_echos::Int = 1)
      X = vec.(collect.(x))
      data = zip(X, y)
      ps = Flux.params(model)
      @epochs n_echos Flux.train!(loss, ps, data, opt)
      return NeuralSurrogate(x,y,model,loss,opt,ps,n_echos,lb,ub)
-
  end
 
  function (my_neural::NeuralSurrogate)(val)
