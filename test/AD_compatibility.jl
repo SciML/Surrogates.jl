@@ -222,7 +222,7 @@ g(5.0)
 #Lobachesky
 n = 4
 α = 2.4
-my_loba = LobacheskySurrogate(x,y,α,n,lb,ub)
+my_loba = LobacheskySurrogate(x,y,lb,ub, alpha = α, n = 4)
 g = x -> my_loba'(x)
 g(0.0)
 

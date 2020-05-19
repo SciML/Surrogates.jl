@@ -56,7 +56,7 @@ x = sample(5,lb,ub,UniformSample())
 y = objective_function_ND.(x)
 alpha = [2.0,2.0]
 n = 4
-my_loba_ND = LobacheskySurrogate(x,y,alpha,n,lb,ub)
+my_loba_ND = LobacheskySurrogate(x,y,lb,ub)
 surrogate_optimize(objective_function_ND,SRBF(),lb,ub,my_loba_ND,UniformSample())
 #Linear
 lb = [1.0,1.0]
