@@ -38,7 +38,7 @@ end
 """
 Lobachesky interpolation, suggested parameters: 0 <= alpha <= 4, n must be even.
 """
-function LobacheskySurrogate(x,y,alpha,n::Int,lb::Number,ub::Number)
+function LobacheskySurrogate(x,y,lb::Number,ub::Number; alpha::Number = 1.0,n::Int=4)
     if alpha > 4 || alpha < 0
         error("Alpha must be between 0 and 4")
     end
@@ -73,7 +73,7 @@ LobacheskySurrogate(x,y,alpha,n::Int,lb,ub)
 
 Build the Lobachesky surrogate with parameters alpha and n.
 """
-function LobacheskySurrogate(x,y,alpha,n::Int,lb,ub)
+function LobacheskySurrogate(x,y,lb,ub; alpha = collect(one.(x[1])),n::Int = 4)
     if n % 2 != 0
         error("Parameter n must be even")
     end

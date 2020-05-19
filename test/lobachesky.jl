@@ -12,7 +12,7 @@ x = sample(2000,a,b,SobolSample())
 y = obj.(x)
 alpha = 2.0
 n = 6
-my_loba = LobacheskySurrogate(x,y,alpha,n,a,b)
+my_loba = LobacheskySurrogate(x,y,a,b, alpha = 2.0, n = 6)
 val = my_loba(3.83)
 
 #1D integral
@@ -32,7 +32,8 @@ alpha = [2.4,2.4]
 n = 8
 x = sample(3200,lb,ub,SobolSample())
 y = obj.(x)
-my_loba_ND = LobacheskySurrogate(x,y,alpha,n,lb,ub)
+my_loba_ND = LobacheskySurrogate(x,y,lb,ub,alpha = [2.4,2.4],n=8)
+my_loba_kwargs = LobacheskySurrogate(x,y,lb,ub)
 pred = my_loba_ND((1.0,2.0))
 #ND
 
@@ -51,5 +52,5 @@ alpha = [2.4,2.4,2.4]
 x = sample(50,lb,ub,SobolSample())
 y = obj.(x)
 n = 4
-my_loba_ND = LobacheskySurrogate(x,y,alpha,n,lb,ub)
+my_loba_ND = LobacheskySurrogate(x,y,lb,ub)
 lobachesky_integrate_dimension(my_loba_ND,lb,ub,2)
