@@ -24,7 +24,7 @@ my_k_SRBF1 = Kriging(x,y,lb,ub)
 surrogate_optimize(objective_function,SRBF(),a,b,my_k_SRBF1,UniformSample())
 
 #Using RadialBasis
-my_rad_SRBF1 = RadialBasis(x,y,a,b,linearRadial)
+my_rad_SRBF1 = RadialBasis(x,y,a,b,rad = linearRadial)
 surrogate_optimize(objective_function,SRBF(),a,b,my_rad_SRBF1,UniformSample())
 
 ##### ND #####
@@ -48,7 +48,7 @@ ub = [6.0,6.0]
 x = sample(5,lb,ub,SobolSample())
 objective_function_ND = z -> 3*norm(z)+1
 y = objective_function_ND.(x)
-my_rad_SRBFN = RadialBasis(x,y,lb,ub,linearRadial)
+my_rad_SRBFN = RadialBasis(x,y,lb,ub,rad = linearRadial)
 surrogate_optimize(objective_function_ND,SRBF(),lb,ub,my_rad_SRBFN,UniformSample())
 
 # Lobachesky
@@ -191,7 +191,7 @@ ub = 6.0
 my_k_DYCORS1 = Kriging(x,y,lb,ub,p=1.9)
 surrogate_optimize(objective_function,DYCORS(),lb,ub,my_k_DYCORS1,UniformSample())
 
-my_rad_DYCORS1 = RadialBasis(x,y,lb,ub,linearRadial)
+my_rad_DYCORS1 = RadialBasis(x,y,lb,ub,rad = linearRadial)
 surrogate_optimize(objective_function,DYCORS(),lb,ub,my_rad_DYCORS1,UniformSample())
 
 
@@ -209,7 +209,7 @@ bounds = [lb,ub]
 my_k_DYCORSN = Kriging(x,y,lb,ub)
 surrogate_optimize(objective_function_ND,DYCORS(),lb,ub,my_k_DYCORSN,UniformSample(),maxiters=30)
 
-my_rad_DYCORSN = RadialBasis(x,y,lb,ub,linearRadial)
+my_rad_DYCORSN = RadialBasis(x,y,lb,ub,rad = linearRadial)
 surrogate_optimize(objective_function_ND,DYCORS(),lb,ub,my_rad_DYCORSN,UniformSample(),maxiters=30)
 
 

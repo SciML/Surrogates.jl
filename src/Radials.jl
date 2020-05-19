@@ -22,11 +22,11 @@ multiquadricRadial = RadialFunction(1,z->sqrt(norm(z)^2+1))
 thinplateRadial = RadialFunction(2,z->norm(z)^2*log(norm(z)))
 
 """
-    RadialBasis(x,y,a::Number,b::Number,rad::RadialFunction,scale::Real=1.0)
+    RadialBasis(x,y,lb::Number,ub::Number; rad::RadialFunction = linearRadial,scale::Real=1.0)
 
 Constructor for Radial basis surrogate.
 """
-function RadialBasis(x, y, lb::Number, ub::Number, rad::RadialFunction, scale_factor::Real=1.0)
+function RadialBasis(x, y, lb::Number, ub::Number; rad::RadialFunction=linearRadial, scale_factor::Real=1.0)
     q = rad.q
     phi = rad.phi
     coeff = _calc_coeffs(x, y, lb, ub, phi, q,scale_factor)
@@ -38,7 +38,7 @@ RadialBasis(x,y,lb,ub,rad::RadialFunction, scale_factor::Float = 1.0)
 
 Constructor for RadialBasis surrogate
 """
-function RadialBasis(x, y, lb, ub, rad::RadialFunction, scale_factor::Real=1.0)
+function RadialBasis(x, y, lb, ub; rad::RadialFunction = linearRadial, scale_factor::Real=1.0)
     q = rad.q
     phi = rad.phi
     coeff = _calc_coeffs(x, y, lb, ub, phi, q, scale_factor)
