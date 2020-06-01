@@ -4,7 +4,7 @@ mutable struct InverseDistanceSurrogate{X,Y,P,C,L,U} <: AbstractSurrogate
 The inverse distance weighting model is an interpolating method and the
 unknown points are calculated with a weighted average of the sampling points.
 p is a positive real number called the power parameter.
-p > 1 is needed for the derivative to be continuous
+p > 1 is needed for the derivative to be continuous.
 
 """
 mutable struct InverseDistanceSurrogate{X,Y,P,L,U} <: AbstractSurrogate

@@ -4,7 +4,7 @@ The syntax for sampling in an interval or region is the following:
 ```
 sample(n,lb,ub,S::SamplingAlgorithm)
 ```
-Where lb and ub are respectively lower and upper bound.
+where lb and ub are, respectively, the lower and upper bounds.
 There are many sampling algorithms to choose from:
 
 * Grid sample
@@ -36,10 +36,10 @@ sample(n,lb,ub,S::LowDiscrepancySample)
 
 ## Adding a new sampling method
 
-Adding a new sampling method is a two step process:
+Adding a new sampling method is a two- step process:
 
-1. Add a new SamplingAlgorithm type
-2. Overload the sample function with the new type.
+1. Adding a new SamplingAlgorithm type
+2. Overloading the sample function with the new type.
 
 **Example**
 ```

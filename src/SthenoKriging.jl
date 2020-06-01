@@ -64,7 +64,7 @@ _query_to_colvec(x) = Stheno.ColVecs(reshape(x, length(x), 1))
 """
     add_point!(k::SthenoKriging, x_new, y_new)
 
-Adds the new point(s) and its respective value(s) to the sample points, re-conditioning
+Adds the new point(s) and its/their respective value(s) to the sample points, re-conditioning
 the surrogate on the updated values.
 """
 function add_point!(k::SthenoKriging, x_new, y_new)

@@ -2,20 +2,20 @@
 # Overview
 A surrogate model is an approximation method that mimics the behavior of a computationally
 expensive simulation. In more mathematical terms: suppose we are attempting to optimize a function
-``\; f(p)``, but each calculation of ``\; f`` is very expensive. It may be the case we need to solve a PDE for each point or use advanced numerical linear algebra machinery which is usually costly. The idea is then to develop a surrogate model ``\; g`` which approximates ``\; f`` by training on previous data collected from evaluations of ``\; f``.
-The construction of a surrogate model can be seen as a three steps process:
+``\; f(p)``, but each calculation of ``\; f`` is very expensive. It may be the case that we need to solve a PDE for each point or use advanced numerical linear algebra machinery, which is usually costly. The idea is then to develop a surrogate model ``\; g`` which approximates ``\; f`` by training on previous data collected from evaluations of ``\; f``.
+The construction of a surrogate model can be seen as a three-step process:
 
-- Sample selection
-- Construction of the surrogate model
-- Surrogate optimization
+1. Sample selection
+2. Construction of the surrogate model
+3. Surrogate optimization
 
-The sampling methods are super important for the behaviour of the Surrogate.
+The sampling methods are super important for the behavior of the Surrogate.
 At the moment they are:
 
 - Grid sample
 - Uniform sample
 - Sobol sample
-- Latin Hypercupe sample
+- Latin Hypercube sample
 - Low discrepancy sample
 
 The available surrogates are:
@@ -102,7 +102,7 @@ alpha = 2.0
 n = 6
 my_lobachesky = LobacheskySurrogate(x,y,alpha,n,lb,ub)
 
-#Approximanting value at 5.0
+#Approximating value at 5.0
 value = my_lobachesky(5.0)
 
 #Adding more data points
