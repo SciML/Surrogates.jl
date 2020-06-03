@@ -24,7 +24,7 @@ thinplateRadial = RadialFunction(2,z->norm(z)^2*log(norm(z)))
 """
     RadialBasis(x,y,lb::Number,ub::Number; rad::RadialFunction = linearRadial,scale::Real=1.0)
 
-Constructor for Radial basis surrogate.
+Constructor for RadialBasis surrogate.
 """
 function RadialBasis(x, y, lb::Number, ub::Number; rad::RadialFunction=linearRadial, scale_factor::Real=1.0)
     q = rad.q
@@ -115,7 +115,7 @@ function centralized_monomial(vect,alpha,mean_half_diameter,central_point)
 end
 
 """
-Calculates current estimate of value 'val' with respect to RadialBasis object.
+Calculates current estimate of value 'val' with respect to the RadialBasis object.
 """
 function (rad::RadialBasis)(val)
     approx = _approx_rbf(val, rad)
@@ -161,7 +161,7 @@ _center_bounds(x, lb, ub) = (ub .- lb) ./ 2
 """
     add_point!(rad::RadialBasis,new_x,new_y)
 
-Add new samples x and y and updates the coefficients. Return the new object radial.
+Add new samples x and y and update the coefficients. Return the new object radial.
 """
 function add_point!(rad::RadialBasis,new_x,new_y)
     if (length(new_x) == 1 && length(new_x[1]) == 1) || ( length(new_x) > 1 && length(new_x[1]) == 1 && length(rad.lb)>1)

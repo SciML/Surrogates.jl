@@ -9,37 +9,37 @@
 
 A surrogate model is an approximation method that mimics the behavior of a computationally
 expensive simulation. In more mathematical terms: suppose we are attempting to optimize a function
-`f(p)`, but each calculation of `f` is very expensive. It may be the case we need to solve a PDE for each point or use advanced numerical linear algebra machinery which is usually costly. The idea is then to develop a surrogate model `g` which approximates `f` by training on previous data collected from evaluations of `f`.
-The construction of a surrogate model can be seen as a three steps process:
-- Sample selection
-- Construction of the surrogate model
-- Surrogate optimization
+`f(p)`, but each calculation of `f` is very expensive. It may be the case we need to solve a PDE for each point or use advanced numerical linear algebra machinery, which is usually costly. The idea is then to develop a surrogate model `g` which approximates `f` by training on previous data collected from evaluations of `f`.
+The construction of a surrogate model can be seen as a three-step process:
+1. Sample selection
+2. Construction of the surrogate model
+3. Surrogate optimization
 
-## ALL the currently available sampling methods: 
+## ALL the currently available sampling methods:
 
 - Grid
-- Uniform 
+- Uniform
 - Sobol
 - Latin Hypercube
 - Low Discrepancy
 - Random
 
-## ALL the currently available surrogate models: 
+## ALL the currently available surrogate models:
 
 - Kriging
 - Radial Basis Function
 - Linear
 - Second Order Polynomial
 - Support Vector Machines (SVM)
-- Artificial Neural Networks 
+- Artificial Neural Networks
 - Random Forests
 - Lobachesky
 - Inverse-distance
 
-## ALL the currently available optimization methods: 
+## ALL the currently available optimization methods:
 
 - SRBF
-- LCBS 
+- LCBS
 - DYCORS
 - EI
 

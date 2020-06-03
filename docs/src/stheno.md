@@ -44,7 +44,7 @@ y = f.(x)
 ```
 
 Additionally, the default hyperparameters of the Gaussian processes may be inappropriate
-for our problem. There are an number of ways to do this, as shown in the [Stheno tutorial](https://willtebbutt.github.io/Stheno.jl/dev/getting_started/).
+for our problem. There are a number of ways to do this, as shown in the [Stheno tutorial](https://willtebbutt.github.io/Stheno.jl/dev/getting_started/).
 
 Suppose we have defined our Gaussian process (note that each dimension has a different
 scaling):
@@ -64,7 +64,7 @@ surrogate = SthenoKriging(x, y, gp)
 ## A Multidimensional Example
 
 Lastly, if we would like to fit a multi-output surrogate with Kriging, we could do
-the following. Note that we co-define the two Gaussian processes within the Stheno model.
+the following (note that we co-define the two Gaussian processes within the Stheno model):
 
 ```
 using Stheno

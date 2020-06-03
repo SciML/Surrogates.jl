@@ -1,5 +1,5 @@
 #=
-One dimensional Kriging method, following this paper:
+One-dimensional Kriging method, following this paper:
 "A Taxonomy of Global Optimization Methods Based on Response Surfaces"
 by DONALD R. JONES
 =#
@@ -26,7 +26,7 @@ mutable struct Kriging{X,Y,L,U,P,T,M,B,S,R} <: AbstractSurrogate
  end
 
  """
-     Returns sqrt of expected mean_squared_error errot at the point.
+     Returns sqrt of expected mean_squared_error error at the point.
  """
  function std_error_at_point(k::Kriging,val)
      n = length(k.x)
@@ -64,7 +64,7 @@ mutable struct Kriging{X,Y,L,U,P,T,M,B,S,R} <: AbstractSurrogate
  end
 
 """
-    Returns sqrt of expected mean_squared_error errot at the point.
+    Returns sqrt of expected mean_squared_error error at the point.
 """
 function std_error_at_point(k::Kriging,val::Number)
     phi(z) = exp(-(abs(z))^k.p)
@@ -91,7 +91,7 @@ Constructor for type Kriging.
 
 #Arguments:
 -(x,y): sampled points
--'p': value between 0 and 2 modelling the
+-p: value between 0 and 2 modelling the
    smoothness of the function being approximated, 0-> rough  2-> C^infinity
 """
 function Kriging(x,y,lb::Number,ub::Number;p=1.0)
@@ -127,15 +127,15 @@ end
 Constructor for Kriging surrogate.
 
 - (x,y): sampled points
-- p: array of values 0<=p<2 modelling the
+- p: array of values 0<=p<2 modeling the
      smoothness of the function being approximated in the i-th variable.
      low p -> rough, high p -> smooth
-- theta: array of values > 0 modellig how much the function is
-          changing in the i-th variable
+- theta: array of values > 0 modeling how much the function is
+          changing in the i-th variable.
 """
 function Kriging(x,y,lb,ub;p=collect(one.(x[1])),theta=collect(one.(x[1])))
     if length(x) != length(unique(x))
-        println("There exists a repetion in the samples, cannot build Kriging.")
+        println("There exists a repetition in the samples, cannot build Kriging.")
         return
     end
     mu,b,sigma,inverse_of_R = _calc_kriging_coeffs(x,y,p,theta)
@@ -169,7 +169,7 @@ end
     add_point!(k::Kriging,new_x,new_y)
 
 Adds the new point and its respective value to the sample points.
-Warning: If you are just adding a single point, you have to wrap it with []
+Warning: If you are just adding a single point, you have to wrap it with [].
 Returns the updated Kriging model.
 
 """

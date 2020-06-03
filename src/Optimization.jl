@@ -40,13 +40,13 @@ end
 The main idea is to pick the new evaluations from a set of candidate points where each candidate point is generated as an N(0, sigma^2)
 distributed perturbation from the current best solution.
 The value of sigma is modified based on progress and follows the same logic as
-in many trust region methods; we increase sigma if we make a lot of progress
+in many trust region methods: we increase sigma if we make a lot of progress
 (the surrogate is accurate) and decrease sigma when we aren’t able to make progress
 (the surrogate model is inaccurate).
 More details about how sigma is updated is given in the original papers.
 
-After generating the candidate points we predict their objective function value
-and compute the minimum distance to previously evaluated point.
+After generating the candidate points, we predict their objective function value
+and compute the minimum distance to the previously evaluated point.
 Let the candidate points be denoted by C and let the function value predictions
 be s(x\\_i) and the distance values be d(x\\_i), both rescaled through a
 linear transformation to the interval [0,1]. This is done to put the values on
@@ -58,10 +58,10 @@ the weighted-distance merit function:
 
 where `` 0 \\leq w \\leq 1 ``.
 That is, we want a small function value prediction and a large minimum distance
-from previously evalauted points.
+from the previously evaluated points.
 The weight w is commonly cycled between
 a few values to achieve both exploitation and exploration.
-When w is close to zero we do pure exploration while w close to 1 corresponds to explotation.
+When w is close to zero, we do pure exploration, while w close to 1 corresponds to exploitation.
 """
 function surrogate_optimize(obj::Function,::SRBF,lb,ub,surr::AbstractSurrogate,sample_type::SamplingAlgorithm;maxiters=100,num_new_samples=100)
     scale = 0.2
@@ -269,7 +269,7 @@ function surrogate_optimize(obj::Function,::SRBF,lb::Number,ub::Number,surr::Abs
                     end
                 end
             end
-            #3) Evaluate merit function in the sampled points
+            #3) Evaluate merit function at the sampled points
             evaluation_of_merit_function = merit_function.(new_sample,w,surr,s_max,s_min,d_max,d_min,box_size)
 
             new_addition = false
@@ -326,9 +326,9 @@ function surrogate_optimize(obj::Function,::SRBF,lb::Number,ub::Number,surr::Abs
 
             if success == 3
                 scale = scale*2
-                #check bounds cant go more than [a,b]
+                #check bounds cannot go more than [a,b]
                 if scale > 0.8*norm(ub-lb)
-                    println("Exiting,scale too big")
+                    println("Exiting, scale too big")
                     index = argmin(surr.y)
                     return (surr.x[index],surr.y[index])
                 end
@@ -666,7 +666,7 @@ end
 surrogate_optimize(obj::Function,::DYCORS,lb::Number,ub::Number,surr1::AbstractSurrogate,sample_type::SamplingAlgorithm;maxiters=100,num_new_samples=100)
 
 DYCORS optimization method in 1D, following closely: Combining radial basis function
-surrogates and dynamic coordinate search in high-dimensional expensive black-box optimzation".
+surrogates and dynamic coordinate search in high-dimensional expensive black-box optimization".
 
 """
 function surrogate_optimize(obj::Function,::DYCORS,lb::Number,ub::Number,surr1::AbstractSurrogate,sample_type::SamplingAlgorithm;maxiters=100,num_new_samples=100)
@@ -971,7 +971,7 @@ surrogate_optimize(obj::Function,::SOP,lb::Number,ub::Number,surr::AbstractSurro
 
 SOP Surrogate optimization method, following closely the following papers:
 
-    -SOP: parallel surrogate global optimization with Pareto center selection for computationally expensive single objective problems by Tipaluck Krityakierne
+    - SOP: parallel surrogate global optimization with Pareto center selection for computationally expensive single objective problems by Tipaluck Krityakierne
     - Multiobjective Optimization Using Evolutionary Algorithms by Kalyan Deb
 #Suggested number of new_samples = min(500*d,5000)
 """
@@ -1046,8 +1046,8 @@ function surrogate_optimize(obj::Function,sop1::SOP,lb::Number,ub::Number,surrSO
             i = i + 1
         end
 
-        # I examined all the points in the ranked list but num_selected < num_p
-        # I just iterate again using only radius rule
+        #I examined all the points in the ranked list but num_selected < num_p
+        #I just iterate again using only radius rule
         if length(C) < num_P
             i = 1
             while i <= length(ranked_list) && centers_full == 0

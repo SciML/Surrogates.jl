@@ -34,8 +34,8 @@ approx = my_radial_basis((1.0,1.4))
 ```
 
 ## Kriging standard error
-Let's now use the Kriging surrogate, which is a single output Gaussian process.
-This surrogate has a nice feature:not only it approximates the solution at a
+Let's now use the Kriging surrogate, which is a single-output Gaussian process.
+This surrogate has a nice feature: not only does it approximate the solution at a
 point, it also calculates the standard error at such point.
 Let's see an example:
 ```
@@ -62,7 +62,7 @@ surrogate_optimize(f,LCBS(),a,b,my_krig,UniformSample())
 ## Lobachesky integral
 The Lobachesky surrogate has the nice feature of having a closed formula for its
 integral, which is something that other surrogates are missing.
-Let's compare it with QuadGK.
+Let's compare it with QuadGK:
 ```
 using Surrogates
 using QuadGK
