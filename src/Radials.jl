@@ -1,6 +1,7 @@
 using LinearAlgebra
+using ExtendableSparse
 
-mutable struct RadialBasis{F,Q,X,Y,L,U,C,S} <: AbstractSurrogate
+mutable struct RadialBasis{F,Q,X,Y,L,U,C,S,D} <: AbstractSurrogate
     phi::F
     dim_poly::Q
     x::X
@@ -9,6 +10,7 @@ mutable struct RadialBasis{F,Q,X,Y,L,U,C,S} <: AbstractSurrogate
     ub::U
     coeff::C
     scale_factor::S
+    sparse::D
 end
 
 mutable struct RadialFunction{Q,P}
@@ -26,11 +28,11 @@ thinplateRadial = RadialFunction(2,z->norm(z)^2*log(norm(z)))
 
 Constructor for RadialBasis surrogate.
 """
-function RadialBasis(x, y, lb::Number, ub::Number; rad::RadialFunction=linearRadial, scale_factor::Real=1.0)
+function RadialBasis(x, y, lb::Number, ub::Number; rad::RadialFunction=linearRadial, scale_factor::Real=1.0, sparse = false)
     q = rad.q
     phi = rad.phi
-    coeff = _calc_coeffs(x, y, lb, ub, phi, q,scale_factor)
-    return RadialBasis(phi, q, x, y, lb, ub, coeff,scale_factor)
+    coeff = _calc_coeffs(x, y, lb, ub, phi, q,scale_factor, sparse)
+    return RadialBasis(phi, q, x, y, lb, ub, coeff,scale_factor,sparse)
 end
 
 """
@@ -38,32 +40,35 @@ RadialBasis(x,y,lb,ub,rad::RadialFunction, scale_factor::Float = 1.0)
 
 Constructor for RadialBasis surrogate
 """
-function RadialBasis(x, y, lb, ub; rad::RadialFunction = linearRadial, scale_factor::Real=1.0)
+function RadialBasis(x, y, lb, ub; rad::RadialFunction = linearRadial, scale_factor::Real=1.0, sparse = false)
     q = rad.q
     phi = rad.phi
-    coeff = _calc_coeffs(x, y, lb, ub, phi, q, scale_factor)
-    return RadialBasis(phi, q, x, y, lb, ub, coeff,scale_factor)
+    coeff = _calc_coeffs(x, y, lb, ub, phi, q, scale_factor, sparse)
+    return RadialBasis(phi, q, x, y, lb, ub, coeff,scale_factor, sparse)
 end
 
-function _calc_coeffs(x, y, lb, ub, phi, q, scale_factor)
-    D = _construct_rbf_interp_matrix(x, first(x), lb, ub, phi, q, scale_factor)
+function _calc_coeffs(x, y, lb, ub, phi, q, scale_factor, sparse)
+    D = _construct_rbf_interp_matrix(x, first(x), lb, ub, phi, q, scale_factor, sparse)
     Y = _construct_rbf_y_matrix(y, first(y), length(y) + q)
     coeff = D \ Y
     return coeff
 end
 
-function _construct_rbf_interp_matrix(x, x_el::Number, lb, ub, phi, q, scale_factor)
+function _construct_rbf_interp_matrix(x, x_el::Number, lb, ub, phi, q, scale_factor, sparse)
     n = length(x)
     m = n + q
-    D = zeros(eltype(x_el), m, m)
-
+    if sparse
+        D = ExtendableSparseMatrix{eltype(x_el),Int}(m,m)
+    else
+        D = zeros(eltype(x_el), m, m)
+    end
     @inbounds for i = 1:n
         for j = 1:n
             D[i,j] = phi( (x[i] .- x[j]) ./ scale_factor )
         end
         if i <= n
             for k = 1:q
-                D[i,n+k] = _scaled_chebyshev(x[i], k-1, lb, ub)
+                    D[i,n+k] = _scaled_chebyshev(x[i], k-1, lb, ub)
             end
         end
     end
@@ -71,15 +76,18 @@ function _construct_rbf_interp_matrix(x, x_el::Number, lb, ub, phi, q, scale_fac
     return D_sym
 end
 
-function _construct_rbf_interp_matrix(x, x_el, lb, ub, phi, q, scale_factor)
+function _construct_rbf_interp_matrix(x, x_el, lb, ub, phi, q, scale_factor,sparse)
     n = length(x)
     nd = length(x_el)
     central_point = _center_bounds(x_el, lb, ub)
     sum_half_diameter = sum((ub[k]-lb[k])/2 for k = 1:nd)
     mean_half_diameter = sum_half_diameter / nd
     m = n+q
-    D = zeros(eltype(x_el), m, m)
-
+    if sparse
+        D = ExtendableSparseMatrix{eltype(x_el),Int}(m,m)
+    else
+        D = zeros(eltype(x_el), m, m)
+    end
     @inbounds for i = 1:n
         for j = 1:n
             D[i,j] = phi( (x[i] .- x[j]) ./ scale_factor)
@@ -171,6 +179,6 @@ function add_point!(rad::RadialBasis,new_x,new_y)
         append!(rad.x,new_x)
         append!(rad.y,new_y)
     end
-    rad.coeff = _calc_coeffs(rad.x,rad.y,rad.lb,rad.ub,rad.phi,rad.dim_poly, rad.scale_factor)
+    rad.coeff = _calc_coeffs(rad.x,rad.y,rad.lb,rad.ub,rad.phi,rad.dim_poly, rad.scale_factor, rad.sparse)
     nothing
 end
