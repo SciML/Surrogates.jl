@@ -75,7 +75,7 @@ my_rad_ND = RadialBasis(x,y,lb,ub,rad = cubicRadial)
 my_rad_ND = RadialBasis(x,y,lb,ub, rad = multiquadricRadial)
 prediction = my_rad_ND((1.0,1.0,1.0))
 
-# #100
+
 f = x -> x[1]*x[2]
 lb = [1.0, 2.0]
 ub = [10.0, 8.5]
@@ -87,7 +87,6 @@ my_radial_basis = RadialBasis(x, y, lb, ub, rad = linearRadial)
 my_radial_basis = RadialBasis(x, y, lb, ub, rad =linearRadial)
 @test my_radial_basis((1.0, 2.0)) ≈ 2
 
-# #100
 f = x -> x[1]*x[2]
 lb = [1.0, 2.0]
 ub = [10.0, 8.5]
@@ -97,7 +96,7 @@ y = f.(x)
 my_radial_basis = RadialBasis(x, y, lb,ub, rad = linearRadial)
 @test my_radial_basis((1.0, 2.0)) ≈ 2
 
-# Multi-output #98
+# Multi-output
 f  = x -> [x^2, x]
 lb = 1.0
 ub = 10.0
@@ -122,3 +121,22 @@ x_new = (2.0, 2.0)
 y_new = f(x_new)
 add_point!(my_radial_basis, x_new, y_new)
 @test my_radial_basis(x_new) ≈ y_new
+
+
+
+#sparse
+
+#1D
+lb = 0.0
+ub = 4.0
+x = [1.0,2.0,3.0]
+y = [4.0,5.0,6.0]
+my_rad = RadialBasis(x, y, lb, ub, rad = linearRadial, sparse = true)
+
+#ND
+x = [(1.0, 2.0, 3.0), (4.0, 5.0, 6.0), (7.0, 8.0, 9.0)]
+y = [4.0, 5.0, 6.0]
+lb = [0.0,3.0,6.0]
+ub = [4.0,7.0,10.0]
+#bounds = [[0.0, 3.0, 6.0], [4.0, 7.0, 10.0]]
+my_rad = RadialBasis(x, y, lb, ub, sparse = true)
