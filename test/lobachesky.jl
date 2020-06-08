@@ -54,3 +54,24 @@ y = obj.(x)
 n = 4
 my_loba_ND = LobacheskySurrogate(x,y,lb,ub)
 lobachesky_integrate_dimension(my_loba_ND,lb,ub,2)
+
+#Sparse
+#1D
+obj = x -> 3*x + log(x)
+a = 1.0
+b = 4.0
+x = sample(100,a,b,SobolSample())
+y = obj.(x)
+alpha = 2.0
+n = 6
+my_loba = LobacheskySurrogate(x,y,a,b, alpha = 2.0, n = 6,sparse=true)
+
+#ND
+obj = x -> x[1] + log(x[2])
+lb = [0.0,0.0]
+ub = [8.0,8.0]
+alpha = [2.4,2.4]
+n = 8
+x = sample(100,lb,ub,SobolSample())
+y = obj.(x)
+my_loba_ND = LobacheskySurrogate(x,y,lb,ub,alpha = [2.4,2.4],n=8,sparse=true)

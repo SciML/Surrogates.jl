@@ -1,4 +1,5 @@
-mutable struct LobacheskySurrogate{X,Y,A,N,L,U,C} <: AbstractSurrogate
+using ExtendableSparse
+mutable struct LobacheskySurrogate{X,Y,A,N,L,U,C,S} <: AbstractSurrogate
     x::X
     y::Y
     alpha::A
@@ -6,6 +7,7 @@ mutable struct LobacheskySurrogate{X,Y,A,N,L,U,C} <: AbstractSurrogate
     lb::L
     ub::U
     coeff::C
+    sparse::S
 end
 
 function phi_nj1D(point,x,alpha,n)
@@ -24,9 +26,13 @@ function phi_nj1D(point,x,alpha,n)
     return val
 end
 
-function _calc_loba_coeff1D(x,y,alpha,n)
+function _calc_loba_coeff1D(x,y,alpha,n,sparse)
     dim = length(x)
-    D = zeros(eltype(x[1]), dim, dim)
+    if sparse
+        D = ExtendableSparseMatrix{eltype(x),Int}(dim,dim)
+    else
+        D = zeros(eltype(x[1]), dim, dim)
+    end
     for i = 1:dim
         for j = 1:dim
             D[i,j] = phi_nj1D(x[i],x[j],alpha,n)
@@ -38,15 +44,15 @@ end
 """
 Lobachesky interpolation, suggested parameters: 0 <= alpha <= 4, n must be even.
 """
-function LobacheskySurrogate(x,y,lb::Number,ub::Number; alpha::Number = 1.0,n::Int=4)
+function LobacheskySurrogate(x,y,lb::Number,ub::Number; alpha::Number = 1.0,n::Int=4, sparse = false)
     if alpha > 4 || alpha < 0
         error("Alpha must be between 0 and 4")
     end
     if n % 2 != 0
         error("Parameter n must be even")
     end
-    coeff = _calc_loba_coeff1D(x,y,alpha,n)
-    LobacheskySurrogate(x,y,alpha,n,lb,ub,coeff)
+    coeff = _calc_loba_coeff1D(x,y,alpha,n,sparse)
+    LobacheskySurrogate(x,y,alpha,n,lb,ub,coeff,sparse)
 end
 
 function (loba::LobacheskySurrogate)(val::Number)
@@ -57,9 +63,13 @@ function phi_njND(point,x,alpha,n)
     return prod(phi_nj1D(point[h],x[h],alpha[h],n) for h = 1:length(x))
 end
 
-function _calc_loba_coeffND(x,y,alpha,n)
+function _calc_loba_coeffND(x,y,alpha,n,sparse)
     dim = length(x)
-    D = zeros(eltype(x[1]), dim, dim)
+    if sparse
+        D = ExtendableSparseMatrix{eltype(x[1]),Int}(dim,dim)
+    else
+        D = zeros(eltype(x[1]), dim, dim)
+    end
     for i = 1:dim
         for j = 1:dim
             D[i,j] = phi_njND(x[i],x[j],alpha,n)
@@ -69,16 +79,16 @@ function _calc_loba_coeffND(x,y,alpha,n)
     return Sym\y
 end
 """
-LobacheskySurrogate(x,y,alpha,n::Int,lb,ub)
+LobacheskySurrogate(x,y,alpha,n::Int,lb,ub,sparse = false)
 
 Build the Lobachesky surrogate with parameters alpha and n.
 """
-function LobacheskySurrogate(x,y,lb,ub; alpha = collect(one.(x[1])),n::Int = 4)
+function LobacheskySurrogate(x,y,lb,ub; alpha = collect(one.(x[1])),n::Int = 4, sparse = false)
     if n % 2 != 0
         error("Parameter n must be even")
     end
-    coeff = _calc_loba_coeffND(x,y,alpha,n)
-    LobacheskySurrogate(x,y,alpha,n,lb,ub,coeff)
+    coeff = _calc_loba_coeffND(x,y,alpha,n,sparse)
+    LobacheskySurrogate(x,y,alpha,n,lb,ub,coeff,sparse)
 end
 
 function (loba::LobacheskySurrogate)(val)
@@ -90,12 +100,12 @@ function add_point!(loba::LobacheskySurrogate,x_new,y_new)
         #1D
         append!(loba.x,x_new)
         append!(loba.y,y_new)
-        loba.coeff = _calc_loba_coeff1D(loba.x,loba.y,loba.alpha,loba.n)
+        loba.coeff = _calc_loba_coeff1D(loba.x,loba.y,loba.alpha,loba.n,loba.sparse)
     else
         #ND
         loba.x = vcat(loba.x,x_new)
         loba.y = vcat(loba.y,y_new)
-        loba.coeff = _calc_loba_coeffND(loba.x,loba.y,loba.alpha,loba.n)
+        loba.coeff = _calc_loba_coeffND(loba.x,loba.y,loba.alpha,loba.n,loba.sparse)
     end
     nothing
 end
@@ -180,5 +190,5 @@ function lobachesky_integrate_dimension(loba::LobacheskySurrogate,lb,ub,dim::Int
     new_lb = deleteat!(lb,dim)
     new_ub = deleteat!(ub,dim)
     new_loba = deleteat!(loba.alpha,dim)
-    return LobacheskySurrogate(new_x,loba.y,loba.alpha,loba.n,new_lb,new_ub,new_coeff)
+    return LobacheskySurrogate(new_x,loba.y,loba.alpha,loba.n,new_lb,new_ub,new_coeff,loba.sparse)
 end
