@@ -776,6 +776,9 @@ function select_evaluation_point_ND(new_points,surrn::AbstractSurrogate,numb_ite
 end
 
 """
+      surrogate_optimize(obj::Function,::DYCORS,lb::Number,ub::Number,surr1::AbstractSurrogate,sample_type::SamplingAlgorithm;maxiters=100,num_new_samples=100)
+
+
 This is an implementation of the DYCORS strategy by Regis and Shoemaker:
 Rommel G Regis and Christine A Shoemaker.
 Combining radial basis function surrogates and dynamic coordinate search in high-dimensional expensive black-box optimization.
