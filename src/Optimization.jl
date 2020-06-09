@@ -776,14 +776,13 @@ function select_evaluation_point_ND(new_points,surrn::AbstractSurrogate,numb_ite
 end
 
 """
-surrogate_optimize(obj::Function,::DYCORS,lb::Number,ub::Number,surr1::AbstractSurrogate,sample_type::SamplingAlgorithm;maxiters=100,num_new_samples=100)
+      surrogate_optimize(obj::Function,::DYCORS,lb::Number,ub::Number,surr1::AbstractSurrogate,sample_type::SamplingAlgorithm;maxiters=100,num_new_samples=100)
+
 
 This is an implementation of the DYCORS strategy by Regis and Shoemaker:
-
 Rommel G Regis and Christine A Shoemaker.
 Combining radial basis function surrogates and dynamic coordinate search in high-dimensional expensive black-box optimization.
 Engineering Optimization, 45(5): 529–555, 2013.
-
 This is an extension of the SRBF strategy that changes how the
 candidate points are generated. The main idea is that many objective
 functions depend only on a few directions so it may be advantageous to
