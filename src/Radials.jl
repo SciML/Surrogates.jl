@@ -51,8 +51,8 @@ function RadialBasis(x, y, lb, ub; rad::RadialFunction = linearRadial, scale_fac
 end
 
 function _calc_coeffs(x, y, lb, ub, phi, q, scale_factor, sparse)
-    @show D = _construct_rbf_interp_matrix(x, first(x), lb, ub, phi, q, scale_factor, sparse)
-    @show Y = _construct_rbf_y_matrix(y, first(y), length(y) + q)
+    D = _construct_rbf_interp_matrix(x, first(x), lb, ub, phi, q, scale_factor, sparse)
+    Y = _construct_rbf_y_matrix(y, first(y), length(y) + q)
     coeff = D \ Y
     return coeff
 end
