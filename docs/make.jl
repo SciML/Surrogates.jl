@@ -17,5 +17,5 @@ makedocs(
 
 
 deploydocs(
-   repo = "github.com/JuliaDiffEq/Surrogates.jl.git",
+   repo = "github.com/SciML/Surrogates.jl.git",
 )
