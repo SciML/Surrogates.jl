@@ -1,5 +1,5 @@
 [deps]
 Documenter = "e30172f5-a6a5-5a46-863b-614d45cd2de4"
-
+Stheno = "8188c328-b5d6-583d-959b-9690869a5511"
 [compat]
 Documenter = "~0.22"
