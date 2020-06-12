@@ -21,7 +21,10 @@ end
 linearRadial = RadialFunction(0,z->norm(z))
 cubicRadial = RadialFunction(1,z->norm(z)^3)
 multiquadricRadial = RadialFunction(1,z->sqrt(norm(z)^2+1))
-thinplateRadial = RadialFunction(2,z->norm(z)^2*log(norm(z)))
+thinplateRadial = RadialFunction(2, z->begin
+    result = norm(z)^2 * log(norm(z))
+    ifelse(iszero(z), zero(result), result)
+end)
 
 """
     RadialBasis(x,y,lb::Number,ub::Number; rad::RadialFunction = linearRadial,scale::Real=1.0)
@@ -48,8 +51,8 @@ function RadialBasis(x, y, lb, ub; rad::RadialFunction = linearRadial, scale_fac
 end
 
 function _calc_coeffs(x, y, lb, ub, phi, q, scale_factor, sparse)
-    D = _construct_rbf_interp_matrix(x, first(x), lb, ub, phi, q, scale_factor, sparse)
-    Y = _construct_rbf_y_matrix(y, first(y), length(y) + q)
+    @show D = _construct_rbf_interp_matrix(x, first(x), lb, ub, phi, q, scale_factor, sparse)
+    @show Y = _construct_rbf_y_matrix(y, first(y), length(y) + q)
     coeff = D \ Y
     return coeff
 end
