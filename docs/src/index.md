@@ -86,7 +86,7 @@ You can obtain the current master with:
 ```
 
 # Quick example
-```julia
+```@example
 using Surrogates
 num_samples = 10
 lb = 0.0
