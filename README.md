@@ -49,3 +49,25 @@ The construction of a surrogate model can be seen as a three-step process:
 using Pkg
 Pkg.add("Surrogates")
 ```
+
+## Contributing
+
+Here is the suggested workflow to contribute to this package:
+
+1. Fork the repository on github. (Click the `Fork` button in the top-right corner)
+
+2. Clone the repository you have just forked. `git clone https://github.com/YOUR_USERNAME/Surrogates.jl.git`
+
+3. Enter the repository's directory. `cd Surrogates.jl`
+
+4. Open the Julia REPL. `julia`
+
+5. Enter package mode and activate the local environment. `]activate .`
+
+6. Install the dependencies. `instantiate`
+
+7. Perform your edits (Atom with Juno, or VSCode with the Julia plugin are good editor choices)
+
+8. Stage, Commit, and Push your changes
+
+9. [Open a Pull Request](https://help.github.com/en/github/collaborating-with-issues-and-pull-requests/creating-a-pull-request-from-a-fork)
