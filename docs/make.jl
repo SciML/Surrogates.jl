@@ -10,7 +10,6 @@ makedocs(
         ]
     "Tutorials" => [
         "Basics" => "tutorials.md",
-        "Custom Kriging with Stheno" => "stheno.md"
         ]
     "Contributing" => "contributing.md"
     ]
@@ -18,5 +17,5 @@ makedocs(
 
 
 deploydocs(
-   repo = "github.com/JuliaDiffEq/Surrogates.jl.git",
+   repo = "github.com/SciML/Surrogates.jl.git",
 )

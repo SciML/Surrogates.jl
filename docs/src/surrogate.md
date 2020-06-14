@@ -22,11 +22,6 @@ RadialBasis(x,y,bounds,phi::Function,q::Int)
 Kriging(x,y,p,theta)
 ```
 
-* Kriging surrogate based on a Stheno backend
-```@docs
-SthenoKriging
-```
-
 * Lobachesky surrogate
 ```@docs
 LobacheskySurrogate(x,y,alpha,n::Int,lb,ub)
@@ -34,18 +29,18 @@ lobachesky_integral(loba::LobacheskySurrogate,lb,ub)
 ```
 
 * Support vector machine surrogate, requires `using LIBSVM`
-```
-Currently unavailable due to problems with LIBSVM
+```@docs
+SVMSurrogate(x,y,lb,ub)
 ```
 
 * Random forest surrogate, requires `using XGBoost`
 ```@docs
-RandomForestSurrogate(x,y,lb,ub,num_round)
+RandomForestSurrogate(x,y,lb,ub;num_round::Int = 1)
 ```
 
 * Neural network surrogate, requires `using Flux`
 ```@docs
-NeuralSurrogate(x,y,lb,ub,model,loss,opt,n_echos)
+NeuralSurrogate(x,y,lb,ub; model = Chain(Dense(length(x[1]),1), first), loss = (x,y) -> Flux.mse(model(x), y),opt = Descent(0.01),n_echos::Int = 1)
 ```
 
 # Creating another surrogate

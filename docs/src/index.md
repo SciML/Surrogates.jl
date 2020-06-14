@@ -31,7 +31,7 @@ The available surrogates are:
 - Inverse Distance
 
 After the surrogate is built, we need to optimize it with respect to some objective function.
-That is, simultaneously looking for a minimum **and** sampling the most unknown region.  
+That is, simultaneously looking for a minimum **and** sampling the most unknown region.
 The available optimization methods are:
 
 - Stochastic RBF (SRBF)
@@ -86,7 +86,7 @@ You can obtain the current master with:
 ```
 
 # Quick example
-```
+```@example
 using Surrogates
 num_samples = 10
 lb = 0.0
@@ -100,7 +100,7 @@ y = f.(x)
 #Creating surrogate
 alpha = 2.0
 n = 6
-my_lobachesky = LobacheskySurrogate(x,y,alpha,n,lb,ub)
+my_lobachesky = LobacheskySurrogate(x,y,lb,ub,alpha=alpha,n=n)
 
 #Approximating value at 5.0
 value = my_lobachesky(5.0)
