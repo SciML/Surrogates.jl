@@ -21,7 +21,10 @@ end
 linearRadial = RadialFunction(0,z->norm(z))
 cubicRadial = RadialFunction(1,z->norm(z)^3)
 multiquadricRadial = RadialFunction(1,z->sqrt(norm(z)^2+1))
-thinplateRadial = RadialFunction(2,z->norm(z)^2*log(norm(z)))
+thinplateRadial = RadialFunction(2, z->begin
+    result = norm(z)^2 * log(norm(z))
+    ifelse(iszero(z), zero(result), result)
+end)
 
 """
     RadialBasis(x,y,lb::Number,ub::Number; rad::RadialFunction = linearRadial,scale::Real=1.0)
