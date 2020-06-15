@@ -14,7 +14,7 @@ LinearSurrogate(x,y,lb,ub)
 
 * Radial basis function surrogate
 ```@docs
-RadialBasis(x,y,bounds,phi::Function,q::Int)
+RadialBasis(x, y, lb, ub; rad::RadialFunction = linearRadial, scale_factor::Real=1.0, sparse = false)
 ```
 
 * Kriging surrogate
@@ -24,13 +24,13 @@ Kriging(x,y,p,theta)
 
 * Lobachesky surrogate
 ```@docs
-LobacheskySurrogate(x,y,alpha,n::Int,lb,ub)
+LobacheskySurrogate(x,y,lb,ub; alpha = collect(one.(x[1])),n::Int = 4, sparse = false)
 lobachesky_integral(loba::LobacheskySurrogate,lb,ub)
 ```
 
 * Support vector machine surrogate, requires `using LIBSVM`
 ```@docs
-SVMSurrogate(x,y,lb,ub)
+SVMSurrogate(x,y,lb::Number,ub::Number)
 ```
 
 * Random forest surrogate, requires `using XGBoost`
