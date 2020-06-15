@@ -1,3 +1,4 @@
 **/.DS_Store
 docs/build/
 Manifest.toml
+.vscode/settings.json
