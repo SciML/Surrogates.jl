@@ -1,4 +1,5 @@
 ![SurrogatesLogo](docs/src/images/Surrogates.png)
+
 ## Surrogates.jl
 
 [![Build Status](https://travis-ci.org/JuliaDiffEq/Surrogates.jl.svg?branch=master)](https://travis-ci.org/JuliaDiffEq/Surrogates.jl)
@@ -11,6 +12,7 @@ A surrogate model is an approximation method that mimics the behavior of a compu
 expensive simulation. In more mathematical terms: suppose we are attempting to optimize a function
 `f(p)`, but each calculation of `f` is very expensive. It may be the case we need to solve a PDE for each point or use advanced numerical linear algebra machinery, which is usually costly. The idea is then to develop a surrogate model `g` which approximates `f` by training on previous data collected from evaluations of `f`.
 The construction of a surrogate model can be seen as a three-step process:
+
 1. Sample selection
 2. Construction of the surrogate model
 3. Surrogate optimization
@@ -49,25 +51,3 @@ The construction of a surrogate model can be seen as a three-step process:
 using Pkg
 Pkg.add("Surrogates")
 ```
-
-## Contributing
-
-Here is the suggested workflow to contribute to this package:
-
-1. Fork the repository on github. (Click the `Fork` button in the top-right corner)
-
-2. Clone the repository you have just forked. `git clone https://github.com/YOUR_USERNAME/Surrogates.jl.git`
-
-3. Enter the repository's directory. `cd Surrogates.jl`
-
-4. Open the Julia REPL. `julia`
-
-5. Enter package mode and activate the local environment. `]activate .`
-
-6. Install the dependencies. `instantiate`
-
-7. Perform your edits (Atom with Juno, or VSCode with the Julia plugin are good editor choices)
-
-8. Stage, Commit, and Push your changes
-
-9. [Open a Pull Request](https://help.github.com/en/github/collaborating-with-issues-and-pull-requests/creating-a-pull-request-from-a-fork)
