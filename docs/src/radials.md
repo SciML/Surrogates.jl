@@ -57,3 +57,4 @@ my_radial_basis = RadialBasis(x, y, lb, ub)
 
 #We want an approximation at (1.0,2.0,3.0)  
 est = my_radial_basis((1.0,2.0,3.0))
+```
