@@ -358,9 +358,7 @@ Under a Gaussian process (GP) prior, the goal is to minimize:
 ``LCB(x) := E[x] - k * \\sqrt{(V[x])}``
 default value ``k = 2``.
 """
-function surrogate_optimize(obj::Function,::LCBS,lb::Number,ub::Number,krig,sample_type::SamplingAlgorithm;maxiters=100,num_new_samples=100)
-    #Default value
-    k = 2.0
+function surrogate_optimize(obj::Function,::LCBS,lb::Number,ub::Number,krig,sample_type::SamplingAlgorithm;maxiters=100,num_new_samples=100,k=2.0)
     dtol = 1e-3 * norm(ub-lb)
     for i = 1:maxiters
         new_sample = sample(num_new_samples,lb,ub,sample_type)
@@ -419,9 +417,7 @@ Under a Gaussian process (GP) prior, the goal is to minimize:
 
 default value ``k = 2``.
 """
-function surrogate_optimize(obj::Function,::LCBS,lb,ub,krig,sample_type::SamplingAlgorithm;maxiters=100,num_new_samples=100)
-    #Default value
-    k = 2.0
+function surrogate_optimize(obj::Function,::LCBS,lb,ub,krig,sample_type::SamplingAlgorithm;maxiters=100,num_new_samples=100,k=2.0)
     dtol = 1e-3 * norm(ub-lb)
     for i = 1:maxiters
         d = length(krig.x)
