@@ -7,7 +7,6 @@ y = [3.0,5.0,7.0]
 lb = 0.0
 ub = 5.0
 my_wend = Wendland(x,y,lb,ub)
-
 add_point!(my_wend,0.5,4.0)
 val = my_wend(0.5)
 
