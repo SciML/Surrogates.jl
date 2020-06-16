@@ -14,3 +14,4 @@ using Surrogates
 @testset "SecondOrderPolynomialSurrogate" begin include("secondOrderPolynomialSurrogate.jl") end
 @testset "AD_Compatibility" begin include("AD_compatibility.jl") end
 @testset "SthenoKriging.jl" begin include("SthenoKriging.jl") end
+@testset "Wendland" begin include("wendland.jl") end
