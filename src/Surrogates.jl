@@ -1,10 +1,6 @@
 module Surrogates
 using LinearAlgebra
-using GLM
 using Distributions
-using Sobol
-using LatinHypercubeSampling
-using Stheno
 
 abstract type AbstractSurrogate <: Function end
 include("utils.jl")
