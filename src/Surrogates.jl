@@ -19,6 +19,7 @@ include("SecondOrderPolynomialSurrogate.jl")
 include("SthenoKriging.jl")
 include("RandomForestSurrogate.jl")
 include("NeuralSurrogate.jl")
+include("Wendland.jl")
 
 export AbstractSurrogate, SamplingAlgorithm
 export Kriging, RadialBasis, add_point!, current_estimate, std_error_at_point
@@ -34,5 +35,6 @@ export NeuralSurrogate
 export InverseDistanceSurrogate
 export SecondOrderPolynomialSurrogate
 export SthenoKriging
+export Wendland
 
 end
