@@ -367,7 +367,7 @@ function surrogate_optimize(obj::Function,::LCBS,lb::Number,ub::Number,krig,samp
         evaluations = zeros(eltype(krig.x[1]), num_new_samples)
         for j = 1:num_new_samples
             evaluations[j] = krig(new_sample[j]) +
-                             k*sqrt(std_error_at_point(krig,new_sample[j]))
+                             k*std_error_at_point(krig,new_sample[j])
         end
 
         new_addition = false
@@ -429,7 +429,7 @@ function surrogate_optimize(obj::Function,::LCBS,lb,ub,krig,sample_type::Samplin
         evaluations = zeros(eltype(krig.x[1]),num_new_samples)
         for j = 1:num_new_samples
             evaluations[j] = krig(new_sample[j]) +
-                             k*sqrt(std_error_at_point(krig,new_sample[j]))
+                             k*std_error_at_point(krig,new_sample[j])
         end
 
         new_addition = false
