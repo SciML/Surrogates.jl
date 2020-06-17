@@ -47,8 +47,7 @@ approx = my_radial_basis((1.0,1.4))
 Let's see an Optimization method for 1D:
 
 ```@example
-using Surrogates, LinearAlgebra, Flux
-using Flux: @epochs
+using Surrogates, LinearAlgebra
 ##### For 1D #####
 lb = 0.0
 ub = 15.0
@@ -70,8 +69,7 @@ surrogate_optimize(objective_function,SRBF(),a,b,my_rad_SRBF1,UniformSample())
 Now, let's see an optimization method for ND:
 
 ```@example
-using Surrogates, LinearAlgebra, Flux
-using Flux: @epochs
+using Surrogates, LinearAlgebra
 ##### For ND #####
 objective_function_ND = z -> 3*norm(z)+1
 lb = [1.0,1.0]
