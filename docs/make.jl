@@ -10,7 +10,7 @@ makedocs(
         ]
     "Tutorials" => [
         "Radials" => "radials.md",
-        "Basics" => "tutorials.md",
+        "Basics" => "tutorials.md"
         ]
     "Contributing" => "contributing.md"
     ]
