@@ -9,9 +9,8 @@ makedocs(
         "Optimization" => "optimizations.md"
         ]
     "Tutorials" => [
+        "Basics" => "tutorials.md",
         "Radials" => "radials.md",
-        "Basics" => "tutorials.md",
-        "Basics" => "tutorials.md",
         "Kriging" => "kriging.md"
         ]
     "Contributing" => "contributing.md"
