@@ -1,10 +1,6 @@
 module Surrogates
 using LinearAlgebra
-using GLM
 using Distributions
-using Sobol
-using LatinHypercubeSampling
-using Stheno
 
 abstract type AbstractSurrogate <: Function end
 include("utils.jl")
@@ -19,6 +15,7 @@ include("SecondOrderPolynomialSurrogate.jl")
 include("SthenoKriging.jl")
 include("RandomForestSurrogate.jl")
 include("NeuralSurrogate.jl")
+include("Wendland.jl")
 
 export AbstractSurrogate, SamplingAlgorithm
 export Kriging, RadialBasis, add_point!, current_estimate, std_error_at_point
@@ -34,5 +31,6 @@ export NeuralSurrogate
 export InverseDistanceSurrogate
 export SecondOrderPolynomialSurrogate
 export SthenoKriging
+export Wendland
 
 end

@@ -1,3 +1,5 @@
+using GLM
+
 mutable struct LinearSurrogate{X,Y,C,L,U} <: AbstractSurrogate
     x::X
     y::Y
