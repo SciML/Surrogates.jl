@@ -42,8 +42,6 @@ my_radial_basis = RadialBasis(x,y,lb,ub)
 approx = my_radial_basis((1.0,1.4))
 ```
 
-
-- Now we will call an Optimization Method for RadialBasis Surrogates in 1D and ND.
 Let's see an Optimization method for 1D:
 
 ```@example
