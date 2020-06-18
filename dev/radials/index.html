@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Radials · Surrogates.jl</title><link href="https://fonts.googleapis.com/css?family=Lato|Roboto+Mono" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.11.2/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.11.2/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.11.2/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.11.1/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL=".."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../assets/documenter.js"></script><script src="../siteinfo.js"></script><script src="../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/documenter-dark.css" data-theme-name="documenter-dark"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><div class="docs-package-name"><span class="docs-autofit">Surrogates.jl</span></div><form class="docs-search" action="../search/"><input class="docs-search-query" id="documenter-search-query" name="q" type="text" placeholder="Search docs"/></form><ul class="docs-menu"><li><a class="tocitem" href="../">Overview</a></li><li><span class="tocitem">User guide</span><ul><li><a class="tocitem" href="../samples/">Samples</a></li><li><a class="tocitem" href="../surrogate/">Surrogates</a></li><li><a class="tocitem" href="../optimizations/">Optimization</a></li></ul></li><li><span class="tocitem">Tutorials</span><ul><li><a class="tocitem" href="../tutorials/">Basics</a></li><li class="is-active"><a class="tocitem" href>Radials</a><ul class="internal"><li><a class="tocitem" href="#Radial-Surrogates-1"><span>Radial Surrogates</span></a></li></ul></li><li><a class="tocitem" href="../kriging/">Kriging</a></li></ul></li><li><a class="tocitem" href="../contributing/">Contributing</a></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><nav class="breadcrumb"><ul class="is-hidden-mobile"><li><a class="is-disabled">Tutorials</a></li><li class="is-active"><a href>Radials</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>Radials</a></li></ul></nav><div class="docs-right"><a class="docs-edit-link" href="https://github.com/SciML/Surrogates.jl/blob/master/docs/src/radials.md" title="Edit on GitHub"><span class="docs-icon fab"></span><span class="docs-label is-hidden-touch">Edit on GitHub</span></a><a class="docs-settings-button fas fa-cog" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-sidebar-button fa fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a></div></header><article class="content" id="documenter-page"><h2 id="Radial-Surrogates-1"><a class="docs-heading-anchor" href="#Radial-Surrogates-1">Radial Surrogates</a><a class="docs-heading-anchor-permalink" href="#Radial-Surrogates-1" title="Permalink"></a></h2><p>Let&#39;s start with something easy to get our hands dirty. I want to build a surrogate for <span>$f(x) = log(x)*x^2+x^3$</span>. Let&#39;s choose the Radial Basis Surrogate for 1D.</p><pre><code class="language-julia">using Surrogates
+f = x -&gt; log(x)*x^2+x^3
+lb = 1.0
+ub = 10.0
+x = sample(50,lb,ub,SobolSample())
+y = f.(x)
+my_radial_basis = RadialBasis(x,y,lb,ub)
+
+#I want an approximation at 5.4
+approx = my_radial_basis(5.4)</code></pre><pre><code class="language-none">206.8309775042321</code></pre><ul><li>For each Surrogates we can call it with different inputs: either <span>$(x,y,lb,ub)$</span> or with it&#39;s parameters,</li></ul><p>different for each Surrogates. Let&#39;s see for Radial Basis Surrogates:</p><pre><code class="language-">my_radial_basis = RadialBasis(x,y,lb,ub,rad=thinplateRadial)
+
+#We want an approximation at 5.4
+approx = my_radial_basis(5.4)</code></pre><p>Now, Let&#39;s choose the Radial Basis Surrogate for 2D.</p><pre><code class="language-julia">using Surrogates
+using LinearAlgebra
+f = x -&gt; x[1]*x[2]
+lb = [1.0,2.0]
+ub = [10.0,8.5]
+x = sample(50,lb,ub,SobolSample())
+y = f.(x)
+my_radial_basis = RadialBasis(x,y,lb,ub)
+
+#I want an approximation at (1.0,1.4)
+approx = my_radial_basis((1.0,1.4))</code></pre><pre><code class="language-none">7.5013036763263905</code></pre><ul><li>Now we will call an Optimization Method for RadialBasis Surrogates in 1D and ND.</li></ul><p>Let&#39;s see an Optimization method for 1D:</p><pre><code class="language-julia">using Surrogates, LinearAlgebra
+##### For 1D #####
+lb = 0.0
+ub = 15.0
+objective_function = x -&gt; 2*x+1
+x = [2.5,4.0,6.0]
+y = [6.0,9.0,13.0]
+a = 0.0
+b = 6.0
+
+my_rad_SRBF1 = RadialBasis(x,y,a,b,rad = linearRadial)
+surrogate_optimize(objective_function,SRBF(),a,b,my_rad_SRBF1,UniformSample())</code></pre><pre><code class="language-none">(1.0477121142604, 3.0954242285208)</code></pre></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../tutorials/">« Basics</a><a class="docs-footer-nextpage" href="../kriging/">Kriging »</a></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> on <span class="colophon-date" title="Thursday 18 June 2020 07:22">Thursday 18 June 2020</span>. Using Julia version 1.4.2.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
