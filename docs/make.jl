@@ -10,6 +10,7 @@ makedocs(
         ]
     "Tutorials" => [
         "Basics" => "tutorials.md",
+        "Kriging" => "kriging.md",
         ]
     "Contributing" => "contributing.md"
     ]
