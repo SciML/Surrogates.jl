@@ -16,7 +16,12 @@ include("SthenoKriging.jl")
 include("RandomForestSurrogate.jl")
 include("NeuralSurrogate.jl")
 include("Wendland.jl")
+include("MOE.jl")
 
+current_surrogates = ["Kriging","LinearSurrogate","LobacheskySurrogate","NeuralSurrogate",
+                      "RadialBasis","RandomForestSurrogate","SecondOrderPolynomialSurrogate",
+                      "SthenoKriging","Wendland","MOE"]
+export current_surrogates
 export AbstractSurrogate, SamplingAlgorithm
 export Kriging, RadialBasis, add_point!, current_estimate, std_error_at_point
 export linearRadial,cubicRadial,multiquadricRadial,thinplateRadial
@@ -32,5 +37,6 @@ export InverseDistanceSurrogate
 export SecondOrderPolynomialSurrogate
 export SthenoKriging
 export Wendland
+export MOE
 
 end

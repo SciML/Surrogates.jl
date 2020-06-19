@@ -15,3 +15,4 @@ using Surrogates
 @testset "AD_Compatibility" begin include("AD_compatibility.jl") end
 @testset "SthenoKriging.jl" begin include("SthenoKriging.jl") end
 @testset "Wendland" begin include("Wendland.jl") end
+@testset "MOE" begin include("MOE.jl") end
