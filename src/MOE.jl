@@ -1,20 +1,23 @@
 using Clustering
 using GaussianMixtures
-mutable struct MOE{X,Y,L,U,S,K,V,C} <: AbstractSurrogate
+using LinearAlgebra
+
+mutable struct MOE{X,Y,L,U,S,K,M,V,W} <: AbstractSurrogate
     x::X
     y::Y
     lb::L
     ub::U
     local_surr::S
     k::K
+    means::M
     varcov::V
-    x_clustered::C
+    weights::W
 end
 
 
 #Radial structure:
-function RadialBasisStructure(;radial_function,scale_factor)
-    return (name = "RadialBasis", radial_function = radial_function, scale_factor = scale_factor)
+function RadialBasisStructure(;radial_function,scale_factor,sparse)
+    return (name = "RadialBasis", radial_function = radial_function, scale_factor = scale_factor, sparse = sparse)
 end
 
 #Kriging structure:
@@ -33,8 +36,8 @@ function InverseDistanceStructure(;p)
 end
 
 #Lobachesky structure
-function LobacheskyStructure(;alpha,n)
-    return (name = "LobacheskySurrogate", alpha = alpha, n = n)
+function LobacheskyStructure(;alpha,n,sparse)
+    return (name = "LobacheskySurrogate", alpha = alpha, n = n, sparse = sparse)
 end
 
 function NeuralStructure(;model,loss,opt,n_echos)
@@ -54,23 +57,82 @@ function WendlandStructure(; eps, maxiters, tol)
 end
 
 
-function MOE(x,y,lb::number,ub::number; k::Int = 2,
-            local_kind = [RadialStructure(radial_function = linearRadial, scale_factor=1.0),RadialStructure(radial_function = cubicRadial, scale_factor=1.0)])
+function MOE(x,y,lb::Number,ub::Number; k::Int = 2,
+            local_kind = [RadialStructure(radial_function = linearRadial, scale_factor=1.0,sparse = false),RadialStructure(radial_function = cubicRadial, scale_factor=1.0, sparse = false)])
+    n = length(x)
+    # find weight, mean and variance for each mixture
+    # For GaussianMixtures I need nxd matrix
+    X_G = reshape(x,(n,1))
+    moe_gmm = GMM(k,x, kind = :full)
+    weights = weights(my_gmm)
+    means = means(my_gmm)
+    variances = Base.Iterators.flatten(covars(my_gmm))
+
     #cluster the points
+    #For clustering I need dxn matrix
+    X_C = reshape(x,(1,n)
+    KNN = kmeans(x_mat, k)
+    x_c = [ [] for i = 1:k]
+    y_c = [ [] for i = 1:k]
+    @inbounds for i = 1:n
+        append!(x_c[i],x[i])
+        append!(y_c[i],y[i])
+    end
 
+    local_surr = Array{AbstractSurrogate}[]
+    for i = 1:k
+        if local_kind[i].name == "RadialBasis"
+            #fit and append to local_surr
+            my_local_i = RadialBasis(x_c[i],y_c[i],lb,ub,rad = local_kind[i].radial_function, scale_factor = local_kind[i].scale_factor, sparse = local_kind[i].sparse)
+            append!(local_surr,my_local_i)
 
-    #fit each cluster with a Surrogate
+        elseif local_kind[i].name == "Kriging"
+            my_local_i = Kriging(x_c[i], y_c[i],lb,ub, p = local_kind[i].p, theta = local_kind[i].p)
+            append!(local_surr,my_local_i)
 
+        elseif local_kind[i].name == "LinearSurrogate"
+            my_local_i = LinearSurrogate(x_c[i], y_c[i],lb,ub)
+            append!(local_surr,my_local_i)
 
-    #find varcov matrix for each mixture
+        elseif local_kind[i].name == "InverseDistanceSurrogate"
+            my_local_i = InverseDistanceSurrogate(x_c[i], y_c[i],lb,ub, local_kind[i].p)
+            append!(local_surr,my_local_i)
 
+        elseif local_kind[i].name == "LobacheskySurrogate"
+            my_local_i = LobacheskySurrogate(x_c[i], y_c[i],lb,ub,alpha = local_kind[i].alpha , n = local_kind[i].n, sparse = local_kind[i].sparse)
+            append!(local_surr,my_local_i)
 
-    return MOE(..)
+        elseif local_kind[i].name == "NeuralSurrogate"
+            my_local_i = NeuralSurrogate(x_c[i], y_c[i],lb,ub, model = local_kind[i].model , loss = local_kind[i].loss ,opt = local_kind[i].opt ,n_echos = local_kind[i].n_echos)
+            append!(local_surr,my_local_i)
+
+        elseif local_kind[i].name == "RandomForestSurrogate"
+            my_local_i = RandomForestSurrogate(x_c[i], y_c[i],lb,ub, num_round = local_kind[i].num_round)
+            append!(local_surr,my_local_i)
+
+        elseif local_kind[i].name == "SecondOrderPolynomialSurrogate"
+            my_local_i = SecondOrderPolynomialSurrogate(x_c[i], y_c[i],lb,ub)
+            append!(local_surr,my_local_i)
+
+        elseif local_kind[i].name == "Wendland"
+            my_local_i = Wendand(x_c[i], y_c[i],lb,ub, eps = local_kind[i].eps, maxiters = local_kind[i].maxiters, tol = local_kind[i].tol)
+            append!(local_surr,my_local_i)
+        else
+            throw("A surrogate with name "* local_kind[i].name *" does not exist or is not currently supported with MOE.")
+        end
+    end
+    return MOE(x,y,lb,ub,local_surr,k,means,varcov,weights)
 end
 
 function MOE(x,y,lb,ub; k::Int = 2,
-            local_kind = [RadialStructure(radial_function = linearRadial, scale_factor=1.0),RadialStructure(radial_function = cubicRadial, scale_factor=1.0)])
+            local_kind = [RadialStructure(radial_function = linearRadial, scale_factor=1.0, sparse = false),RadialStructure(radial_function = cubicRadial, scale_factor=1.0, sparse = false)])
+
+
+    #find varcov matrix for each mixture
+    X_G = collect(reshape(collect(Base.Iterators.flatten(x)), (length(x[1]),length(x)))')
+
     #cluster the points
+    X_C = collect(reshape(collect(Base.Iterators.flatten(x)), (length(x[1]),length(x))))
 
 
     #fit each cluster with a Surrogate
@@ -79,19 +141,27 @@ function MOE(x,y,lb,ub; k::Int = 2,
     #find varcov matrix for each mixture
 
 
-    return MOE(..)
+    return MOE(x,y,lb,ub,local_surr,k,means,varcov,weights)
 end
 
 
-function (moe::MOE)(val::number)
-    #compyte formula with var covar matrix
+function _prob_x_in_i(x::Number,i,mu,varcov,alpha,k)
+    num = (1/sqrt(varcov[i]))*alpha[i]*exp(-0.5(x-mu[i])*(1/varcov[i])*(x-mu[i]))
+    den = sum([(1/sqrt(varcov[j]))*alpha[j]*exp(-0.5(x-mu[j])*(1/varcov[j])*(x-mu[j]))  for j = 1:k])
+    return num/den
+end
 
+function _prob_x_in_i(x,i,mu,varcov,alpha,k)
+    num = (1/sqrt(det(varcov[i])))*alpha[i]*exp(-0.5*(x .- mu[i,:])'*(inv(varcov[i]))*(x .- mu[i,:]))
+    den = sum([(1/sqrt(det(varcov[j])))*alpha[j]*exp(-0.5*(x .- mu[j,:])'*(inv(varcov[j]))*(x .- mu[j,:])) for j = 1:k])
+    return num/den
 end
 
 function (moe::MOE)(val)
-
-
+    return prod([moe.local_surr[i](val)*_prob_x_in_i(val,i,moe.means,moe.varcov,moe.weights,moe.k) for i = 1:moe.k])
 end
+
+
 function add_point!(moe::MOE,x_new,y_new)
     #classic things
 
