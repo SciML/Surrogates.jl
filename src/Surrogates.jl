@@ -37,6 +37,9 @@ export InverseDistanceSurrogate
 export SecondOrderPolynomialSurrogate
 export SthenoKriging
 export Wendland
+export RadialBasisStructure, KrigingStructure, LinearStructure, InverseDistanceStructure
+export LobacheskyStructure, NeuralStructure, RandomForestStructure, SecondOrderPolynomialStructure
+export WendlandStructure
 export MOE
 
 end

@@ -12,9 +12,50 @@ mutable struct MOE{X,Y,L,U,S,K,V,C} <: AbstractSurrogate
 end
 
 
-RadialStructure(p=2,k=3) = (name = "Radial",p = p, k = k) #do this for each surrogate available
+#Radial structure:
+function RadialBasisStructure(;radial_function,scale_factor)
+    return (name = "RadialBasis", radial_function = radial_function, scale_factor = scale_factor)
+end
 
-function MOE(x,y,lb::number,ub::number; k = 2, local_kind = [RadialStructure() for i = 1:k])
+#Kriging structure:
+function KrigingStructure(;p,theta)
+    return (name = "Kriging", p = p, theta = theta)
+end
+
+#Linear structure
+function LinearStructure()
+    return (name = "LinearSurrogate")
+end
+
+#InverseDistance structure
+function InverseDistanceStructure(;p)
+    return (name = "InverseDistanceSurrogate", p = p)
+end
+
+#Lobachesky structure
+function LobacheskyStructure(;alpha,n)
+    return (name = "LobacheskySurrogate", alpha = alpha, n = n)
+end
+
+function NeuralStructure(;model,loss,opt,n_echos)
+    return (name ="NeuralSurrogate", model = model ,loss = loss,opt = opt,n_echos = n_echos)
+end
+
+function RandomForestStructure(;num_round)
+    return (name = "RandomForestSurrogate", num_round = num_round)
+end
+
+function SecondOrderPolynomialStructure()
+    return (name = "SecondOrderPolynomialSurrogate")
+end
+
+function WendlandStructure(; eps, maxiters, tol)
+    return (name = "Wendland", eps = eps, maxiters = maxiters, tol = tol)
+end
+
+
+function MOE(x,y,lb::number,ub::number; k::Int = 2,
+            local_kind = [RadialStructure(radial_function = linearRadial, scale_factor=1.0),RadialStructure(radial_function = cubicRadial, scale_factor=1.0)])
     #cluster the points
 
 
@@ -27,7 +68,8 @@ function MOE(x,y,lb::number,ub::number; k = 2, local_kind = [RadialStructure() f
     return MOE(..)
 end
 
-function MOE(x,y,lb,ub; k = 2, local_kind = [RadialStructure() for i = 1:k])
+function MOE(x,y,lb,ub; k::Int = 2,
+            local_kind = [RadialStructure(radial_function = linearRadial, scale_factor=1.0),RadialStructure(radial_function = cubicRadial, scale_factor=1.0)])
     #cluster the points
 
 
@@ -51,7 +93,7 @@ function (moe::MOE)(val)
 
 end
 function add_point!(moe::MOE,x_new,y_new)
-    #classic things 
+    #classic things
 
 
 
