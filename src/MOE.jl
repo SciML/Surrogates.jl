@@ -57,33 +57,36 @@ function WendlandStructure(; eps, maxiters, tol)
 end
 
 
-function MOE(x,y,lb::Number,ub::Number; k::Int = 2,
-            local_kind = [RadialStructure(radial_function = linearRadial, scale_factor=1.0,sparse = false),RadialStructure(radial_function = cubicRadial, scale_factor=1.0, sparse = false)])
+function MOE(x,y,lb::Number,ub::Number; k::Int = 2, local_kind = [RadialBasisStructure(radial_function = linearRadial, scale_factor=1.0,sparse = false),RadialBasisStructure(radial_function = cubicRadial, scale_factor=1.0, sparse = false)])
     n = length(x)
     # find weight, mean and variance for each mixture
     # For GaussianMixtures I need nxd matrix
     X_G = reshape(x,(n,1))
-    moe_gmm = GMM(k,x, kind = :full)
-    weights = weights(my_gmm)
-    means = means(my_gmm)
-    variances = Base.Iterators.flatten(covars(my_gmm))
+    moe_gmm = GaussianMixtures.GMM(k,x)
+    weights = GaussianMixtures.weights(moe_gmm)
+    means = GaussianMixtures.means(moe_gmm)
+    variances = moe_gmm.Σ
+
 
     #cluster the points
     #For clustering I need dxn matrix
-    X_C = reshape(x,(1,n)
-    KNN = kmeans(x_mat, k)
+    X_C = reshape(x,(1,n))
+    KNN = kmeans(X_C, k)
     x_c = [ [] for i = 1:k]
     y_c = [ [] for i = 1:k]
+    assingnements = assignments(KNN)
     @inbounds for i = 1:n
-        append!(x_c[i],x[i])
-        append!(y_c[i],y[i])
+        pos = assingnements[i]
+        append!(x_c[pos],x[i])
+        append!(y_c[pos],y[i])
     end
 
-    local_surr = Array{AbstractSurrogate}[]
+    local_surr = []
     for i = 1:k
         if local_kind[i].name == "RadialBasis"
             #fit and append to local_surr
             my_local_i = RadialBasis(x_c[i],y_c[i],lb,ub,rad = local_kind[i].radial_function, scale_factor = local_kind[i].scale_factor, sparse = local_kind[i].sparse)
+            #problema qui
             append!(local_surr,my_local_i)
 
         elseif local_kind[i].name == "Kriging"
@@ -125,7 +128,7 @@ function MOE(x,y,lb::Number,ub::Number; k::Int = 2,
 end
 
 function MOE(x,y,lb,ub; k::Int = 2,
-            local_kind = [RadialStructure(radial_function = linearRadial, scale_factor=1.0, sparse = false),RadialStructure(radial_function = cubicRadial, scale_factor=1.0, sparse = false)])
+            local_kind = [RadialBasisStructure(radial_function = linearRadial, scale_factor=1.0, sparse = false),RadialBasisStructure(radial_function = cubicRadial, scale_factor=1.0, sparse = false)])
 
 
     #find varcov matrix for each mixture
