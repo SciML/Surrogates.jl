@@ -30,7 +30,7 @@ y = f.(x)
 my_moe_ND = MOE(x,y,lb,ub)
 val = my_moe_ND((1.0,1.0))
 
-add_point!(my_moe_ND, (1.0,1.0), 1.0)
+add_point!(my_moe_ND, (6.0,6.0), 36.0)
 
 #Local surr redefinition
 my_locals = [InverseDistanceStructure(p = 1.0),
