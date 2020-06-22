@@ -162,7 +162,7 @@ function surrogate_optimize(obj::Function,::SRBF,lb,ub,surr::AbstractSurrogate,s
             adaptive_point_y = obj(adaptive_point_x)
 
             #5) Update surrogate with (adaptive_point,objective(adaptive_point)
-            !(surr,adaptive_point_x,adaptive_point_y)
+            add_point!(surr,adaptive_point_x,adaptive_point_y)
 
             #6) How to go on?
             if surr(adaptive_point_x) < incumbent_value
