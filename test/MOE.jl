@@ -2,7 +2,7 @@ using Surrogates
 using Distributions
 #1D MOE
 
-n = 4
+n = 30
 lb = 0.0
 ub = 5.0
 x1 = Surrogates.sample(n,1,Normal(2.5,0.1))
@@ -18,14 +18,13 @@ add_point!(my_moe,[4.0,5.0],[8.0,10.0])
 
 #Local surrogates redefinition
 my_local_kind = [InverseDistanceStructure(p = 1.0),
-                 SecondOrderPolynomialStructure()]
+                 RadialBasisStructure(radial_function = cubicRadial, scale_factor=1.0,sparse = false)]
 my_moe = MOE(x,y,lb,ub,k = 2,local_kind = my_local_kind)
 
 
 
 #ND MOE
-
-n = 10
+n = 30
 lb = [0.0,0.0]
 ub = [5.0,5.0]
 x1 = Surrogates.sample(n,2,Normal(0.0,4.0))
@@ -39,6 +38,6 @@ val = my_moe_ND((1.0,1.0))
 add_point!(my_moe_ND, (1.0,1.0), 1.0)
 
 #Local surr redefinition
-my_locals = [InverseDistanceStructure(p = 2.0),
-             SecondOrderPolynomialStructure()]
+my_locals = [InverseDistanceStructure(p = 1.0),
+             RadialBasisStructure(radial_function = linearRadial, scale_factor=1.0,sparse = false)]
 my_moe_redef = MOE(x,y,lb,ub,k = 2,local_kind = my_local_kind)
