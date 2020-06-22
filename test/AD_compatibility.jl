@@ -1,5 +1,4 @@
 using Surrogates
-using ForwardDiff
 using LinearAlgebra
 using Flux
 using Flux: @epochs
@@ -146,6 +145,11 @@ my_neural = NeuralSurrogate(x,y,lb,ub,model=my_model,loss=my_loss,opt=my_opt,n_e
 g = x->my_neural'(x)
 g(3.4)
 
+#Wendland
+my_wend = Wendland(x,y,lb,ub)
+g = x -> my_wend'(x)
+g(3.0)
+
 ###### ND ######
 
 lb = [0.0,0.0]
@@ -200,6 +204,11 @@ my_opt = Descent(0.01)
 n_echos = 1
 my_neural = NeuralSurrogate(x,y,lb,ub,model=my_model,loss=my_loss,opt=my_opt,n_echos=1)
 g = x -> Zygote.gradient(my_neural, x)
+g((2.0,5.0))
+
+#wendland
+my_wend_ND = Wendland(x,y,lb,ub)
+g = x -> Zygote.gradient(my_wend_ND,x)
 g((2.0,5.0))
 
 ###### ND -> ND ######
