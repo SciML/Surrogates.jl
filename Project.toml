@@ -20,6 +20,7 @@ Stheno = "8188c328-b5d6-583d-959b-9690869a5511"
 XGBoost = "009559a3-9522-5dbb-924b-0b6ed2b22bb9"
 
 [compat]
+Clustering = "0.14"
 Distributions = "0.21, 0.22, 0.23"
 ExtendableSparse = "0.3"
 Flux = "0.10"
