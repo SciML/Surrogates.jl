@@ -57,12 +57,16 @@ function WendlandStructure(; eps, maxiters, tol)
 end
 
 
+
 function MOE(x,y,lb::Number,ub::Number; k::Int = 2, local_kind = [RadialBasisStructure(radial_function = linearRadial, scale_factor=1.0,sparse = false),RadialBasisStructure(radial_function = cubicRadial, scale_factor=1.0, sparse = false)])
+    if k != length(local_kind)
+        throw("Number of mixtures = $k is not equal to length of local surrogates")
+    end
     n = length(x)
     # find weight, mean and variance for each mixture
     # For GaussianMixtures I need nxd matrix
     X_G = reshape(x,(n,1))
-    moe_gmm = GaussianMixtures.GMM(k,x)
+    moe_gmm = GaussianMixtures.GMM(k,X_G)
     weights = GaussianMixtures.weights(moe_gmm)
     means = GaussianMixtures.means(moe_gmm)
     variances = moe_gmm.Σ
@@ -72,59 +76,58 @@ function MOE(x,y,lb::Number,ub::Number; k::Int = 2, local_kind = [RadialBasisStr
     #For clustering I need dxn matrix
     X_C = reshape(x,(1,n))
     KNN = kmeans(X_C, k)
-    x_c = [ [] for i = 1:k]
-    y_c = [ [] for i = 1:k]
-    assingnements = assignments(KNN)
+    x_c = [ Array{eltype(x)}(undef,0) for i = 1:k]
+    y_c = [ Array{eltype(y)}(undef,0) for i = 1:k]
+    a = assignments(KNN)
     @inbounds for i = 1:n
-        pos = assingnements[i]
+        pos = a[i]
         append!(x_c[pos],x[i])
         append!(y_c[pos],y[i])
     end
 
-    local_surr = []
+    local_surr = Dict()
     for i = 1:k
-        if local_kind[i].name == "RadialBasis"
+        if local_kind[i][1] == "RadialBasis"
             #fit and append to local_surr
             my_local_i = RadialBasis(x_c[i],y_c[i],lb,ub,rad = local_kind[i].radial_function, scale_factor = local_kind[i].scale_factor, sparse = local_kind[i].sparse)
-            #problema qui
-            append!(local_surr,my_local_i)
+            local_surr[i] = my_local_i
 
-        elseif local_kind[i].name == "Kriging"
+        elseif local_kind[i][1] == "Kriging"
             my_local_i = Kriging(x_c[i], y_c[i],lb,ub, p = local_kind[i].p, theta = local_kind[i].p)
-            append!(local_surr,my_local_i)
+            local_surr[i] = my_local_i
 
-        elseif local_kind[i].name == "LinearSurrogate"
+        elseif local_kind[i] == "LinearSurrogate"
             my_local_i = LinearSurrogate(x_c[i], y_c[i],lb,ub)
-            append!(local_surr,my_local_i)
+            local_surr[i] = my_local_i
 
-        elseif local_kind[i].name == "InverseDistanceSurrogate"
+        elseif local_kind[i][1] == "InverseDistanceSurrogate"
             my_local_i = InverseDistanceSurrogate(x_c[i], y_c[i],lb,ub, local_kind[i].p)
-            append!(local_surr,my_local_i)
+            local_surr[i] = my_local_i
 
-        elseif local_kind[i].name == "LobacheskySurrogate"
+        elseif local_kind[i][1] == "LobacheskySurrogate"
             my_local_i = LobacheskySurrogate(x_c[i], y_c[i],lb,ub,alpha = local_kind[i].alpha , n = local_kind[i].n, sparse = local_kind[i].sparse)
-            append!(local_surr,my_local_i)
+            local_surr[i] = my_local_i
 
-        elseif local_kind[i].name == "NeuralSurrogate"
+        elseif local_kind[i][1] == "NeuralSurrogate"
             my_local_i = NeuralSurrogate(x_c[i], y_c[i],lb,ub, model = local_kind[i].model , loss = local_kind[i].loss ,opt = local_kind[i].opt ,n_echos = local_kind[i].n_echos)
-            append!(local_surr,my_local_i)
+            local_surr[i] = my_local_i
 
-        elseif local_kind[i].name == "RandomForestSurrogate"
+        elseif local_kind[i][1] == "RandomForestSurrogate"
             my_local_i = RandomForestSurrogate(x_c[i], y_c[i],lb,ub, num_round = local_kind[i].num_round)
-            append!(local_surr,my_local_i)
+            local_surr[i] = my_local_i
 
-        elseif local_kind[i].name == "SecondOrderPolynomialSurrogate"
+        elseif local_kind[i] == "SecondOrderPolynomialSurrogate"
             my_local_i = SecondOrderPolynomialSurrogate(x_c[i], y_c[i],lb,ub)
-            append!(local_surr,my_local_i)
+            local_surr[i] = my_local_i
 
-        elseif local_kind[i].name == "Wendland"
+        elseif local_kind[i][1] == "Wendland"
             my_local_i = Wendand(x_c[i], y_c[i],lb,ub, eps = local_kind[i].eps, maxiters = local_kind[i].maxiters, tol = local_kind[i].tol)
-            append!(local_surr,my_local_i)
+            local_surr[i] = my_local_i
         else
-            throw("A surrogate with name "* local_kind[i].name *" does not exist or is not currently supported with MOE.")
+            throw("A surrogate with name "* local_kind[i][1] *" does not exist or is not currently supported with MOE.")
         end
     end
-    return MOE(x,y,lb,ub,local_surr,k,means,varcov,weights)
+    return MOE(x,y,lb,ub,local_surr,k,means,variances,weights)
 end
 
 function MOE(x,y,lb,ub; k::Int = 2,
@@ -166,10 +169,31 @@ end
 
 
 function add_point!(moe::MOE,x_new,y_new)
-    #classic things
+    if length(moe.x[1]) == 1
+        #1D
+        moe.x = vcat(moe.x,x_new)
+        moe.y = vcat(moe.y,y_new)
+        n = length(moe.x)
 
+        #New mixture parameters
+        X_G = reshape(moe.x,(n,1))
+        moe_gmm = GaussianMixtures.GMM(moe.k,X_G)
+        moe.weights = GaussianMixtures.weights(moe_gmm)
+        moe.means = GaussianMixtures.means(moe_gmm)
+        moe.varcov = moe_gmm.Σ
 
-
-
+        #Find cluster of new point(s):
+        n_added = length(x_new)
+        X_C = reshape(moe.x,(1,n))
+        KNN = kmeans(X_C, moe.k)
+        a = assignments(KNN)
+        #Recalculate only relevant surrogates
+        for i = 1:n_added
+            pos = a[n-n_added+i]
+            add_point!(moe.local_surr[i],moe.x[n-n_added+i],moe.y[n-n_added+i])
+        end
+    else
+        #todo
+    end
     nothing
 end
