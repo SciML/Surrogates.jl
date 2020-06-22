@@ -35,4 +35,4 @@ add_point!(my_moe_ND, (6.0,6.0), 36.0)
 #Local surr redefinition
 my_locals = [InverseDistanceStructure(p = 1.0),
              RandomForestStructure(num_round=1)]
-my_moe_redef = MOE(x,y,lb,ub,k = 2,local_kind = my_local_kind)
+my_moe_redef = MOE(x,y,lb,ub,k = 2,local_kind = my_locals)
