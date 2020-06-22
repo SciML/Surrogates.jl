@@ -4,10 +4,12 @@ authors = ["ludoro <ludovicobessi@gmail.com>"]
 version = "1.1.2"
 
 [deps]
+Clustering = "aaaa29a8-35af-508c-8bc3-b662a17a0fe5"
 Distributions = "31c24e10-a181-5473-b8eb-7969acd0382f"
 ExtendableSparse = "95c220a8-a1cf-11e9-0c77-dbfce5f500b3"
 Flux = "587475ba-b771-5e3f-ad9e-33799f191a9c"
 GLM = "38e38edf-8417-5370-95a0-9cbb8c7f171a"
+GaussianMixtures = "cc18c42c-b769-54ff-9e2a-b28141a64aae"
 IterativeSolvers = "42fd0dbc-a981-5370-80f2-aaf504508153"
 LatinHypercubeSampling = "a5e1c1ea-c99a-51d3-a14d-a9a37257b02d"
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
