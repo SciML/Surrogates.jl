@@ -11,7 +11,6 @@ y = f.(x)
 #Standard definition
 my_moe = MOE(x,y,lb,ub)
 val = my_moe(3.0)
-add_point!(my_moe,6.0,12.0)
 
 #Local surrogates redefinition
 my_local_kind = [InverseDistanceStructure(p = 1.0),
@@ -29,8 +28,6 @@ f = x -> x[1]*x[2]
 y = f.(x)
 my_moe_ND = MOE(x,y,lb,ub)
 val = my_moe_ND((1.0,1.0))
-
-add_point!(my_moe_ND, (6.0,6.0), 36.0)
 
 #Local surr redefinition
 my_locals = [InverseDistanceStructure(p = 1.0),
