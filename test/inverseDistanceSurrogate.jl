@@ -24,7 +24,7 @@ x = sample(n,lb,ub,SobolSample())
 f = x -> x[1]*x[2]^2
 y = f.(x)
 p = 3.0
-InverseDistance = InverseDistanceSurrogate(x,y,p,lb,ub)
+InverseDistance = InverseDistanceSurrogate(x,y,lb,ub,p=p)
 prediction = InverseDistance((1.0,2.0))
 add_point!(InverseDistance,(5.0,3.4),-0.91)
 add_point!(InverseDistance,[(5.1,5.2),(5.3,6.7)],[1.0,2.0])
