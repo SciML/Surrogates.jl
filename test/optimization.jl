@@ -30,6 +30,11 @@ surrogate_optimize(objective_function,SRBF(),a,b,my_rad_SRBF1,UniformSample())
 my_wend_1d = Wendland(x,y,lb,ub)
 surrogate_optimize(objective_function,SRBF(),a,b,my_wend_1d,UniformSample())
 
+x = sample(20,lb,ub,SobolSample())
+y = objective_function.(x)
+my_poly1d = PolynomialChaosSurrogate(x,y,lb,ub)
+surrogate_optimize(objective_function,SRBF(),a,b,my_poly1d,LowDiscrepancySample(2))
+
 ##### ND #####
 objective_function_ND = z -> 3*norm(z)+1
 lb = [1.0,1.0]
@@ -123,6 +128,13 @@ x = sample(15,lb,ub,UniformSample())
 y = obj_ND.(x)
 my_second_order_poly_ND = SecondOrderPolynomialSurrogate(x,y,lb,ub)
 surrogate_optimize(obj_ND,SRBF(),lb,ub,my_second_order_poly_ND,SobolSample(),maxiters=15)
+
+
+obj_ND = x -> log(x[1])*exp(x[2])
+x = sample(40,lb,ub,UniformSample())
+y = obj_ND.(x)
+my_polyND = PolynomialChaosSurrogate(x,y,lb,ub)
+surrogate_optimize(obj_ND,SRBF(),lb,ub,my_polyND,SobolSample(),maxiters=15)
 
 ####### LCBS #########
 ######1D######
