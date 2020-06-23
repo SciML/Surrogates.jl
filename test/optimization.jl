@@ -27,6 +27,9 @@ surrogate_optimize(objective_function,SRBF(),a,b,my_k_SRBF1,UniformSample())
 my_rad_SRBF1 = RadialBasis(x,y,a,b,rad = linearRadial)
 surrogate_optimize(objective_function,SRBF(),a,b,my_rad_SRBF1,UniformSample())
 
+my_wend_1d = Wendland(x,y,lb,ub)
+surrogate_optimize(objective_function,SRBF(),a,b,my_wend_1d,UniformSample())
+
 ##### ND #####
 objective_function_ND = z -> 3*norm(z)+1
 lb = [1.0,1.0]
@@ -212,6 +215,8 @@ surrogate_optimize(objective_function_ND,DYCORS(),lb,ub,my_k_DYCORSN,UniformSamp
 my_rad_DYCORSN = RadialBasis(x,y,lb,ub,rad = linearRadial)
 surrogate_optimize(objective_function_ND,DYCORS(),lb,ub,my_rad_DYCORSN,UniformSample(),maxiters=30)
 
+my_wend_ND = Wendland(x,y,lb,ub)
+surrogate_optimize(objective_function_ND,DYCORS(),lb,ub,my_wend_ND,UniformSample(),maxiters=30)
 
 
 ### SOP ###

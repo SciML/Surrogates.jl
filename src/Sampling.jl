@@ -1,3 +1,7 @@
+using Sobol
+using LatinHypercubeSampling
+
+
 abstract type SamplingAlgorithm end
 
 """

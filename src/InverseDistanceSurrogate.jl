@@ -7,16 +7,16 @@ p is a positive real number called the power parameter.
 p > 1 is needed for the derivative to be continuous.
 
 """
-mutable struct InverseDistanceSurrogate{X,Y,P,L,U} <: AbstractSurrogate
+mutable struct InverseDistanceSurrogate{X,Y,L,U,P} <: AbstractSurrogate
     x::X
     y::Y
-    p::P
     lb::L
     ub::U
+    p::P
 end
 
 function InverseDistanceSurrogate(x,y,lb,ub;p::Number=1.0)
-    return InverseDistanceSurrogate(x,y,p,lb,ub)
+    return InverseDistanceSurrogate(x,y,lb,ub,p)
 end
 
 function (inverSurr::InverseDistanceSurrogate)(val)

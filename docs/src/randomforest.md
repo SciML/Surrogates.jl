@@ -4,9 +4,9 @@ Random forests is a supervised learning algorithm that randomly creates and merg
 
 We are going to use a Random forests surrogate to optimize $f(x)=3*x+1$.
 
-First of all import `Surrogates`, `XGBoost` and `Plots`.
+First of all import `Surrogates` and `Plots`.
 ```@example RandomForestSurrogate_tutorial
-using Surrogates, XGBoost
+using Surrogates
 using Plots
 ```
 ### Sampling

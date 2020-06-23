@@ -94,13 +94,12 @@ Constructor for type Kriging.
 -p: value between 0 and 2 modelling the
    smoothness of the function being approximated, 0-> rough  2-> C^infinity
 """
-function Kriging(x,y,lb::Number,ub::Number;p=1.0)
+function Kriging(x,y,lb::Number,ub::Number;p=1.0,theta=1.0)
     if length(x) != length(unique(x))
         println("There exists a repetion in the samples, cannot build Kriging.")
         return
     end
     mu,b,sigma,inverse_of_R = _calc_kriging_coeffs(x,y,p)
-    theta = 1.0
     Kriging(x,y,lb,ub,p,theta,mu,b,sigma,inverse_of_R)
 end
 
