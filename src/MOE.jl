@@ -40,22 +40,30 @@ function LobacheskyStructure(;alpha,n,sparse)
     return (name = "LobacheskySurrogate", alpha = alpha, n = n, sparse = sparse)
 end
 
+#Neural structure
 function NeuralStructure(;model,loss,opt,n_echos)
     return (name ="NeuralSurrogate", model = model ,loss = loss,opt = opt,n_echos = n_echos)
 end
 
+#Random forest structure
 function RandomForestStructure(;num_round)
     return (name = "RandomForestSurrogate", num_round = num_round)
 end
 
+#Second order poly structure
 function SecondOrderPolynomialStructure()
     return (name = "SecondOrderPolynomialSurrogate")
 end
 
+#Wendland structure
 function WendlandStructure(; eps, maxiters, tol)
     return (name = "Wendland", eps = eps, maxiters = maxiters, tol = tol)
 end
 
+#Polychaos structure
+function PolyChaosStructure(; op)
+    return (name = "PolynomialChaosSurrogate", op = op)
+end
 
 
 function MOE(x,y,lb::Number,ub::Number; k::Int = 2, local_kind = [RadialBasisStructure(radial_function = linearRadial, scale_factor=1.0,sparse = false),RadialBasisStructure(radial_function = cubicRadial, scale_factor=1.0, sparse = false)])
@@ -123,6 +131,10 @@ function MOE(x,y,lb::Number,ub::Number; k::Int = 2, local_kind = [RadialBasisStr
         elseif local_kind[i][1] == "Wendland"
             my_local_i = Wendand(x_c[i], y_c[i],lb,ub, eps = local_kind[i].eps, maxiters = local_kind[i].maxiters, tol = local_kind[i].tol)
             local_surr[i] = my_local_i
+        elseif local_kind[i][1] == "PolynomialChaosSurrogate"
+            my_local_i = PolynomialChaosSurrogate(x,y,lb,ub, op = local_kind[i].op)
+            local_surr[i] = my_local_i
+
         else
             throw("A surrogate with name provided does not exist or is not currently supported with MOE.")
         end
@@ -192,6 +204,10 @@ function MOE(x,y,lb,ub; k::Int = 2,
         elseif local_kind[i][1] == "Wendland"
             my_local_i = Wendand(x_c[i], y_c[i],lb,ub, eps = local_kind[i].eps, maxiters = local_kind[i].maxiters, tol = local_kind[i].tol)
             local_surr[i] = my_local_i
+
+        elseif local_kind[i][1] == "PolynomialChaosSurrogate"
+            my_local_i = PolynomialChaosSurrogate(x,y,lb,ub, op = local_kind[i].op)
+            local_surr[i] = my_local_i
         else
             throw("A surrogate with name "* local_kind[i][1] *" does not exist or is not currently supported with MOE.")
         end
@@ -217,51 +233,51 @@ function (moe::MOE)(val)
 end
 
 
-function add_point!(moe::MOE,x_new,y_new)
-    if length(moe.x[1]) == 1
+function add_point!(my_moe::MOE,x_new,y_new)
+    if length(my_moe.x[1]) == 1
         #1D
-        moe.x = vcat(moe.x,x_new)
-        moe.y = vcat(moe.y,y_new)
-        n = length(moe.x)
+        my_moe.x = vcat(my_moe.x,x_new)
+        my_moe.y = vcat(my_moe.y,y_new)
+        n = length(my_moe.x)
 
         #New mixture parameters
-        X_G = reshape(moe.x,(n,1))
-        moe_gmm = GaussianMixtures.GMM(moe.k,X_G)
-        moe.weights = GaussianMixtures.weights(moe_gmm)
-        moe.means = GaussianMixtures.means(moe_gmm)
-        moe.varcov = moe_gmm.Σ
+        X_G = reshape(my_moe.x,(n,1))
+        moe_gmm = GaussianMixtures.GMM(my_moe.k,X_G)
+        my_moe.weights = GaussianMixtures.weights(moe_gmm)
+        my_moe.means = GaussianMixtures.means(moe_gmm)
+        my_moe.varcov = moe_gmm.Σ
 
         #Find cluster of new point(s):
         n_added = length(x_new)
-        X_C = reshape(moe.x,(1,n))
-        KNN = kmeans(X_C, moe.k)
+        X_C = reshape(my_moe.x,(1,n))
+        KNN = kmeans(X_C, my_moe.k)
         a = assignments(KNN)
         #Recalculate only relevant surrogates
         for i = 1:n_added
             pos = a[n-n_added+i]
-            add_point!(moe.local_surr[i],moe.x[n-n_added+i],moe.y[n-n_added+i])
+            add_point!(my_moe.local_surr[i],my_moe.x[n-n_added+i],my_moe.y[n-n_added+i])
         end
     else
         #ND
-        moe.x = vcat(moe.x,x_new)
-        moe.y = vcat(moe.y,y_new)
-        n = length(moe.x)
-        d = length(moe.lb)
+        my_moe.x = vcat(my_moe.x,x_new)
+        my_moe.y = vcat(my_moe.y,y_new)
+        n = length(my_moe.x)
+        d = length(my_moe.lb)
         #New mixture parameters
-        X_G = collect(reshape(collect(Base.Iterators.flatten(moe.x)), (d,n))')
-        my_gmm = GMM(moe.k,X_G,kind = :full)
-        moe.weights = my_gmm.w
-        moe.means = my_gmm.μ
-        moe.varcov = my_gmm.Σ
+        X_G = collect(reshape(collect(Base.Iterators.flatten(my_moe.x)), (d,n))')
+        my_gmm = GMM(my_moe.k,X_G,kind = :full)
+        my_moe.weights = my_gmm.w
+        my_moe.means = my_gmm.μ
+        my_moe.varcov = my_gmm.Σ
 
         #cluster the points
-        X_C = collect(reshape(collect(Base.Iterators.flatten(moe.x)), (d,n)))
-        KNN = kmeans(X_C, moe.k)
+        X_C = collect(reshape(collect(Base.Iterators.flatten(my_moe.x)), (d,n)))
+        KNN = kmeans(X_C, my_moe.k)
         a = assignments(KNN)
         n_added = length(x_new)
         for i = 1:n_added
             pos = a[n-n_added+i]
-            add_point!(moe.local_surr[i],moe.x[n-n_added+i],moe.y[n-n_added+i])
+            add_point!(my_moe.local_surr[i],my_moe.x[n-n_added+i],my_moe.y[n-n_added+i])
         end
     end
     nothing
