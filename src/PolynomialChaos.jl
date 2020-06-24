@@ -66,7 +66,11 @@ function PolynomialChaosSurrogate(x,y,lb,ub; op::MultiOrthoPoly = MultiOrthoPoly
 end
 
 function (pcND::PolynomialChaosSurrogate)(val)
-    return sum([pcND.coeff[i]*PolyChaos.evaluate(collect(val),pcND.ortopolys)[i] for i = 1:pcND.num_of_multi_indexes])
+    sum = zero(eltype(val[1]))
+    for i = 1:pcND.num_of_multi_indexes
+        sum = sum + pcND.coeff[i]*first(PolyChaos.evaluate(pcND.ortopolys.ind[i,:],collect(val),pcND.ortopolys))
+    end
+    return sum
 end
 
 

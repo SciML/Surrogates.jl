@@ -4,8 +4,8 @@ using Flux
 using Flux: @epochs
 using Zygote
 using PolyChaos
+using Test
 #using Zygote: @nograd
-
 #=
 #FORWARD
 ###### 1D ######
@@ -236,15 +236,17 @@ g((2.0,5.0))
 #MOE and VariableFidelity for free because they are Linear combinations
 #of differentiable surrogates
 
+
 #PolynomialChaos
-#= Waiting for issue https://github.com/timueh/PolyChaos.jl/issues/38 
 n = 50
+lb = [0.0,0.0]
+ub = [10.0,10.0]
 x = sample(n,lb,ub,SobolSample())
+f = x -> x[1]*x[2]
 y = f.(x)
 my_poli_ND = PolynomialChaosSurrogate(x,y,lb,ub)
-g = x -> Zygote.gradient(my_poli_ND,x) #not working
-g((2.0,5.0))
-=#
+g = x -> Zygote.gradient(my_poli_ND,x)
+@test_broken g((1.0,1.0)) #will work on Zygote0.5
 
 ###### ND -> ND ######
 
