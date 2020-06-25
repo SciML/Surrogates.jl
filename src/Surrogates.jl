@@ -17,9 +17,11 @@ include("RandomForestSurrogate.jl")
 include("NeuralSurrogate.jl")
 include("Wendland.jl")
 include("MOE.jl")
+include("VariableFidelity.jl")
+include("PolynomialChaos.jl")
 
-current_surrogates_MOE = ["Kriging","LinearSurrogate","LobacheskySurrogate","NeuralSurrogate",
-                     "RadialBasis","RandomForestSurrogate","SecondOrderPolynomialSurrogate","Wendland"]
+current_surrogates = ["Kriging","LinearSurrogate","LobacheskySurrogate","NeuralSurrogate",
+                          "RadialBasis","RandomForestSurrogate","SecondOrderPolynomialSurrogate","Wendland"]
 export current_surrogates_MOE
 export AbstractSurrogate, SamplingAlgorithm
 export Kriging, RadialBasis, add_point!, current_estimate, std_error_at_point
@@ -40,5 +42,7 @@ export RadialBasisStructure, KrigingStructure, LinearStructure, InverseDistanceS
 export LobacheskyStructure, NeuralStructure, RandomForestStructure, SecondOrderPolynomialStructure
 export WendlandStructure
 export MOE
+export VariableFidelitySurrogate
+export PolynomialChaosSurrogate
 
 end

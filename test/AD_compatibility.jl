@@ -3,8 +3,9 @@ using LinearAlgebra
 using Flux
 using Flux: @epochs
 using Zygote
+using PolyChaos
+using Test
 #using Zygote: @nograd
-
 #=
 #FORWARD
 ###### 1D ######
@@ -91,10 +92,16 @@ g([2.0,5.0])
 my_second = SecondOrderPolynomialSurrogate(x,y,lb,ub)
 g = x -> ForwardDiff.gradient(my_second,x)
 g([2.0,5.0])
-
-### ZYGOTE ###
 =#
-###### 1D ######
+
+##############
+### ZYGOTE ###
+##############
+
+
+############
+#### 1D ####
+############
 lb = 0.0
 ub = 10.0
 n = 5
@@ -150,7 +157,20 @@ my_wend = Wendland(x,y,lb,ub)
 g = x -> my_wend'(x)
 g(3.0)
 
+#MOE and VariableFidelity for free because they are Linear combinations
+#of differentiable surrogates
+
+#Polynomialchaos
+n = 50
+x = sample(n,lb,ub,SobolSample())
+y = f.(x)
+my_poli = PolynomialChaosSurrogate(x,y,lb,ub)
+g = x -> my_poli'(x)
+g(3.0)
+
+################
 ###### ND ######
+################
 
 lb = [0.0,0.0]
 ub = [10.0,10.0]
@@ -182,6 +202,8 @@ my_inverse = InverseDistanceSurrogate(x,y,lb,ub,p=my_p)
 g = x -> Zygote.gradient(my_inverse,x)
 g((2.0,5.0))
 
+
+
 #Lobachesky not working yet weird issue with Zygote @nograd
 #=
 Zygote.refresh()
@@ -210,6 +232,21 @@ g((2.0,5.0))
 my_wend_ND = Wendland(x,y,lb,ub)
 g = x -> Zygote.gradient(my_wend_ND,x)
 g((2.0,5.0))
+
+#MOE and VariableFidelity for free because they are Linear combinations
+#of differentiable surrogates
+
+
+#PolynomialChaos
+n = 50
+lb = [0.0,0.0]
+ub = [10.0,10.0]
+x = sample(n,lb,ub,SobolSample())
+f = x -> x[1]*x[2]
+y = f.(x)
+my_poli_ND = PolynomialChaosSurrogate(x,y,lb,ub)
+g = x -> Zygote.gradient(my_poli_ND,x)
+@test_broken g((1.0,1.0)) #will work on Zygote0.5
 
 ###### ND -> ND ######
 
