@@ -14,7 +14,7 @@ function RandomForestSurrogate(x,y,lb::Number,ub::Number; num_round::Int = 1)
 end
 
 function (rndfor::RandomForestSurrogate)(val::Number)
-    return XGBoost.predict(rndfor.bst,reshape([val],1,1))
+    return XGBoost.predict(rndfor.bst,reshape([val],1,1))[1]
 end
 
 """

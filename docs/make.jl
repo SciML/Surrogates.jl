@@ -10,6 +10,9 @@ makedocs(
         ]
     "Tutorials" => [
         "Basics" => "tutorials.md",
+        "RandomForestSurrogate" => "randomforest.md",
+        "Radials" => "radials.md",
+        "Kriging" => "kriging.md"
         ]
     "Contributing" => "contributing.md"
     ]
