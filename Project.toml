@@ -33,7 +33,7 @@ PolyChaos = "0.2"
 Requires = "0.5, 1.0"
 Sobol = "1.3"
 Stheno = "0.6"
-XGBoost = "0.4"
+XGBoost = "0.4, 1.1"
 julia = "1"
 
 [extras]
