@@ -26,7 +26,7 @@ f(x) = term1 + term2
 n_samples = 6
 lower_bound = 5.2
 upper_bound = 12.5
-x = sample(n_samples, lower_bound, upper_bound, sobolSample())
+x = sample(n_samples, lower_bound, upper_bound, SobolSample())
 y = f.(x)
 scatter(x, y, label="Sampled points", xlims=(lower_bound, upper_bound))
 plot!(f, label="True function", xlims=(lower_bound, upper_bound))
