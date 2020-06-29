@@ -1,5 +1,5 @@
 ## Linear Surrogate
-Linear Surrogate is a linear approach to modeling the relationship between a scalar response or dependent variable and one or more explanatory variables. We will use Linear Surrogate to optimize **Eggholder Function** [function](http://infinity77.net/global_optimization/test_functions.html#test-functions-index.):
+Linear Surrogate is a linear approach to modeling the relationship between a scalar response or dependent variable and one or more explanatory variables. We will use Linear Surrogate to optimize **Eggholder Function**.
 
 $f(x) = - x_{1} \sin\left(\sqrt{\lvert{x_{1} - x_{2} -47}\rvert}\right) - \left(x_{2} + 47\right) \sin\left(\sqrt{\left|{\frac{1}{2} x_{1} + x_{2} + 47}\right|}\right)$.
 
@@ -8,6 +8,7 @@ First of all we have to import these two packages: `Surrogates` and `Plots`.
 ```@example linear_surrogate1D
 using Surrogates
 using Plots
+default()
 ```
 
 ### Sampling
