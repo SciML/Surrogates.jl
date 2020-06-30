@@ -106,3 +106,21 @@ p2 = contour(x, y, (x1,x2) -> branin((x1,x2))) # hide
 scatter!(xs, ys) # hide
 plot(p1, p2, title="True function") # hide
 ```
+
+### Building a surrogate
+Using the sampled points we build the surrogate, the steps are analogous to the 1-dimensional case.
+
+```@example linear_surrogateND
+my_linear_ND = LinearSurrogate(xys, zs,  lower_bound, upper_bound)
+add_point!(my_linear_ND,(10.0,11.0),9.0)
+add_point!(my_linear_ND,[(8.0,5.0),(9.0,9.5)],[4.0,5.0])
+val = my_linear_ND((10.0,11.0))
+```
+
+```@example linear_surrogateND
+p1 = surface(x, y, (x, y) -> my_linear_ND([x y])) # hide
+scatter!(xs, ys, zs, marker_z=zs) # hide
+p2 = contour(x, y, (x, y) -> my_linear_ND([x y])) # hide
+scatter!(xs, ys, marker_z=zs) # hide
+plot(p1, p2, title="Surrogate") # hide
+```
