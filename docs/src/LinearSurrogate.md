@@ -59,3 +59,26 @@ scatter(x, y, label="Sampled points")
 plot!(f, label="True function",  xlims=(lower_bound, upper_bound))
 plot!(my_linear_surr_1D, label="Surrogate function",  xlims=(lower_bound, upper_bound))
 ```
+
+
+## Linear Surrogate tutorial (ND)
+
+First of all we will define the function we are going to build surrogate for. Notice, one how its argument is a vector of numbers, one for each coordinate, and its output is a scalar.
+
+```@example linear_surrogateND
+using Plots # hide
+default(c=:matter, legend=false, xlabel="x", ylabel="y") # hide
+using Surrogates # hide
+
+function branin(x)
+    x1=x[1]
+    x2=x[2]
+    a=1;
+    b=5.1/(4*π^2);
+    c=5/π;
+    r=6;
+    s=10;
+    t=1/(8π);
+    a*(x2-b*x1+c*x1-r)^2+s*(1-t)*cos(x1)+s
+end
+```
