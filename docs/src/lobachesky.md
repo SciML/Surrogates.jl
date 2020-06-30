@@ -46,6 +46,6 @@ To optimize using our surrogate we call `surrogate_optimize` method. We choose t
 ```@example LobachevskySurrogate_tutorial
 @show surrogate_optimize(f, SRBF(), lower_bound, upper_bound, lobachevsky_surrogate, SobolSample())
 scatter(x, y, label="Sampled points")
-plot(f, label="True function",  xlims=(lower_bound, upper_bound),color = :blue)
+plot!(f, label="True function",  xlims=(lower_bound, upper_bound))
 plot!(lobachevsky_surrogate, label="Surrogate function",  xlims=(lower_bound, upper_bound))
 ```

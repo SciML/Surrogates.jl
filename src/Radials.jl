@@ -32,7 +32,7 @@ end)
 Constructor for RadialBasis surrogate.
 """
 function RadialBasis(x, y, lb::Number, ub::Number; rad::RadialFunction=linearRadial, scale_factor::Real=1.0, sparse = false)
-    q = rad.q
+    q = rad.q + 1
     phi = rad.phi
     coeff = _calc_coeffs(x, y, lb, ub, phi, q,scale_factor, sparse)
     return RadialBasis(phi, q, x, y, lb, ub, coeff,scale_factor,sparse)
@@ -44,7 +44,7 @@ RadialBasis(x,y,lb,ub,rad::RadialFunction, scale_factor::Float = 1.0)
 Constructor for RadialBasis surrogate
 """
 function RadialBasis(x, y, lb, ub; rad::RadialFunction = linearRadial, scale_factor::Real=1.0, sparse = false)
-    q = rad.q
+    q = rad.q + 1
     phi = rad.phi
     coeff = _calc_coeffs(x, y, lb, ub, phi, q, scale_factor, sparse)
     return RadialBasis(phi, q, x, y, lb, ub, coeff,scale_factor, sparse)
