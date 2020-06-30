@@ -20,7 +20,7 @@ f(x) = sin(x) + log(x)
 n_samples = 20
 lower_bound = 5.2
 upper_bound = 12.5
-x = sample(n_samples, lower_bound, upper_bound, sobolSample())
+x = sample(n_samples, lower_bound, upper_bound, SobolSample())
 y = f.(x)
 scatter(x, y, label="Sampled points", xlims=(lower_bound, upper_bound))
 plot!(f, label="True function", xlims=(lower_bound, upper_bound))
@@ -74,10 +74,8 @@ function egg(x)
     x1=x[1]
     x2=x[2]
     term1 = -(x2+47) * sin(sqrt(abs(x2+x1/2+47)));
-term2 = -x1 * sin(sqrt(abs(x1-(x2+47))));
-
-y = term1 + term2;
-
+    term2 = -x1 * sin(sqrt(abs(x1-(x2+47))));
+    y = term1 + term2;
 end
 ```
 
@@ -110,9 +108,6 @@ Using the sampled points we build the surrogate, the steps are analogous to the 
 
 ```@example linear_surrogateND
 my_linear_ND = LinearSurrogate(xys, zs,  lower_bound, upper_bound)
-add_point!(my_linear_ND,(10.0,11.0),9.0)
-add_point!(my_linear_ND,[(8.0,5.0),(9.0,9.5)],[4.0,5.0])
-val = my_linear_ND((10.0,11.0))
 ```
 
 ```@example linear_surrogateND
