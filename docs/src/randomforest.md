@@ -8,6 +8,7 @@ First of all import `Surrogates` and `Plots`.
 ```@example RandomForestSurrogate_tutorial
 using Surrogates
 using Plots
+default()
 ```
 ### Sampling
 
