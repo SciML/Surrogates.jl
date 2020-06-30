@@ -8,7 +8,7 @@ y = f.(x)
 my_radial_basis = RadialBasis(x,y,lb,ub)
 
 #I want an approximation at 5.4
-approx = my_radial_basis(5.4)</code></pre><pre><code class="language-none">206.83097750423218</code></pre><ul><li>For each Surrogates we can call it with different inputs: either <span>$(x,y,lb,ub)$</span> or with it&#39;s parameters,</li></ul><p>different for each Surrogates. Let&#39;s see for Radial Basis Surrogates:</p><pre><code class="language-">my_radial_basis = RadialBasis(x,y,lb,ub,rad=thinplateRadial)
+approx = my_radial_basis(5.4)</code></pre><pre><code class="language-none">206.83097750423184</code></pre><ul><li>For each Surrogates we can call it with different inputs: either <span>$(x,y,lb,ub)$</span> or with it&#39;s parameters,</li></ul><p>different for each Surrogates. Let&#39;s see for Radial Basis Surrogates:</p><pre><code class="language-">my_radial_basis = RadialBasis(x,y,lb,ub,rad=thinplateRadial)
 
 #We want an approximation at 5.4
 approx = my_radial_basis(5.4)</code></pre><p>Now, Let&#39;s choose the Radial Basis Surrogate for 2D.</p><pre><code class="language-julia">using Surrogates
@@ -21,7 +21,7 @@ y = f.(x)
 my_radial_basis = RadialBasis(x,y,lb,ub)
 
 #I want an approximation at (1.0,1.4)
-approx = my_radial_basis((1.0,1.4))</code></pre><pre><code class="language-none">1.73300290722473</code></pre><p>Let&#39;s see an Optimization method for 1D:</p><pre><code class="language-julia">using Surrogates, LinearAlgebra
+approx = my_radial_basis((1.0,1.4))</code></pre><pre><code class="language-none">1.733002907224698</code></pre><p>Let&#39;s see an Optimization method for 1D:</p><pre><code class="language-julia">using Surrogates, LinearAlgebra
 ##### For 1D #####
 lb = 0.0
 ub = 15.0
@@ -32,4 +32,4 @@ a = 0.0
 b = 6.0
 
 my_rad_SRBF1 = RadialBasis(x,y,a,b,rad = linearRadial)
-surrogate_optimize(objective_function,SRBF(),a,b,my_rad_SRBF1,UniformSample())</code></pre><pre><code class="language-none">(0.0020527905022241053, 1.0041055810044481)</code></pre></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../randomforest/">« RandomForestSurrogate</a><a class="docs-footer-nextpage" href="../kriging/">Kriging »</a></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> on <span class="colophon-date" title="Tuesday 30 June 2020 09:05">Tuesday 30 June 2020</span>. Using Julia version 1.4.2.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+surrogate_optimize(objective_function,SRBF(),a,b,my_rad_SRBF1,UniformSample())</code></pre><pre><code class="language-none">(0.0037256888780556885, 1.0074513777561114)</code></pre></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../randomforest/">« RandomForestSurrogate</a><a class="docs-footer-nextpage" href="../kriging/">Kriging »</a></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> on <span class="colophon-date" title="Tuesday 30 June 2020 14:26">Tuesday 30 June 2020</span>. Using Julia version 1.4.2.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
