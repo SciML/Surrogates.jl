@@ -13,7 +13,8 @@ makedocs(
         "RandomForestSurrogate" => "randomforest.md",
         "Radials" => "radials.md",
         "Kriging" => "kriging.md",
-        "Lobachesky" => "lobachesky.md"
+        "Lobachesky" => "lobachesky.md",
+        "LinearSurrogate" => "LinearSurrogate.md"
         ]
     "Contributing" => "contributing.md"
     ]
