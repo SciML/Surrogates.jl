@@ -82,3 +82,27 @@ function branin(x)
     a*(x2-b*x1+c*x1-r)^2+s*(1-t)*cos(x1)+s
 end
 ```
+
+### Sampling
+
+Let's define our bounds, this time we are working in two dimensions. In particular we want our first dimension `x` to have bounds `-10, 5`, and `0, 15` for the second dimension. We are taking 50 samples of the space using Sobol Sequences. We then evaluate our function on all of the sampling points.
+
+```@example linear_surrogateND
+n_samples = 50
+lower_bound = [-10.0, 0.0]
+upper_bound = [5.0, 15.0]
+
+xys = sample(n_samples, lower_bound, upper_bound, SobolSample())
+zs = branin.(xys);
+```
+
+```@example linear_surrogateND
+x, y = -10:5, 0:15 # hide
+p1 = surface(x, y, (x1,x2) -> branin((x1,x2))) # hide
+xs = [xy[1] for xy in xys] # hide
+ys = [xy[2] for xy in xys] # hide
+scatter!(xs, ys, zs) # hide
+p2 = contour(x, y, (x1,x2) -> branin((x1,x2))) # hide
+scatter!(xs, ys) # hide
+plot(p1, p2, title="True function") # hide
+```
