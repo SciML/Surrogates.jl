@@ -63,23 +63,21 @@ plot!(my_linear_surr_1D, label="Surrogate function",  xlims=(lower_bound, upper_
 
 ## Linear Surrogate tutorial (ND)
 
-First of all we will define the function we are going to build surrogate for. Notice, one how its argument is a vector of numbers, one for each coordinate, and its output is a scalar.
+First of all we will define the `Egg Holder` function we are going to build surrogate for. Notice, one how its argument is a vector of numbers, one for each coordinate, and its output is a scalar.
 
 ```@example linear_surrogateND
 using Plots # hide
 default(c=:matter, legend=false, xlabel="x", ylabel="y") # hide
 using Surrogates # hide
 
-function branin(x)
+function egg(x)
     x1=x[1]
     x2=x[2]
-    a=1;
-    b=5.1/(4*π^2);
-    c=5/π;
-    r=6;
-    s=10;
-    t=1/(8π);
-    a*(x2-b*x1+c*x1-r)^2+s*(1-t)*cos(x1)+s
+    term1 = -(x2+47) * sin(sqrt(abs(x2+x1/2+47)));
+term2 = -x1 * sin(sqrt(abs(x1-(x2+47))));
+
+y = term1 + term2;
+
 end
 ```
 
@@ -93,16 +91,16 @@ lower_bound = [-10.0, 0.0]
 upper_bound = [5.0, 15.0]
 
 xys = sample(n_samples, lower_bound, upper_bound, SobolSample())
-zs = branin.(xys);
+zs = egg.(xys);
 ```
 
 ```@example linear_surrogateND
 x, y = -10:5, 0:15 # hide
-p1 = surface(x, y, (x1,x2) -> branin((x1,x2))) # hide
+p1 = surface(x, y, (x1,x2) -> egg((x1,x2))) # hide
 xs = [xy[1] for xy in xys] # hide
 ys = [xy[2] for xy in xys] # hide
 scatter!(xs, ys, zs) # hide
-p2 = contour(x, y, (x1,x2) -> branin((x1,x2))) # hide
+p2 = contour(x, y, (x1,x2) -> egg((x1,x2))) # hide
 scatter!(xs, ys) # hide
 plot(p1, p2, title="True function") # hide
 ```
@@ -135,7 +133,7 @@ This is why its size changes.
 size(xys)
 ```
 ```@example linear_surrogateND
-surrogate_optimize(branin, SRBF(), lower_bound, upper_bound, my_linear_ND, SobolSample(), maxiters=10)
+surrogate_optimize(egg, SRBF(), lower_bound, upper_bound, my_linear_ND, SobolSample(), maxiters=10)
 ```
 ```@example linear_surrogateND
 size(xys)
@@ -145,7 +143,7 @@ size(xys)
 p1 = surface(x, y, (x, y) -> my_linear_ND([x y])) # hide
 xs = [xy[1] for xy in xys] # hide
 ys = [xy[2] for xy in xys] # hide
-zs = branin.(xys) # hide
+zs = egg.(xys) # hide
 scatter!(xs, ys, zs, marker_z=zs) # hide
 p2 = contour(x, y, (x, y) -> my_linear_ND([x y])) # hide
 scatter!(xs, ys, marker_z=zs) # hide
