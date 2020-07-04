@@ -14,7 +14,7 @@ mutable struct RadialBasis{F,Q,X,Y,L,U,C,S,D} <: AbstractSurrogate
 end
 
 mutable struct RadialFunction{Q,P}
-    q::Q
+    q::Q # degree of polynomial
     phi::P
 end
 
@@ -44,7 +44,7 @@ RadialBasis(x,y,lb,ub,rad::RadialFunction, scale_factor::Float = 1.0)
 Constructor for RadialBasis surrogate
 """
 function RadialBasis(x, y, lb, ub; rad::RadialFunction = linearRadial, scale_factor::Real=1.0, sparse = false)
-    q = rad.q + 1
+    q = rad.q
     phi = rad.phi
     coeff = _calc_coeffs(x, y, lb, ub, phi, q, scale_factor, sparse)
     return RadialBasis(phi, q, x, y, lb, ub, coeff,scale_factor, sparse)
@@ -52,7 +52,7 @@ end
 
 function _calc_coeffs(x, y, lb, ub, phi, q, scale_factor, sparse)
     D = _construct_rbf_interp_matrix(x, first(x), lb, ub, phi, q, scale_factor, sparse)
-    Y = _construct_rbf_y_matrix(y, first(y), length(y) + q)
+    Y = _construct_rbf_y_matrix(y, first(y), length(y) + binomial(q+length(first(x)),q))
     coeff = D \ Y
     return coeff
 end
@@ -85,7 +85,7 @@ function _construct_rbf_interp_matrix(x, x_el, lb, ub, phi, q, scale_factor,spar
     central_point = _center_bounds(x_el, lb, ub)
     sum_half_diameter = sum((ub[k]-lb[k])/2 for k = 1:nd)
     mean_half_diameter = sum_half_diameter / nd
-    m = n+q
+    m = n + binomial(q+nd,q)
     if sparse
         D = ExtendableSparseMatrix{eltype(x_el),Int}(m,m)
     else
@@ -96,8 +96,8 @@ function _construct_rbf_interp_matrix(x, x_el, lb, ub, phi, q, scale_factor,spar
             D[i,j] = phi( (x[i] .- x[j]) ./ scale_factor)
         end
         if i < n + 1
-            for k = 1:q
-                D[i,n+k] = centralized_monomial(x[i], k-1, mean_half_diameter, central_point)
+            for k = 1:(binomial(q+nd,q))
+                D[i,n+k] = multivar_poly_basis(x[i], k-1, nd, q)
             end
         end
     end
@@ -119,10 +119,61 @@ Returns the value at point vect[] of the alpha degree monomial centralized.
 -'mean_half_diameter': half diameter of the domain
 -'central_point': central point in the domain
 """
-function centralized_monomial(vect,alpha,mean_half_diameter,central_point)
-    if iszero(alpha) return one(eltype(vect)) end
-    centralized_product = prod(vect .- central_point)
-    return (centralized_product / mean_half_diameter)^alpha
+function multivar_poly_basis(x, ix, dimensions, max_degree)
+    println("ix=$(ix), d=$(dimensions), max_degree=$(max_degree)")
+
+    if dimensions == 2
+        if max_degree == 0
+            return 1
+        end
+
+        if max_degree == 1
+            if ix == 0
+                return 1
+            end
+
+            if ix == 1
+                return x[1]
+            end
+
+            if ix == 2
+                return x[2]
+            end
+        end
+
+        if max_degree == 2
+            if ix == 0
+                return 1
+            end
+
+            if ix == 1
+                return x[1]
+            end
+
+            if ix == 2
+                return x[2]
+            end
+
+            if ix == 3
+                return x[1]^2
+            end
+
+            if ix == 4
+                return x[2]^2
+            end
+
+            if ix == 5
+                return x[1]*x[2]
+            end
+        end
+
+        throw("Unsupported degree")
+    end
+
+    throw("Unsupported dimensions")
+    # if iszero(ix) return one(eltype(x)) end
+    # centralized_product = prod(x)
+    # return (centralized_product)^ix
 end
 
 """
@@ -159,8 +210,8 @@ function _approx_rbf(val, rad)
 
     approx = zero(rad.coeff[1, :])
     @views approx += sum( rad.coeff[i, :] * rad.phi( (val .- rad.x[i]) ./rad.scale_factor) for i = 1:n)
-    for k = 1:q
-        @views approx += rad.coeff[n+k, :] .* centralized_monomial(val, k-1, mean_half_diameter, central_point)
+    for k = 1:(binomial(q+nd,q))
+        @views approx += rad.coeff[n+k, :] .* multivar_poly_basis(val, k-1, d, q)
     end
     return approx
 end
