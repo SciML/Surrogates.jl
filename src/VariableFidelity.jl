@@ -47,6 +47,8 @@ function VariableFidelitySurrogate(x,y,lb,ub;
 
             elseif low_fid_structure[1] == "Wendland"
                 low_fid_surr = Wendand(x_low, y_low,lb,ub, eps = low_fid_surr.eps, maxiters = low_fid_surr.maxiters, tol = low_fid_surr.tol)
+            elseif low_fid_structure[1] == "EarthSurrogate"
+                low_fid_surr = EarthSurrogate()#todo
             else
                 throw("A surrogate with the name provided does not exist or is not currently supported with VariableFidelity")
             end

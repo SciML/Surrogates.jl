@@ -66,6 +66,11 @@ function PolyChaosStructure(; op)
 end
 
 
+function EarthSurrogate(; penalty)
+    return (name = "EarthSurrogate", penalty = penalty)
+end
+
+
 function MOE(x,y,lb::Number,ub::Number; k::Int = 2, local_kind = [RadialBasisStructure(radial_function = linearRadial, scale_factor=1.0,sparse = false),RadialBasisStructure(radial_function = cubicRadial, scale_factor=1.0, sparse = false)])
     if k != length(local_kind)
         throw("Number of mixtures = $k is not equal to length of local surrogates")
@@ -134,7 +139,9 @@ function MOE(x,y,lb::Number,ub::Number; k::Int = 2, local_kind = [RadialBasisStr
         elseif local_kind[i][1] == "PolynomialChaosSurrogate"
             my_local_i = PolynomialChaosSurrogate(x,y,lb,ub, op = local_kind[i].op)
             local_surr[i] = my_local_i
-
+        elseif local_kind[i][1] == "EarthSurrogate"
+            my_local_i = EarthSurrogate(x,y,lb,ub, penalty = local_kind[i].penalty)
+            local_surr[i] = my_local_i
         else
             throw("A surrogate with name provided does not exist or is not currently supported with MOE.")
         end
@@ -207,6 +214,9 @@ function MOE(x,y,lb,ub; k::Int = 2,
 
         elseif local_kind[i][1] == "PolynomialChaosSurrogate"
             my_local_i = PolynomialChaosSurrogate(x,y,lb,ub, op = local_kind[i].op)
+            local_surr[i] = my_local_i
+        elseif local_kind[i][1] == "EarthSurrogate"
+            my_local_i = EarthSurrogate(x,y,lb,ub, penalty = local_kind[i].penalty)
             local_surr[i] = my_local_i
         else
             throw("A surrogate with name "* local_kind[i][1] *" does not exist or is not currently supported with MOE.")
