@@ -5,7 +5,7 @@ mutable struct EarthSurrogate{X,Y,L,U,P,C} <: AbstractSurrogate
     ub::U
     penalty::P
     coeff::C
-
+    otherstuff
  end
 
 
