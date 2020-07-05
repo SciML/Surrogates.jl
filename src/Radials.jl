@@ -19,8 +19,10 @@ mutable struct RadialFunction{Q,P}
 end
 
 linearRadial = RadialFunction(0,z->norm(z))
+
 cubicRadial = RadialFunction(1,z->norm(z)^3)
 multiquadricRadial = RadialFunction(1,z->sqrt(norm(z)^2+1))
+
 thinplateRadial = RadialFunction(2, z->begin
     result = norm(z)^2 * log(norm(z))
     ifelse(iszero(z), zero(result), result)
@@ -32,7 +34,7 @@ end)
 Constructor for RadialBasis surrogate.
 """
 function RadialBasis(x, y, lb::Number, ub::Number; rad::RadialFunction=linearRadial, scale_factor::Real=1.0, sparse = false)
-    q = rad.q + 1
+    q = rad.q
     phi = rad.phi
     coeff = _calc_coeffs(x, y, lb, ub, phi, q,scale_factor, sparse)
     return RadialBasis(phi, q, x, y, lb, ub, coeff,scale_factor,sparse)
@@ -51,15 +53,22 @@ function RadialBasis(x, y, lb, ub; rad::RadialFunction = linearRadial, scale_fac
 end
 
 function _calc_coeffs(x, y, lb, ub, phi, q, scale_factor, sparse)
+    nd = length(first(x))
+    num_poly_terms = binomial(q + nd, q)
+
     D = _construct_rbf_interp_matrix(x, first(x), lb, ub, phi, q, scale_factor, sparse)
-    Y = _construct_rbf_y_matrix(y, first(y), length(y) + binomial(q+length(first(x)),q))
+    Y = _construct_rbf_y_matrix(y, first(y), length(y) + num_poly_terms)
+
     coeff = D \ Y
     return coeff
 end
 
 function _construct_rbf_interp_matrix(x, x_el::Number, lb, ub, phi, q, scale_factor, sparse)
     n = length(x)
-    m = n + q
+
+    num_poly_terms = binomial(q + 1, q)
+    m = n + num_poly_terms
+
     if sparse
         D = ExtendableSparseMatrix{eltype(x_el),Int}(m,m)
     else
@@ -70,7 +79,7 @@ function _construct_rbf_interp_matrix(x, x_el::Number, lb, ub, phi, q, scale_fac
             D[i,j] = phi( (x[i] .- x[j]) ./ scale_factor )
         end
         if i <= n
-            for k = 1:q
+            for k = 1:num_poly_terms
                     D[i,n+k] = _scaled_chebyshev(x[i], k-1, lb, ub)
             end
         end
@@ -82,10 +91,10 @@ end
 function _construct_rbf_interp_matrix(x, x_el, lb, ub, phi, q, scale_factor,sparse)
     n = length(x)
     nd = length(x_el)
-    central_point = _center_bounds(x_el, lb, ub)
-    sum_half_diameter = sum((ub[k]-lb[k])/2 for k = 1:nd)
-    mean_half_diameter = sum_half_diameter / nd
-    m = n + binomial(q+nd,q)
+
+    num_poly_terms = binomial(q + nd, q)
+    m = n + num_poly_terms
+
     if sparse
         D = ExtendableSparseMatrix{eltype(x_el),Int}(m,m)
     else
@@ -96,7 +105,7 @@ function _construct_rbf_interp_matrix(x, x_el, lb, ub, phi, q, scale_factor,spar
             D[i,j] = phi( (x[i] .- x[j]) ./ scale_factor)
         end
         if i < n + 1
-            for k = 1:(binomial(q+nd,q))
+            for k = 1:num_poly_terms
                 D[i,n+k] = multivar_poly_basis(x[i], k-1, nd, q)
             end
         end
@@ -109,71 +118,45 @@ _construct_rbf_y_matrix(y, y_el::Number, m) = [i <= length(y) ? y[i] : zero(y_el
 _construct_rbf_y_matrix(y, y_el, m) = [i <= length(y) ? y[i][j] : zero(first(y_el)) for i=1:m, j=1:length(y_el)]
 
 """
-    centralized_monomial(vect,alpha,mean_half_diameter,central_point)
+    multivar_poly_basis(x, ix, d, n)
 
-Returns the value at point vect[] of the alpha degree monomial centralized.
+Evaluates in `x` the `ix`-th element of the multivariate polynomial basis of maximum
+degree `n` and `d` dimensions.
 
-#Arguments:
--'vect': vector of points i.e [x,y,...,w]
--'alpha': degree
--'mean_half_diameter': half diameter of the domain
--'central_point': central point in the domain
+Time complexity: `(n+1)^d.`
+
+# Example
+For n=2, d=2 the multivariate polynomial basis is
+````
+1,
+x,y
+x^2,y^2,xy
+````
+Therefore the 3rd (ix=3) element is `y` .
+Therefore when x=(13,43) and ix=3 this function will return 43.
 """
-function multivar_poly_basis(x, ix, dimensions, max_degree)
-    println("ix=$(ix), d=$(dimensions), max_degree=$(max_degree)")
+function multivar_poly_basis(x, ix, d, n)
+    values = [
+        # Evaluate the generated combinations of monomials in x
+        prod([
+            x[i]^d
+            for (i, d)
+            in Iterators.enumerate(degrees)
+        ])
 
-    if dimensions == 2
-        if max_degree == 0
-            return 1
-        end
+        # Generate all possible combinations of exponents
+        for degrees
+        in collect(
+            Iterators.product(
+                Iterators.repeated(0:n, d)...
+            )
+        )[:]
 
-        if max_degree == 1
-            if ix == 0
-                return 1
-            end
+        # Prune the combinations whose degree (sum of exponents) is > n
+        if sum(degrees) <= n
+    ]
 
-            if ix == 1
-                return x[1]
-            end
-
-            if ix == 2
-                return x[2]
-            end
-        end
-
-        if max_degree == 2
-            if ix == 0
-                return 1
-            end
-
-            if ix == 1
-                return x[1]
-            end
-
-            if ix == 2
-                return x[2]
-            end
-
-            if ix == 3
-                return x[1]^2
-            end
-
-            if ix == 4
-                return x[2]^2
-            end
-
-            if ix == 5
-                return x[1]*x[2]
-            end
-        end
-
-        throw("Unsupported degree")
-    end
-
-    throw("Unsupported dimensions")
-    # if iszero(ix) return one(eltype(x)) end
-    # centralized_product = prod(x)
-    # return (centralized_product)^ix
+    return values[ix + 1]
 end
 
 """
@@ -187,13 +170,14 @@ end
 function _approx_rbf(val::Number, rad)
     n = length(rad.x)
     q = rad.dim_poly
+    num_poly_terms = binomial(q + 1, q)
     lb = rad.lb
     ub = rad.ub
     approx = zero(rad.coeff[1, :])
     for i = 1:n
         approx += rad.coeff[i, :] * rad.phi( (val .- rad.x[i]) / rad.scale_factor)
     end
-    for k = 1:q
+    for k = 1:num_poly_terms
         approx += rad.coeff[n+k, :] * _scaled_chebyshev(val, k-1, lb, ub)
     end
     return approx
@@ -202,6 +186,7 @@ function _approx_rbf(val, rad)
     n = length(rad.x)
     d = length(rad.x[1])
     q = rad.dim_poly
+    num_poly_terms = binomial(q + d, q)
     lb = rad.lb
     ub = rad.ub
     sum_half_diameter = sum((ub[k]-lb[k])/2 for k = 1:d)
@@ -210,7 +195,7 @@ function _approx_rbf(val, rad)
 
     approx = zero(rad.coeff[1, :])
     @views approx += sum( rad.coeff[i, :] * rad.phi( (val .- rad.x[i]) ./rad.scale_factor) for i = 1:n)
-    for k = 1:(binomial(q+nd,q))
+    for k = 1:num_poly_terms
         @views approx += rad.coeff[n+k, :] .* multivar_poly_basis(val, k-1, d, q)
     end
     return approx
