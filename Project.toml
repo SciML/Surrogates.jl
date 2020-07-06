@@ -1,7 +1,7 @@
 name = "Surrogates"
 uuid = "6fc51010-71bc-11e9-0e15-a3fcc6593c49"
 authors = ["ludoro <ludovicobessi@gmail.com>"]
-version = "1.1.2"
+version = "1.2"
 
 [deps]
 Clustering = "aaaa29a8-35af-508c-8bc3-b662a17a0fe5"
