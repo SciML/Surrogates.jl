@@ -117,6 +117,26 @@ end
 _construct_rbf_y_matrix(y, y_el::Number, m) = [i <= length(y) ? y[i] : zero(y_el) for i = 1:m]
 _construct_rbf_y_matrix(y, y_el, m) = [i <= length(y) ? y[i][j] : zero(first(y_el)) for i=1:m, j=1:length(y_el)]
 
+using Zygote: @nograd
+
+function _make_combination(n, d, ix)
+    exponents_combinations = [
+        e
+        for e
+        in collect(
+            Iterators.product(
+                Iterators.repeated(0:n, d)...
+            )
+        )[:]
+        if sum(e) <= n
+    ]
+
+    return exponents_combinations[ix + 1]
+end
+# TODO: Is this correct? Do we ever want to differentiate w.r.t n, d, or ix?
+# By using @nograd we force the gradient to be 1 for n, d, ix
+@nograd _make_combination
+
 """
     multivar_poly_basis(x, ix, d, n)
 
@@ -135,29 +155,11 @@ x^2,y^2,xy
 Therefore the 3rd (ix=3) element is `y` .
 Therefore when x=(13,43) and ix=3 this function will return 43.
 """
-function multivar_poly_basis(x, ix, d, n)
-    values = [
-        # Evaluate the generated combinations of monomials in x
-        prod([
-            x[i]^d
-            for (i, d)
-            in Iterators.enumerate(degrees)
-        ])
-
-        # Generate all possible combinations of exponents
-        for degrees
-        in collect(
-            Iterators.product(
-                Iterators.repeated(0:n, d)...
-            )
-        )[:]
-
-        # Prune the combinations whose degree (sum of exponents) is > n
-        if sum(degrees) <= n
-    ]
-
-    return values[ix + 1]
-end
+multivar_poly_basis(x, ix, d, n) = prod(
+    a^d
+    for (a, d)
+    in zip(x, _make_combination(n, d, ix))
+)
 
 """
 Calculates current estimate of value 'val' with respect to the RadialBasis object.
