@@ -19,6 +19,7 @@ Sobol = "ed01d8cd-4d21-5b2a-85b4-cc3bdc58bad4"
 SparseArrays = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
 Stheno = "8188c328-b5d6-583d-959b-9690869a5511"
 XGBoost = "009559a3-9522-5dbb-924b-0b6ed2b22bb9"
+Zygote = "e88e6eb3-aa80-5325-afca-941959d7151f"
 
 [compat]
 Clustering = "0.14"
