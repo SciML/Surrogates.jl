@@ -29,7 +29,8 @@ The construction of a surrogate model can be seen as a three-step process:
 ## ALL the currently available surrogate models:
 
 - Kriging
-- Radial Basis Function
+- Radial Basis
+- Wendland 
 - Linear
 - Second Order Polynomial
 - Support Vector Machines (SVM)
@@ -37,6 +38,10 @@ The construction of a surrogate model can be seen as a three-step process:
 - Random Forests
 - Lobachesky
 - Inverse-distance
+- Polynomial expansions 
+- Variable fidelity 
+- Mixture of experts 
+
 
 ## ALL the currently available optimization methods:
 
