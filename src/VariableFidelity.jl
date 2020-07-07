@@ -141,5 +141,4 @@ function add_point!(varfid::VariableFidelitySurrogate,x_new,y_new)
         #I added a new lowfidelity datapoint, I need to update the low_fid_surr:
         add_point!(varfid.low_fid_surr,x_new,y_new)
     end
-
 end
