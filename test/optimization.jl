@@ -35,6 +35,9 @@ y = objective_function.(x)
 my_poly1d = PolynomialChaosSurrogate(x,y,lb,ub)
 surrogate_optimize(objective_function,SRBF(),a,b,my_poly1d,LowDiscrepancySample(2))
 
+my_earth1d = EarthSurrogate(x,y,lb,ub)
+surrogate_optimize(objective_function,SRBF(),a,b,my_earth1d,LowDiscrepancySample(2))
+
 ##### ND #####
 objective_function_ND = z -> 3*norm(z)+1
 lb = [1.0,1.0]
