@@ -19,5 +19,5 @@ x = sample(n,lb,ub,SobolSample())
 f = x -> x[1]*x[2] + x[1]
 y = f.(x)
 my_earnd = EarthSurrogate(x,y,lb,ub)
-#val = my_earnd((2.0,2.0))
-#add_point!(my_earnd,(2.0,2.0),6.0)
+val = my_earnd((2.0,2.0))
+add_point!(my_earnd,(2.0,2.0),6.0)
