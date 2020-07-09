@@ -24,7 +24,7 @@ The construction of a surrogate model can be seen as a three-step process:
 - Sobol
 - Latin Hypercube
 - Low Discrepancy
-- Random
+- Random following different distributions
 
 ## ALL the currently available surrogate models:
 
@@ -33,8 +33,8 @@ The construction of a surrogate model can be seen as a three-step process:
 - Wendland 
 - Linear
 - Second Order Polynomial
-- Support Vector Machines (SVM)
-- Artificial Neural Networks
+- Support Vector Machines
+- Neural Networks
 - Random Forests
 - Lobachesky
 - Inverse-distance
