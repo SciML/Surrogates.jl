@@ -41,7 +41,7 @@ The construction of a surrogate model can be seen as a three-step process:
 - Polynomial expansions 
 - Variable fidelity 
 - Mixture of experts 
-
+- Earth
 
 ## ALL the currently available optimization methods:
 
