@@ -17,3 +17,4 @@ using Surrogates
 @testset "Wendland" begin include("Wendland.jl") end
 @testset "MOE" begin include("MOE.jl") end
 @testset "VariableFidelity" begin include("VariableFidelity.jl") end
+@testset "Earth" begin include("earth.jl") end
