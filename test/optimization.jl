@@ -232,9 +232,6 @@ surrogate_optimize(objective_function_ND,DYCORS(),lb,ub,my_rad_DYCORSN,UniformSa
 my_wend_ND = Wendland(x,y,lb,ub)
 surrogate_optimize(objective_function_ND,DYCORS(),lb,ub,my_wend_ND,UniformSample(),maxiters=30)
 
-my_earthND = EarthSurrogate(x,y,lb,ub)
-surrogate_optimize(obj_ND,SRBF(),lb,ub,my_earthND,SobolSample(),maxiters = 15)
-
 ### SOP ###
 # 1D
 objective_function = x -> 3*x+1
