@@ -29,3 +29,25 @@ y = f.(x)
 scatter(x, y, label="Sampled points", xlims=(lower_bound, upper_bound))
 plot!(f, label="True function", xlims=(lower_bound, upper_bound))
 ```
+
+
+## Building a Surrogate
+
+With our sampled points we can build the **Inverse Distance Surrogate** using the `InverseDistance` function.
+
+We can simply calculate `InverseDistance` for any value.
+
+```@example Inverse_Distance1D
+InverseDistance = InverseDistanceSurrogate(x,y,lb,ub)
+add_point!(InverseDistance,5.0,-0.91)
+add_point!(InverseDistance,[5.1,5.2],[1.0,2.0])
+prediction = InverseDistance(5.0)
+```
+
+Now, we will simply plot `InverseDistance`:
+
+```@example Inverse_Distance1D
+plot(x, y, seriestype=:scatter, label="Sampled points", xlims=(lower_bound, upper_bound))
+plot!(f, label="True function",  xlims=(lower_bound, upper_bound))
+plot!(InverseDistance, label="Surrogate function",  xlims=(lower_bound, upper_bound))
+```
