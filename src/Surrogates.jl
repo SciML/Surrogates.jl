@@ -19,6 +19,7 @@ include("Wendland.jl")
 include("MOE.jl")
 include("VariableFidelity.jl")
 include("PolynomialChaos.jl")
+include("Earth.jl")
 
 current_surrogates = ["Kriging","LinearSurrogate","LobacheskySurrogate","NeuralSurrogate",
                           "RadialBasis","RandomForestSurrogate","SecondOrderPolynomialSurrogate","Wendland"]
@@ -44,5 +45,6 @@ export WendlandStructure
 export MOE
 export VariableFidelitySurrogate
 export PolynomialChaosSurrogate
+export EarthSurrogate
 
 end

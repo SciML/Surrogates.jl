@@ -24,19 +24,24 @@ The construction of a surrogate model can be seen as a three-step process:
 - Sobol
 - Latin Hypercube
 - Low Discrepancy
-- Random
+- Random following different distributions
 
 ## ALL the currently available surrogate models:
 
 - Kriging
-- Radial Basis Function
+- Radial Basis
+- Wendland 
 - Linear
 - Second Order Polynomial
-- Support Vector Machines (SVM)
-- Artificial Neural Networks
+- Support Vector Machines
+- Neural Networks
 - Random Forests
 - Lobachesky
 - Inverse-distance
+- Polynomial expansions 
+- Variable fidelity 
+- Mixture of experts 
+- Earth
 
 ## ALL the currently available optimization methods:
 
