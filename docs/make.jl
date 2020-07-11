@@ -14,7 +14,8 @@ makedocs(
         "Radials" => "radials.md",
         "Kriging" => "kriging.md",
         "Lobachesky" => "lobachesky.md",
-        "LinearSurrogate" => "LinearSurrogate.md"
+        "LinearSurrogate" => "LinearSurrogate.md",
+        "InverseDistance" => "InverseDistance.md"
         ]
     "Contributing" => "contributing.md"
     ]
