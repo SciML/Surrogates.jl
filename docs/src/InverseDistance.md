@@ -35,8 +35,8 @@ plot!(f, label="True function", xlims=(lower_bound, upper_bound))
 
 ```@example Inverse_Distance1D
 InverseDistance = InverseDistanceSurrogate(x, y, lower_bound, upper_bound)
-add_point!(InverseDistance, 5.0, -0.91)
-add_point!(InverseDistance, [5.1,5.2], [1.0,2.0])
+add_point!(InverseDistance, 5.0, f(5.0))
+add_point!(InverseDistance, [5.1,5.2], [f(5.1),f(5.2)])
 prediction = InverseDistance(5.0)
 ```
 
