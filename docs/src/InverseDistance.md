@@ -26,8 +26,8 @@ upper_bound = 10.0
 x = sample(n_samples, lower_bound, upper_bound, LowDiscrepancySample(2))
 y = f.(x)
 
-scatter(x, y, label="Sampled points", xlims=(lower_bound, upper_bound))
-plot!(f, label="True function", xlims=(lower_bound, upper_bound))
+scatter(x, y, label="Sampled points", xlims=(lower_bound, upper_bound), legend=:top)
+plot!(f, label="True function", xlims=(lower_bound, upper_bound), legend=:top)
 ```
 
 
@@ -43,9 +43,9 @@ prediction = InverseDistance(5.0)
 Now, we will simply plot `InverseDistance`:
 
 ```@example Inverse_Distance1D
-plot(x, y, seriestype=:scatter, label="Sampled points", xlims=(lower_bound, upper_bound))
-plot!(f, label="True function",  xlims=(lower_bound, upper_bound))
-plot!(InverseDistance, label="Surrogate function",  xlims=(lower_bound, upper_bound))
+plot(x, y, seriestype=:scatter, label="Sampled points", xlims=(lower_bound, upper_bound), legend=:top)
+plot!(f, label="True function",  xlims=(lower_bound, upper_bound), legend=:top)
+plot!(InverseDistance, label="Surrogate function",  xlims=(lower_bound, upper_bound), legend=:top)
 ```
 
 
@@ -57,9 +57,9 @@ To optimize using our surrogate we call `surrogate_optimize` method. We choose t
 
 ```@example Inverse_Distance1D
 @show surrogate_optimize(f, SRBF(), lower_bound, upper_bound, InverseDistance, SobolSample())
-scatter(x, y, label="Sampled points")
-plot!(f, label="True function",  xlims=(lower_bound, upper_bound))
-plot!(InverseDistance, label="Surrogate function",  xlims=(lower_bound, upper_bound))
+scatter(x, y, label="Sampled points", legend=:top)
+plot!(f, label="True function",  xlims=(lower_bound, upper_bound), legend=:top)
+plot!(InverseDistance, label="Surrogate function",  xlims=(lower_bound, upper_bound), legend=:top)
 ```
 
 
