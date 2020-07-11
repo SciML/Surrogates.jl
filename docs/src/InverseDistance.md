@@ -105,3 +105,47 @@ p2 = contour(x, y, (x1,x2) -> schaffer((x1,x2))) # hide
 scatter!(xs, ys) # hide
 plot(p1, p2, title="True function") # hide
 ```
+
+
+### Building a surrogate
+Using the sampled points we build the surrogate, the steps are analogous to the 1-dimensional case.
+
+```@example Inverse_DistanceND
+InverseDistance = InverseDistanceSurrogate(xys, zs,  lower_bound, upper_bound)
+```
+
+```@example Inverse_DistanceND
+p1 = surface(x, y, (x, y) -> InverseDistance([x y])) # hide
+scatter!(xs, ys, zs, marker_z=zs) # hide
+p2 = contour(x, y, (x, y) -> InverseDistance([x y])) # hide
+scatter!(xs, ys, marker_z=zs) # hide
+plot(p1, p2, title="Surrogate") # hide
+```
+
+
+### Optimizing
+With our surrogate we can now search for the minimas of the function.
+
+Notice how the new sampled points, which were created during the optimization process, are appended to the `xys` array.
+This is why its size changes.
+
+```@example Inverse_DistanceND
+size(xys)
+```
+```@example Inverse_DistanceND
+surrogate_optimize(schaffer, SRBF(), lower_bound, upper_bound, InverseDistance, SobolSample(), maxiters=10)
+```
+```@example Inverse_DistanceND
+size(xys)
+```
+
+```@example Inverse_DistanceND
+p1 = surface(x, y, (x, y) -> InverseDistance([x y])) # hide
+xs = [xy[1] for xy in xys] # hide
+ys = [xy[2] for xy in xys] # hide
+zs = schaffer.(xys) # hide
+scatter!(xs, ys, zs, marker_z=zs) # hide
+p2 = contour(x, y, (x, y) -> InverseDistance([x y])) # hide
+scatter!(xs, ys, marker_z=zs) # hide
+plot(p1, p2) # hide
+```
