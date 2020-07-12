@@ -1,7 +1,7 @@
 # Sphere function
 
 The sphere function of dimension d is defined as:
-$ f(x) = \sum_{i=1}^d x_i $
+``f(x) = \sum_{i=1}^d x_i``
 with lower bound -10 and upper bound 10.
 
 Let's import Surrogates and Plots:
