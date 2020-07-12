@@ -20,7 +20,7 @@ end
 
 The 1D case is just a simple parabola, let's plot it:
 ```@example sphere_function
-n = 100
+n = 20
 lb = -10
 ub = 10
 x = sample(n,lb,ub,SobolSample())
