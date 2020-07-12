@@ -22,7 +22,7 @@ upper_bound = 7.5
 x = sample(n_samples, lower_bound, upper_bound, SobolSample())
 y = f.(x)
 scatter(x, y, label="Sampled points", xlims=(lower_bound, upper_bound))
-plot!(f, label="True function", xlims=(lower_bound, upper_bound))
+plot!(f, label="True function", xlims=(lower_bound, upper_bound), legend=:top)
 ```
 ### Building a surrogate
 
@@ -34,9 +34,9 @@ using the parameter num_round
 ```@example RandomForestSurrogate_tutorial
 num_round = 2
 randomforest_surrogate = RandomForestSurrogate(x ,y ,lower_bound, upper_bound, num_round = 2)
-plot(x, y, seriestype=:scatter, label="Sampled points", xlims=(lower_bound, upper_bound))
-plot!(f, label="True function",  xlims=(lower_bound, upper_bound))
-plot!(randomforest_surrogate, label="Surrogate function",  xlims=(lower_bound, upper_bound))
+plot(x, y, seriestype=:scatter, label="Sampled points", xlims=(lower_bound, upper_bound), legend=:top)
+plot!(f, label="True function",  xlims=(lower_bound, upper_bound), legend=:top)
+plot!(randomforest_surrogate, label="Surrogate function",  xlims=(lower_bound, upper_bound), legend=:top)
 ```
 ### Optimizing
 Having built a surrogate, we can now use it to search for minimas in our original function `f`.
@@ -46,6 +46,6 @@ To optimize using our surrogate we call `surrogate_optimize` method. We choose t
 ```@example RandomForestSurrogate_tutorial
 @show surrogate_optimize(f, SRBF(), lower_bound, upper_bound, randomforest_surrogate, SobolSample())
 scatter(x, y, label="Sampled points")
-plot!(f, label="True function",  xlims=(lower_bound, upper_bound))
-plot!(randomforest_surrogate, label="Surrogate function",  xlims=(lower_bound, upper_bound))
+plot!(f, label="True function",  xlims=(lower_bound, upper_bound), legend=:top)
+plot!(randomforest_surrogate, label="Surrogate function",  xlims=(lower_bound, upper_bound), legend=:top)
 ```
