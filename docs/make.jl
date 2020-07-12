@@ -17,6 +17,9 @@ makedocs(
         "LinearSurrogate" => "LinearSurrogate.md",
         "InverseDistance" => "InverseDistance.md"
         ]
+    "Benchmarks" => [
+        "Sphere function" => "sphere_function.md"
+    ]
     "Contributing" => "contributing.md"
     ]
 )
