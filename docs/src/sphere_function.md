@@ -26,8 +26,8 @@ ub = 10
 x = sample(n,lb,ub,SobolSample())
 y = sphere_function.(x)
 xs = lb:0.001:ub
-plot(x, y, seriestype=:scatter, label="Sampled points", xlims=(lb, ub), ylims=(-2, 120))
-plot!(xs,sphere_function.(xs), label="True function")
+plot(x, y, seriestype=:scatter, label="Sampled points", xlims=(lb, ub), ylims=(-2, 120), legend=:top)
+plot!(xs,sphere_function.(xs), label="True function", legend=:top)
 ```
 
 Fitting RadialSurrogate with different radial basis:
@@ -35,11 +35,11 @@ Fitting RadialSurrogate with different radial basis:
 rad_1d_linear = RadialBasis(x,y,lb,ub)
 rad_1d_cubic = RadialBasis(x,y,lb,ub,rad = cubicRadial)
 rad_1d_multiquadric = RadialBasis(x,y,lb,ub, rad = multiquadricRadial)
-plot(x, y, seriestype=:scatter, label="Sampled points", xlims=(lb, ub), ylims=(-2, 120))
-plot!(xs,sphere_function.(xs), label="True function")
-plot!(xs, rad_1d_linear.(xs), label="Radial surrogate with linear")
-plot!(xs, rad_1d_cubic.(xs), label="Radial surrogate with cubic")
-plot!(xs, rad_1d_multiquadric.(xs), label="Radial surrogate with multiquadric")
+plot(x, y, seriestype=:scatter, label="Sampled points", xlims=(lb, ub), ylims=(-2, 120), legend=:top)
+plot!(xs,sphere_function.(xs), label="True function", legend=:top)
+plot!(xs, rad_1d_linear.(xs), label="Radial surrogate with linear", legend=:top)
+plot!(xs, rad_1d_cubic.(xs), label="Radial surrogate with cubic", legend=:top)
+plot!(xs, rad_1d_multiquadric.(xs), label="Radial surrogate with multiquadric", legend=:top)
 ```
 
 Fitting Lobachesky Surrogate with different values of hyperparameters alpha:
@@ -47,9 +47,9 @@ Fitting Lobachesky Surrogate with different values of hyperparameters alpha:
 loba_1 = LobacheskySurrogate(x,y,lb,ub)
 loba_2 = LobacheskySurrogate(x,y,lb,ub,alpha = 1.5, n = 6)
 loba_3 = LobacheskySurrogate(x,y,lb,ub,alpha = 0.3, n = 6)
-plot(x, y, seriestype=:scatter, label="Sampled points", xlims=(lb, ub), ylims=(-2, 120))
-plot!(xs,sphere_function.(xs), label="True function")
-plot!(xs, loba_1.(xs), label="Lobachesky surrogate 1")
-plot!(xs, loba_2.(xs), label="Lobachesky surrogate 2")
-plot!(xs, loba_3.(xs), label="Lobachesky surrogate 3")
+plot(x, y, seriestype=:scatter, label="Sampled points", xlims=(lb, ub), ylims=(-2, 120), legend=:top)
+plot!(xs,sphere_function.(xs), label="True function", legend=:top)
+plot!(xs, loba_1.(xs), label="Lobachesky surrogate 1", legend=:top)
+plot!(xs, loba_2.(xs), label="Lobachesky surrogate 2", legend=:top)
+plot!(xs, loba_3.(xs), label="Lobachesky surrogate 3", legend=:top)
 ```
