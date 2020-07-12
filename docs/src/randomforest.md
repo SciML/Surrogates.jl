@@ -68,3 +68,28 @@ function bukin6(x)
     y = term1 + term2;
 end
 ```
+
+
+### Sampling
+
+Let's define our bounds, this time we are working in two dimensions. In particular we want our first dimension `x` to have bounds `-10, 5`, and `0, 15` for the second dimension. We are taking 50 samples of the space using Sobol Sequences. We then evaluate our function on all of the sampling points.
+
+```@example RandomForestSurrogateND
+n_samples = 50
+lower_bound = [-10.0, 0.0]
+upper_bound = [5.0, 15.0]
+
+xys = sample(n_samples, lower_bound, upper_bound, SobolSample())
+zs = bukin6.(xys);
+```
+
+```@example RandomForestSurrogateND
+x, y = -10:5, 0:15 # hide
+p1 = surface(x, y, (x1,x2) -> bukin6((x1,x2))) # hide
+xs = [xy[1] for xy in xys] # hide
+ys = [xy[2] for xy in xys] # hide
+scatter!(xs, ys, zs) # hide
+p2 = contour(x, y, (x1,x2) -> bukin6((x1,x2))) # hide
+scatter!(xs, ys) # hide
+plot(p1, p2, title="True function") # hide
+```
