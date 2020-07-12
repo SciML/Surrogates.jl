@@ -26,26 +26,26 @@ upper_bound = 10.0
 x = sample(n_samples, lower_bound, upper_bound, LowDiscrepancySample(2))
 y = f.(x)
 
-scatter(x, y, label="Sampled points", xlims=(lower_bound, upper_bound))
-plot!(f, label="True function", xlims=(lower_bound, upper_bound))
+scatter(x, y, label="Sampled points", xlims=(lower_bound, upper_bound), legend=:top)
+plot!(f, label="True function", xlims=(lower_bound, upper_bound), legend=:top)
 ```
 
 
 ## Building a Surrogate
 
 ```@example Inverse_Distance1D
-InverseDistance = InverseDistanceSurrogate(x,y,lb,ub)
-add_point!(InverseDistance,5.0,-0.91)
-add_point!(InverseDistance,[5.1,5.2],[1.0,2.0])
+InverseDistance = InverseDistanceSurrogate(x, y, lower_bound, upper_bound)
+add_point!(InverseDistance, 5.0, f(5.0))
+add_point!(InverseDistance, [5.1,5.2], [f(5.1),f(5.2)])
 prediction = InverseDistance(5.0)
 ```
 
 Now, we will simply plot `InverseDistance`:
 
 ```@example Inverse_Distance1D
-plot(x, y, seriestype=:scatter, label="Sampled points", xlims=(lower_bound, upper_bound))
-plot!(f, label="True function",  xlims=(lower_bound, upper_bound))
-plot!(InverseDistance, label="Surrogate function",  xlims=(lower_bound, upper_bound))
+plot(x, y, seriestype=:scatter, label="Sampled points", xlims=(lower_bound, upper_bound), legend=:top)
+plot!(f, label="True function",  xlims=(lower_bound, upper_bound), legend=:top)
+plot!(InverseDistance, label="Surrogate function",  xlims=(lower_bound, upper_bound), legend=:top)
 ```
 
 
@@ -57,9 +57,9 @@ To optimize using our surrogate we call `surrogate_optimize` method. We choose t
 
 ```@example Inverse_Distance1D
 @show surrogate_optimize(f, SRBF(), lower_bound, upper_bound, InverseDistance, SobolSample())
-scatter(x, y, label="Sampled points")
-plot!(f, label="True function",  xlims=(lower_bound, upper_bound))
-plot!(InverseDistance, label="Surrogate function",  xlims=(lower_bound, upper_bound))
+scatter(x, y, label="Sampled points", legend=:top)
+plot!(f, label="True function",  xlims=(lower_bound, upper_bound), legend=:top)
+plot!(InverseDistance, label="Surrogate function",  xlims=(lower_bound, upper_bound), legend=:top)
 ```
 
 
