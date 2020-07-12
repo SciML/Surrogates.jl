@@ -49,3 +49,22 @@ scatter(x, y, label="Sampled points")
 plot!(f, label="True function",  xlims=(lower_bound, upper_bound))
 plot!(randomforest_surrogate, label="Surrogate function",  xlims=(lower_bound, upper_bound))
 ```
+
+
+## Random Forest ND
+
+First of all we will define the `Bukin Function N. 6` function we are going to build surrogate for.
+
+```@example RandomForestSurrogateND
+using Plots # hide
+default(c=:matter, legend=false, xlabel="x", ylabel="y") # hide
+using Surrogates # hide
+
+function bukin6(x)
+    x1=x[1]
+    x2=x[2]
+    term1 = 100 * sqrt(abs(x2 - 0.01*x1^2));
+    term2 = 0.01 * abs(x1+10);
+    y = term1 + term2;
+end
+```
