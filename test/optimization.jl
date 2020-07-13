@@ -35,6 +35,9 @@ y = objective_function.(x)
 my_poly1d = PolynomialChaosSurrogate(x,y,lb,ub)
 surrogate_optimize(objective_function,SRBF(),a,b,my_poly1d,LowDiscrepancySample(2))
 
+my_earth1d = EarthSurrogate(x,y,lb,ub)
+surrogate_optimize(objective_function,SRBF(),a,b,my_earth1d,LowDiscrepancySample(2))
+
 ##### ND #####
 objective_function_ND = z -> 3*norm(z)+1
 lb = [1.0,1.0]
@@ -128,7 +131,6 @@ x = sample(15,lb,ub,UniformSample())
 y = obj_ND.(x)
 my_second_order_poly_ND = SecondOrderPolynomialSurrogate(x,y,lb,ub)
 surrogate_optimize(obj_ND,SRBF(),lb,ub,my_second_order_poly_ND,SobolSample(),maxiters=15)
-
 
 obj_ND = x -> log(x[1])*exp(x[2])
 x = sample(40,lb,ub,UniformSample())
@@ -229,7 +231,6 @@ surrogate_optimize(objective_function_ND,DYCORS(),lb,ub,my_rad_DYCORSN,UniformSa
 
 my_wend_ND = Wendland(x,y,lb,ub)
 surrogate_optimize(objective_function_ND,DYCORS(),lb,ub,my_wend_ND,UniformSample(),maxiters=30)
-
 
 ### SOP ###
 # 1D

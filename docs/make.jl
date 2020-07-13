@@ -12,8 +12,14 @@ makedocs(
         "Basics" => "tutorials.md",
         "RandomForestSurrogate" => "randomforest.md",
         "Radials" => "radials.md",
-        "Kriging" => "kriging.md"
+        "Kriging" => "kriging.md",
+        "Lobachesky" => "lobachesky.md",
+        "LinearSurrogate" => "LinearSurrogate.md",
+        "InverseDistance" => "InverseDistance.md"
         ]
+    "Benchmarks" => [
+        "Sphere function" => "sphere_function.md"
+    ]
     "Contributing" => "contributing.md"
     ]
 )

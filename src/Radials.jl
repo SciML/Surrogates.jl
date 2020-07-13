@@ -14,13 +14,15 @@ mutable struct RadialBasis{F,Q,X,Y,L,U,C,S,D} <: AbstractSurrogate
 end
 
 mutable struct RadialFunction{Q,P}
-    q::Q
+    q::Q # degree of polynomial
     phi::P
 end
 
 linearRadial = RadialFunction(0,z->norm(z))
+
 cubicRadial = RadialFunction(1,z->norm(z)^3)
 multiquadricRadial = RadialFunction(1,z->sqrt(norm(z)^2+1))
+
 thinplateRadial = RadialFunction(2, z->begin
     result = norm(z)^2 * log(norm(z))
     ifelse(iszero(z), zero(result), result)
@@ -51,15 +53,22 @@ function RadialBasis(x, y, lb, ub; rad::RadialFunction = linearRadial, scale_fac
 end
 
 function _calc_coeffs(x, y, lb, ub, phi, q, scale_factor, sparse)
+    nd = length(first(x))
+    num_poly_terms = binomial(q + nd, q)
+
     D = _construct_rbf_interp_matrix(x, first(x), lb, ub, phi, q, scale_factor, sparse)
-    Y = _construct_rbf_y_matrix(y, first(y), length(y) + q)
+    Y = _construct_rbf_y_matrix(y, first(y), length(y) + num_poly_terms)
+
     coeff = D \ Y
     return coeff
 end
 
 function _construct_rbf_interp_matrix(x, x_el::Number, lb, ub, phi, q, scale_factor, sparse)
     n = length(x)
-    m = n + q
+
+    num_poly_terms = binomial(q + 1, q)
+    m = n + num_poly_terms
+
     if sparse
         D = ExtendableSparseMatrix{eltype(x_el),Int}(m,m)
     else
@@ -70,7 +79,7 @@ function _construct_rbf_interp_matrix(x, x_el::Number, lb, ub, phi, q, scale_fac
             D[i,j] = phi( (x[i] .- x[j]) ./ scale_factor )
         end
         if i <= n
-            for k = 1:q
+            for k = 1:num_poly_terms
                     D[i,n+k] = _scaled_chebyshev(x[i], k-1, lb, ub)
             end
         end
@@ -82,10 +91,10 @@ end
 function _construct_rbf_interp_matrix(x, x_el, lb, ub, phi, q, scale_factor,sparse)
     n = length(x)
     nd = length(x_el)
-    central_point = _center_bounds(x_el, lb, ub)
-    sum_half_diameter = sum((ub[k]-lb[k])/2 for k = 1:nd)
-    mean_half_diameter = sum_half_diameter / nd
-    m = n+q
+
+    num_poly_terms = binomial(q + nd, q)
+    m = n + num_poly_terms
+
     if sparse
         D = ExtendableSparseMatrix{eltype(x_el),Int}(m,m)
     else
@@ -96,8 +105,8 @@ function _construct_rbf_interp_matrix(x, x_el, lb, ub, phi, q, scale_factor,spar
             D[i,j] = phi( (x[i] .- x[j]) ./ scale_factor)
         end
         if i < n + 1
-            for k = 1:q
-                D[i,n+k] = centralized_monomial(x[i], k-1, mean_half_diameter, central_point)
+            for k = 1:num_poly_terms
+                D[i,n+k] = multivar_poly_basis(x[i], k-1, nd, q)
             end
         end
     end
@@ -108,22 +117,49 @@ end
 _construct_rbf_y_matrix(y, y_el::Number, m) = [i <= length(y) ? y[i] : zero(y_el) for i = 1:m]
 _construct_rbf_y_matrix(y, y_el, m) = [i <= length(y) ? y[i][j] : zero(first(y_el)) for i=1:m, j=1:length(y_el)]
 
-"""
-    centralized_monomial(vect,alpha,mean_half_diameter,central_point)
+using Zygote: @nograd
 
-Returns the value at point vect[] of the alpha degree monomial centralized.
+function _make_combination(n, d, ix)
+    exponents_combinations = [
+        e
+        for e
+        in collect(
+            Iterators.product(
+                Iterators.repeated(0:n, d)...
+            )
+        )[:]
+        if sum(e) <= n
+    ]
 
-#Arguments:
--'vect': vector of points i.e [x,y,...,w]
--'alpha': degree
--'mean_half_diameter': half diameter of the domain
--'central_point': central point in the domain
-"""
-function centralized_monomial(vect,alpha,mean_half_diameter,central_point)
-    if iszero(alpha) return one(eltype(vect)) end
-    centralized_product = prod(vect .- central_point)
-    return (centralized_product / mean_half_diameter)^alpha
+    return exponents_combinations[ix + 1]
 end
+# TODO: Is this correct? Do we ever want to differentiate w.r.t n, d, or ix?
+# By using @nograd we force the gradient to be 1 for n, d, ix
+@nograd _make_combination
+
+"""
+    multivar_poly_basis(x, ix, d, n)
+
+Evaluates in `x` the `ix`-th element of the multivariate polynomial basis of maximum
+degree `n` and `d` dimensions.
+
+Time complexity: `(n+1)^d.`
+
+# Example
+For n=2, d=2 the multivariate polynomial basis is
+````
+1,
+x,y
+x^2,y^2,xy
+````
+Therefore the 3rd (ix=3) element is `y` .
+Therefore when x=(13,43) and ix=3 this function will return 43.
+"""
+multivar_poly_basis(x, ix, d, n) = prod(
+    a^d
+    for (a, d)
+    in zip(x, _make_combination(n, d, ix))
+)
 
 """
 Calculates current estimate of value 'val' with respect to the RadialBasis object.
@@ -136,13 +172,14 @@ end
 function _approx_rbf(val::Number, rad)
     n = length(rad.x)
     q = rad.dim_poly
+    num_poly_terms = binomial(q + 1, q)
     lb = rad.lb
     ub = rad.ub
     approx = zero(rad.coeff[1, :])
     for i = 1:n
         approx += rad.coeff[i, :] * rad.phi( (val .- rad.x[i]) / rad.scale_factor)
     end
-    for k = 1:q
+    for k = 1:num_poly_terms
         approx += rad.coeff[n+k, :] * _scaled_chebyshev(val, k-1, lb, ub)
     end
     return approx
@@ -151,6 +188,7 @@ function _approx_rbf(val, rad)
     n = length(rad.x)
     d = length(rad.x[1])
     q = rad.dim_poly
+    num_poly_terms = binomial(q + d, q)
     lb = rad.lb
     ub = rad.ub
     sum_half_diameter = sum((ub[k]-lb[k])/2 for k = 1:d)
@@ -159,8 +197,8 @@ function _approx_rbf(val, rad)
 
     approx = zero(rad.coeff[1, :])
     @views approx += sum( rad.coeff[i, :] * rad.phi( (val .- rad.x[i]) ./rad.scale_factor) for i = 1:n)
-    for k = 1:q
-        @views approx += rad.coeff[n+k, :] .* centralized_monomial(val, k-1, mean_half_diameter, central_point)
+    for k = 1:num_poly_terms
+        @views approx += rad.coeff[n+k, :] .* multivar_poly_basis(val, k-1, d, q)
     end
     return approx
 end
