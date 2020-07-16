@@ -12,5 +12,7 @@ You can also contact me on the Julia slack channel at @ludoro.
 # List of contributors
 
 - Ludovico Bessi (@ludoro)
-- Chris Rackauckas
+- Chris Rackauckas (@ChrisRackauckas)
 - Rohit Singh Rathaur (@TeAmp0is0N)
+- Andrea Cognolato (@mrandri19)
+- Kanav Gupta (@kanav99)

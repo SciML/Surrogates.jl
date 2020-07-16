@@ -29,7 +29,7 @@ x = sample(n_samples, lower_bound, upper_bound, SobolSample())
 y = f.(x)
 
 scatter(x, y, label="Sampled points", xlims=(lower_bound, upper_bound), ylims=(-7, 17))
-plot!(xs, f.(xs), label="True function")
+plot!(xs, f.(xs), label="True function", legend=:top)
 ```
 ### Building a surrogate
 
@@ -40,9 +40,9 @@ With our sampled points we can build the Kriging surrogate using the `Kriging` f
 ```@example kriging_tutorial1d
 kriging_surrogate = Kriging(x, y, lower_bound, upper_bound, p=1.9);
 
-plot(x, y, seriestype=:scatter, label="Sampled points", xlims=(lower_bound, upper_bound), ylims=(-7, 17))
-plot!(xs, f.(xs), label="True function")
-plot!(xs, kriging_surrogate.(xs), label="Surrogate function", ribbon=p->std_error_at_point(kriging_surrogate, p))
+plot(x, y, seriestype=:scatter, label="Sampled points", xlims=(lower_bound, upper_bound), ylims=(-7, 17), legend=:top)
+plot!(xs, f.(xs), label="True function", legend=:top)
+plot!(xs, kriging_surrogate.(xs), label="Surrogate function", ribbon=p->std_error_at_point(kriging_surrogate, p), legend=:top)
 ```
 ### Optimizing
 Having built a surrogate, we can now use it to search for minimas in our original function `f`.
@@ -52,9 +52,9 @@ To optimize using our surrogate we call `surrogate_optimize` method. We choose t
 ```@example kriging_tutorial1d
 @show surrogate_optimize(f, SRBF(), lower_bound, upper_bound, kriging_surrogate, SobolSample())
 
-scatter(x, y, label="Sampled points", ylims=(-7, 7))
-plot!(xs, f.(xs), label="True function")
-plot!(xs, kriging_surrogate.(xs), label="Surrogate function", ribbon=p->std_error_at_point(kriging_surrogate, p))
+scatter(x, y, label="Sampled points", ylims=(-7, 7), legend=:top)
+plot!(xs, f.(xs), label="True function", legend=:top)
+plot!(xs, kriging_surrogate.(xs), label="Surrogate function", ribbon=p->std_error_at_point(kriging_surrogate, p), legend=:top)
 ```
 
 
