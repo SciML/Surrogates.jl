@@ -109,3 +109,31 @@ p2 = contour(x, y, (x, y) -> RandomForest([x y])) # hide
 scatter!(xs, ys, marker_z=zs) # hide
 plot(p1, p2, title="Surrogate") # hide
 ```
+
+
+### Optimizing
+With our surrogate we can now search for the minimas of the function.
+
+Notice how the new sampled points, which were created during the optimization process, are appended to the `xys` array.
+This is why its size changes.
+
+```@example RandomForestSurrogateND
+size(xys)
+```
+```@example RandomForestSurrogateND
+surrogate_optimize(bukin6, SRBF(), lower_bound, upper_bound, RandomForest, SobolSample(), maxiters=20)
+```
+```@example RandomForestSurrogateND
+size(xys)
+```
+
+```@example RandomForestSurrogateND
+p1 = surface(x, y, (x, y) -> RandomForest([x y])) # hide
+xs = [xy[1] for xy in xys] # hide
+ys = [xy[2] for xy in xys] # hide
+zs = bukin6.(xys) # hide
+scatter!(xs, ys, zs, marker_z=zs) # hide
+p2 = contour(x, y, (x, y) -> RandomForest([x y])) # hide
+scatter!(xs, ys, marker_z=zs) # hide
+plot(p1, p2) # hide
+```
