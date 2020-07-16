@@ -93,3 +93,19 @@ p2 = contour(x, y, (x1,x2) -> bukin6((x1,x2))) # hide
 scatter!(xs, ys) # hide
 plot(p1, p2, title="True function") # hide
 ```
+
+
+### Building a surrogate
+Using the sampled points we build the surrogate, the steps are analogous to the 1-dimensional case.
+
+```@example RandomForestSurrogateND
+RandomForest = RandomForestSurrogate(xys, zs,  lower_bound, upper_bound)
+```
+
+```@example RandomForestSurrogateND
+p1 = surface(x, y, (x, y) -> RandomForest([x y])) # hide
+scatter!(xs, ys, zs, marker_z=zs) # hide
+p2 = contour(x, y, (x, y) -> RandomForest([x y])) # hide
+scatter!(xs, ys, marker_z=zs) # hide
+plot(p1, p2, title="Surrogate") # hide
+```
