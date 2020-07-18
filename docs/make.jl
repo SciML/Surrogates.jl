@@ -3,11 +3,6 @@ makedocs(
     sitename="Surrogates.jl",
     pages = [
     "index.md"
-    "User guide" => [
-        "Samples" => "samples.md",
-        "Surrogates" => "surrogate.md",
-        "Optimization" => "optimizations.md"
-        ]
     "Tutorials" => [
         "Basics" => "tutorials.md",
         "RandomForestSurrogate" => "randomforest.md",
@@ -16,6 +11,11 @@ makedocs(
         "Lobachesky" => "lobachesky.md",
         "LinearSurrogate" => "LinearSurrogate.md",
         "InverseDistance" => "InverseDistance.md"
+        ]
+    "User guide" => [
+        "Samples" => "samples.md",
+        "Surrogates" => "surrogate.md",
+        "Optimization" => "optimizations.md"
         ]
     "Benchmarks" => [
         "Sphere function" => "sphere_function.md"
