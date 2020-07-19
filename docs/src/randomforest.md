@@ -49,3 +49,91 @@ scatter(x, y, label="Sampled points")
 plot!(f, label="True function",  xlims=(lower_bound, upper_bound), legend=:top)
 plot!(randomforest_surrogate, label="Surrogate function",  xlims=(lower_bound, upper_bound), legend=:top)
 ```
+
+
+## Random Forest ND
+
+First of all we will define the `Bukin Function N. 6` function we are going to build surrogate for.
+
+```@example RandomForestSurrogateND
+using Plots # hide
+default(c=:matter, legend=false, xlabel="x", ylabel="y") # hide
+using Surrogates # hide
+
+function bukin6(x)
+    x1=x[1]
+    x2=x[2]
+    term1 = 100 * sqrt(abs(x2 - 0.01*x1^2));
+    term2 = 0.01 * abs(x1+10);
+    y = term1 + term2;
+end
+```
+
+
+### Sampling
+
+Let's define our bounds, this time we are working in two dimensions. In particular we want our first dimension `x` to have bounds `-5, 10`, and `0, 15` for the second dimension. We are taking 50 samples of the space using Sobol Sequences. We then evaluate our function on all of the sampling points.
+
+```@example RandomForestSurrogateND
+n_samples = 50
+lower_bound = [-5.0, 0.0]
+upper_bound = [10.0, 15.0]
+
+xys = sample(n_samples, lower_bound, upper_bound, SobolSample())
+zs = bukin6.(xys);
+```
+
+```@example RandomForestSurrogateND
+x, y = -5:10, 0:15 # hide
+p1 = surface(x, y, (x1,x2) -> bukin6((x1,x2))) # hide
+xs = [xy[1] for xy in xys] # hide
+ys = [xy[2] for xy in xys] # hide
+scatter!(xs, ys, zs) # hide
+p2 = contour(x, y, (x1,x2) -> bukin6((x1,x2))) # hide
+scatter!(xs, ys) # hide
+plot(p1, p2, title="True function") # hide
+```
+
+
+### Building a surrogate
+Using the sampled points we build the surrogate, the steps are analogous to the 1-dimensional case.
+
+```@example RandomForestSurrogateND
+RandomForest = RandomForestSurrogate(xys, zs,  lower_bound, upper_bound)
+```
+
+```@example RandomForestSurrogateND
+p1 = surface(x, y, (x, y) -> RandomForest([x y])) # hide
+scatter!(xs, ys, zs, marker_z=zs) # hide
+p2 = contour(x, y, (x, y) -> RandomForest([x y])) # hide
+scatter!(xs, ys, marker_z=zs) # hide
+plot(p1, p2, title="Surrogate") # hide
+```
+
+
+### Optimizing
+With our surrogate we can now search for the minimas of the function.
+
+Notice how the new sampled points, which were created during the optimization process, are appended to the `xys` array.
+This is why its size changes.
+
+```@example RandomForestSurrogateND
+size(xys)
+```
+```@example RandomForestSurrogateND
+surrogate_optimize(bukin6, SRBF(), lower_bound, upper_bound, RandomForest, SobolSample(), maxiters=20)
+```
+```@example RandomForestSurrogateND
+size(xys)
+```
+
+```@example RandomForestSurrogateND
+p1 = surface(x, y, (x, y) -> RandomForest([x y])) # hide
+xs = [xy[1] for xy in xys] # hide
+ys = [xy[2] for xy in xys] # hide
+zs = bukin6.(xys) # hide
+scatter!(xs, ys, zs, marker_z=zs) # hide
+p2 = contour(x, y, (x, y) -> RandomForest([x y])) # hide
+scatter!(xs, ys, marker_z=zs) # hide
+plot(p1, p2) # hide
+```
