@@ -99,16 +99,16 @@ function Kriging(x,y,lb::Number,ub::Number;p=1.0,theta=1.0)
         println("There exists a repetion in the samples, cannot build Kriging.")
         return
     end
-    mu,b,sigma,inverse_of_R = _calc_kriging_coeffs(x,y,p)
+    mu,b,sigma,inverse_of_R = _calc_kriging_coeffs(x,y,p,theta)
     Kriging(x,y,lb,ub,p,theta,mu,b,sigma,inverse_of_R)
 end
 
-function _calc_kriging_coeffs(x,y,p::Number)
+function _calc_kriging_coeffs(x,y,p::Number,theta::Number)
     n = length(x)
     R = zeros(eltype(x[1]), n, n)
     @inbounds for i = 1:n
         for j = 1:n
-            R[i,j] = exp(-abs(x[i]-x[j])^p)
+            R[i,j] = exp(-theta*abs(x[i]-x[j])^p)
         end
     end
     one = ones(eltype(x[1]),n,1)
