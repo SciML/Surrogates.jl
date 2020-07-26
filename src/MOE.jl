@@ -65,8 +65,6 @@ function PolyChaosStructure(; op)
     return (name = "PolynomialChaosSurrogate", op = op)
 end
 
-function
-
 
 function MOE(x,y,lb::Number,ub::Number; k::Int = 2, local_kind = [RadialBasisStructure(radial_function = linearRadial, scale_factor=1.0,sparse = false),RadialBasisStructure(radial_function = cubicRadial, scale_factor=1.0, sparse = false)])
     if k != length(local_kind)
@@ -133,6 +131,7 @@ function MOE(x,y,lb::Number,ub::Number; k::Int = 2, local_kind = [RadialBasisStr
         elseif local_kind[i][1] == "Wendland"
             my_local_i = Wendand(x_c[i], y_c[i],lb,ub, eps = local_kind[i].eps, maxiters = local_kind[i].maxiters, tol = local_kind[i].tol)
             local_surr[i] = my_local_i
+
         elseif local_kind[i][1] == "PolynomialChaosSurrogate"
             my_local_i = PolynomialChaosSurrogate(x,y,lb,ub, op = local_kind[i].op)
             local_surr[i] = my_local_i
