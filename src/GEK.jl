@@ -57,11 +57,11 @@ function std_error_at_point(k::GEK,val::Number)
     nd1 = length(k.y)
     n = length(k.x)
     r = zeros(eltype(k.x[1]),nd1,1)
-    @inbounds for i = 1:nd1
+    @inbounds for i = 1:n
         r[i] = phi(val - k.x[i])
     end
     one = ones(eltype(k.x[1]),nd1,1)
-    for i = n+1:nd1
+    @inbounds for i = n+1:nd1
         one[i] = zero(eltype(k.x[1]))
     end
     one_t = one'
@@ -75,9 +75,9 @@ end
 
 function (k::GEK)(val::Number)
     phi = z -> exp(-(abs(z))^k.p)
-    nd = length(k.x)
+    n = length(k.x)
     prediction = zero(eltype(k.x[1]))
-    for i = 1:nd
+    @inbounds for i = 1:n
         prediction = prediction + k.b[i]*phi(val-k.x[i])
     end
     prediction = k.mu + prediction
@@ -167,7 +167,7 @@ function std_error_at_point(k::GEK,val)
     n = length(k.x)
     d = length(k.x[1])
     r = zeros(eltype(k.x[1]),nd1,1)
-    @inbounds for i = 1:nd1
+    @inbounds for i = 1:n
         sum = zero(eltype(k.x[1]))
         for l = 1:d
             sum = sum + k.theta[l]*norm(val[l]-k.x[i][l])^(k.p[l])
@@ -175,7 +175,7 @@ function std_error_at_point(k::GEK,val)
         r[i] = exp(-sum)
     end
     one = ones(eltype(k.x[1]),nd1,1)
-    for i = n+1:nd1
+    @inbounds for i = n+1:nd1
         one[i] = zero(eltype(k.x[1]))
     end
     one_t = one'
