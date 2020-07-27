@@ -18,3 +18,4 @@ using Surrogates
 @testset "MOE" begin include("MOE.jl") end
 @testset "VariableFidelity" begin include("VariableFidelity.jl") end
 @testset "Earth" begin include("earth.jl") end
+@testset "Gradient Enhanced Kriging" begin include("GEK.jl") end

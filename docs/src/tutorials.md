@@ -55,6 +55,8 @@ Let's now optimize the Kriging surrogate using Lower confidence bound method, th
 ```@example kriging
 surrogate_optimize(f,LCBS(),lb,ub,my_krig,UniformSample())
 ```
+Surrogate optimization methods have two purposes: they both sample the space in unknown regions and look for the minima at the same time.
+
 ## Lobachesky integral
 The Lobachesky surrogate has the nice feature of having a closed formula for its
 integral, which is something that other surrogates are missing.
