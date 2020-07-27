@@ -25,6 +25,10 @@ function KrigingStructure(;p,theta)
     return (name = "Kriging", p = p, theta = theta)
 end
 
+function GEKStructure(;p,theta)
+    return (name = "GEK", p = p, theta = theta)
+end
+
 #Linear structure
 function LinearStructure()
     return (name = "LinearSurrogate")
@@ -104,6 +108,10 @@ function MOE(x,y,lb::Number,ub::Number; k::Int = 2, local_kind = [RadialBasisStr
             my_local_i = Kriging(x_c[i], y_c[i],lb,ub, p = local_kind[i].p, theta = local_kind[i].theta)
             local_surr[i] = my_local_i
 
+        elseif local_kind[i][1] == "GEK"
+            my_local_i = GEK(x_c[i], y_c[i],lb,ub, p = local_kind[i].p, theta = local_kind[i].theta)
+            local_surr[i] = my_local_i
+
         elseif local_kind[i] == "LinearSurrogate"
             my_local_i = LinearSurrogate(x_c[i], y_c[i],lb,ub)
             local_surr[i] = my_local_i
@@ -131,10 +139,10 @@ function MOE(x,y,lb::Number,ub::Number; k::Int = 2, local_kind = [RadialBasisStr
         elseif local_kind[i][1] == "Wendland"
             my_local_i = Wendand(x_c[i], y_c[i],lb,ub, eps = local_kind[i].eps, maxiters = local_kind[i].maxiters, tol = local_kind[i].tol)
             local_surr[i] = my_local_i
+
         elseif local_kind[i][1] == "PolynomialChaosSurrogate"
             my_local_i = PolynomialChaosSurrogate(x,y,lb,ub, op = local_kind[i].op)
             local_surr[i] = my_local_i
-
         else
             throw("A surrogate with name provided does not exist or is not currently supported with MOE.")
         end
@@ -175,6 +183,10 @@ function MOE(x,y,lb,ub; k::Int = 2,
 
         elseif local_kind[i][1] == "Kriging"
             my_local_i = Kriging(x_c[i], y_c[i],lb,ub, p = local_kind[i].p, theta = local_kind[i].theta)
+            local_surr[i] = my_local_i
+            
+        elseif local_kind[i][1] == "GEK"
+            my_local_i = GEK(x_c[i], y_c[i],lb,ub, p = local_kind[i].p, theta = local_kind[i].theta)
             local_surr[i] = my_local_i
 
         elseif local_kind[i] == "LinearSurrogate"

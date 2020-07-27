@@ -27,6 +27,9 @@ function VariableFidelitySurrogate(x,y,lb,ub;
             elseif low_fid_structure[1] == "Kriging"
                 low_fid_surr = Kriging(x_low, y_low,lb,ub, p = low_fid_structure.p, theta = low_fid_structure.theta)
 
+            elseif low_fid_structure[1] == "GEK"
+                low_fid_surr = GEK(x_low, y_low,lb,ub, p = low_fid_structure.p, theta = low_fid_structure.theta)
+
             elseif low_fid_structure == "LinearSurrogate"
                 low_fid_surr = LinearSurrogate(x_low, y_low,lb,ub)
 

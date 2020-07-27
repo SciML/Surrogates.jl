@@ -20,9 +20,11 @@ include("MOE.jl")
 include("VariableFidelity.jl")
 include("PolynomialChaos.jl")
 include("Earth.jl")
+include("GEK.jl")
 
 current_surrogates = ["Kriging","LinearSurrogate","LobacheskySurrogate","NeuralSurrogate",
-                          "RadialBasis","RandomForestSurrogate","SecondOrderPolynomialSurrogate","Wendland"]
+                      "RadialBasis","RandomForestSurrogate","SecondOrderPolynomialSurrogate",
+                      "Wendland","GEK","PolynomialChaosSurrogate"]
 export current_surrogates_MOE
 export AbstractSurrogate, SamplingAlgorithm
 export Kriging, RadialBasis, add_point!, current_estimate, std_error_at_point
@@ -46,5 +48,5 @@ export MOE
 export VariableFidelitySurrogate
 export PolynomialChaosSurrogate
 export EarthSurrogate
-
+export GEK
 end
