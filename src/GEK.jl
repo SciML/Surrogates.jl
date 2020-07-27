@@ -148,8 +148,8 @@ function _calc_gek_coeffs(x,y,p,theta)
         ir = ir + + 1
     end
 
-    one = ones(eltype(x[1]),nd1,1)
-    for i = n+1:nd1
+    one = ones(eltype(x[1]),nd,1)
+    for i = n+1:nd
         one[i] = zero(eltype(x[1]))
     end
     one_t = one'
@@ -198,7 +198,7 @@ function GEK(x,y,lb,ub; p=collect(one.(x[1])),theta=collect(one.(x[1])))
         println("There exists a repetition in the samples, cannot build Kriging.")
         return
     end
-    mu,b,sigma,inverse_of_R = _calc_kriging_coeffs(x,y,p,theta)
+    mu,b,sigma,inverse_of_R = _calc_gek_coeffs(x,y,p,theta)
     GEK(x,y,lb,ub,p,theta,mu,b,sigma,inverse_of_R)
 end
 
@@ -211,11 +211,11 @@ function add_point!(k::GEK,new_x,new_y)
     if (length(new_x) == 1 && length(new_x[1]) == 1) || ( length(new_x) > 1 && length(new_x[1]) == 1 && length(k.theta)>1)
         n = length(k.x)
         k.x = insert!(k.x,n+1,new_x)
-        k.x = insert!(k.x,n+1,new_y)
+        k.y = insert!(k.y,n+1,new_y)
     else
         n = length(k.x)
         k.x = insert!(k.x,n+1,new_x)
-        k.x = insert!(k.x,n+1,new_y)
+        k.y = insert!(k.y,n+1,new_y)
     end
     k.mu,k.b,k.sigma,k.inverse_of_R = _calc_gek_coeffs(k.x,k.y,k.p,k.theta)
     nothing
