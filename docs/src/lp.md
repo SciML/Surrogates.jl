@@ -1,6 +1,6 @@
 # Lp norm function
 The Lp norm function is defined as:
-``f(x) = \sqrt[p]{ \sum_{i=1}^n \vert x_i \vert ^p}``
+``f(x) = \sqrt[p]{ \sum_{i=1}^d \vert x_i \vert ^p}``
 
 
 Let's import Surrogates and Plots:
