@@ -30,12 +30,10 @@ plot!(xs,f.(xs,a), label="True function", legend=:top)
 
 Fitting and plotting different surrogates:
 ```@example tensor
-gek = GEK(x,y,lb,ub)
 loba_1 = LobacheskySurrogate(x,y,lb,ub)
 krig = Kriging(x,y,lb,ub)
 plot(x, y, seriestype=:scatter, label="Sampled points", xlims=(lb, ub), ylims=(-2.5, 2.5), legend=:bottom)
 plot!(xs,f.(xs,a), label="True function", legend=:top)
 plot!(xs, loba_1.(xs), label="Lobachesky", legend=:top)
 plot!(xs, krig.(xs), label="Kriging", legend=:top)
-plot!(xs, gek.(xs), label="GEK", legend=:top)
 ```
