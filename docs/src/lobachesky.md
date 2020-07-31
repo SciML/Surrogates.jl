@@ -49,3 +49,94 @@ scatter(x, y, label="Sampled points")
 plot!(f, label="True function",  xlims=(lower_bound, upper_bound))
 plot!(lobachevsky_surrogate, label="Surrogate function",  xlims=(lower_bound, upper_bound))
 ```
+
+
+In the example below, it shows how to use `lobachevsky_surrogate` for higher dimension problems.
+
+## Lobachevsky Surrogate Tutorial (ND):
+
+First of all we will define the `Schaffer` function we are going to build surrogate for. Notice, one how its argument is a vector of numbers, one for each coordinate, and its output is a scalar.
+
+```@example LobachevskySurrogate_ND
+using Plots # hide
+default(c=:matter, legend=false, xlabel="x", ylabel="y") # hide
+using Surrogates # hide
+
+function schaffer(x)
+    x1=x[1]
+    x2=x[2]
+    fact1 = x1 ^2;
+    fact2 = x2 ^2;
+    y = fact1 + fact2;
+end
+```
+
+
+### Sampling
+
+Let's define our bounds, this time we are working in two dimensions. In particular we want our first dimension `x` to have bounds `0, 8`, and `0, 8` for the second dimension. We are taking 60 samples of the space using Sobol Sequences. We then evaluate our function on all of the sampling points.
+
+```@example LobachevskySurrogate_ND
+n_samples = 60
+lower_bound = [0.0, 0.0]
+upper_bound = [8.0, 8.0]
+
+xys = sample(n_samples, lower_bound, upper_bound, SobolSample())
+zs = schaffer.(xys);
+```
+
+```@example LobachevskySurrogate_ND
+x, y = 0:8, 0:8 # hide
+p1 = surface(x, y, (x1,x2) -> schaffer((x1,x2))) # hide
+xs = [xy[1] for xy in xys] # hide
+ys = [xy[2] for xy in xys] # hide
+scatter!(xs, ys, zs) # hide
+p2 = contour(x, y, (x1,x2) -> schaffer((x1,x2))) # hide
+scatter!(xs, ys) # hide
+plot(p1, p2, title="True function") # hide
+```
+
+
+### Building a surrogate
+Using the sampled points we build the surrogate, the steps are analogous to the 1-dimensional case.
+
+```@example LobachevskySurrogate_ND
+Lobachesky = LobacheskySurrogate(xys, zs,  lower_bound, upper_bound, alpha = [2.4,2.4], n=8)
+```
+
+```@example LobachevskySurrogate_ND
+p1 = surface(x, y, (x, y) -> Lobachesky([x y])) # hide
+scatter!(xs, ys, zs, marker_z=zs) # hide
+p2 = contour(x, y, (x, y) -> Lobachesky([x y])) # hide
+scatter!(xs, ys, marker_z=zs) # hide
+plot(p1, p2, title="Surrogate") # hide
+```
+
+
+### Optimizing
+With our surrogate we can now search for the minimas of the function.
+
+Notice how the new sampled points, which were created during the optimization process, are appended to the `xys` array.
+This is why its size changes.
+
+```@example LobachevskySurrogate_ND
+size(Lobachesky.x)
+```
+```@example LobachevskySurrogate_ND
+surrogate_optimize(schaffer, SRBF(), lower_bound, upper_bound, Lobachesky, SobolSample(), maxiters=1, num_new_samples=10)
+```
+```@example LobachevskySurrogate_ND
+size(Lobachesky.x)
+```
+
+```@example LobachevskySurrogate_ND
+p1 = surface(x, y, (x, y) -> Lobachesky([x y])) # hide
+xys = Lobachesky.x # hide
+xs = [i[1] for i in xys] # hide
+ys = [i[2] for i in xys] # hide
+zs = schaffer.(xys) # hide
+scatter!(xs, ys, zs, marker_z=zs) # hide
+p2 = contour(x, y, (x, y) -> Lobachesky([x y])) # hide
+scatter!(xs, ys, marker_z=zs) # hide
+plot(p1, p2) # hide
+```
