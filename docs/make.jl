@@ -21,7 +21,8 @@ makedocs(
         "Sphere function" => "sphere_function.md",
         "Lp norm" => "lp.md",
         "Rosenbrock" => "rosenbrock.md",
-        "Tensor product" => "tensor_prod.md"
+        "Tensor product" => "tensor_prod.md",
+        "Cantilever beam" => "cantilever.md"
         ]
     "Contributing" => "contributing.md"
     ]
