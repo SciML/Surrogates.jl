@@ -22,7 +22,8 @@ makedocs(
         "Lp norm" => "lp.md",
         "Rosenbrock" => "rosenbrock.md",
         "Tensor product" => "tensor_prod.md",
-        "Cantilever beam" => "cantilever.md"
+        "Cantilever beam" => "cantilever.md",
+        "Water Flow function" => "water_flow.md"
         ]
     "Contributing" => "contributing.md"
     ]
