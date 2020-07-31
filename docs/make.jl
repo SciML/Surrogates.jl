@@ -18,8 +18,11 @@ makedocs(
         "Optimization" => "optimizations.md"
         ]
     "Benchmarks" => [
-        "Sphere function" => "sphere_function.md"
-    ]
+        "Sphere function" => "sphere_function.md",
+        "Lp norm" => "lp.md",
+        "Rosenbrock" => "rosenbrock.md",
+        "Tensor product" => "tensor_prod.md"
+        ]
     "Contributing" => "contributing.md"
     ]
 )
