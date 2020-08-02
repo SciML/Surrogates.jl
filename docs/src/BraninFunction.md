@@ -80,7 +80,7 @@ plot(p1, p2, title="Inverse Distance Surrogate") # hide
 
 Now, let's talk about `Lobachesky Surrogate`:
 ```@example BraninFunction
-Lobachesky = LobacheskySurrogate(xys, zs,  lower_bound, upper_bound, alpha = [2.8,2.8], n=8
+Lobachesky = LobacheskySurrogate(xys, zs,  lower_bound, upper_bound, alpha = [2.8,2.8], n=8)
 ```
 
 ```@example BraninFunction
