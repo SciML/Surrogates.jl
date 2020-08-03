@@ -18,8 +18,15 @@ makedocs(
         "Optimization" => "optimizations.md"
         ]
     "Benchmarks" => [
-        "Sphere function" => "sphere_function.md"
-    ]
+        "Sphere function" => "sphere_function.md",
+        "Lp norm" => "lp.md",
+        "Rosenbrock" => "rosenbrock.md",
+        "Tensor product" => "tensor_prod.md",
+        "Cantilever beam" => "cantilever.md",
+        "Water Flow function" => "water_flow.md",
+        "Welded beam function" => "welded_beam.md",
+        "Branin Function" => "BraninFunction.md"
+        ]
     "Contributing" => "contributing.md"
     ]
 )
