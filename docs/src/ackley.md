@@ -12,16 +12,33 @@ using Plots
 default()
 ```
 
+Now, let's define the `Ackley` function:
+
+```@example akley
+function ackley(x)
+    a, b, c = 20.0, -0.2, 2.0*π
+    len_recip = inv(length(x))
+    sum_sqrs = zero(eltype(x))
+    sum_cos = sum_sqrs
+    for i in x
+        sum_cos += cos(c*i)
+        sum_sqrs += i^2
+    end
+    return (-a * exp(b * sqrt(len_recip*sum_sqrs)) -
+            exp(len_recip*sum_cos) + a + 2.71)
+end
+```
+
 
 ```@example ackley
 n = 100
 lb = -32.768
 ub = 32.768
 x = sample(n,lb,ub,SobolSample())
-y = f.(x)
+y = ackley.(x)
 xs = lb:0.001:ub
 plot(x, y, seriestype=:scatter, label="Sampled points", xlims=(lb, ub), ylims=(0,30), legend=:top)
-plot!(xs,f.(xs), label="True function", legend=:top)
+plot!(xs,ackley.(xs), label="True function", legend=:top)
 ```
 
 ```@example ackley
@@ -32,7 +49,7 @@ my_loba = LobacheskySurrogate(x,y,lb,ub)
 
 ```@example ackley
 plot(x, y, seriestype=:scatter, label="Sampled points", xlims=(lb, ub), ylims=(0, 30), legend=:top)
-plot!(xs,f.(xs), label="True function", legend=:top)
+plot!(xs,ackley.(xs), label="True function", legend=:top)
 plot!(xs, my_rad.(xs), label="Polynomial expansion", legend=:top)
 plot!(xs, my_krig.(xs), label="Lobachesky", legend=:top)
 plot!(xs, my_loba.(xs), label="Kriging", legend=:top)
@@ -42,9 +59,9 @@ The fit looks good. Let's now see if we are able to find the minimum value using
 optimization methods:
 
 ```@example ackley
-surrogate_optimize(f,DYCORS(),lb,ub,my_rad,UniformSample())
+surrogate_optimize(ackley,DYCORS(),lb,ub,my_rad,UniformSample())
 plot(x, y, seriestype=:scatter, label="Sampled points", xlims=(lb, ub), ylims=(0, 30), legend=:top)
-plot!(xs,f.(xs), label="True function", legend=:top)
+plot!(xs,ackley.(xs), label="True function", legend=:top)
 plot!(xs, my_rad.(xs), label="Radial basis optimized", legend=:top)
 ```
 
