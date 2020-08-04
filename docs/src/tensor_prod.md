@@ -11,7 +11,8 @@ default()
 
 Define the 1D objective function:
 ```@example tensor
-function f(x,a)
+function f(x)
+    a = 0.5;
     return cos(a*pi*x)
 end
 ```
@@ -22,7 +23,7 @@ lb = -5.0
 ub = 5.0
 a = 0.5
 x = sample(n,lb,ub,SobolSample())
-y = f.(x,a)
+y = f.(x)
 xs = lb:0.001:ub
 plot(x, y, seriestype=:scatter, label="Sampled points", xlims=(lb, ub), ylims=(-1, 1), legend=:top)
 plot!(xs,f.(xs,a), label="True function", legend=:top)
