@@ -22,7 +22,7 @@ lb = -5.0
 ub = 5.0
 a = 0.5
 x = sample(n,lb,ub,SobolSample())
-y = f.(x)
+y = f.(x,a)
 xs = lb:0.001:ub
 plot(x, y, seriestype=:scatter, label="Sampled points", xlims=(lb, ub), ylims=(-1, 1), legend=:top)
 plot!(xs,f.(xs,a), label="True function", legend=:top)
