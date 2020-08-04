@@ -25,7 +25,8 @@ makedocs(
         "Cantilever beam" => "cantilever.md",
         "Water Flow function" => "water_flow.md",
         "Welded beam function" => "welded_beam.md",
-        "Branin Function" => "BraninFunction.md"
+        "Branin function" => "BraninFunction.md",
+        "Ackley function" => "ackley.md"
         ]
     "Contributing" => "contributing.md"
     ]
