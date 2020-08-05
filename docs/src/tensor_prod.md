@@ -11,7 +11,8 @@ default()
 
 Define the 1D objective function:
 ```@example tensor
-function f(x,a)
+function f(x)
+    a = 0.5;
     return cos(a*pi*x)
 end
 ```
