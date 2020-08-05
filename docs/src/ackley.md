@@ -14,7 +14,7 @@ default()
 
 Now, let's define the `Ackley` function:
 
-```@example akley
+```@example ackley
 function ackley(x)
     a, b, c = 20.0, -0.2, 2.0*π
     len_recip = inv(length(x))
@@ -34,22 +34,22 @@ end
 n = 100
 lb = -32.768
 ub = 32.768
-x = sample(n,lb,ub,SobolSample())
+x = sample(n, lb, ub, SobolSample())
 y = ackley.(x)
 xs = lb:0.001:ub
-plot(x, y, seriestype=:scatter, label="Sampled points", xlims=(lb, ub), ylims=(0,30), legend=:top)
-plot!(xs,ackley.(xs), label="True function", legend=:top)
+scatter(x, y, label="Sampled points", xlims=(lb, ub), ylims=(0,30), legend=:top)
+plot!(xs, ackley.(xs), label="True function", legend=:top)
 ```
 
 ```@example ackley
-my_rad = RadialBasis(x,y,lb,ub)
-my_krig = Kriging(x,y,lb,ub)
-my_loba = LobacheskySurrogate(x,y,lb,ub)
+my_rad = RadialBasis(x, y, lb, ub)
+my_krig = Kriging(x, y, lb, ub)
+my_loba = LobacheskySurrogate(x, y, lb, ub)
 ```
 
 ```@example ackley
-plot(x, y, seriestype=:scatter, label="Sampled points", xlims=(lb, ub), ylims=(0, 30), legend=:top)
-plot!(xs,ackley.(xs), label="True function", legend=:top)
+scatter(x, y, label="Sampled points", xlims=(lb, ub), ylims=(0, 30), legend=:top)
+plot!(xs, ackley.(xs), label="True function", legend=:top)
 plot!(xs, my_rad.(xs), label="Polynomial expansion", legend=:top)
 plot!(xs, my_krig.(xs), label="Lobachesky", legend=:top)
 plot!(xs, my_loba.(xs), label="Kriging", legend=:top)
@@ -60,9 +60,9 @@ optimization methods:
 
 ```@example ackley
 surrogate_optimize(ackley,DYCORS(),lb,ub,my_rad,UniformSample())
-plot(x, y, seriestype=:scatter, label="Sampled points", xlims=(lb, ub), ylims=(0, 30), legend=:top)
-plot!(xs,ackley.(xs), label="True function", legend=:top)
+scatter(x, y, label="Sampled points", xlims=(lb, ub), ylims=(0, 30), legend=:top)
+plot!(xs, ackley.(xs), label="True function", legend=:top)
 plot!(xs, my_rad.(xs), label="Radial basis optimized", legend=:top)
 ```
 
-The DYCORS methods successfully finds the minimum. 
+The DYCORS methods successfully finds the minimum.

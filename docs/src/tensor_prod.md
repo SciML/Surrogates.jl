@@ -22,18 +22,18 @@ n = 30
 lb = -5.0
 ub = 5.0
 a = 0.5
-x = sample(n,lb,ub,SobolSample())
+x = sample(n, lb, ub, SobolSample())
 y = f.(x)
 xs = lb:0.001:ub
-plot(x, y, seriestype=:scatter, label="Sampled points", xlims=(lb, ub), ylims=(-1, 1), legend=:top)
-plot!(xs,f.(xs,a), label="True function", legend=:top)
+scatter(x, y, label="Sampled points", xlims=(lb, ub), ylims=(-1, 1), legend=:top)
+plot!(xs, f.(xs), label="True function", legend=:top)
 ```
 
 Fitting and plotting different surrogates:
 ```@example tensor
-loba_1 = LobacheskySurrogate(x,y,lb,ub)
-krig = Kriging(x,y,lb,ub)
-plot(x, y, seriestype=:scatter, label="Sampled points", xlims=(lb, ub), ylims=(-2.5, 2.5), legend=:bottom)
+loba_1 = LobacheskySurrogate(x, y, lb, ub)
+krig = Kriging(x, y, lb, ub)
+scatter(x, y, label="Sampled points", xlims=(lb, ub), ylims=(-2.5, 2.5), legend=:bottom)
 plot!(xs,f.(xs,a), label="True function", legend=:top)
 plot!(xs, loba_1.(xs), label="Lobachesky", legend=:top)
 plot!(xs, krig.(xs), label="Kriging", legend=:top)
