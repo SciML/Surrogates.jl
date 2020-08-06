@@ -10,7 +10,8 @@ makedocs(
         "Kriging" => "kriging.md",
         "Lobachesky" => "lobachesky.md",
         "LinearSurrogate" => "LinearSurrogate.md",
-        "InverseDistance" => "InverseDistance.md"
+        "InverseDistance" => "InverseDistance.md",
+        "GradientEnhancedKriging" => "gek.md"
         ]
     "User guide" => [
         "Samples" => "samples.md",
