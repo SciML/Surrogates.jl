@@ -58,3 +58,98 @@ plot(x, y1, seriestype=:scatter, label="Sampled points", xlims=(lower_bound, upp
 plot!(f, label="True function",  xlims=(lower_bound, upper_bound), legend=:top)
 plot!(my_gek, label="Surrogate function", ribbon=p->std_error_at_point(my_gek, p), xlims=(lower_bound, upper_bound), legend=:top)
 ```
+
+
+## Gradient Enhanced Kriging Surrogate Tutorial (ND)
+
+First of all let's define the function we are going to build a surrogate for.
+
+```@example GEK_ND
+using Plots # hide
+default(c=:matter, legend=false, xlabel="x", ylabel="y") # hide
+using Surrogates # hide
+```
+
+Now, let's define the function:
+
+```@example GEK_ND
+function shubert(x)
+      x1 = x[1]
+      x2 = x[2]
+      sum1 = 0;
+      sum2 = 0;
+        for ii in 1:5
+	    new1 = ii * cos((ii+1)*x1+ii);
+	    new2 = ii * cos((ii+1)*x2+ii);
+	    sum1 = sum1 + new1;
+	    sum2 = sum2 + new2;
+        end
+      y = sum1 * sum2;
+end
+```
+
+### Sampling
+
+Let's define our bounds, this time we are working in two dimensions. In particular we want our first dimension `x` to have bounds `-10, 5.12`, and `-5.12, 10` for the second dimension. We are taking 80 samples of the space using Sobol Sequences. We then evaluate our function on all of the sampling points.
+
+```@example GEK_ND
+n_samples = 80
+lower_bound = [-10, -5.12]
+upper_bound = [5.12, 10.0]
+
+xys = sample(n_samples, lower_bound, upper_bound, SobolSample())
+zs = shubert.(xys);
+```
+
+```@example GEK_ND
+x, y = -10:5.12, -5.12:10 # hide
+p1 = surface(x, y, (x1,x2) -> shubert((x1,x2))) # hide
+xs = [xy[1] for xy in xys] # hide
+ys = [xy[2] for xy in xys] # hide
+scatter!(xs, ys, zs) # hide
+p2 = contour(x, y, (x1,x2) -> shubert((x1,x2))) # hide
+scatter!(xs, ys) # hide
+plot(p1, p2, title="True function") # hide
+```
+
+### Building a surrogate
+Using the sampled points we build the surrogate, the steps are analogous to the 1-dimensional case.
+
+```@example GEK_ND
+my_GEK = GEK(xys, zs, lower_bound, upper_bound, p=[1.9, 1.9])
+```
+
+```@example GEK_ND
+p1 = surface(x, y, (x, y) -> my_GEK([x y])) # hide
+scatter!(xs, ys, zs, marker_z=zs) # hide
+p2 = contour(x, y, (x, y) -> my_GEK([x y])) # hide
+scatter!(xs, ys, marker_z=zs) # hide
+plot(p1, p2, title="Surrogate") # hide
+```
+
+### Optimizing
+With our surrogate we can now search for the minimas of the shubert function.
+
+Notice how the new sampled points, which were created during the optimization process, are appended to the `xys` array.
+This is why its size changes.
+
+```@example GEK_ND
+size(xys)
+```
+```@example GEK_ND
+surrogate_optimize(shubert, SRBF(), lower_bound, upper_bound, my_GEK, SobolSample(), maxiters=10)
+```
+```@example GEK_ND
+size(xys)
+```
+
+```@example GEK_ND
+p1 = surface(x, y, (x, y) -> my_GEK([x y])) # hide
+xs = [xy[1] for xy in xys] # hide
+ys = [xy[2] for xy in xys] # hide
+zs = shubert.(xys) # hide
+scatter!(xs, ys, zs, marker_z=zs) # hide
+p2 = contour(x, y, (x, y) -> my_GEK([x y])) # hide
+scatter!(xs, ys, marker_z=zs) # hide
+plot(p1, p2) # hide
+```
