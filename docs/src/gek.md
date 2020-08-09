@@ -44,3 +44,13 @@ plot(x, y, seriestype=:scatter, label="Sampled points", xlims=(lower_bound, uppe
 plot!(f, label="True function",  xlims=(lower_bound, upper_bound), legend=:top)
 plot!(my_gek, label="Surrogate function", ribbon=p->std_error_at_point(my_gek, p), xlims=(lower_bound, upper_bound), legend=:top)
 ```
+
+
+## Optimizing
+
+Having built a surrogate, we can now use it to search for minimas in our original function `f`.
+
+To optimize using our surrogate we call `surrogate_optimize` method. We choose to use Stochastic RBF as optimization technique and again Sobol sampling as sampling technique.
+
+```@example GEK1D
+@show surrogate_optimize(f, SRBF(), lower_bound, upper_bound, kriging_surrogate, SobolSample())
