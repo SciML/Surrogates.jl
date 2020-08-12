@@ -24,7 +24,9 @@ makedocs(
         "Tensor product" => "tensor_prod.md",
         "Cantilever beam" => "cantilever.md",
         "Water Flow function" => "water_flow.md",
-        "Welded beam function" => "welded_beam.md"
+        "Welded beam function" => "welded_beam.md",
+        "Branin function" => "BraninFunction.md",
+        "Ackley function" => "ackley.md"
         ]
     "Contributing" => "contributing.md"
     ]
