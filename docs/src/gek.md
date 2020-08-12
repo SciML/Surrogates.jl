@@ -37,23 +37,9 @@ plot!(f, label="True function", xlims=(lower_bound, upper_bound), legend=:top)
 With our sampled points we can build the Gradient Enhanced Kriging surrogate using the `GEK` function.
 
 ```@example GEK1D
-my_gek = GEK(x, y1, lower_bound, upper_bound, p = 2.9);
+my_gek = GEK(x, y, lower_bound, upper_bound, p = 2.9);
 ```
 ```@example @GEK1D
-plot(x, y1, seriestype=:scatter, label="Sampled points", xlims=(lower_bound, upper_bound), legend=:top)
-plot!(f, label="True function",  xlims=(lower_bound, upper_bound), legend=:top)
-plot!(my_gek, label="Surrogate function", ribbon=p->std_error_at_point(my_gek, p), xlims=(lower_bound, upper_bound), legend=:top)
-```
-
-
-## Optimizing
-
-Having built a surrogate, we can now use it to search for minimas in our original function `f`.
-
-To optimize using our surrogate we call `surrogate_optimize` method. We choose to use Stochastic RBF as optimization technique and again Sobol sampling as sampling technique.
-
-```@example GEK1D
-@show surrogate_optimize(f, SRBF(), lower_bound, upper_bound, my_gek, SobolSample())
 plot(x, y1, seriestype=:scatter, label="Sampled points", xlims=(lower_bound, upper_bound), legend=:top)
 plot!(f, label="True function",  xlims=(lower_bound, upper_bound), legend=:top)
 plot!(my_gek, label="Surrogate function", ribbon=p->std_error_at_point(my_gek, p), xlims=(lower_bound, upper_bound), legend=:top)
@@ -125,31 +111,4 @@ scatter!(xs, ys, zs, marker_z=zs) # hide
 p2 = contour(x, y, (x, y) -> my_GEK([x y])) # hide
 scatter!(xs, ys, marker_z=zs) # hide
 plot(p1, p2, title="Surrogate") # hide
-```
-
-### Optimizing
-With our surrogate we can now search for the minimas of the shubert function.
-
-Notice how the new sampled points, which were created during the optimization process, are appended to the `xys` array.
-This is why its size changes.
-
-```@example GEK_ND
-size(xys)
-```
-```@example GEK_ND
-surrogate_optimize(shubert, SRBF(), lower_bound, upper_bound, my_GEK, SobolSample(), maxiters=10)
-```
-```@example GEK_ND
-size(xys)
-```
-
-```@example GEK_ND
-p1 = surface(x, y, (x, y) -> my_GEK([x y])) # hide
-xs = [xy[1] for xy in xys] # hide
-ys = [xy[2] for xy in xys] # hide
-zs = shubert.(xys) # hide
-scatter!(xs, ys, zs, marker_z=zs) # hide
-p2 = contour(x, y, (x, y) -> my_GEK([x y])) # hide
-scatter!(xs, ys, marker_z=zs) # hide
-plot(p1, p2) # hide
 ```
