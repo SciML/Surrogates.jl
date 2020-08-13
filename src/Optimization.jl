@@ -987,7 +987,7 @@ function surrogate_optimize(obj::Function,sop1::SOP,lb::Number,ub::Number,surrSO
         del = N_tenures_tabu .> N_tenure
 
         if length(del) > 0
-            for i = length(del)
+            for i = 1:length(del)
                 if del[i]
                     del[i] = i
                 end
