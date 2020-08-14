@@ -5,13 +5,13 @@ makedocs(
     "index.md"
     "Tutorials" => [
         "Basics" => "tutorials.md",
-        "RandomForestSurrogate" => "randomforest.md",
         "Radials" => "radials.md",
         "Kriging" => "kriging.md",
         "Lobachesky" => "lobachesky.md",
-        "LinearSurrogate" => "LinearSurrogate.md",
+        "Linear" => "LinearSurrogate.md",
         "InverseDistance" => "InverseDistance.md",
-        "GradientEnhancedKriging" => "gek.md"
+        "RandomForest" => "randomforest.md",
+        "SecondOrderPolynomial" => "secondorderpoly.md"
         ]
     "User guide" => [
         "Samples" => "samples.md",
@@ -27,7 +27,8 @@ makedocs(
         "Water Flow function" => "water_flow.md",
         "Welded beam function" => "welded_beam.md",
         "Branin function" => "BraninFunction.md",
-        "Ackley function" => "ackley.md"
+        "Ackley function" => "ackley.md",
+        "Gramacy & Lee Function" => "gramacylee.md"
         ]
     "Contributing" => "contributing.md"
     ]
