@@ -12,7 +12,8 @@ makedocs(
         "InverseDistance" => "InverseDistance.md",
         "RandomForest" => "randomforest.md",
         "SecondOrderPolynomial" => "secondorderpoly.md",
-        "NeuralSurrogate" => "neural.md"
+        "NeuralSurrogate" => "neural.md",
+        "Wendland" => "wendland.md"
         ]
     "User guide" => [
         "Samples" => "samples.md",
