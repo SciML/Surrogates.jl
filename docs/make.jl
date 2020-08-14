@@ -5,12 +5,13 @@ makedocs(
     "index.md"
     "Tutorials" => [
         "Basics" => "tutorials.md",
-        "RandomForestSurrogate" => "randomforest.md",
         "Radials" => "radials.md",
         "Kriging" => "kriging.md",
         "Lobachesky" => "lobachesky.md",
-        "LinearSurrogate" => "LinearSurrogate.md",
-        "InverseDistance" => "InverseDistance.md"
+        "Linear" => "LinearSurrogate.md",
+        "InverseDistance" => "InverseDistance.md",
+        "RandomForest" => "randomforest.md",
+        "SecondOrderPolynomial" => "secondorderpoly.md"
         ]
     "User guide" => [
         "Samples" => "samples.md",
