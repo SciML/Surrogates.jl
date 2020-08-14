@@ -11,7 +11,8 @@ makedocs(
         "Linear" => "LinearSurrogate.md",
         "InverseDistance" => "InverseDistance.md",
         "RandomForest" => "randomforest.md",
-        "SecondOrderPolynomial" => "secondorderpoly.md"
+        "SecondOrderPolynomial" => "secondorderpoly.md",
+        "NeuralSurrogate" => "neural.md"
         ]
     "User guide" => [
         "Samples" => "samples.md",
