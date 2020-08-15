@@ -13,7 +13,8 @@ makedocs(
         "RandomForest" => "randomforest.md",
         "SecondOrderPolynomial" => "secondorderpoly.md",
         "NeuralSurrogate" => "neural.md",
-        "Wendland" => "wendland.md"
+        "Wendland" => "wendland.md",
+        "Polynomial Chaos" => "polychaos.md"
         ]
     "User guide" => [
         "Samples" => "samples.md",
