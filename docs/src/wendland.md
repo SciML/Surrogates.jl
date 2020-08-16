@@ -5,6 +5,10 @@ The coefficients are found using an iterative solver.
 
 ``f = x -> exp(-x^2)``
 
+```@example wendland
+using Surrogates
+using Plots
+```
 
 ```@example wendland
 n = 40
