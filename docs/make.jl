@@ -14,7 +14,8 @@ makedocs(
         "SecondOrderPolynomial" => "secondorderpoly.md",
         "NeuralSurrogate" => "neural.md",
         "Wendland" => "wendland.md",
-        "Polynomial Chaos" => "polychaos.md"
+        "Polynomial Chaos" => "polychaos.md",
+        "Variable Fidelity" => "variablefidelity.md"
         ]
     "User guide" => [
         "Samples" => "samples.md",
