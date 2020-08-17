@@ -59,41 +59,34 @@ using Surrogates # hide
 Now, let's define the function:
 
 ```@example GEK_ND
-function shubert(x)
+function leon(x)
       x1 = x[1]
       x2 = x[2]
-      sum1 = 0;
-      sum2 = 0;
-        for ii in 1:5
-	    new1 = ii * cos((ii+1)*x1+ii);
-	    new2 = ii * cos((ii+1)*x2+ii);
-	    sum1 = sum1 + new1;
-	    sum2 = sum2 + new2;
-        end
-      y = sum1 * sum2;
+      term1 = 100*(x2 - x1^3)^2
+      term2 = (1 - x1)^2
+      y = term1 + term2
 end
 ```
 
 ### Sampling
 
-Let's define our bounds, this time we are working in two dimensions. In particular we want our first dimension `x` to have bounds `-10, 5.12`, and `-5.12, 10` for the second dimension. We are taking 80 samples of the space using Sobol Sequences. We then evaluate our function on all of the sampling points.
+Let's define our bounds, this time we are working in two dimensions. In particular we want our first dimension `x` to have bounds `0, 10`, and `0, 10` for the second dimension. We are taking 80 samples of the space using Sobol Sequences. We then evaluate our function on all of the sampling points.
 
 ```@example GEK_ND
 n_samples = 80
-lower_bound = [-10, -5.12]
-upper_bound = [5.12, 10.0]
-
+lower_bound = [0, 0] 
+upper_bound = [10, 10]
 xys = sample(n_samples, lower_bound, upper_bound, SobolSample())
-zs = shubert.(xys);
+y1 = leon.(xys);
 ```
 
 ```@example GEK_ND
-x, y = -10:5.12, -5.12:10 # hide
-p1 = surface(x, y, (x1,x2) -> shubert((x1,x2))) # hide
+x, y = 0:10, 0:10 # hide
+p1 = surface(x, y, (x1,x2) -> leon((x1,x2))) # hide
 xs = [xy[1] for xy in xys] # hide
 ys = [xy[2] for xy in xys] # hide
-scatter!(xs, ys, zs) # hide
-p2 = contour(x, y, (x1,x2) -> shubert((x1,x2))) # hide
+scatter!(xs, ys, y1) # hide
+p2 = contour(x, y, (x1,x2) -> leon((x1,x2))) # hide
 scatter!(xs, ys) # hide
 plot(p1, p2, title="True function") # hide
 ```
@@ -102,13 +95,32 @@ plot(p1, p2, title="True function") # hide
 Using the sampled points we build the surrogate, the steps are analogous to the 1-dimensional case.
 
 ```@example GEK_ND
-my_GEK = GEK(xys, zs, lower_bound, upper_bound, p=[1.9, 1.9])
+grad1 = x1 -> 2*(300*(x[1])^5 - 300*(x[1])^2*x[2] + x[1] -1)
+grad2 = x2 -> 200*(x[2] - (x[1])^3)
+d = 2
+n = 10
+function create_grads(n, d, grad1, grad2, y)
+      c = 0
+      y2 = zeros(eltype(y[1]),n*d)
+      for i in 1:n
+            y2[i + c] = grad1(x[i])
+            y2[i + c + 1] = grad2(x[i])
+            c = c + 1
+      end
+      return y2
+end
+y2 = create_grads(n, d, grad2, grad2, y)
+y = vcat(y1,y2)
+```
+
+```@example GEK_ND
+my_GEK = GEK(xys, y, lower_bound, upper_bound, p=[1.9, 1.9])
 ```
 
 ```@example GEK_ND
 p1 = surface(x, y, (x, y) -> my_GEK([x y])) # hide
-scatter!(xs, ys, zs, marker_z=zs) # hide
+scatter!(xs, ys, y1, marker_z=y1) # hide
 p2 = contour(x, y, (x, y) -> my_GEK([x y])) # hide
-scatter!(xs, ys, marker_z=zs) # hide
+scatter!(xs, ys, marker_z=y1) # hide
 plot(p1, p2, title="Surrogate") # hide
 ```
