@@ -15,7 +15,8 @@ makedocs(
         "NeuralSurrogate" => "neural.md",
         "Wendland" => "wendland.md",
         "Polynomial Chaos" => "polychaos.md",
-        "Variable Fidelity" => "variablefidelity.md"
+        "Variable Fidelity" => "variablefidelity.md",
+        "Gradient Enhanced Kriging" => "gek.md"
         ]
     "User guide" => [
         "Samples" => "samples.md",
