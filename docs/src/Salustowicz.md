@@ -51,3 +51,16 @@ plot!(xs, InverseDistance.(xs), label="InverseDistanceSurrogate", legend=:toprig
 plot!(xs, randomforest_surrogate.(xs), label="RandomForest", legend=:topright)
 plot!(xs, lobachevsky_surrogate.(xs), label="Lobachesky", legend=:topright)
 ```
+
+Not's let's see Kriging Surrogate with different hyper parameter:
+
+```@example salustowicz1D
+kriging_surrogate1 = Kriging(x, y, lower_bound, upper_bound, p=2.3);
+kriging_surrogate2 = Kriging(x, y, lower_bound, upper_bound, p=1.5);
+kriging_surrogate3 = Kriging(x, y, lower_bound, upper_bound, p=2.9);
+scatter(x, y, label="Sampled points", xlims=(lower_bound, upper_bound), legend=:top)
+plot!(xs, salustowicz.(xs), label="True function", legend=:top)
+plot!(xs, kriging_surrogate1.(xs), label="Surrogate function", ribbon=p->std_error_at_point(kriging_surrogate1, p), legend=:top)
+plot!(xs, kriging_surrogate2.(xs), label="Surrogate function", ribbon=p->std_error_at_point(kriging_surrogate2, p), legend=:top)
+plot!(xs, kriging_surrogate3.(xs), label="Surrogate function", ribbon=p->std_error_at_point(kriging_surrogate3, p), legend=:top)
+```
