@@ -33,7 +33,8 @@ makedocs(
         "Welded beam function" => "welded_beam.md",
         "Branin function" => "BraninFunction.md",
         "Ackley function" => "ackley.md",
-        "Gramacy & Lee Function" => "gramacylee.md"
+        "Gramacy & Lee Function" => "gramacylee.md",
+        "Salustowicz Benchmark" => "Salustowicz.md"
         ]
     "Contributing" => "contributing.md"
     ]
