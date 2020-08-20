@@ -50,6 +50,7 @@ The construction of a surrogate model can be seen as a three-step process:
 - LCBS
 - DYCORS
 - EI
+- SOP
 
 ## Installing Surrogates package
 
