@@ -37,10 +37,10 @@ plot!(f, label="True function", xlims=(lower_bound, upper_bound), legend=:top)
 With our sampled points we can build the Gradient Enhanced Kriging surrogate using the `GEK` function.
 
 ```@example GEK1D
-my_gek = GEK(x, y, lower_bound, upper_bound, p = 2.9);
+my_gek = GEK(x, y, lower_bound, upper_bound, p = 1.4);
 ```
 ```@example @GEK1D
-plot(x, y1, seriestype=:scatter, label="Sampled points", xlims=(lower_bound, upper_bound), legend=:top)
+scatter(x, y1, label="Sampled points", xlims=(lower_bound, upper_bound), legend=:top)
 plot!(f, label="True function",  xlims=(lower_bound, upper_bound), legend=:top)
 plot!(my_gek, label="Surrogate function", ribbon=p->std_error_at_point(my_gek, p), xlims=(lower_bound, upper_bound), legend=:top)
 ```
@@ -74,7 +74,7 @@ Let's define our bounds, this time we are working in two dimensions. In particul
 
 ```@example GEK_ND
 n_samples = 80
-lower_bound = [0, 0] 
+lower_bound = [0, 0]
 upper_bound = [10, 10]
 xys = sample(n_samples, lower_bound, upper_bound, SobolSample())
 y1 = leon.(xys);

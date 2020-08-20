@@ -58,9 +58,9 @@ Not's let's see Kriging Surrogate with different hyper parameter:
 kriging_surrogate1 = Kriging(x, y, lower_bound, upper_bound, p=0.9);
 kriging_surrogate2 = Kriging(x, y, lower_bound, upper_bound, p=1.5);
 kriging_surrogate3 = Kriging(x, y, lower_bound, upper_bound, p=1.9);
-scatter(x, y, label="Sampled points", xlims=(lower_bound, upper_bound), legend=:top)
-plot!(xs, salustowicz.(xs), label="True function", legend=:top)
-plot!(xs, kriging_surrogate1.(xs), label="kriging_surrogate1", ribbon=p->std_error_at_point(kriging_surrogate1, p), legend=:top)
-plot!(xs, kriging_surrogate2.(xs), label="kriging_surrogate2", ribbon=p->std_error_at_point(kriging_surrogate2, p), legend=:top)
-plot!(xs, kriging_surrogate3.(xs), label="kriging_surrogate3", ribbon=p->std_error_at_point(kriging_surrogate3, p), legend=:top)
+scatter(x, y, label="Sampled points", xlims=(lower_bound, upper_bound), legend=:topright)
+plot!(xs, salustowicz.(xs), label="True function", legend=:topright)
+plot!(xs, kriging_surrogate1.(xs), label="kriging_surrogate1", ribbon=p->std_error_at_point(kriging_surrogate1, p), legend=:topright)
+plot!(xs, kriging_surrogate2.(xs), label="kriging_surrogate2", ribbon=p->std_error_at_point(kriging_surrogate2, p), legend=:topright)
+plot!(xs, kriging_surrogate3.(xs), label="kriging_surrogate3", ribbon=p->std_error_at_point(kriging_surrogate3, p), legend=:topright)
 ```
