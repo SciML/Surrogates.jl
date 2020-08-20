@@ -1111,7 +1111,7 @@ function surrogate_optimize(obj::Function,sop1::SOP,lb::Number,ub::Number,surrSO
                 N_failures[i] = N_failures_global[i]
             end
 
-            f_1 = new_points[i,1]
+            f_1 = obj(new_points[i,1])
             f_2 = obj2_1D(f_1,surrSOP.x)
 
             l = length(Fronts[1])
@@ -1119,7 +1119,7 @@ function surrogate_optimize(obj::Function,sop1::SOP,lb::Number,ub::Number,surrSO
 
             for j = 1:l
                 val = obj2_1D(Fronts[1][j],surrSOP.x)
-                Pareto_set[j,1] = Fronts[1][j]
+                Pareto_set[j,1] = obj(Fronts[1][j])
                 Pareto_set[j,2] = val
             end
             if (Hypervolume_Pareto_improving(f_1,f_2,Pareto_set)<tau)
@@ -1144,9 +1144,7 @@ function surrogate_optimize(obj::Function,sop1::SOP,lb::Number,ub::Number,surrSO
 end
 
 
-
-
-function obj2_1D(value,points)
+function obj2_ND(value,points)
     min = +Inf
     my_p = filter(x->norm(x.-value)>10^-6,points)
     for i = 1:length(my_p)
@@ -1156,13 +1154,6 @@ function obj2_1D(value,points)
         end
     end
     return min
-end
-
-function obj2_ND(value,points)
-    min = +Inf
-    m
-
-
 end
 
 function I_tier_ranking_ND(P,surrSOPD::AbstractSurrogate)
@@ -1214,9 +1205,17 @@ function I_tier_ranking_ND(P,surrSOPD::AbstractSurrogate)
     return F
 end
 
-function II_tier_ranking_1D(D::Dict,srgD::AbstractSurrogate)
-
-
+function II_tier_ranking_ND(D::Dict,srgD::AbstractSurrogate)
+    for i = 1:length(D)
+        pos = []
+        yn = []
+        for j = 1:length(D[i])
+            push!(pos,findall(e->e==D[i][j],srgD.x))
+            push!(yn,srgD.y[pos[j]])
+        end
+        D[i] = D[i][sortperm(D[i])]
+    end
+    return D
 end
 
 function surrogate_optimize(obj::Function,sopd::SOP,lb,ub,surrSOPD::AbstractSurrogate,sample_type::SamplingAlgorithm;maxiters=100,num_new_samples=min(500*length(lb),5000))
@@ -1247,7 +1246,7 @@ function surrogate_optimize(obj::Function,sopd::SOP,lb,ub,surrSOPD::AbstractSurr
 
 
         ##### P CENTERS ######
-        C = []
+        C = Array{eltype(surrSOPD.x),1}()
 
         #S(x) set of points already evaluated
         #Rank points in S with:
@@ -1255,13 +1254,12 @@ function surrogate_optimize(obj::Function,sopd::SOP,lb,ub,surrSOPD::AbstractSurr
         Fronts_I = I_tier_ranking_ND(centers_global,surrSOPD)
         #2) Second tier ranking
         Fronts = II_tier_ranking_ND(Fronts_I,surrSOPD)
-        ranked_list = []
+        ranked_list = Array{eltype(surrSOPD.x),1}()
         for i = 1:length(Fronts)
             for j = 1:length(Fronts[i])
                 push!(ranked_list,Fronts[i][j])
             end
         end
-        ranked_list = eltype(surrSOPD.x[1][1]).(ranked_list)
 
         centers_full = 0
         i = 1
@@ -1269,12 +1267,12 @@ function surrogate_optimize(obj::Function,sopd::SOP,lb,ub,surrSOPD::AbstractSurr
             flag = 0
             for j = 1:length(ranked_list)
                 for m = 1:length(tabu)
-                    if abs(ranked_list[j]-tabu[m]) < tau
+                    if norm(ranked_list[j].-tabu[m]) < tau
                         flag = 1
                     end
                 end
                 for l = 1:length(centers_global)
-                    if abs(ranked_list[j]-centers_global[l]) < tau
+                    if norm(ranked_list[j].-centers_global[l]) < tau
                         flag = 1
                     end
                 end
@@ -1298,7 +1296,7 @@ function surrogate_optimize(obj::Function,sopd::SOP,lb,ub,surrSOPD::AbstractSurr
                 flag = 0
                 for j = 1:length(ranked_list)
                     for m = 1:length(centers_global)
-                        if abs(centers_global[j] - ranked_list[m]) < tau
+                        if norm(centers_global[j] .- ranked_list[m]) < tau
                             flag = 1
                         end
                     end
@@ -1327,51 +1325,53 @@ function surrogate_optimize(obj::Function,sopd::SOP,lb,ub,surrSOPD::AbstractSurr
             end
         end
 
-        #Here I have selected C = [] containing the centers
+        #Here I have selected C = [(1.0,2.0),(3.0,4.0),.....] containing the centers
         r_centers = 0.2*norm(ub.-lb)*ones(num_P)
         N_failures = zeros(num_P)
         #2.3 Candidate search
-        new_points = zeros(eltype(surrSOPD.x[1]),num_P,2)
+        new_points_x = Array{eltype(surrSOPD.x),1}()
+        new_points_y = zeros(eltype(surrSOPD.y[1]),num_P)
         for i = 1:num_P
-            N_candidates = zeros(eltype(surrSOPD.x[1]),num_new_samples)
+            N_candidates = zeros(eltype(surrSOPD.x[1]),num_new_samples,d)
             #Using phi(n) just like DYCORS, merit function = surrogate
             #Like in DYCORS, I_perturb = 1 always
             evaluations = zeros(eltype(surrSOPD.y[1]),num_new_samples)
             for j = 1:num_new_samples
-                a = lb - C[i]
-                b = ub - C[i]
-                N_candidates[j] = C[i] + rand(truncated(Normal(0,r_centers[i]), a,b))
-                evaluations[j] = surrSOP(N_candidates[j])
+                for k = 1:d
+                    a = lb[k] - C[i][k]
+                    b = ub[k] - C[i][k]
+                    N_candidates[j,k] = C[i][k] + rand(truncated(Normal(0,r_centers[i]), a,b))
+                end
+                evaluations[j] = surrSOPD(Tuple(N_candidates[j,:]))
             end
-            x_best = N_candidates[argmin(evaluations)]
+            x_best = Tuple(N_candidates[argmin(evaluations),:])
             y_best = minimum(evaluations)
-            new_points[i,1] = x_best
-            new_points[i,2] = y_best
+            push!(new_points_x,x_best)
+            new_points_y[i] = y_best
         end
 
-        #new_points[i] now contains:
+        #new_points[i] is splitted in new_points_x and new_points_y now contains:
         #[x_1,y_1; x_2,y_2,...,x_{num_new_samples},y_{num_new_samples}]
 
 
         #2.4 Adaptive learning and tabu archive
         for i=1:num_P
-            if new_points[i,1] in centers_global
+            if new_points_x[i] in centers_global
                 r_centers[i] = r_centers_global[i]
                 N_failures[i] = N_failures_global[i]
             end
 
-            f_1 = new_points[i,1]
-            f_2 = obj2_1D(f_1,surrSOP.x)
+            f_1 = obj(Tuple(new_points_x[i]))
+            f_2 = obj2_ND(f_1,surrSOPD.x)
 
             l = length(Fronts[1])
-            Pareto_set = zeros(eltype(surrSOP.x[1]),l,2)
-
+            Pareto_set = zeros(eltype(surrSOPD.x[1]),l,2)
             for j = 1:l
-                val = obj2_1D(Fronts[1][j],surrSOP.x)
-                Pareto_set[j,1] = Fronts[1][j]
+                val = obj2_ND(Fronts[1][j],surrSOPD.x)
+                Pareto_set[j,1] = obj(Tuple(Fronts[1][j]))
                 Pareto_set[j,2] = val
             end
-            if (Hypervolume_Pareto_improving(f_1,f_2,Pareto_set)<tau)
+            if (Hypervolume_Pareto_improving(f_1,f_2,Pareto_set)<tau)#check this
                 #failure
                 r_centers[i] = r_centers[i]/2
                 N_failures[i] += 1
@@ -1382,12 +1382,12 @@ function surrogate_optimize(obj::Function,sopd::SOP,lb,ub,surrSOPD::AbstractSurr
             else
                 #P_i is success
                 #Adaptive_learning
-                add_point!(surrSOP,new_points[i,1],new_points[i,2])
+                add_point!(surrSOPD,new_points_x[i],new_points_y[i])
                 push!(r_centers_global,r_centers[i])
                 push!(N_failures_global,N_failures[i])
             end
         end
     end
-    index = argmin(surrSOP.y)
-    return (surrSOP.x[index],surrSOP.y[index])
+    index = argmin(surrSOPD.y)
+    return (surrSOPD.x[index],surrSOPD.y[index])
 end
