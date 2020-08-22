@@ -16,8 +16,8 @@ upper_bound = 6.0
 x = sample(n,lower_bound,upper_bound,LowDiscrepancySample(2))
 f = x -> 1/3*x
 y = f.(x)
-scatter(x, y, label="Sampled Points", xlims=(lower_bound, upper_bound), legend=:top)
-plot!(f, label="True function", scatter(x, y, label="Sampled Points", xlims=(lower_bound, upper_bound), legend=:top)
+plot(x, y, seriestype=:scatter, label="Sampled points", xlims=(lower_bound, upper_bound), legend=:top)
+plot!(f, label="True function",  xlims=(lower_bound, upper_bound), legend=:top)
 ```
 
 ```@example variablefid
