@@ -22,7 +22,7 @@ using Plots
 n = 20
 lower_bound = 1.0
 upper_bound = 6.0
-x = sample(n,lb,ub,LowDiscrepancySample(2))
+x = sample(n,lower_bound,upper_bound,LowDiscrepancySample(2))
 f = x -> log(x)*x + sin(x)
 y = f.(x)
 scatter(x, y, label="Sampled points", xlims=(lower_bound, upper_bound), legend=:top)
@@ -33,8 +33,8 @@ plot!(f, label="True function", xlims=(lower_bound, upper_bound), legend=:top)
 ## Building a Surrogate
 
 ```@example polychaos
-poly1 = PolynomialChaosSurrogate(x,y,lb,ub)
-poly2 = PolynomialChaosSurrogate(x,y,lb,ub, op = GaussOrthoPoly(5))
+poly1 = PolynomialChaosSurrogate(x,y,lower_bound,upper_bound)
+poly2 = PolynomialChaosSurrogate(x,y,lower_bound,upper_bound, op = GaussOrthoPoly(5))
 plot(x, y, seriestype=:scatter, label="Sampled points", xlims=(lower_bound, upper_bound), legend=:top)
 plot!(f, label="True function",  xlims=(lower_bound, upper_bound), legend=:top)
 plot!(poly1, label="First polynomial",  xlims=(lower_bound, upper_bound), legend=:top)
