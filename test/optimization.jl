@@ -4,7 +4,6 @@ using Flux
 using Flux: @epochs
 
 #######SRBF############
-
 ##### 1D #####
 lb = 0.0
 ub = 15.0
@@ -220,7 +219,6 @@ p = [1.5,1.5]
 theta = [2.0,2.0]
 lb = [1.0,1.0]
 ub = [6.0,6.0]
-bounds = [lb,ub]
 
 
 my_k_DYCORSN = Kriging(x,y,lb,ub)
@@ -243,3 +241,14 @@ ub = 6.0
 num_centers = 2
 my_k_SOP1 = Kriging(x,y,lb,ub,p=1.9)
 surrogate_optimize(objective_function,SOP(num_centers),lb,ub,my_k_SOP1,SobolSample(),maxiters=60)
+#ND
+objective_function_ND = z -> 2*norm(z)+1
+x = [(2.3,2.2),(1.4,1.5)]
+y = objective_function_ND.(x)
+p = [1.5,1.5]
+theta = [2.0,2.0]
+lb = [1.0,1.0]
+ub = [6.0,6.0]
+my_k_SOPND = Kriging(x,y,lb,ub)
+num_centers = 2
+surrogate_optimize(objective_function_ND,SOP(num_centers),lb,ub,my_k_SOPND,SobolSample(),maxiters=20)

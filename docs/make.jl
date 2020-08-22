@@ -5,12 +5,18 @@ makedocs(
     "index.md"
     "Tutorials" => [
         "Basics" => "tutorials.md",
-        "RandomForestSurrogate" => "randomforest.md",
         "Radials" => "radials.md",
         "Kriging" => "kriging.md",
         "Lobachesky" => "lobachesky.md",
-        "LinearSurrogate" => "LinearSurrogate.md",
-        "InverseDistance" => "InverseDistance.md"
+        "Linear" => "LinearSurrogate.md",
+        "InverseDistance" => "InverseDistance.md",
+        "RandomForest" => "randomforest.md",
+        "SecondOrderPolynomial" => "secondorderpoly.md",
+        "NeuralSurrogate" => "neural.md",
+        "Wendland" => "wendland.md",
+        "Polynomial Chaos" => "polychaos.md",
+        "Variable Fidelity" => "variablefidelity.md",
+        "Gradient Enhanced Kriging" => "gek.md"
         ]
     "User guide" => [
         "Samples" => "samples.md",
@@ -25,7 +31,10 @@ makedocs(
         "Cantilever beam" => "cantilever.md",
         "Water Flow function" => "water_flow.md",
         "Welded beam function" => "welded_beam.md",
-        "Branin Function" => "BraninFunction.md"
+        "Branin function" => "BraninFunction.md",
+        "Ackley function" => "ackley.md",
+        "Gramacy & Lee Function" => "gramacylee.md",
+        "Salustowicz Benchmark" => "Salustowicz.md"
         ]
     "Contributing" => "contributing.md"
     ]

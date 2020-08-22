@@ -32,7 +32,11 @@ mutable struct NeuralSurrogate{X,Y,M,L,O,P,N,A,U} <: AbstractSurrogate
  function (my_neural::NeuralSurrogate)(val)
      v = [val...]
      out = my_neural.model(v)
-     remove_tracker(out)
+     if length(out) == 1
+         return out[1]
+     else
+         return out
+     end
  end
 
 function add_point!(my_n::NeuralSurrogate, x_new, y_new)

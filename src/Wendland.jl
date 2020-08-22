@@ -52,7 +52,7 @@ function Wendland(x,y,lb,ub; eps = 1.0, maxiters = 300, tol = 1e-6)
 end
 
 function (wend::Wendland)(val)
-    return sum(wend.coeff[j]*_wendland(val,wend.eps) for j=1:length(wend.lb))
+    return sum(wend.coeff[j]*_wendland(val,wend.eps) for j=1:length(wend.coeff))
 end
 
 function add_point!(wend::Wendland,new_x,new_y)
