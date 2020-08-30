@@ -43,12 +43,10 @@ Now, let's fit Salustowicz Function with different Surrogates:
 
 ```@example salustowicz1D
 InverseDistance = InverseDistanceSurrogate(x, y, lower_bound, upper_bound)
-randomforest_surrogate = RandomForestSurrogate(x ,y ,lower_bound, upper_bound, num_round = 2)
 lobachevsky_surrogate = LobacheskySurrogate(x, y, lower_bound, upper_bound, alpha = 2.0, n = 6)
 scatter(x, y, label="Sampled points", xlims=(lower_bound, upper_bound), legend=:topright)
 plot!(xs, salustowicz.(xs), label="True function", legend=:topright)
 plot!(xs, InverseDistance.(xs), label="InverseDistanceSurrogate", legend=:topright)
-plot!(xs, randomforest_surrogate.(xs), label="RandomForest", legend=:topright)
 plot!(xs, lobachevsky_surrogate.(xs), label="Lobachesky", legend=:topright)
 ```
 
