@@ -70,11 +70,13 @@ function PolyChaosStructure(; op)
 end
 
 
-function MOE(x,y,lb::Number,ub::Number; k::Int = 2, local_kind = [RadialBasisStructure(radial_function = linearRadial, scale_factor=1.0,sparse = false),RadialBasisStructure(radial_function = cubicRadial, scale_factor=1.0, sparse = false)])
+function MOE(x,y,lb::Number,ub::Number; scale_factor::Number = 1.0, k::Int = 2, local_kind = [RadialBasisStructure(radial_function = linearRadial, scale_factor=1.0,sparse = false),RadialBasisStructure(radial_function = cubicRadial, scale_factor=1.0, sparse = false)])
     if k != length(local_kind)
         throw("Number of mixtures = $k is not equal to length of local surrogates")
     end
     n = length(x)
+    x = x ./ scale_factor
+    y = y ./ scale_factor
     # find weight, mean and variance for each mixture
     # For GaussianMixtures I need nxd matrix
     X_G = reshape(x,(n,1))
@@ -150,11 +152,15 @@ function MOE(x,y,lb::Number,ub::Number; k::Int = 2, local_kind = [RadialBasisStr
     return MOE(x,y,lb,ub,local_surr,k,means,variances,weights)
 end
 
-function MOE(x,y,lb,ub; k::Int = 2,
+function MOE(x,y,lb,ub; k::Int = 2, scale_factor::Number = 1.0,
             local_kind = [RadialBasisStructure(radial_function = linearRadial, scale_factor=1.0, sparse = false),RadialBasisStructure(radial_function = cubicRadial, scale_factor=1.0, sparse = false)])
 
     n = length(x)
     d = length(lb)
+    for i = 1:n
+        x[i] = x[i] ./ scale_factor
+    end
+    y = y ./ scale_factor
     #GMM parameters:
     X_G = collect(reshape(collect(Base.Iterators.flatten(x)), (d,n))')
     my_gmm = GMM(k,X_G,kind = :full)
@@ -184,7 +190,7 @@ function MOE(x,y,lb,ub; k::Int = 2,
         elseif local_kind[i][1] == "Kriging"
             my_local_i = Kriging(x_c[i], y_c[i],lb,ub, p = local_kind[i].p, theta = local_kind[i].theta)
             local_surr[i] = my_local_i
-            
+
         elseif local_kind[i][1] == "GEK"
             my_local_i = GEK(x_c[i], y_c[i],lb,ub, p = local_kind[i].p, theta = local_kind[i].theta)
             local_surr[i] = my_local_i
