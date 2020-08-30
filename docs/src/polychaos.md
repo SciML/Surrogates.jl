@@ -5,7 +5,7 @@ with a different polynomial basis depending on the distribution of the data
 we are trying to fit. Under the hood, PolyChaos.jl has been used.
 It is possible to specify a type of polynomial for each dimension of the problem.
 
-```@example Inverse_Distance1D
+```@example polychaos
 using Surrogates
 using Plots
 default()
