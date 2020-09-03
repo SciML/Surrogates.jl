@@ -3,12 +3,19 @@ using Distributions
 
 abstract type SurrogateOptimizationAlgorithm end
 
+#single objective optimization
 struct SRBF <: SurrogateOptimizationAlgorithm end
 struct LCBS <: SurrogateOptimizationAlgorithm end
 struct EI <: SurrogateOptimizationAlgorithm end
 struct DYCORS <: SurrogateOptimizationAlgorithm end
 struct SOP{P} <: SurrogateOptimizationAlgorithm
     p::P
+end
+
+#multi objective optimization
+struct EGO <: SurrogateOptimizationAlgorithm end
+struct RTEA{Z} <: SurrogateOptimizationAlgorithm
+    z::Z
 end
 
 function merit_function(point,w,surr::AbstractSurrogate,s_max,s_min,d_max,d_min,box_size)
@@ -1390,4 +1397,78 @@ function surrogate_optimize(obj::Function,sopd::SOP,lb,ub,surrSOPD::AbstractSurr
     end
     index = argmin(surrSOPD.y)
     return (surrSOPD.x[index],surrSOPD.y[index])
+end
+
+
+#EGO
+
+function surrogate_optimize(obj,ego::EGO,lb::Number,ub::Number,surrEGO::AbstractSurrogate,sample_type::SamplingAlgorithm;maxiters=100, n_new_look = 1000)
+    #obj contains a function for each output dimension
+    dim_out = length(surrEGO.y[1])
+    d = 1
+    x_to_look = sample(n_new_look,lb,ub,sample_type)
+    for iter = 1:maxiters
+        index_min = 0
+        min_mean = +Inf
+        for i = 1:n_new_look
+            new_mean = sum(obj(x_to_look[i]))/dim_out
+            if new_mean < min_mean
+                min_mean = new_mean
+                index_min = i
+            end
+        end
+
+        x_new = x_to_look[index_min]
+        deleteat!(x_to_look,index_min)
+        n_new_look = n_new_look - 1
+        # evaluate the true function at that point
+        y_new = obj(x_new)
+        #update the surrogate
+        add_point!(surrEGO,x_new,y_new)
+    end
+    #Find and return Pareto
+    x = surrEGO.x
+    y = surrEGO.y
+
+    #todo
+
+
+
+
+
+
+
+end
+
+
+function surrogate_optimize(obj::Function,ego::EGO,lb,ub,surrEGOND::AbstractSurrogate,sample_type::SamplingAlgorithm;maxiters=100, n_new_look = 1000)
+    #obj contains a function for each output dimension
+    dim_out = length(surrEGOND.y[1])
+    d = length(lb)
+    x_to_look = sample(n_new_look,lb,ub,sample_type)
+    for iter = 1:maxiters
+        index_min = 0
+        min_mean = +Inf
+        for i = 1:n_new_look
+            new_mean = sum(obj(x_to_look[i]))/dim_out
+            if new_mean < min_mean
+                min_mean = new_mean
+                index_min = i
+            end
+        end
+        x_new = x_to_look[index_min]
+        deleteat!(x_to_look,index_min)
+        n_new_look = n_new_look - 1
+        # evaluate the true function at that point
+        y_new = obj(x_new)
+        #update the surrogate
+        add_point!(surrEGOND,x_new,y_new)
+    end
+    #Find and return Pareto
+
+    x = surrEGOND.x
+    y = surrEGOND.y
+    #todo
+
+
 end
