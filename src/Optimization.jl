@@ -14,7 +14,8 @@ end
 
 #multi objective optimization
 struct EGO <: SurrogateOptimizationAlgorithm end
-struct RTEA{Z} <: SurrogateOptimizationAlgorithm
+struct RTEA{K,Z} <: SurrogateOptimizationAlgorithm
+    k::K
     z::Z
 end
 
@@ -1493,3 +1494,17 @@ function surrogate_optimize(obj::Function,ego::EGO,lb,ub,surrEGOND::AbstractSurr
     end
     return pareto_set,pareto_front
 end
+
+
+# RTEA (Noisy model based multi objective optimization + standard rtea by fieldsen)
+
+ function surrogate_optimize(obj,ego::RTEA,lb::Number,ub::Number,surrRTEA::AbstractSurrogate,sample_type::SamplingAlgorithm;maxiters=100, n_new_look = 1000)
+
+ end
+
+
+
+ function surrogate_optimize(obj,ego::RTEA,lb,ub,surrRTEA::AbstractSurrogate,sample_type::SamplingAlgorithm;maxiters=100, n_new_look = 1000)
+
+
+ end

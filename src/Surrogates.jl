@@ -16,7 +16,7 @@ include("SthenoKriging.jl")
 include("RandomForestSurrogate.jl")
 include("NeuralSurrogate.jl")
 include("Wendland.jl")
-#include("MOE.jl") #rewrite gaussian mixture with own algorithm to fix deps issue
+include("MOE.jl") #rewrite gaussian mixture with own algorithm to fix deps issue
 include("VariableFidelity.jl")
 include("PolynomialChaos.jl")
 include("Earth.jl")
