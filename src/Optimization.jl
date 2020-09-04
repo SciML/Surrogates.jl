@@ -1402,6 +1402,23 @@ end
 
 #EGO
 
+_dominates(x, y) = all(x .<= y) && any(x .< y)
+function _nonDominatedSorting(arr::Array{Float64,2})
+    fronts::Array{Array,1} = Array[]
+    ind::Array{Int64,1} = collect(1:size(arr, 1))
+    while !isempty(arr)
+        s = size(arr, 1)
+        red = dropdims(sum([ dominates(arr[i,:], arr[j,:]) for i in 1:s, j in 1:s ], dims=1) .== 0, dims=1)
+        a = 1:s
+        sel::Array{Int64,1} = a[red]
+        push!(fronts, ind[sel])
+        da::Array{Int64,1} = deleteat!(collect(1:s), sel)
+        ind = deleteat!(ind, sel)
+        arr = arr[da, :]
+    end
+    return fronts
+end
+
 function surrogate_optimize(obj,ego::EGO,lb::Number,ub::Number,surrEGO::AbstractSurrogate,sample_type::SamplingAlgorithm;maxiters=100, n_new_look = 1000)
     #obj contains a function for each output dimension
     dim_out = length(surrEGO.y[1])
@@ -1427,19 +1444,18 @@ function surrogate_optimize(obj,ego::EGO,lb::Number,ub::Number,surrEGO::Abstract
         add_point!(surrEGO,x_new,y_new)
     end
     #Find and return Pareto
-    x = surrEGO.x
     y = surrEGO.y
-
-    #todo
-
-
-
-
-
-
-
+    y = permutedims(reshape(hcat(y...),(length(y[1]), length(y)))) #2d matrix
+    Fronts = _nonDominatedSorting(y) #this returns the indexes
+    pareto_front_index = Fronts[1]
+    pareto_set = []
+    pareto_front = []
+    for i = 1:length(pareto_front_index)
+        push!(pareto_set,surrEGO.x[pareto_front_index[i]])
+        push!(pareto_front,surrEGO.y[pareto_front_index[i]])
+    end
+    return pareto_set,pareto_front
 end
-
 
 function surrogate_optimize(obj::Function,ego::EGO,lb,ub,surrEGOND::AbstractSurrogate,sample_type::SamplingAlgorithm;maxiters=100, n_new_look = 1000)
     #obj contains a function for each output dimension
@@ -1465,10 +1481,15 @@ function surrogate_optimize(obj::Function,ego::EGO,lb,ub,surrEGOND::AbstractSurr
         add_point!(surrEGOND,x_new,y_new)
     end
     #Find and return Pareto
-
-    x = surrEGOND.x
-    y = surrEGOND.y
-    #todo
-
-
+    y = surrEGO.y
+    y = permutedims(reshape(hcat(y...),(length(y[1]), length(y)))) #2d matrix
+    Fronts = _nonDominatedSorting(y) #this returns the indexes
+    pareto_front_index = Fronts[1]
+    pareto_set = []
+    pareto_front = []
+    for i = 1:length(pareto_front_index)
+        push!(pareto_set,surrEGO.x[pareto_front_index[i]])
+        push!(pareto_front,surrEGO.y[pareto_front_index[i]])
+    end
+    return pareto_set,pareto_front
 end

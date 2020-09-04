@@ -16,7 +16,7 @@ include("SthenoKriging.jl")
 include("RandomForestSurrogate.jl")
 include("NeuralSurrogate.jl")
 include("Wendland.jl")
-include("MOE.jl")
+#include("MOE.jl") #rewrite gaussian mixture with own algorithm to fix deps issue
 include("VariableFidelity.jl")
 include("PolynomialChaos.jl")
 include("Earth.jl")
@@ -44,7 +44,7 @@ export Wendland
 export RadialBasisStructure, KrigingStructure, LinearStructure, InverseDistanceStructure
 export LobacheskyStructure, NeuralStructure, RandomForestStructure, SecondOrderPolynomialStructure
 export WendlandStructure
-export MOE
+#export MOE
 export VariableFidelitySurrogate
 export PolynomialChaosSurrogate
 export EarthSurrogate
