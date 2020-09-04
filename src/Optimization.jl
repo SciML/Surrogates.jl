@@ -14,9 +14,12 @@ end
 
 #multi objective optimization
 struct EGO <: SurrogateOptimizationAlgorithm end
-struct RTEA{K,Z} <: SurrogateOptimizationAlgorithm
+struct RTEA{K,Z,P,N,S} <: SurrogateOptimizationAlgorithm
     k::K
     z::Z
+    p::P
+    n_c::N
+    sigma::S
 end
 
 function merit_function(point,w,surr::AbstractSurrogate,s_max,s_min,d_max,d_min,box_size)
@@ -1496,15 +1499,215 @@ function surrogate_optimize(obj::Function,ego::EGO,lb,ub,surrEGOND::AbstractSurr
 end
 
 
-# RTEA (Noisy model based multi objective optimization + standard rtea by fieldsen)
+# RTEA (Noisy model based multi objective optimization + standard rtea by fieldsen), use this for very noisy objective functions because there are a lot of re-evaluations
 
- function surrogate_optimize(obj,ego::RTEA,lb::Number,ub::Number,surrRTEA::AbstractSurrogate,sample_type::SamplingAlgorithm;maxiters=100, n_new_look = 1000)
+ function surrogate_optimize(obj,rtea::RTEA,lb::Number,ub::Number,surrRTEA::AbstractSurrogate,sample_type::SamplingAlgorithm;maxiters=100, n_new_look = 1000)
+     Z = rtea.z
+     K = rtea.k
+     p_cross = rtea.p
+     n_c = rtea.n_c
+     sigma = rtea.sigma
+     #find pareto set of the first evaluations: (estimated pareto)
+     y = surrRTEA.y
+     y = permutedims(reshape(hcat(y...),(length(y[1]), length(y)))) #2d matrix
+     Fronts = _nonDominatedSorting(y) #this returns the indexes
+     pareto_front_index = Fronts[1]
+     pareto_set = []
+     pareto_front = []
+     for i = 1:length(pareto_front_index)
+         push!(pareto_set,surrRTEA.x[pareto_front_index[i]])
+         push!(pareto_front,surrRTEA.y[pareto_front_index[i]])
+     end
+     number_of_revaluations = zeros(Int,length(pareto_set))
+     iter = 1
+     d = 1
+     dim_out = length(surrRTEA.y[1])
+     while iter < maxiters
 
+         if iter < (1-Z)*maxiters
+             #1) propose new point x_new
+
+             #sample randomly from (estimated) pareto v and u
+             if length(pareto_set) < 2
+                 throw("Starting pareto set is too small, increase number of sampling point of the surrogate")
+             end
+             u = pareto_set[rand(1:length(pareto_set))]
+             v = pareto_set[rand(1:length(pareto_set))]
+
+             #children
+             if rand() < p_cross
+                 mu = rand()
+                 if mu <= 0.5
+                     beta = (2*mu)^(1/n_c+1)
+                else
+                    beta = ( 1/(2*(1-mu)) )^(1/n_c+1)
+                end
+                x = 0.5*( (1+beta)*v + (1-beta)*u)
+             else
+                 x = v
+             end
+
+             #mutation
+             x_new = x + rand(Normal(0,sigma))
+             y_new = obj(x_new)
+
+             #update pareto
+             new_to_pareto = false
+             for i = 1:length(pareto_set)
+                 counter = zeros(Int,dim_out)
+                 #compare the y_new values to pareto, if there is at least one entry where it dominates all the others, then it can be in pareto
+                 for l = 1:dim_out
+                     if y_new[l] < pareto_front[i][l]
+                         counter[l]
+                     end
+                 end
+             end
+             for j = 1:dim_out
+                 if counter[j] == dim_out
+                     new_to_pareto = true
+                 end
+             end
+             if new_to_pareto == true
+                 push!(pareto_set,x_new)
+                 push!(pareto_front,y_new)
+                 push!(number_of_revaluations,0)
+             end
+             add_point!(surrRTEA,new_x,new_y)
+         end
+         for k = 1:K
+             val,pos = findmin(number_of_revaluations)
+             x_r = pareto_set[pos]
+             y_r = obj(x_r)
+             number_of_revaluations[pos] = number_of_revaluations + 1
+             #check if it is again in the pareto set or not, if not eliminate it from pareto
+             still_in_pareto = false
+             for i = 1:length(pareto_set)
+                 counter = zeros(Int,dim_out)
+                 for l = 1:dim_out
+                     if y_r[l] < pareto_front[i][l]
+                         counter[l]
+                     end
+                 end
+             end
+             for j = 1:dim_out
+                 if counter[j] == dim_out
+                     still_in_pareto = true
+                 end
+             end
+             if still_in_pareto == false
+                 #remove from pareto
+                 deleteat!(pareto_set,pos)
+                 deleteat!(pareto_front,pos)
+                 deleteat!(number_of_revaluationsm,pos)
+             end
+         end
+     end
+     return pareto_set,pareto_front
  end
 
 
 
- function surrogate_optimize(obj,ego::RTEA,lb,ub,surrRTEA::AbstractSurrogate,sample_type::SamplingAlgorithm;maxiters=100, n_new_look = 1000)
+ function surrogate_optimize(obj,rtea::RTEA,lb,ub,surrRTEAND::AbstractSurrogate,sample_type::SamplingAlgorithm;maxiters=100, n_new_look = 1000)
+     Z = rtea.z
+     K = rtea.k
+     p_cross = rtea.p
+     n_c = rtea.n_c
+     sigma = rtea.sigma
+     #find pareto set of the first evaluations: (estimated pareto)
+     y = surrRTEA.y
+     y = permutedims(reshape(hcat(y...),(length(y[1]), length(y)))) #2d matrix
+     Fronts = _nonDominatedSorting(y) #this returns the indexes
+     pareto_front_index = Fronts[1]
+     pareto_set = []
+     pareto_front = []
+     for i = 1:length(pareto_front_index)
+         push!(pareto_set,surrRTEA.x[pareto_front_index[i]])
+         push!(pareto_front,surrRTEA.y[pareto_front_index[i]])
+     end
+     number_of_revaluations = zeros(Int,length(pareto_set))
+     iter = 1
+     d = length(lb)
+     dim_out = length(surrRTEA.y[1])
+     while iter < maxiters
 
+         if iter < (1-Z)*maxiters
 
+             #sample pareto_set
+             if length(pareto_set) < 2
+                 throw("Starting pareto set is too small, increase number of sampling point of the surrogate")
+             end
+             u = pareto_set[rand(1:length(pareto_set))]
+             v = pareto_set[rand(1:length(pareto_set))]
+
+             #children
+             if rand() < p_cross
+                 mu = rand()
+                 if mu <= 0.5
+                     beta = (2*mu)^(1/n_c+1)
+                else
+                    beta = ( 1/(2*(1-mu)) )^(1/n_c+1)
+                end
+                x = 0.5*( (1+beta)*v + (1-beta)*u)
+             else
+                 x = v
+             end
+
+             #mutation
+             for i =1:d
+                 x_new[i] = x[i] + rand(Normal(0,sigma))
+             end
+             y_new = obj(x_new)
+
+             #update pareto
+             new_to_pareto = false
+             for i = 1:length(pareto_set)
+                 counter = zeros(Int,dim_out)
+                 #compare the y_new values to pareto, if there is at least one entry where it dominates all the others, then it can be in pareto
+                 for l = 1:dim_out
+                     if y_new[l] < pareto_front[i][l]
+                         counter[l]
+                     end
+                 end
+             end
+             for j = 1:dim_out
+                 if counter[j] == dim_out
+                     new_to_pareto = true
+                 end
+             end
+             if new_to_pareto == true
+                 push!(pareto_set,x_new)
+                 push!(pareto_front,y_new)
+                 push!(number_of_revaluations,0)
+             end
+             add_point!(surrRTEAND,new_x,new_y)
+         end
+         for k = 1:K
+             val,pos = findmin(number_of_revaluations)
+             x_r = pareto_set[pos]
+             y_r = obj(x_r)
+             number_of_revaluations[pos] = number_of_revaluations + 1
+             #check if it is again in the pareto set or not, if not eliminate it from pareto
+             still_in_pareto = false
+             for i = 1:length(pareto_set)
+                 counter = zeros(Int,dim_out)
+                 for l = 1:dim_out
+                     if y_r[l] < pareto_front[i][l]
+                         counter[l]
+                     end
+                 end
+             end
+             for j = 1:dim_out
+                 if counter[j] == dim_out
+                     still_in_pareto = true
+                 end
+             end
+             if still_in_pareto == false
+                 #remove from pareto
+                 deleteat!(pareto_set,pos)
+                 deleteat!(pareto_front,pos)
+                 deleteat!(number_of_revaluationsm,pos)
+             end
+         end
+     end
+     return pareto_set,pareto_front
  end
