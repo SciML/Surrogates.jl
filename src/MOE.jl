@@ -1,5 +1,5 @@
 using Clustering
-using GaussianMixtures
+#using GaussianMixtures
 using LinearAlgebra
 
 mutable struct MOE{X,Y,L,U,S,K,M,V,W} <: AbstractSurrogate
@@ -69,7 +69,7 @@ function PolyChaosStructure(; op)
     return (name = "PolynomialChaosSurrogate", op = op)
 end
 
-
+#=
 function MOE(x,y,lb::Number,ub::Number; scale_factor::Number = 1.0, k::Int = 2, local_kind = [RadialBasisStructure(radial_function = linearRadial, scale_factor=1.0,sparse = false),RadialBasisStructure(radial_function = cubicRadial, scale_factor=1.0, sparse = false)])
     if k != length(local_kind)
         throw("Number of mixtures = $k is not equal to length of local surrogates")
@@ -300,3 +300,5 @@ function add_point!(my_moe::MOE,x_new,y_new)
     end
     nothing
 end
+
+=#

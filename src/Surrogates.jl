@@ -16,7 +16,7 @@ include("SthenoKriging.jl")
 include("RandomForestSurrogate.jl")
 include("NeuralSurrogate.jl")
 include("Wendland.jl")
-include("MOE.jl")
+include("MOE.jl") #rewrite gaussian mixture with own algorithm to fix deps issue
 include("VariableFidelity.jl")
 include("PolynomialChaos.jl")
 include("Earth.jl")
@@ -31,7 +31,7 @@ export Kriging, RadialBasis, add_point!, current_estimate, std_error_at_point
 export linearRadial,cubicRadial,multiquadricRadial,thinplateRadial
 export sample, GridSample, UniformSample, SobolSample, LatinHypercubeSample, LowDiscrepancySample
 export RandomSample, KroneckerSample, GoldenSample
-export SRBF,LCBS,EI,DYCORS,SOP,surrogate_optimize
+export SRBF,LCBS,EI,DYCORS,SOP,EGO,RTEA,surrogate_optimize
 export LobacheskySurrogate, lobachesky_integral, lobachesky_integrate_dimension
 export LinearSurrogate
 export RandomForestSurrogate
@@ -44,7 +44,7 @@ export Wendland
 export RadialBasisStructure, KrigingStructure, LinearStructure, InverseDistanceStructure
 export LobacheskyStructure, NeuralStructure, RandomForestStructure, SecondOrderPolynomialStructure
 export WendlandStructure
-export MOE
+#export MOE
 export VariableFidelitySurrogate
 export PolynomialChaosSurrogate
 export EarthSurrogate

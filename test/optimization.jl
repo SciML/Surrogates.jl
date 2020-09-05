@@ -5,6 +5,7 @@ using Flux: @epochs
 
 #######SRBF############
 ##### 1D #####
+
 lb = 0.0
 ub = 15.0
 objective_function = x -> 2*x+1
@@ -252,3 +253,30 @@ ub = [6.0,6.0]
 my_k_SOPND = Kriging(x,y,lb,ub)
 num_centers = 2
 surrogate_optimize(objective_function_ND,SOP(num_centers),lb,ub,my_k_SOPND,SobolSample(),maxiters=20)
+
+
+
+#multi optimization
+
+f  = x -> [x^2, x]
+lb = 1.0
+ub = 10.0
+x  = sample(100, lb, ub, SobolSample())
+y  = f.(x)
+my_radial_basis_ego = RadialBasis(x, y, lb, ub, rad = linearRadial)
+surrogate_optimize(f,EGO(),lb,ub,my_radial_basis_ego,SobolSample())
+
+
+
+f  = x -> [x^2, x]
+lb = 1.0
+ub = 10.0
+x  = sample(100, lb, ub, SobolSample())
+y  = f.(x)
+my_radial_basis_rtea = RadialBasis(x, y, lb, ub, rad = linearRadial)
+Z = 0.8 #percentage
+K = 2 #number of revaluations
+p_cross = 0.5 #crossing vs copy
+n_c = 1.0 # hyperparameter for children creation
+sigma = 1.5 # mutation
+surrogate_optimize(f,RTEA(Z,K,p_cross,n_c,sigma),lb,ub,my_radial_basis_rtea,SobolSample())

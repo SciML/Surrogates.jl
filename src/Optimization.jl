@@ -3,12 +3,23 @@ using Distributions
 
 abstract type SurrogateOptimizationAlgorithm end
 
+#single objective optimization
 struct SRBF <: SurrogateOptimizationAlgorithm end
 struct LCBS <: SurrogateOptimizationAlgorithm end
 struct EI <: SurrogateOptimizationAlgorithm end
 struct DYCORS <: SurrogateOptimizationAlgorithm end
 struct SOP{P} <: SurrogateOptimizationAlgorithm
     p::P
+end
+
+#multi objective optimization
+struct EGO <: SurrogateOptimizationAlgorithm end
+struct RTEA{K,Z,P,N,S} <: SurrogateOptimizationAlgorithm
+    k::K
+    z::Z
+    p::P
+    n_c::N
+    sigma::S
 end
 
 function merit_function(point,w,surr::AbstractSurrogate,s_max,s_min,d_max,d_min,box_size)
@@ -1391,3 +1402,314 @@ function surrogate_optimize(obj::Function,sopd::SOP,lb,ub,surrSOPD::AbstractSurr
     index = argmin(surrSOPD.y)
     return (surrSOPD.x[index],surrSOPD.y[index])
 end
+
+
+#EGO
+
+_dominates(x, y) = all(x .<= y) && any(x .< y)
+function _nonDominatedSorting(arr::Array{Float64,2})
+    fronts::Array{Array,1} = Array[]
+    ind::Array{Int64,1} = collect(1:size(arr, 1))
+    while !isempty(arr)
+        s = size(arr, 1)
+        red = dropdims(sum([ _dominates(arr[i,:], arr[j,:]) for i in 1:s, j in 1:s ], dims=1) .== 0, dims=1)
+        a = 1:s
+        sel::Array{Int64,1} = a[red]
+        push!(fronts, ind[sel])
+        da::Array{Int64,1} = deleteat!(collect(1:s), sel)
+        ind = deleteat!(ind, sel)
+        arr = arr[da, :]
+    end
+    return fronts
+end
+
+function surrogate_optimize(obj::Function,ego::EGO,lb::Number,ub::Number,surrEGO::AbstractSurrogate,sample_type::SamplingAlgorithm;maxiters=100, n_new_look = 1000)
+    #obj contains a function for each output dimension
+    dim_out = length(surrEGO.y[1])
+    d = 1
+    x_to_look = sample(n_new_look,lb,ub,sample_type)
+    for iter = 1:maxiters
+        index_min = 0
+        min_mean = +Inf
+        for i = 1:n_new_look
+            new_mean = sum(obj(x_to_look[i]))/dim_out
+            if new_mean < min_mean
+                min_mean = new_mean
+                index_min = i
+            end
+        end
+
+        x_new = x_to_look[index_min]
+        deleteat!(x_to_look,index_min)
+        n_new_look = n_new_look - 1
+        # evaluate the true function at that point
+        y_new = obj(x_new)
+        #update the surrogate
+        add_point!(surrEGO,x_new,y_new)
+    end
+    #Find and return Pareto
+    y = surrEGO.y
+    y = permutedims(reshape(hcat(y...),(length(y[1]), length(y)))) #2d matrix
+    Fronts = _nonDominatedSorting(y) #this returns the indexes
+    pareto_front_index = Fronts[1]
+    pareto_set = []
+    pareto_front = []
+    for i = 1:length(pareto_front_index)
+        push!(pareto_set,surrEGO.x[pareto_front_index[i]])
+        push!(pareto_front,surrEGO.y[pareto_front_index[i]])
+    end
+    return pareto_set,pareto_front
+end
+
+function surrogate_optimize(obj::Function,ego::EGO,lb,ub,surrEGOND::AbstractSurrogate,sample_type::SamplingAlgorithm;maxiters=100, n_new_look = 1000)
+    #obj contains a function for each output dimension
+    dim_out = length(surrEGOND.y[1])
+    d = length(lb)
+    x_to_look = sample(n_new_look,lb,ub,sample_type)
+    for iter = 1:maxiters
+        index_min = 0
+        min_mean = +Inf
+        for i = 1:n_new_look
+            new_mean = sum(obj(x_to_look[i]))/dim_out
+            if new_mean < min_mean
+                min_mean = new_mean
+                index_min = i
+            end
+        end
+        x_new = x_to_look[index_min]
+        deleteat!(x_to_look,index_min)
+        n_new_look = n_new_look - 1
+        # evaluate the true function at that point
+        y_new = obj(x_new)
+        #update the surrogate
+        add_point!(surrEGOND,x_new,y_new)
+    end
+    #Find and return Pareto
+    y = surrEGO.y
+    y = permutedims(reshape(hcat(y...),(length(y[1]), length(y)))) #2d matrix
+    Fronts = _nonDominatedSorting(y) #this returns the indexes
+    pareto_front_index = Fronts[1]
+    pareto_set = []
+    pareto_front = []
+    for i = 1:length(pareto_front_index)
+        push!(pareto_set,surrEGO.x[pareto_front_index[i]])
+        push!(pareto_front,surrEGO.y[pareto_front_index[i]])
+    end
+    return pareto_set,pareto_front
+end
+
+
+# RTEA (Noisy model based multi objective optimization + standard rtea by fieldsen), use this for very noisy objective functions because there are a lot of re-evaluations
+
+ function surrogate_optimize(obj,rtea::RTEA,lb::Number,ub::Number,surrRTEA::AbstractSurrogate,sample_type::SamplingAlgorithm;maxiters=100, n_new_look = 1000)
+     Z = rtea.z
+     K = rtea.k
+     p_cross = rtea.p
+     n_c = rtea.n_c
+     sigma = rtea.sigma
+     #find pareto set of the first evaluations: (estimated pareto)
+     y = surrRTEA.y
+     y = permutedims(reshape(hcat(y...),(length(y[1]), length(y)))) #2d matrix
+     Fronts = _nonDominatedSorting(y) #this returns the indexes
+     pareto_front_index = Fronts[1]
+     pareto_set = []
+     pareto_front = []
+     for i = 1:length(pareto_front_index)
+         push!(pareto_set,surrRTEA.x[pareto_front_index[i]])
+         push!(pareto_front,surrRTEA.y[pareto_front_index[i]])
+     end
+     number_of_revaluations = zeros(Int,length(pareto_set))
+     iter = 1
+     d = 1
+     dim_out = length(surrRTEA.y[1])
+     while iter < maxiters
+
+         if iter < (1-Z)*maxiters
+             #1) propose new point x_new
+
+             #sample randomly from (estimated) pareto v and u
+             if length(pareto_set) < 2
+                 throw("Starting pareto set is too small, increase number of sampling point of the surrogate")
+             end
+             u = pareto_set[rand(1:length(pareto_set))]
+             v = pareto_set[rand(1:length(pareto_set))]
+
+             #children
+             if rand() < p_cross
+                 mu = rand()
+                 if mu <= 0.5
+                     beta = (2*mu)^(1/n_c+1)
+                else
+                    beta = ( 1/(2*(1-mu)) )^(1/n_c+1)
+                end
+                x = 0.5*( (1+beta)*v + (1-beta)*u)
+             else
+                 x = v
+             end
+
+             #mutation
+             x_new = x + rand(Normal(0,sigma))
+             y_new = obj(x_new)
+
+             #update pareto
+             new_to_pareto = false
+             for i = 1:length(pareto_set)
+                 counter = zeros(Int,dim_out)
+                 #compare the y_new values to pareto, if there is at least one entry where it dominates all the others, then it can be in pareto
+                 for l = 1:dim_out
+                     if y_new[l] < pareto_front[i][l]
+                         counter[l]
+                     end
+                 end
+             end
+             for j = 1:dim_out
+                 if counter[j] == dim_out
+                     new_to_pareto = true
+                 end
+             end
+             if new_to_pareto == true
+                 push!(pareto_set,x_new)
+                 push!(pareto_front,y_new)
+                 push!(number_of_revaluations,0)
+             end
+             add_point!(surrRTEA,new_x,new_y)
+         end
+         for k = 1:K
+             val,pos = findmin(number_of_revaluations)
+             x_r = pareto_set[pos]
+             y_r = obj(x_r)
+             number_of_revaluations[pos] = number_of_revaluations + 1
+             #check if it is again in the pareto set or not, if not eliminate it from pareto
+             still_in_pareto = false
+             for i = 1:length(pareto_set)
+                 counter = zeros(Int,dim_out)
+                 for l = 1:dim_out
+                     if y_r[l] < pareto_front[i][l]
+                         counter[l]
+                     end
+                 end
+             end
+             for j = 1:dim_out
+                 if counter[j] == dim_out
+                     still_in_pareto = true
+                 end
+             end
+             if still_in_pareto == false
+                 #remove from pareto
+                 deleteat!(pareto_set,pos)
+                 deleteat!(pareto_front,pos)
+                 deleteat!(number_of_revaluationsm,pos)
+             end
+         end
+         iter = iter + 1
+     end
+     return pareto_set,pareto_front
+ end
+
+
+
+ function surrogate_optimize(obj,rtea::RTEA,lb,ub,surrRTEAND::AbstractSurrogate,sample_type::SamplingAlgorithm;maxiters=100, n_new_look = 1000)
+     Z = rtea.z
+     K = rtea.k
+     p_cross = rtea.p
+     n_c = rtea.n_c
+     sigma = rtea.sigma
+     #find pareto set of the first evaluations: (estimated pareto)
+     y = surrRTEA.y
+     y = permutedims(reshape(hcat(y...),(length(y[1]), length(y)))) #2d matrix
+     Fronts = _nonDominatedSorting(y) #this returns the indexes
+     pareto_front_index = Fronts[1]
+     pareto_set = []
+     pareto_front = []
+     for i = 1:length(pareto_front_index)
+         push!(pareto_set,surrRTEA.x[pareto_front_index[i]])
+         push!(pareto_front,surrRTEA.y[pareto_front_index[i]])
+     end
+     number_of_revaluations = zeros(Int,length(pareto_set))
+     iter = 1
+     d = length(lb)
+     dim_out = length(surrRTEA.y[1])
+     while iter < maxiters
+
+         if iter < (1-Z)*maxiters
+
+             #sample pareto_set
+             if length(pareto_set) < 2
+                 throw("Starting pareto set is too small, increase number of sampling point of the surrogate")
+             end
+             u = pareto_set[rand(1:length(pareto_set))]
+             v = pareto_set[rand(1:length(pareto_set))]
+
+             #children
+             if rand() < p_cross
+                 mu = rand()
+                 if mu <= 0.5
+                     beta = (2*mu)^(1/n_c+1)
+                else
+                    beta = ( 1/(2*(1-mu)) )^(1/n_c+1)
+                end
+                x = 0.5*( (1+beta)*v + (1-beta)*u)
+             else
+                 x = v
+             end
+
+             #mutation
+             for i =1:d
+                 x_new[i] = x[i] + rand(Normal(0,sigma))
+             end
+             y_new = obj(x_new)
+
+             #update pareto
+             new_to_pareto = false
+             for i = 1:length(pareto_set)
+                 counter = zeros(Int,dim_out)
+                 #compare the y_new values to pareto, if there is at least one entry where it dominates all the others, then it can be in pareto
+                 for l = 1:dim_out
+                     if y_new[l] < pareto_front[i][l]
+                         counter[l]
+                     end
+                 end
+             end
+             for j = 1:dim_out
+                 if counter[j] == dim_out
+                     new_to_pareto = true
+                 end
+             end
+             if new_to_pareto == true
+                 push!(pareto_set,x_new)
+                 push!(pareto_front,y_new)
+                 push!(number_of_revaluations,0)
+             end
+             add_point!(surrRTEAND,new_x,new_y)
+         end
+         for k = 1:K
+             val,pos = findmin(number_of_revaluations)
+             x_r = pareto_set[pos]
+             y_r = obj(x_r)
+             number_of_revaluations[pos] = number_of_revaluations + 1
+             #check if it is again in the pareto set or not, if not eliminate it from pareto
+             still_in_pareto = false
+             for i = 1:length(pareto_set)
+                 counter = zeros(Int,dim_out)
+                 for l = 1:dim_out
+                     if y_r[l] < pareto_front[i][l]
+                         counter[l]
+                     end
+                 end
+             end
+             for j = 1:dim_out
+                 if counter[j] == dim_out
+                     still_in_pareto = true
+                 end
+             end
+             if still_in_pareto == false
+                 #remove from pareto
+                 deleteat!(pareto_set,pos)
+                 deleteat!(pareto_front,pos)
+                 deleteat!(number_of_revaluationsm,pos)
+             end
+         end
+         iter = iter + 1
+     end
+     return pareto_set,pareto_front
+ end
