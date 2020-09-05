@@ -1412,7 +1412,7 @@ function _nonDominatedSorting(arr::Array{Float64,2})
     ind::Array{Int64,1} = collect(1:size(arr, 1))
     while !isempty(arr)
         s = size(arr, 1)
-        red = dropdims(sum([ dominates(arr[i,:], arr[j,:]) for i in 1:s, j in 1:s ], dims=1) .== 0, dims=1)
+        red = dropdims(sum([ _dominates(arr[i,:], arr[j,:]) for i in 1:s, j in 1:s ], dims=1) .== 0, dims=1)
         a = 1:s
         sel::Array{Int64,1} = a[red]
         push!(fronts, ind[sel])
@@ -1423,7 +1423,7 @@ function _nonDominatedSorting(arr::Array{Float64,2})
     return fronts
 end
 
-function surrogate_optimize(obj,ego::EGO,lb::Number,ub::Number,surrEGO::AbstractSurrogate,sample_type::SamplingAlgorithm;maxiters=100, n_new_look = 1000)
+function surrogate_optimize(obj::Function,ego::EGO,lb::Number,ub::Number,surrEGO::AbstractSurrogate,sample_type::SamplingAlgorithm;maxiters=100, n_new_look = 1000)
     #obj contains a function for each output dimension
     dim_out = length(surrEGO.y[1])
     d = 1
@@ -1601,6 +1601,7 @@ end
                  deleteat!(number_of_revaluationsm,pos)
              end
          end
+         iter = iter + 1
      end
      return pareto_set,pareto_front
  end
@@ -1708,6 +1709,7 @@ end
                  deleteat!(number_of_revaluationsm,pos)
              end
          end
+         iter = iter + 1
      end
      return pareto_set,pareto_front
  end
