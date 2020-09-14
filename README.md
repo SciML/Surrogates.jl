@@ -24,25 +24,29 @@ The construction of a surrogate model can be seen as a three-step process:
 - Sobol
 - Latin Hypercube
 - Low Discrepancy
-- Random following different distributions
+- Kronecker
+- Golden
+- Random
+
 
 ## ALL the currently available surrogate models:
 
 - Kriging
+- Kriging using Stheno
 - Radial Basis
 - Wendland
 - Linear
 - Second Order Polynomial
-- Support Vector Machines
+- Support Vector Machines (Wait for LIBSVM resolution)
 - Neural Networks
 - Random Forests
 - Lobachesky
 - Inverse-distance
 - Polynomial expansions
 - Variable fidelity
-- Mixture of experts
+- Mixture of experts (Waiting GaussianMixtures package to work on v1.5)
 - Earth
-- Gradient Enhanced Kriging 
+- Gradient Enhanced Kriging
 
 ## ALL the currently available optimization methods:
 
@@ -51,7 +55,7 @@ The construction of a surrogate model can be seen as a three-step process:
 - DYCORS
 - EI
 - SOP
-
+- Multi-optimization: EGO and RTEA
 ## Installing Surrogates package
 
 ```julia
