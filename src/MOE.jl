@@ -1,3 +1,4 @@
+#=
 using Clustering
 #using GaussianMixtures
 using LinearAlgebra
@@ -14,62 +15,6 @@ mutable struct MOE{X,Y,L,U,S,K,M,V,W} <: AbstractSurrogate
     weights::W
 end
 
-
-#Radial structure:
-function RadialBasisStructure(;radial_function,scale_factor,sparse)
-    return (name = "RadialBasis", radial_function = radial_function, scale_factor = scale_factor, sparse = sparse)
-end
-
-#Kriging structure:
-function KrigingStructure(;p,theta)
-    return (name = "Kriging", p = p, theta = theta)
-end
-
-function GEKStructure(;p,theta)
-    return (name = "GEK", p = p, theta = theta)
-end
-
-#Linear structure
-function LinearStructure()
-    return (name = "LinearSurrogate")
-end
-
-#InverseDistance structure
-function InverseDistanceStructure(;p)
-    return (name = "InverseDistanceSurrogate", p = p)
-end
-
-#Lobachesky structure
-function LobacheskyStructure(;alpha,n,sparse)
-    return (name = "LobacheskySurrogate", alpha = alpha, n = n, sparse = sparse)
-end
-
-#Neural structure
-function NeuralStructure(;model,loss,opt,n_echos)
-    return (name ="NeuralSurrogate", model = model ,loss = loss,opt = opt,n_echos = n_echos)
-end
-
-#Random forest structure
-function RandomForestStructure(;num_round)
-    return (name = "RandomForestSurrogate", num_round = num_round)
-end
-
-#Second order poly structure
-function SecondOrderPolynomialStructure()
-    return (name = "SecondOrderPolynomialSurrogate")
-end
-
-#Wendland structure
-function WendlandStructure(; eps, maxiters, tol)
-    return (name = "Wendland", eps = eps, maxiters = maxiters, tol = tol)
-end
-
-#Polychaos structure
-function PolyChaosStructure(; op)
-    return (name = "PolynomialChaosSurrogate", op = op)
-end
-
-#=
 function MOE(x,y,lb::Number,ub::Number; scale_factor::Number = 1.0, k::Int = 2, local_kind = [RadialBasisStructure(radial_function = linearRadial, scale_factor=1.0,sparse = false),RadialBasisStructure(radial_function = cubicRadial, scale_factor=1.0, sparse = false)])
     if k != length(local_kind)
         throw("Number of mixtures = $k is not equal to length of local surrogates")

@@ -25,7 +25,65 @@ include("GEK.jl")
 current_surrogates = ["Kriging","LinearSurrogate","LobacheskySurrogate","NeuralSurrogate",
                       "RadialBasis","RandomForestSurrogate","SecondOrderPolynomialSurrogate",
                       "Wendland","GEK","PolynomialChaosSurrogate"]
-export current_surrogates_MOE
+
+#Radial structure:
+function RadialBasisStructure(;radial_function,scale_factor,sparse)
+    return (name = "RadialBasis", radial_function = radial_function, scale_factor = scale_factor, sparse = sparse)
+end
+
+#Kriging structure:
+function KrigingStructure(;p,theta)
+    return (name = "Kriging", p = p, theta = theta)
+end
+
+function GEKStructure(;p,theta)
+    return (name = "GEK", p = p, theta = theta)
+end
+
+#Linear structure
+function LinearStructure()
+    return (name = "LinearSurrogate")
+end
+
+#InverseDistance structure
+function InverseDistanceStructure(;p)
+    return (name = "InverseDistanceSurrogate", p = p)
+end
+
+#Lobachesky structure
+function LobacheskyStructure(;alpha,n,sparse)
+    return (name = "LobacheskySurrogate", alpha = alpha, n = n, sparse = sparse)
+end
+
+#Neural structure
+function NeuralStructure(;model,loss,opt,n_echos)
+    return (name ="NeuralSurrogate", model = model ,loss = loss,opt = opt,n_echos = n_echos)
+end
+
+#Random forest structure
+function RandomForestStructure(;num_round)
+    return (name = "RandomForestSurrogate", num_round = num_round)
+end
+
+#Second order poly structure
+function SecondOrderPolynomialStructure()
+    return (name = "SecondOrderPolynomialSurrogate")
+end
+
+#Wendland structure
+function WendlandStructure(; eps, maxiters, tol)
+    return (name = "Wendland", eps = eps, maxiters = maxiters, tol = tol)
+end
+
+#Polychaos structure
+function PolyChaosStructure(; op)
+    return (name = "PolynomialChaosSurrogate", op = op)
+end
+
+export current_surrogates
+export RadialBasisStructure, KrigingStructure, LinearStructure, InverseDistanceStructure
+export LobacheskyStructure, NeuralStructure, RandomForestStructure, SecondOrderPolynomialStructure
+export WendlandStructure
 export AbstractSurrogate, SamplingAlgorithm
 export Kriging, RadialBasis, add_point!, current_estimate, std_error_at_point
 export linearRadial,cubicRadial,multiquadricRadial,thinplateRadial
