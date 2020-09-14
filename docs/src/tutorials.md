@@ -9,7 +9,7 @@ lb = 1.0
 ub = 10.0
 x = sample(50,lb,ub,SobolSample())
 y = f.(x)
-my_radial_basis = RadialBasis(x,y,lb,ub,rad=thinplateRadial)
+my_radial_basis = RadialBasis(x,y,lb,ub)
 
 #I want an approximation at 5.4
 approx = my_radial_basis(5.4)
