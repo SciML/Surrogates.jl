@@ -1,6 +1,6 @@
 using Surrogates
 
-
+#=
 #1D MOE
 n = 30
 lb = 0.0
@@ -33,3 +33,4 @@ val = my_moe_ND((1.0,1.0))
 my_locals = [InverseDistanceStructure(p = 1.0),
              RandomForestStructure(num_round=1)]
 my_moe_redef = MOE(x,y,lb,ub,k = 2,local_kind = my_locals)
+=#
