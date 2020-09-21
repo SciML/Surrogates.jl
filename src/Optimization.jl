@@ -1485,15 +1485,15 @@ function surrogate_optimize(obj::Function,ego::EGO,lb,ub,surrEGOND::AbstractSurr
         add_point!(surrEGOND,x_new,y_new)
     end
     #Find and return Pareto
-    y = surrEGO.y
+    y = surrEGOND.y
     y = permutedims(reshape(hcat(y...),(length(y[1]), length(y)))) #2d matrix
     Fronts = _nonDominatedSorting(y) #this returns the indexes
     pareto_front_index = Fronts[1]
     pareto_set = []
     pareto_front = []
     for i = 1:length(pareto_front_index)
-        push!(pareto_set,surrEGO.x[pareto_front_index[i]])
-        push!(pareto_front,surrEGO.y[pareto_front_index[i]])
+        push!(pareto_set,surrEGOND.x[pareto_front_index[i]])
+        push!(pareto_front,surrEGOND.y[pareto_front_index[i]])
     end
     return pareto_set,pareto_front
 end
@@ -1606,8 +1606,6 @@ end
      return pareto_set,pareto_front
  end
 
-
-
  function surrogate_optimize(obj,rtea::RTEA,lb,ub,surrRTEAND::AbstractSurrogate,sample_type::SamplingAlgorithm;maxiters=100, n_new_look = 1000)
      Z = rtea.z
      K = rtea.k
@@ -1615,20 +1613,20 @@ end
      n_c = rtea.n_c
      sigma = rtea.sigma
      #find pareto set of the first evaluations: (estimated pareto)
-     y = surrRTEA.y
+     y = surrRTEAND.y
      y = permutedims(reshape(hcat(y...),(length(y[1]), length(y)))) #2d matrix
      Fronts = _nonDominatedSorting(y) #this returns the indexes
      pareto_front_index = Fronts[1]
      pareto_set = []
      pareto_front = []
      for i = 1:length(pareto_front_index)
-         push!(pareto_set,surrRTEA.x[pareto_front_index[i]])
-         push!(pareto_front,surrRTEA.y[pareto_front_index[i]])
+         push!(pareto_set,surrRTEAND.x[pareto_front_index[i]])
+         push!(pareto_front,surrRTEAND.y[pareto_front_index[i]])
      end
      number_of_revaluations = zeros(Int,length(pareto_set))
      iter = 1
      d = length(lb)
-     dim_out = length(surrRTEA.y[1])
+     dim_out = length(surrRTEAND.y[1])
      while iter < maxiters
 
          if iter < (1-Z)*maxiters
