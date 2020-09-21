@@ -34,7 +34,8 @@ makedocs(
         "Branin function" => "BraninFunction.md",
         "Ackley function" => "ackley.md",
         "Gramacy & Lee Function" => "gramacylee.md",
-        "Salustowicz Benchmark" => "Salustowicz.md"
+        "Salustowicz Benchmark" => "Salustowicz.md",
+        "Multi objective optimization" => "multi_objective_opt.md"
         ]
     "Contributing" => "contributing.md"
     ]
