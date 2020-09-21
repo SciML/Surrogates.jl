@@ -5,7 +5,7 @@ The true underlying function HyGP had to approximate is the 1D Salustowicz funct
 
 The Salustowicz benchmark function is as follows:
 
-``f(x) = e^(-x) * x^3 * cos(x) * sin(x) * (cos(x) * sin(x)*sin(x) - 1)``
+``f(x) = e^{(-x)} x^3 cos(x) sin(x) (cos(x) sin^2(x) - 1)``
 
 Let's import these two packages  `Surrogates` and `Plots`:
 
