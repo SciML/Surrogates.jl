@@ -13,7 +13,7 @@ struct SOP{P} <: SurrogateOptimizationAlgorithm
 end
 
 #multi objective optimization
-struct EGO <: SurrogateOptimizationAlgorithm end
+struct SMB <: SurrogateOptimizationAlgorithm end
 struct RTEA{K,Z,P,N,S} <: SurrogateOptimizationAlgorithm
     k::K
     z::Z
@@ -1423,9 +1423,9 @@ function _nonDominatedSorting(arr::Array{Float64,2})
     return fronts
 end
 
-function surrogate_optimize(obj::Function,ego::EGO,lb::Number,ub::Number,surrEGO::AbstractSurrogate,sample_type::SamplingAlgorithm;maxiters=100, n_new_look = 1000)
+function surrogate_optimize(obj::Function,sbm::SMB,lb::Number,ub::Number,surrSMB::AbstractSurrogate,sample_type::SamplingAlgorithm;maxiters=100, n_new_look = 1000)
     #obj contains a function for each output dimension
-    dim_out = length(surrEGO.y[1])
+    dim_out = length(surrSMB.y[1])
     d = 1
     x_to_look = sample(n_new_look,lb,ub,sample_type)
     for iter = 1:maxiters
@@ -1445,25 +1445,25 @@ function surrogate_optimize(obj::Function,ego::EGO,lb::Number,ub::Number,surrEGO
         # evaluate the true function at that point
         y_new = obj(x_new)
         #update the surrogate
-        add_point!(surrEGO,x_new,y_new)
+        add_point!(surrSMB,x_new,y_new)
     end
     #Find and return Pareto
-    y = surrEGO.y
+    y = surrSMB.y
     y = permutedims(reshape(hcat(y...),(length(y[1]), length(y)))) #2d matrix
     Fronts = _nonDominatedSorting(y) #this returns the indexes
     pareto_front_index = Fronts[1]
     pareto_set = []
     pareto_front = []
     for i = 1:length(pareto_front_index)
-        push!(pareto_set,surrEGO.x[pareto_front_index[i]])
-        push!(pareto_front,surrEGO.y[pareto_front_index[i]])
+        push!(pareto_set,surrSMB.x[pareto_front_index[i]])
+        push!(pareto_front,surrSMB.y[pareto_front_index[i]])
     end
     return pareto_set,pareto_front
 end
 
-function surrogate_optimize(obj::Function,ego::EGO,lb,ub,surrEGOND::AbstractSurrogate,sample_type::SamplingAlgorithm;maxiters=100, n_new_look = 1000)
+function surrogate_optimize(obj::Function,smb::SMB,lb,ub,surrSMBND::AbstractSurrogate,sample_type::SamplingAlgorithm;maxiters=100, n_new_look = 1000)
     #obj contains a function for each output dimension
-    dim_out = length(surrEGOND.y[1])
+    dim_out = length(surrSMBND.y[1])
     d = length(lb)
     x_to_look = sample(n_new_look,lb,ub,sample_type)
     for iter = 1:maxiters
@@ -1482,18 +1482,18 @@ function surrogate_optimize(obj::Function,ego::EGO,lb,ub,surrEGOND::AbstractSurr
         # evaluate the true function at that point
         y_new = obj(x_new)
         #update the surrogate
-        add_point!(surrEGOND,x_new,y_new)
+        add_point!(surrSMBND,x_new,y_new)
     end
     #Find and return Pareto
-    y = surrEGOND.y
+    y = surrSMBND.y
     y = permutedims(reshape(hcat(y...),(length(y[1]), length(y)))) #2d matrix
     Fronts = _nonDominatedSorting(y) #this returns the indexes
     pareto_front_index = Fronts[1]
     pareto_set = []
     pareto_front = []
     for i = 1:length(pareto_front_index)
-        push!(pareto_set,surrEGOND.x[pareto_front_index[i]])
-        push!(pareto_front,surrEGOND.y[pareto_front_index[i]])
+        push!(pareto_set,surrSMBND.x[pareto_front_index[i]])
+        push!(pareto_front,surrSMBND.y[pareto_front_index[i]])
     end
     return pareto_set,pareto_front
 end
