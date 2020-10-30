@@ -263,8 +263,8 @@ lb = 1.0
 ub = 10.0
 x  = sample(100, lb, ub, SobolSample())
 y  = f.(x)
-my_radial_basis_ego = RadialBasis(x, y, lb, ub, rad = linearRadial)
-surrogate_optimize(f,EGO(),lb,ub,my_radial_basis_ego,SobolSample())
+my_radial_basis_smb = RadialBasis(x, y, lb, ub, rad = linearRadial)
+surrogate_optimize(f,SMB(),lb,ub,my_radial_basis_ego,SobolSample())
 
 
 
