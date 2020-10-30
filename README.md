@@ -55,7 +55,7 @@ The construction of a surrogate model can be seen as a three-step process:
 - DYCORS
 - EI
 - SOP
-- Multi-optimization: EGO and RTEA
+- Multi-optimization: SMB and RTEA
 ## Installing Surrogates package
 
 ```julia
