@@ -2,8 +2,7 @@
 
 ## Surrogates.jl
 
-[![Build Status](https://travis-ci.org/JuliaDiffEq/Surrogates.jl.svg?branch=master)](https://travis-ci.org/JuliaDiffEq/Surrogates.jl)
-[![Build status](https://ci.appveyor.com/api/projects/status/fl7hr18apc7lt4of?svg=true)](https://ci.appveyor.com/project/ludoro/surrogates-jl)
+[![Build Status](https://github.com/SciML/Surrogates.jl/workflows/CI/badge.svg)](https://github.com/SciML/Surrogates.jl/actions?query=workflow%3ACI)
 [![Coverage Status](https://coveralls.io/repos/github/JuliaDiffEq/Surrogates.jl/badge.svg)](https://coveralls.io/github/JuliaDiffEq/Surrogates.jl)
 [![Stable](https://img.shields.io/badge/docs-stable-blue.svg)](http://surrogates.sciml.ai/stable/)
 [![dev](https://img.shields.io/badge/docs-dev-blue.svg)](http://surrogates.sciml.ai/dev/)
