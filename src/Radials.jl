@@ -59,7 +59,10 @@ function _calc_coeffs(x, y, lb, ub, phi, q, scale_factor, sparse)
     D = _construct_rbf_interp_matrix(x, first(x), lb, ub, phi, q, scale_factor, sparse)
     Y = _construct_rbf_y_matrix(y, first(y), length(y) + num_poly_terms)
 
-    coeff = D \ Y
+    # D is a Symmetric
+    # ExtendableSparse only defined `\` on its type, not the wrapper
+    ExtendableSparse.flush!(D.data)
+    coeff = D.data \ Y
     return coeff
 end
 
