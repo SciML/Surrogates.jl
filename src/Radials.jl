@@ -61,8 +61,12 @@ function _calc_coeffs(x, y, lb, ub, phi, q, scale_factor, sparse)
 
     # D is a Symmetric
     # ExtendableSparse only defined `\` on its type, not the wrapper
-    ExtendableSparse.flush!(D.data)
-    coeff = D.data \ Y
+    if D.data isa ExtendableSparseMatrix
+        ExtendableSparse.flush!(D.data)
+        coeff = D.data \ Y
+    else
+        coeff = D \ Y
+    end
     return coeff
 end
 
