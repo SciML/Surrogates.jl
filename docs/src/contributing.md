@@ -13,6 +13,6 @@ You can also contact me on the Julia slack channel at @ludoro.
 
 - Ludovico Bessi (@ludoro)
 - Chris Rackauckas (@ChrisRackauckas)
-- Rohit Singh Rathaur (@TeAmp0is0N)
+- Rohit Singh Rathaur (@RohitRathore1)
 - Andrea Cognolato (@mrandri19)
 - Kanav Gupta (@kanav99)
