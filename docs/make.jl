@@ -7,7 +7,7 @@ makedocs(
         "Basics" => "tutorials.md",
         "Radials" => "radials.md",
         "Kriging" => "kriging.md",
-        "Lobachesky" => "lobachesky.md",
+        "Lobachevsky" => "lobachevsky.md",
         "Linear" => "LinearSurrogate.md",
         "InverseDistance" => "InverseDistance.md",
         "RandomForest" => "randomforest.md",

@@ -1,5 +1,5 @@
 using ExtendableSparse
-mutable struct LobacheskySurrogate{X,Y,A,N,L,U,C,S} <: AbstractSurrogate
+mutable struct LobachevskySurrogate{X,Y,A,N,L,U,C,S} <: AbstractSurrogate
     x::X
     y::Y
     alpha::A
@@ -42,9 +42,9 @@ function _calc_loba_coeff1D(x,y,alpha,n,sparse)
     return Sym\y
 end
 """
-Lobachesky interpolation, suggested parameters: 0 <= alpha <= 4, n must be even.
+Lobachevsky interpolation, suggested parameters: 0 <= alpha <= 4, n must be even.
 """
-function LobacheskySurrogate(x,y,lb::Number,ub::Number; alpha::Number = 1.0,n::Int=4, sparse = false)
+function LobachevskySurrogate(x,y,lb::Number,ub::Number; alpha::Number = 1.0,n::Int=4, sparse = false)
     if alpha > 4 || alpha < 0
         error("Alpha must be between 0 and 4")
     end
@@ -52,10 +52,10 @@ function LobacheskySurrogate(x,y,lb::Number,ub::Number; alpha::Number = 1.0,n::I
         error("Parameter n must be even")
     end
     coeff = _calc_loba_coeff1D(x,y,alpha,n,sparse)
-    LobacheskySurrogate(x,y,alpha,n,lb,ub,coeff,sparse)
+    LobachevskySurrogate(x,y,alpha,n,lb,ub,coeff,sparse)
 end
 
-function (loba::LobacheskySurrogate)(val::Number)
+function (loba::LobachevskySurrogate)(val::Number)
     return sum(loba.coeff[j]*phi_nj1D(val,loba.x[j],loba.alpha,loba.n) for j = 1:length(loba.x))
 end
 
@@ -79,23 +79,23 @@ function _calc_loba_coeffND(x,y,alpha,n,sparse)
     return Sym\y
 end
 """
-LobacheskySurrogate(x,y,alpha,n::Int,lb,ub,sparse = false)
+LobachevskySurrogate(x,y,alpha,n::Int,lb,ub,sparse = false)
 
-Build the Lobachesky surrogate with parameters alpha and n.
+Build the Lobachevsky surrogate with parameters alpha and n.
 """
-function LobacheskySurrogate(x,y,lb,ub; alpha = collect(one.(x[1])),n::Int = 4, sparse = false)
+function LobachevskySurrogate(x,y,lb,ub; alpha = collect(one.(x[1])),n::Int = 4, sparse = false)
     if n % 2 != 0
         error("Parameter n must be even")
     end
     coeff = _calc_loba_coeffND(x,y,alpha,n,sparse)
-    LobacheskySurrogate(x,y,alpha,n,lb,ub,coeff,sparse)
+    LobachevskySurrogate(x,y,alpha,n,lb,ub,coeff,sparse)
 end
 
-function (loba::LobacheskySurrogate)(val)
+function (loba::LobachevskySurrogate)(val)
     return sum(loba.coeff[j]*phi_njND(val,loba.x[j],loba.alpha,loba.n) for j=1:length(loba.x))
 end
 
-function add_point!(loba::LobacheskySurrogate,x_new,y_new)
+function add_point!(loba::LobachevskySurrogate,x_new,y_new)
     if length(loba.x[1]) == 1
         #1D
         append!(loba.x,x_new)
@@ -110,7 +110,7 @@ function add_point!(loba::LobacheskySurrogate,x_new,y_new)
     nothing
 end
 
-#Lobachesky integrals
+#Lobachevsky integrals
 function _phi_int(point,n)
     res = zero(eltype(point))
     for k = 0:n
@@ -122,7 +122,7 @@ function _phi_int(point,n)
     res *= 1/(2^n*factorial(n))
 end
 
-function lobachesky_integral(loba::LobacheskySurrogate,lb::Number,ub::Number)
+function lobachevsky_integral(loba::LobachevskySurrogate,lb::Number,ub::Number)
     val = zero(eltype(loba.y[1]))
     n = length(loba.x)
     for i = 1:n
@@ -135,12 +135,12 @@ function lobachesky_integral(loba::LobacheskySurrogate,lb::Number,ub::Number)
 end
 
 """
-lobachesky_integral(loba::LobacheskySurrogate,lb,ub)
+lobachevsky_integral(loba::LobachevskySurrogate,lb,ub)
 
-Calculates the integral of the Lobachesky surrogate, which has a closed form.
+Calculates the integral of the Lobachevsky surrogate, which has a closed form.
 
 """
-function lobachesky_integral(loba::LobacheskySurrogate,lb,ub)
+function lobachevsky_integral(loba::LobachevskySurrogate,lb,ub)
     d = length(lb)
     val = zero(eltype(loba.y[1]))
     for j = 1:length(loba.x)
@@ -157,12 +157,12 @@ end
 
 
 """
-lobachesky_integrate_dimension(loba::LobacheskySurrogate,lb,ub,dimension)
+lobachevsky_integrate_dimension(loba::LobachevskySurrogate,lb,ub,dimension)
 
 Integrating the surrogate on selected dimension dim
 
 """
-function lobachesky_integrate_dimension(loba::LobacheskySurrogate,lb,ub,dim::Int)
+function lobachevsky_integrate_dimension(loba::LobachevskySurrogate,lb,ub,dim::Int)
     gamma_d = zero(loba.coeff[1])
     n = length(loba.x)
     for i = 1:n
@@ -190,5 +190,5 @@ function lobachesky_integrate_dimension(loba::LobacheskySurrogate,lb,ub,dim::Int
     new_lb = deleteat!(lb,dim)
     new_ub = deleteat!(ub,dim)
     new_loba = deleteat!(loba.alpha,dim)
-    return LobacheskySurrogate(new_x,loba.y,loba.alpha,loba.n,new_lb,new_ub,new_coeff,loba.sparse)
+    return LobachevskySurrogate(new_x,loba.y,loba.alpha,loba.n,new_lb,new_ub,new_coeff,loba.sparse)
 end
