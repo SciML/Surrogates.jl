@@ -43,7 +43,7 @@ function _calc_coeffs_wend(x,y,eps,maxiters,tol)
         end
     end
     U = Symmetric(W,:U)
-    return cg(U,y,maxiter = maxiters, tol = tol)
+    return cg(U,y,maxiter = maxiters, reltol = tol)
 end
 
 function Wendland(x,y,lb,ub; eps = 1.0, maxiters = 300, tol = 1e-6)
