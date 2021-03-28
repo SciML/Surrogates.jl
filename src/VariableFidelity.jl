@@ -36,8 +36,8 @@ function VariableFidelitySurrogate(x,y,lb,ub;
             elseif low_fid_structure[1] == "InverseDistanceSurrogate"
                 low_fid_surr = InverseDistanceSurrogate(x_low, y_low,lb,ub, p = low_fid_structure.p)
 
-            elseif low_fid_structure[1] == "LobacheskySurrogate"
-                low_fid_surr = LobacheskySurrogate(x_low, y_low,lb,ub,alpha = low_fid_structure.alpha , n = low_fid_structure.n, sparse = low_fid_structure.sparse)
+            elseif low_fid_structure[1] == "LobachevskySurrogate"
+                low_fid_surr = LobachevskySurrogate(x_low, y_low,lb,ub,alpha = low_fid_structure.alpha , n = low_fid_structure.n, sparse = low_fid_structure.sparse)
 
             elseif low_fid_structure[1] == "NeuralSurrogate"
                 low_fid_surr = NeuralSurrogate(x_low, y_low,lb,ub, model = low_fid_structure.model , loss = low_fid_structure.loss ,opt = low_fid_structure.opt ,n_echos = low_fid_structure.n_echos)
@@ -73,8 +73,8 @@ function VariableFidelitySurrogate(x,y,lb,ub;
             elseif high_fid_structure[1] == "InverseDistanceSurrogate"
                 eps = InverseDistanceSurrogate(x_high, y_eps,lb,ub, high_fid_structure.p)
 
-            elseif high_fid_structure[1] == "LobacheskySurrogate"
-                eps = LobacheskySurrogate(x_high, y_eps,lb,ub,alpha = high_fid_structure.alpha , n = high_fid_structure.n, sparse = high_fid_structure.sparse)
+            elseif high_fid_structure[1] == "LobachevskySurrogate"
+                eps = LobachevskySurrogate(x_high, y_eps,lb,ub,alpha = high_fid_structure.alpha , n = high_fid_structure.n, sparse = high_fid_structure.sparse)
 
             elseif high_fid_structure[1] == "NeuralSurrogate"
                 eps = NeuralSurrogate(x_high, y_eps,lb,ub, model = high_fid_structure.model , loss = high_fid_structure.loss ,opt = high_fid_structure.opt ,n_echos = high_fid_structure.n_echos)

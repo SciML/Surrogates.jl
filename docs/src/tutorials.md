@@ -57,8 +57,8 @@ surrogate_optimize(f,LCBS(),lb,ub,my_krig,UniformSample())
 ```
 Surrogate optimization methods have two purposes: they both sample the space in unknown regions and look for the minima at the same time.
 
-## Lobachesky integral
-The Lobachesky surrogate has the nice feature of having a closed formula for its
+## Lobachevsky integral
+The Lobachevsky surrogate has the nice feature of having a closed formula for its
 integral, which is something that other surrogates are missing.
 Let's compare it with QuadGK:
 ```@examples
@@ -71,10 +71,10 @@ x = sample(2000,a,b,SobolSample())
 y = obj.(x)
 alpha = 2.0
 n = 6
-my_loba = LobacheskySurrogate(x,y,a,b,alpha=alpha,n=n)
+my_loba = LobachevskySurrogate(x,y,a,b,alpha=alpha,n=n)
 
 #1D integral
-int_1D = lobachesky_integral(my_loba,a,b)
+int_1D = lobachevsky_integral(my_loba,a,b)
 int = quadgk(obj,a,b)
 int_val_true = int[1]-int[2]
 @assert int_1D ≈ int_val_true

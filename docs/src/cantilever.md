@@ -62,7 +62,7 @@ p1 = surface(x, y, (x, y) -> loba([x y]))
 scatter!(xs, ys, zs, marker_z=zs)
 p2 = contour(x, y, (x, y) -> loba([x y]))
 scatter!(xs, ys, marker_z=zs)
-plot(p1, p2, title="Lobachesky")
+plot(p1, p2, title="Lobachevsky")
 ```
 
 ```@example beam

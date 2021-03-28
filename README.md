@@ -39,7 +39,7 @@ The construction of a surrogate model can be seen as a three-step process:
 - Support Vector Machines (Wait for LIBSVM resolution)
 - Neural Networks
 - Random Forests
-- Lobachesky
+- Lobachevsky
 - Inverse-distance
 - Polynomial expansions
 - Variable fidelity

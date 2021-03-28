@@ -41,11 +41,11 @@ Now, let's fit Gramacy & Lee Function with different Surrogates:
 
 ```@example gramacylee1D
 my_pol = PolynomialChaosSurrogate(x, y, lower_bound, upper_bound)
-loba_1 = LobacheskySurrogate(x, y, lower_bound, upper_bound)
+loba_1 = LobachevskySurrogate(x, y, lower_bound, upper_bound)
 krig = Kriging(x, y, lower_bound, upper_bound)
 scatter(x, y, label="Sampled points", xlims=(lower_bound, upper_bound), ylims=(-5, 20), legend=:top)
 plot!(xs, gramacylee.(xs), label="True function", legend=:top)
 plot!(xs, my_pol.(xs), label="Polynomial expansion", legend=:top)
-plot!(xs, loba_1.(xs), label="Lobachesky", legend=:top)
+plot!(xs, loba_1.(xs), label="Lobachevsky", legend=:top)
 plot!(xs, krig.(xs), label="Kriging", legend=:top)
 ```

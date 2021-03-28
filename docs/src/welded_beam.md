@@ -52,8 +52,8 @@ y_krig = my_krig.(x_test)
 mse_krig = norm(y_true - y_krig,2)/n_test
 print("MSE Kriging: $mse_krig")
 
-my_loba = LobacheskySurrogate(x,y,lb,ub)
+my_loba = LobachevskySurrogate(x,y,lb,ub)
 y_loba = my_loba.(x_test)
 mse_rad = norm(y_true - y_loba,2)/n_test
-print("MSE Lobachesky: $mse_rad")
+print("MSE Lobachevsky: $mse_rad")
 ```

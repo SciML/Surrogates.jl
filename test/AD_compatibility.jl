@@ -38,10 +38,10 @@ my_inverse = InverseDistanceSurrogate(x,y,p,lb,ub)
 g = x -> ForwardDiff.derivative(my_inverse,x)
 g(5.0)
 
-#Lobachesky
+#Lobachevsky
 n = 4
 α = 2.4
-my_loba = LobacheskySurrogate(x,y,α,n,lb,ub)
+my_loba = LobachevskySurrogate(x,y,α,n,lb,ub)
 g = x -> ForwardDiff.derivative(my_loba,x)
 g(5.0)
 
@@ -81,10 +81,10 @@ my_inverse = InverseDistanceSurrogate(x,y,p,lb,ub)
 g = x -> ForwardDiff.gradient(my_inverse,x)
 g([2.0,5.0])
 
-#Lobachesky
+#Lobachevsky
 alpha = [1.4,1.4]
 n = 4
-my_loba_ND = LobacheskySurrogate(x,y,alpha,n,lb,ub)
+my_loba_ND = LobachevskySurrogate(x,y,alpha,n,lb,ub)
 g = x -> ForwardDiff.gradient(my_loba_ND,x)
 g([2.0,5.0])
 
@@ -136,10 +136,10 @@ my_second = SecondOrderPolynomialSurrogate(x,y,lb,ub)
 g = x -> my_second'(x)
 g(5.0)
 
-#Lobachesky
+#Lobachevsky
 n = 4
 α = 2.4
-my_loba = LobacheskySurrogate(x,y,lb,ub, alpha = α, n = 4)
+my_loba = LobachevskySurrogate(x,y,lb,ub, alpha = α, n = 4)
 g = x -> my_loba'(x)
 g(0.0)
 
@@ -220,12 +220,12 @@ g((2.0,5.0))
 
 
 
-#Lobachesky not working yet weird issue with Zygote @nograd
+#Lobachevsky not working yet weird issue with Zygote @nograd
 #=
 Zygote.refresh()
 alpha = [1.4,1.4]
 n = 4
-my_loba_ND = LobacheskySurrogate(x,y,alpha,n,lb,ub)
+my_loba_ND = LobachevskySurrogate(x,y,alpha,n,lb,ub)
 g = x -> Zygote.gradient(my_loba_ND,x)
 g((2.0,5.0))
 =#

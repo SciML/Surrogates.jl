@@ -44,14 +44,14 @@ plot!(xs, ackley.(xs), label="True function", legend=:top)
 ```@example ackley
 my_rad = RadialBasis(x, y, lb, ub)
 my_krig = Kriging(x, y, lb, ub)
-my_loba = LobacheskySurrogate(x, y, lb, ub)
+my_loba = LobachevskySurrogate(x, y, lb, ub)
 ```
 
 ```@example ackley
 scatter(x, y, label="Sampled points", xlims=(lb, ub), ylims=(0, 30), legend=:top)
 plot!(xs, ackley.(xs), label="True function", legend=:top)
 plot!(xs, my_rad.(xs), label="Polynomial expansion", legend=:top)
-plot!(xs, my_krig.(xs), label="Lobachesky", legend=:top)
+plot!(xs, my_krig.(xs), label="Lobachevsky", legend=:top)
 plot!(xs, my_loba.(xs), label="Kriging", legend=:top)
 ```
 

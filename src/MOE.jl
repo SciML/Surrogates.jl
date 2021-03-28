@@ -67,8 +67,8 @@ function MOE(x,y,lb::Number,ub::Number; scale_factor::Number = 1.0, k::Int = 2, 
             my_local_i = InverseDistanceSurrogate(x_c[i], y_c[i],lb,ub, local_kind[i].p)
             local_surr[i] = my_local_i
 
-        elseif local_kind[i][1] == "LobacheskySurrogate"
-            my_local_i = LobacheskySurrogate(x_c[i], y_c[i],lb,ub,alpha = local_kind[i].alpha , n = local_kind[i].n, sparse = local_kind[i].sparse)
+        elseif local_kind[i][1] == "LobachevskySurrogate"
+            my_local_i = LobachevskySurrogate(x_c[i], y_c[i],lb,ub,alpha = local_kind[i].alpha , n = local_kind[i].n, sparse = local_kind[i].sparse)
             local_surr[i] = my_local_i
 
         elseif local_kind[i][1] == "NeuralSurrogate"
@@ -148,8 +148,8 @@ function MOE(x,y,lb,ub; k::Int = 2, scale_factor::Number = 1.0,
             my_local_i = InverseDistanceSurrogate(x_c[i], y_c[i],lb,ub, local_kind[i].p)
             local_surr[i] = my_local_i
 
-        elseif local_kind[i][1] == "LobacheskySurrogate"
-            my_local_i = LobacheskySurrogate(x_c[i], y_c[i],lb,ub,alpha = local_kind[i].alpha , n = local_kind[i].n, sparse = local_kind[i].sparse)
+        elseif local_kind[i][1] == "LobachevskySurrogate"
+            my_local_i = LobachevskySurrogate(x_c[i], y_c[i],lb,ub,alpha = local_kind[i].alpha , n = local_kind[i].n, sparse = local_kind[i].sparse)
             local_surr[i] = my_local_i
 
         elseif local_kind[i][1] == "NeuralSurrogate"

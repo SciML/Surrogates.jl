@@ -78,15 +78,15 @@ scatter!(xs, ys, marker_z=zs) # hide
 plot(p1, p2, title="Inverse Distance Surrogate") # hide
 ```
 
-Now, let's talk about `Lobachesky Surrogate`:
+Now, let's talk about `Lobachevsky Surrogate`:
 ```@example BraninFunction
-Lobachesky = LobacheskySurrogate(xys, zs,  lower_bound, upper_bound, alpha = [2.8,2.8], n=8)
+Lobachevsky = LobachevskySurrogate(xys, zs,  lower_bound, upper_bound, alpha = [2.8,2.8], n=8)
 ```
 
 ```@example BraninFunction
-p1 = surface(x, y, (x, y) -> Lobachesky([x y])) # hide
+p1 = surface(x, y, (x, y) -> Lobachevsky([x y])) # hide
 scatter!(xs, ys, zs, marker_z=zs) # hide
-p2 = contour(x, y, (x, y) -> Lobachesky([x y])) # hide
+p2 = contour(x, y, (x, y) -> Lobachevsky([x y])) # hide
 scatter!(xs, ys, marker_z=zs) # hide
-plot(p1, p2, title="Lobachesky Surrogate") # hide
+plot(p1, p2, title="Lobachevsky Surrogate") # hide
 ```
