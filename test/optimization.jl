@@ -257,7 +257,7 @@ surrogate_optimize(objective_function_ND,SOP(num_centers),lb,ub,my_k_SOPND,Sobol
 
 
 #multi optimization
-
+#=
 f  = x -> [x^2, x]
 lb = 1.0
 ub = 10.0
@@ -280,3 +280,4 @@ p_cross = 0.5 #crossing vs copy
 n_c = 1.0 # hyperparameter for children creation
 sigma = 1.5 # mutation
 surrogate_optimize(f,RTEA(Z,K,p_cross,n_c,sigma),lb,ub,my_radial_basis_rtea,SobolSample())
+=#
