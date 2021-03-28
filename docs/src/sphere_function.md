@@ -42,14 +42,14 @@ plot!(xs, rad_1d_cubic.(xs), label="Radial surrogate with cubic", legend=:top)
 plot!(xs, rad_1d_multiquadric.(xs), label="Radial surrogate with multiquadric", legend=:top)
 ```
 
-Fitting Lobachesky Surrogate with different values of hyperparameters alpha:
+Fitting Lobachevsky Surrogate with different values of hyperparameters alpha:
 ```@example sphere_function
-loba_1 = LobacheskySurrogate(x,y,lb,ub)
-loba_2 = LobacheskySurrogate(x,y,lb,ub,alpha = 1.5, n = 6)
-loba_3 = LobacheskySurrogate(x,y,lb,ub,alpha = 0.3, n = 6)
+loba_1 = LobachevskySurrogate(x,y,lb,ub)
+loba_2 = LobachevskySurrogate(x,y,lb,ub,alpha = 1.5, n = 6)
+loba_3 = LobachevskySurrogate(x,y,lb,ub,alpha = 0.3, n = 6)
 plot(x, y, seriestype=:scatter, label="Sampled points", xlims=(lb, ub), ylims=(-2, 120), legend=:top)
 plot!(xs,sphere_function.(xs), label="True function", legend=:top)
-plot!(xs, loba_1.(xs), label="Lobachesky surrogate 1", legend=:top)
-plot!(xs, loba_2.(xs), label="Lobachesky surrogate 2", legend=:top)
-plot!(xs, loba_3.(xs), label="Lobachesky surrogate 3", legend=:top)
+plot!(xs, loba_1.(xs), label="Lobachevsky surrogate 1", legend=:top)
+plot!(xs, loba_2.(xs), label="Lobachevsky surrogate 2", legend=:top)
+plot!(xs, loba_3.(xs), label="Lobachevsky surrogate 3", legend=:top)
 ```

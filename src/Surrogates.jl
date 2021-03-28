@@ -8,7 +8,7 @@ include("Radials.jl")
 include("Kriging.jl")
 include("Sampling.jl")
 include("Optimization.jl")
-include("Lobachesky.jl")
+include("Lobachevsky.jl")
 include("LinearSurrogate.jl")
 include("InverseDistanceSurrogate.jl")
 include("SecondOrderPolynomialSurrogate.jl")
@@ -22,7 +22,7 @@ include("PolynomialChaos.jl")
 include("Earth.jl")
 include("GEK.jl")
 
-current_surrogates = ["Kriging","LinearSurrogate","LobacheskySurrogate","NeuralSurrogate",
+current_surrogates = ["Kriging","LinearSurrogate","LobachevskySurrogate","NeuralSurrogate",
                       "RadialBasis","RandomForestSurrogate","SecondOrderPolynomialSurrogate",
                       "Wendland","GEK","PolynomialChaosSurrogate"]
 
@@ -50,9 +50,9 @@ function InverseDistanceStructure(;p)
     return (name = "InverseDistanceSurrogate", p = p)
 end
 
-#Lobachesky structure
-function LobacheskyStructure(;alpha,n,sparse)
-    return (name = "LobacheskySurrogate", alpha = alpha, n = n, sparse = sparse)
+#Lobachevsky structure
+function LobachevskyStructure(;alpha,n,sparse)
+    return (name = "LobachevskySurrogate", alpha = alpha, n = n, sparse = sparse)
 end
 
 #Neural structure
@@ -82,7 +82,7 @@ end
 
 export current_surrogates
 export RadialBasisStructure, KrigingStructure, LinearStructure, InverseDistanceStructure
-export LobacheskyStructure, NeuralStructure, RandomForestStructure, SecondOrderPolynomialStructure
+export LobachevskyStructure, NeuralStructure, RandomForestStructure, SecondOrderPolynomialStructure
 export WendlandStructure
 export AbstractSurrogate, SamplingAlgorithm
 export Kriging, RadialBasis, add_point!, current_estimate, std_error_at_point
@@ -90,7 +90,7 @@ export linearRadial,cubicRadial,multiquadricRadial,thinplateRadial
 export sample, GridSample, UniformSample, SobolSample, LatinHypercubeSample, LowDiscrepancySample
 export RandomSample, KroneckerSample, GoldenSample
 export SRBF,LCBS,EI,DYCORS,SOP,EGO,RTEA,surrogate_optimize
-export LobacheskySurrogate, lobachesky_integral, lobachesky_integrate_dimension
+export LobachevskySurrogate, lobachevsky_integral, lobachevsky_integrate_dimension
 export LinearSurrogate
 export RandomForestSurrogate
 export SVMSurrogate
@@ -100,7 +100,7 @@ export SecondOrderPolynomialSurrogate
 export SthenoKriging
 export Wendland
 export RadialBasisStructure, KrigingStructure, LinearStructure, InverseDistanceStructure
-export LobacheskyStructure, NeuralStructure, RandomForestStructure, SecondOrderPolynomialStructure
+export LobachevskyStructure, NeuralStructure, RandomForestStructure, SecondOrderPolynomialStructure
 export WendlandStructure
 #export MOE
 export VariableFidelitySurrogate

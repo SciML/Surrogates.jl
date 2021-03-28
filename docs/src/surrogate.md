@@ -22,10 +22,10 @@ RadialBasis(x, y, lb, ub; rad::RadialFunction = linearRadial, scale_factor::Real
 Kriging(x,y,p,theta)
 ```
 
-* Lobachesky surrogate
+* Lobachevsky surrogate
 ```@docs
-LobacheskySurrogate(x,y,lb,ub; alpha = collect(one.(x[1])),n::Int = 4, sparse = false)
-lobachesky_integral(loba::LobacheskySurrogate,lb,ub)
+LobachevskySurrogate(x,y,lb,ub; alpha = collect(one.(x[1])),n::Int = 4, sparse = false)
+lobachevsky_integral(loba::LobachevskySurrogate,lb,ub)
 ```
 
 * Support vector machine surrogate, requires `using LIBSVM`

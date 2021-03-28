@@ -43,11 +43,11 @@ Now, let's fit Salustowicz Function with different Surrogates:
 
 ```@example salustowicz1D
 InverseDistance = InverseDistanceSurrogate(x, y, lower_bound, upper_bound)
-lobachevsky_surrogate = LobacheskySurrogate(x, y, lower_bound, upper_bound, alpha = 2.0, n = 6)
+lobachevsky_surrogate = LobachevskySurrogate(x, y, lower_bound, upper_bound, alpha = 2.0, n = 6)
 scatter(x, y, label="Sampled points", xlims=(lower_bound, upper_bound), legend=:topright)
 plot!(xs, salustowicz.(xs), label="True function", legend=:topright)
 plot!(xs, InverseDistance.(xs), label="InverseDistanceSurrogate", legend=:topright)
-plot!(xs, lobachevsky_surrogate.(xs), label="Lobachesky", legend=:topright)
+plot!(xs, lobachevsky_surrogate.(xs), label="Lobachevsky", legend=:topright)
 ```
 
 Not's let's see Kriging Surrogate with different hyper parameter:

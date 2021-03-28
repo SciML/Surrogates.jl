@@ -100,14 +100,14 @@ y = f.(x)
 #Creating surrogate
 alpha = 2.0
 n = 6
-my_lobachesky = LobacheskySurrogate(x,y,lb,ub,alpha=alpha,n=n)
+my_lobachevsky = LobachevskySurrogate(x,y,lb,ub,alpha=alpha,n=n)
 
 #Approximating value at 5.0
-value = my_lobachesky(5.0)
+value = my_lobachevsky(5.0)
 
 #Adding more data points
-surrogate_optimize(f,SRBF(),lb,ub,my_lobachesky,UniformSample())
+surrogate_optimize(f,SRBF(),lb,ub,my_lobachevsky,UniformSample())
 
 #New approximation
-value = my_lobachesky(5.0)
+value = my_lobachevsky(5.0)
 ```
