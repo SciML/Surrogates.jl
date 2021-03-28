@@ -33,7 +33,7 @@ With our sampled points we can build the Lobachevsky surrogate using the `Lobach
 ```@example LobachevskySurrogate_tutorial
 alpha = 2.0
 n = 6
-lobachevsky_surrogate = LobacheskySurrogate(x, y, lower_bound, upper_bound, alpha = 2.0, n = 6)
+lobachevsky_surrogate = LobachevskySurrogate(x, y, lower_bound, upper_bound, alpha = 2.0, n = 6)
 plot(x, y, seriestype=:scatter, label="Sampled points", xlims=(lower_bound, upper_bound))
 plot!(f, label="True function",  xlims=(lower_bound, upper_bound))
 plot!(lobachevsky_surrogate, label="Surrogate function",  xlims=(lower_bound, upper_bound))
@@ -101,13 +101,13 @@ plot(p1, p2, title="True function") # hide
 Using the sampled points we build the surrogate, the steps are analogous to the 1-dimensional case.
 
 ```@example LobachevskySurrogate_ND
-Lobachesky = LobacheskySurrogate(xys, zs,  lower_bound, upper_bound, alpha = [2.4,2.4], n=8)
+Lobachevsky = LobachevskySurrogate(xys, zs,  lower_bound, upper_bound, alpha = [2.4,2.4], n=8)
 ```
 
 ```@example LobachevskySurrogate_ND
-p1 = surface(x, y, (x, y) -> Lobachesky([x y])) # hide
+p1 = surface(x, y, (x, y) -> Lobachevsky([x y])) # hide
 scatter!(xs, ys, zs, marker_z=zs) # hide
-p2 = contour(x, y, (x, y) -> Lobachesky([x y])) # hide
+p2 = contour(x, y, (x, y) -> Lobachevsky([x y])) # hide
 scatter!(xs, ys, marker_z=zs) # hide
 plot(p1, p2, title="Surrogate") # hide
 ```
@@ -120,23 +120,23 @@ Notice how the new sampled points, which were created during the optimization pr
 This is why its size changes.
 
 ```@example LobachevskySurrogate_ND
-size(Lobachesky.x)
+size(Lobachevsky.x)
 ```
 ```@example LobachevskySurrogate_ND
-surrogate_optimize(schaffer, SRBF(), lower_bound, upper_bound, Lobachesky, SobolSample(), maxiters=1, num_new_samples=10)
+surrogate_optimize(schaffer, SRBF(), lower_bound, upper_bound, Lobachevsky, SobolSample(), maxiters=1, num_new_samples=10)
 ```
 ```@example LobachevskySurrogate_ND
-size(Lobachesky.x)
+size(Lobachevsky.x)
 ```
 
 ```@example LobachevskySurrogate_ND
-p1 = surface(x, y, (x, y) -> Lobachesky([x y])) # hide
-xys = Lobachesky.x # hide
+p1 = surface(x, y, (x, y) -> Lobachevsky([x y])) # hide
+xys = Lobachevsky.x # hide
 xs = [i[1] for i in xys] # hide
 ys = [i[2] for i in xys] # hide
 zs = schaffer.(xys) # hide
 scatter!(xs, ys, zs, marker_z=zs) # hide
-p2 = contour(x, y, (x, y) -> Lobachesky([x y])) # hide
+p2 = contour(x, y, (x, y) -> Lobachevsky([x y])) # hide
 scatter!(xs, ys, marker_z=zs) # hide
 plot(p1, p2) # hide
 ```

@@ -31,10 +31,10 @@ plot!(xs, f.(xs), label="True function", legend=:top)
 
 Fitting and plotting different surrogates:
 ```@example tensor
-loba_1 = LobacheskySurrogate(x, y, lb, ub)
+loba_1 = LobachevskySurrogate(x, y, lb, ub)
 krig = Kriging(x, y, lb, ub)
 scatter(x, y, label="Sampled points", xlims=(lb, ub), ylims=(-2.5, 2.5), legend=:bottom)
 plot!(xs,f.(xs), label="True function", legend=:top)
-plot!(xs, loba_1.(xs), label="Lobachesky", legend=:top)
+plot!(xs, loba_1.(xs), label="Lobachevsky", legend=:top)
 plot!(xs, krig.(xs), label="Kriging", legend=:top)
 ```
