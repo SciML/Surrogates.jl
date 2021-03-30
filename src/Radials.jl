@@ -58,7 +58,6 @@ function _calc_coeffs(x, y, lb, ub, phi, q, scale_factor, sparse)
 
     D = _construct_rbf_interp_matrix(x, first(x), lb, ub, phi, q, scale_factor, sparse)
     Y = _construct_rbf_y_matrix(y, first(y), length(y) + num_poly_terms)
-
     coeff = D \ Y
     return coeff
 end
@@ -155,11 +154,16 @@ x^2,y^2,xy
 Therefore the 3rd (ix=3) element is `y` .
 Therefore when x=(13,43) and ix=3 this function will return 43.
 """
-multivar_poly_basis(x, ix, d, n) = prod(
-    a^d
-    for (a, d)
-    in zip(x, _make_combination(n, d, ix))
-)
+function multivar_poly_basis(x, ix, d, n)
+    if n == 0
+        return one(eltype(x))
+    else
+        prod(
+        a^d
+        for (a, d)
+        in zip(x, _make_combination(n, d, ix)))
+    end
+end
 
 """
 Calculates current estimate of value 'val' with respect to the RadialBasis object.
