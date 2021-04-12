@@ -1,6 +1,7 @@
 module Surrogates
 using LinearAlgebra
 using Distributions
+using Requires 
 
 abstract type AbstractSurrogate <: Function end
 include("utils.jl")
@@ -12,7 +13,13 @@ include("Lobachevsky.jl")
 include("LinearSurrogate.jl")
 include("InverseDistanceSurrogate.jl")
 include("SecondOrderPolynomialSurrogate.jl")
-include("SthenoKriging.jl")
+
+function __init__()
+    @require Stheno="8188c328-b5d6-583d-959b-9690869a5511" begin 
+        include("SthenoKriging.jl")
+    end
+end
+
 include("RandomForestSurrogate.jl")
 include("NeuralSurrogate.jl")
 include("Wendland.jl")
