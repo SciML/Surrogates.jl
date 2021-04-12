@@ -15,7 +15,6 @@ PolyChaos = "8d666b04-775d-5f6e-b778-5ac7c70f65a3"
 Requires = "ae029012-a4dd-5104-9daa-d747884805df"
 Sobol = "ed01d8cd-4d21-5b2a-85b4-cc3bdc58bad4"
 SparseArrays = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
-Stheno = "8188c328-b5d6-583d-959b-9690869a5511"
 XGBoost = "009559a3-9522-5dbb-924b-0b6ed2b22bb9"
 Zygote = "e88e6eb3-aa80-5325-afca-941959d7151f"
 
@@ -38,8 +37,9 @@ julia = "1.5"
 Cubature = "667455a9-e2ce-5579-9412-b964f529a492"
 ForwardDiff = "f6369f11-7733-5829-9624-2563aa707210"
 QuadGK = "1fd47b50-473d-5c70-9696-f719f8f3bcdc"
+Stheno = "8188c328-b5d6-583d-959b-9690869a5511"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 Tracker = "9f7883ad-71c0-57eb-9f7f-b5c9e6d3789c"
 
 [targets]
-test = ["Cubature", "ForwardDiff", "QuadGK", "Test", "Tracker"]
+test = ["Cubature", "ForwardDiff", "QuadGK", "Stheno", "Test", "Tracker"]
