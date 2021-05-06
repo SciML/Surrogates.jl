@@ -51,3 +51,12 @@ y_new = f(x_new)
 @test surrogate(x_new) ≈ y_new
 add_point!(surrogate, x_new, y_new)
 @test surrogate(x_new) ≈ y_new
+
+# surrogate should recover 2nd order polynomial
+f(x; a = .3, b = [.7, .1], c = [.3 .4; .4 .1]) = a + b' * x + x' * c * x
+f(x::Tuple; kwargs...) = f([x...]; kwargs...)
+lb = fill(-5., 2); ub = fill(5., 2); n = 10^3;
+x = sample(n, lb, ub, SobolSample())
+y = f.(x)
+sec = SecondOrderPolynomialSurrogate(x, y, lb, ub)
+@test y ≈ sec.(x)

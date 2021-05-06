@@ -26,9 +26,12 @@ function _construct_2nd_order_interp_matrix(x, x_el)
     for i = 1:n, j = 1:d
         X[i, j+1] = x[i][j]
     end
-    for i = 1:n, j = 1:d, k = 1:j-1
-        idx = j + (k*(k-1)÷2)
-        X[i, 1+d+idx] = x[i][j]*x[i][end-k+1]
+    idx = d + 1
+    for j = 1:d, k = j+1:d
+        idx += 1
+        for i = 1:n
+            X[i, idx] = x[i][j]*x[i][k]
+        end
     end
     for i = 1:n, j = 1:d
         X[i, j+1+d+d*(d-1)÷2] = x[i][j]^2
@@ -47,9 +50,10 @@ function (my_second_ord::SecondOrderPolynomialSurrogate)(val)
     for j = 1:d
         y += val[j]*my_second_ord.β[j+1, :]
     end
-    for j = 1:d, k = 1:j-1
-        idx = j + (k*(k-1)÷2)
-        y += val[j] * val[end-k+1] * my_second_ord.β[1+d+idx, :]
+    idx = d + 1
+    for j = 1:d, k = j+1:d
+        idx += 1
+        y += val[j] * val[k] * my_second_ord.β[idx, :]
     end
     for j = 1:d
         y += val[j]^2 * my_second_ord.β[j+1+d+d*(d-1)÷2, :]
