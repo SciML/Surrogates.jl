@@ -36,7 +36,7 @@ end
 struct GoldenSample <: SamplingAlgorithm end
 
 struct SectionSample{T} <: SamplingAlgorithm
-    x0::vec{T}
+    x0::Vector{T}
     sa::SamplingAlgorithm
 end
 
