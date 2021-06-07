@@ -35,6 +35,10 @@ end
 
 struct GoldenSample <: SamplingAlgorithm end
 
+struct SectionSample{T} <: SamplingAlgorithm
+    x0::vec{T}
+    sa::SamplingAlgorithm
+end
 
 """
 sample(n,lb,ub,S::GridSample)
