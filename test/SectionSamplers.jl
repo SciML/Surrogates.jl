@@ -32,7 +32,8 @@ f_hat = LinearSurrogate(x,y,lb,ub)
 """ The minimum on the (0,10) section is around (0,10) """
 
 section_sampler_y_is_10 = SectionSample(
-    [NaN64, 10.0], Surrogates.UniformSample())
+    [NaN64, 10.0],
+    Surrogates.UniformSample())
 
 Surrogates.sample(5, lb, ub, section_sampler_y_is_10)
 
