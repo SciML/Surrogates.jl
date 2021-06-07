@@ -697,11 +697,11 @@ function surrogate_optimize(obj::Function,::DYCORS,lb::Number,ub::Number,surr1::
             while new_points[i] < lb || new_points[i] > ub
                 if new_points[i] > ub
                     #reflection
-                    new_points[i] = min(lb, maximum(surr1.x) - norm(new_points[i] - maximum(surr1.x)))
+                    new_points[i] = max(lb, maximum(surr1.x) - norm(new_points[i] - maximum(surr1.x)))
                 end
                 if new_points[i] < lb
                     #reflection
-                    new_points[i] = max(ub, minimum(surr1.x) + norm(new_points[i]-minimum(surr1.x)))
+                    new_points[i] = min(ub, minimum(surr1.x) + norm(new_points[i]-minimum(surr1.x)))
                 end
             end
         end
@@ -831,10 +831,10 @@ function surrogate_optimize(obj::Function,::DYCORS,lb,ub,surrn::AbstractSurrogat
             for j = 1:d
                 while new_points[i,j] < lb[j] || new_points[i,j] > ub[j]
                     if new_points[i,j] > ub[j]
-                        new_points[i,j] = min(lb[j], maximum(surrn.x)[j] - norm(new_points[i,j] - maximum(surrn.x)[j]))
+                        new_points[i,j] = max(lb[j], maximum(surrn.x)[j] - norm(new_points[i,j] - maximum(surrn.x)[j]))
                     end
                     if new_points[i,j] < lb[j]
-                        new_points[i,j] = max(ub[j], minimum(surrn.x)[j] + norm(new_points[i]-minimum(surrn.x)[j]))
+                        new_points[i,j] = min(ub[j], minimum(surrn.x)[j] + norm(new_points[i]-minimum(surrn.x)[j]))
                     end
                 end
             end
