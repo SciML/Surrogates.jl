@@ -1711,3 +1711,82 @@ end
      end
      return pareto_set,pareto_front
  end
+
+
+function surrogate_optimize(obj::Function,::EI,lb,ub,krig,sample_type::SectionSample;maxiters=100,num_new_samples=100)
+    dtol = 1e-3*norm(ub-lb)
+    eps = 0.01
+    for i = 1:maxiters
+        d = length(krig.x)
+        new_sample = sample(num_new_samples,lb,ub,sample_type)
+        f_max = maximum(krig.y)
+        evaluations = zeros(eltype(krig.x[1]),num_new_samples)
+        point_found = false
+        new_x_max = zero(eltype(krig.x[1]))
+        new_y_max = zero(eltype(krig.x[1]))
+        diff_x = zeros(eltype(krig.x[1]),d)
+        while point_found == false
+            for j = 1:length(new_sample)
+                std = std_error_at_point(krig,new_sample[j])
+                u = krig(new_sample[j])
+                if abs(std) > 1e-6
+                    z = (u - f_max - eps)/std
+                else
+                    z = 0
+                end
+                evaluations[j] = (u-f_max-eps)*cdf(Normal(),z) + std*pdf(Normal(),z)
+            end
+            index_max = argmax(evaluations)
+            x_new = new_sample[index_max]
+            y_new = maximum(evaluations)
+            for l = 1:d
+                diff_x[l] = norm(krig.x[l] .- x_new)
+            end
+            bit_x = diff_x .> dtol
+            #new_min_x has to have some distance from krig.x
+            if false in bit_x
+                #The new_point is not actually that new, discard it!
+                deleteat!(evaluations,index_max)
+                deleteat!(new_sample,index_max)
+                if length(new_sample) == 0
+                    println("Out of sampling points")
+                    return section_sampler_returner(sample_type, krig.x, krig.y, lb, ub, krig)
+                end
+             else
+                point_found = true
+                new_x_max = x_new
+                new_y_max = y_new
+            end
+        end
+        if new_y_max < 1e-6*norm(maximum(krig.y)-minimum(krig.y))
+            return section_sampler_returner(sample_type, krig.x, krig.y, lb, ub, krig)
+        end
+        add_point!(krig,Tuple(new_x_max),obj(new_x_max))
+    end
+    println("Completed maximum number of iterations")
+end
+
+function section_sampler_returner(
+        sample_type::SectionSample, surrn_x, surrn_y, 
+        lb, ub, surrn)
+    d_fixed = Surrogates.fixed_dimensions(sample_type)
+    @assert length(surrn_y) == size(surrn_x)[1]
+    surrn_xy = [(surrn_x[y], surrn_y[y]) for y in 1:length(surrn_y)]
+    section_surr1_xy = filter(
+        xyz->xyz[1][d_fixed]==Tuple(sample_type.x0[d_fixed]),
+        surrn_xy)
+    section_surr1_x = [xy[1] for xy in section_surr1_xy]
+    section_surr1_y = [xy[2] for xy in section_surr1_xy]
+    if length(section_surr1_xy) == 0
+        @debug "No new point added - surrogate locally stable"
+        N_NEW_POINTS = 100
+        section_surr1_x = sample(N_NEW_POINTS, lb, ub, sample_type)
+        section_surr1_y = zeros(N_NEW_POINTS)
+        for i in 1:size(section_surr1_x, 1)
+            xi = Tuple([section_surr1_x[i, :]...])[1]
+            section_surr1_y[i] = surrn(xi)
+        end
+    end
+    index = argmin(section_surr1_y)
+    return (section_surr1_x[index, :][1], section_surr1_y[index])
+end

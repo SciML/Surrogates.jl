@@ -13,12 +13,12 @@ Random.seed!(1234)
 
 lb = [0.0,0.0,0.0,0.0]
 ub = [10.0,10.0,10.0,10.0]
-x = sample(10,lb,ub,LatinHypercubeSample())
+x = Surrogates.sample(10,lb,ub,LatinHypercubeSample())
 f = x -> x[1]+x[2]+x[3]+x[4]
 y = f.(x)
-
 f([0,0,0,0]) == 0
 f_hat = Kriging(x,y,lb,ub)
+add_point!(f_hat,(0.0,0.0,0.0,0.0),0.0)
 
 isapprox(f([0,0,0,0]), f_hat([0,0,0,0]))
 
@@ -49,5 +49,7 @@ Surrogates.sample(5, lb, ub, section_sampler_y_is_10)
     f_hat,
     section_sampler_y_is_10, maxiters=1000)
 
-isapprox(xy_min[2], 10.0, atol=0.1)
 isapprox(xy_min[1],  0.0, atol=0.1)
+isapprox(xy_min[2],  0.0, atol=0.1)
+isapprox(xy_min[3], 10.0, atol=0.1)
+isapprox(xy_min[4], 10.0, atol=0.1)
