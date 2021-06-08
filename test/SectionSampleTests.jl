@@ -7,8 +7,6 @@
 
 using Surrogates
 using Test
-using Random
-Random.seed!(1234)
 
 
 lb = [ 0.0, 0.0, 0.0]
@@ -40,7 +38,7 @@ section_sampler_z_is_10 = SectionSample(
     [NaN64, NaN64, 10.0],
     Surrogates.UniformSample())
 
-@test [3,4] == Surrogates.fixed_dimensions(section_sampler_z_is_10)
+@test [3] == Surrogates.fixed_dimensions(section_sampler_z_is_10)
 @test [1,2] == Surrogates.free_dimensions(section_sampler_z_is_10)
 
 Surrogates.sample(5, lb, ub, section_sampler_z_is_10)
