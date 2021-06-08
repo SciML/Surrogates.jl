@@ -17,7 +17,7 @@ x = sample(10,lb,ub,LatinHypercubeSample())
 f = x -> x[1]+x[2]
 y = f.(x)
 @test f([0,0]) == 0
-f_hat = LinearSurrogate(x,y,lb,ub)
+f_hat = Kriging(x,y,lb,ub)
 @test isapprox(f([0,0]), f_hat([0,0]))
 
 """ The global minimum is at (0,0) """
@@ -32,8 +32,11 @@ f_hat = LinearSurrogate(x,y,lb,ub)
 """ The minimum on the (0,10) section is around (0,10) """
 
 section_sampler_y_is_10 = SectionSample(
-    [NaN64, 10.0],
+    [NaN64, NaN64, 10.0, 10.0],
     Surrogates.UniformSample())
+
+@test [3,4] == Surrogates.fixed_dimensions(section_sampler_y_is_10)
+@test [1,2] == Surrogates.free_dimensions(section_sampler_y_is_10)
 
 Surrogates.sample(5, lb, ub, section_sampler_y_is_10)
 

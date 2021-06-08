@@ -242,26 +242,26 @@ function sample(n,lb,ub,G::GoldenSample)
 end
 
 fixed_dimensions(
-        section_sampler::UniformSectionSampler)::Vector{Int64} = findall(
+        section_sampler::SectionSample)::Vector{Int64} = findall(
     x->x == false, isnan.(section_sampler.x0))
 
 free_dimensions(
-        section_sampler::UniformSectionSampler)::Vector{Int64} = findall(
+        section_sampler::SectionSample)::Vector{Int64} = findall(
     x->x == true, isnan.(section_sampler.x0))
 
-function sample(n,lb,ub,section_sampler::UniformSectionSampler)
-    d_fixed = Surrogates.fixed_dimensions(section_sampler)
+function sample(n,lb,ub,section_sampler::SectionSample)
     if lb isa Number
         return rand(Uniform(lb,ub),n)
     else
         d_free = Surrogates.free_dimensions(section_sampler)
-        xx = repeat(section_sampler.x0', n, 1)
-        for y in 1:size(xx)[1]
-            for d_free_ in d_free
-                xx[y, d_free_] = rand(Uniform(lb[d_free_],ub[d_free_]))
+        new_samples = sample(n, lb[d_free], ub[d_free], section_sampler.sa)
+        out_as_vec = repeat(section_sampler.x0', n, 1)
+        for y in 1:size(out_as_vec,1)
+            for xi in 1:length(d_free)
+                out_as_vec[y,xi] = new_samples[y][xi]
             end
         end
-        y = [xx[i,:] for i = 1:n]
-        Tuple.(y)
+        out = [Tuple(out_as_vec[y,:]) for y in 1:size(out_as_vec,1)]
+        return out
     end
 end
