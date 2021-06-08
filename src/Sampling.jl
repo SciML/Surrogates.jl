@@ -252,7 +252,15 @@ free_dimensions(
 """
 sample(n,d,K::SectionSample)
 
-Returns a Tuple containing numbers on a section.
+Returns Tuples constrained to a section.
+
+In surrogate-based identification and control,
+optimization can alternate between unconstrained sampling
+in the full-dimensional parameter space,
+and sampling constrained on specific sections (e.g. a planes in a 3D volume),
+
+A SectionSampler allows sampling and optimizing
+on a subset of 'free' dimensions while keeping 'fixed' ones constrained.
 
 The sampler is defined as in e.g. 
 
@@ -265,6 +273,7 @@ in which numbers are fixed coordinates
 and `NaN`s correspond to free dimensions,
 and the second argument is a SamplingAlgorithm
 which is used to sample in the free dimensions.
+
 """
 function sample(n,lb,ub,section_sampler::SectionSample)
     if lb isa Number
