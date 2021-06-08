@@ -17,8 +17,8 @@ x = Surrogates.sample(10,lb,ub,LatinHypercubeSample())
 f = x -> x[1]+x[2]+x[3]+x[4]
 y = f.(x)
 f([0,0,0,0]) == 0
+
 f_hat = Kriging(x,y,lb,ub)
-add_point!(f_hat,(0.0,0.0,0.0,0.0),0.0)
 
 isapprox(f([0,0,0,0]), f_hat([0,0,0,0]))
 

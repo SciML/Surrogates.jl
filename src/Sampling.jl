@@ -249,6 +249,23 @@ free_dimensions(
         section_sampler::SectionSample)::Vector{Int64} = findall(
     x->x == true, isnan.(section_sampler.x0))
 
+"""
+sample(n,d,K::SectionSample)
+
+Returns a Tuple containing numbers on a section.
+
+The sampler is defined as in e.g. 
+
+section_sampler_y_is_10 = SectionSample(
+    [NaN64, NaN64, 10.0, 10.0],
+    Surrogates.UniformSample())
+
+where the first argument is a Vector{T} 
+in which numbers are fixed coordinates
+and `NaN`s correspond to free dimensions,
+and the second argument is a SamplingAlgorithm
+which is used to sample in the free dimensions.
+"""
 function sample(n,lb,ub,section_sampler::SectionSample)
     if lb isa Number
         return rand(Uniform(lb,ub),n)
