@@ -1,5 +1,46 @@
-<!DOCTYPE html>
-<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Tutorials · Surrogates.jl</title><link href="https://cdnjs.cloudflare.com/ajax/libs/normalize/4.2.0/normalize.min.css" rel="stylesheet" type="text/css"/><link href="https://fonts.googleapis.com/css?family=Lato|Roboto+Mono" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.6.3/css/font-awesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/default.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL=".."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.2.0/require.min.js" data-main="../assets/documenter.js"></script><script src="../siteinfo.js"></script><script src="../../versions.js"></script><link href="../assets/documenter.css" rel="stylesheet" type="text/css"/></head><body><nav class="toc"><h1>Surrogates.jl</h1><select id="version-selector" onChange="window.location.href=this.value" style="visibility: hidden"></select><form class="search" id="search-form" action="../search/"><input id="search-query" name="q" type="text" placeholder="Search docs"/></form><ul><li><a class="toctext" href="../">Overview</a></li><li><span class="toctext">User guide</span><ul><li><a class="toctext" href="../samples/">Samples</a></li><li><a class="toctext" href="../surrogate/">Surrogates</a></li><li><a class="toctext" href="../optimizations/">Optimization</a></li></ul></li><li class="current"><a class="toctext" href>Tutorials</a><ul class="internal"><li><a class="toctext" href="#Surrogates-101-1">Surrogates 101</a></li><li><a class="toctext" href="#Kriging-standard-error-1">Kriging standard error</a></li><li><a class="toctext" href="#Lobachesky-integral-1">Lobachesky integral</a></li></ul></li><li><a class="toctext" href="../contributing/">Contributing</a></li></ul></nav><article id="docs"><header><nav><ul><li><a href>Tutorials</a></li></ul><a class="edit-page" href="https://github.com/JuliaDiffEq/Surrogates.jl/blob/master/docs/src/tutorials.md"><span class="fa"></span> Edit on GitHub</a></nav><hr/><div id="topbar"><span>Tutorials</span><a class="fa fa-bars" href="#"></a></div></header><h2><a class="nav-anchor" id="Surrogates-101-1" href="#Surrogates-101-1">Surrogates 101</a></h2><p>Let&#39;s start with something easy to get our hands dirty. I want to build a surrogate for <span>$f(x) = log(x)*x^2+x^3$</span>. Let&#39;s choose the radial basis surrogate.</p><pre><code class="language-none">using Surrogates
+<!DOCTYPE html><HTML lang="en"><head><meta charset="UTF-8"/><meta content="width=device-width, initial-scale=1.0" name="viewport"/><title>Tutorials · Surrogates.jl</title><link href="https://cdnjs.cloudflare.com/ajax/libs/normalize/4.2.0/normalize.min.css" rel="stylesheet" type="text/css"/><link href="https://fonts.googleapis.com/css?family=Lato|Roboto+Mono" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.6.3/css/font-awesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/default.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL=".."</script><script data-main="../assets/documenter.js" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.2.0/require.min.js"></script><script src="../siteinfo.js"></script><script src="../../versions.js"></script><link href="../assets/documenter.css" rel="stylesheet" type="text/css"/><script data-outdated-warner="">function maybeAddWarning () {
+    const head = document.getElementsByTagName('head')[0];
+
+    // Add a noindex meta tag (unless one exists) so that search engines don't index this version of the docs.
+    if (document.body.querySelector('meta[name="robots"]') === null) {
+        const meta = document.createElement('meta');
+        meta.name = 'robots';
+        meta.content = 'noindex';
+
+        head.appendChild(meta);
+    };
+
+    // Add a stylesheet to avoid inline styling
+    const style = document.createElement('style');
+    style.type = 'text/css';
+    style.appendChild(document.createTextNode('.outdated-warning-overlay {  position: fixed;  top: 0;  left: 0;  right: 0;  box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);  z-index: 999;  background-color: #ffaba7;  color: rgba(0, 0, 0, 0.7);  border-bottom: 3px solid #da0b00;  padding: 10px 35px;  text-align: center;  font-size: 15px; }  .outdated-warning-overlay .outdated-warning-closer {    position: absolute;    top: calc(50% - 10px);    right: 18px;    cursor: pointer;    width: 12px; }  .outdated-warning-overlay a {    color: #2e63b8; }    .outdated-warning-overlay a:hover {      color: #363636; }'));
+    head.appendChild(style);
+
+    const div = document.createElement('div');
+    div.classList.add('outdated-warning-overlay');
+    const closer = document.createElement('div');
+    closer.classList.add('outdated-warning-closer');
+
+    // Icon by font-awesome (license: https://fontawesome.com/license, link: https://fontawesome.com/icons/times?style=solid)
+    closer.innerHTML = '<svg aria-hidden="true" focusable="false" data-prefix="fas" data-icon="times" class="svg-inline--fa fa-times fa-w-11" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 352 512"><path fill="currentColor" d="M242.72 256l100.07-100.07c12.28-12.28 12.28-32.19 0-44.48l-22.24-22.24c-12.28-12.28-32.19-12.28-44.48 0L176 189.28 75.93 89.21c-12.28-12.28-32.19-12.28-44.48 0L9.21 111.45c-12.28 12.28-12.28 32.19 0 44.48L109.28 256 9.21 356.07c-12.28 12.28-12.28 32.19 0 44.48l22.24 22.24c12.28 12.28 32.2 12.28 44.48 0L176 322.72l100.07 100.07c12.28 12.28 32.2 12.28 44.48 0l22.24-22.24c12.28-12.28 12.28-32.19 0-44.48L242.72 256z"></path></svg>';
+    closer.addEventListener('click', function () {
+        document.body.removeChild(div);
+    });
+    let href = '/stable';
+    if (window.documenterBaseURL) {
+        href = window.documenterBaseURL + '/../stable';
+    }
+    div.innerHTML = 'This is an old version of the documentation. <br> <a href="' + href + '">Go to the newest version</a>.';
+    div.appendChild(closer);
+    document.body.appendChild(div);
+};
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', maybeAddWarning);
+} else {
+    maybeAddWarning();
+};
+</script></head><body><nav class="toc"><h1>Surrogates.jl</h1><select id="version-selector" onchange="window.location.href=this.value" style="visibility: hidden"></select><form action="../search/" class="search" id="search-form"><input id="search-query" name="q" placeholder="Search docs" type="text"/></form><ul><li><a class="toctext" href="../">Overview</a></li><li><span class="toctext">User guide</span><ul><li><a class="toctext" href="../samples/">Samples</a></li><li><a class="toctext" href="../surrogate/">Surrogates</a></li><li><a class="toctext" href="../optimizations/">Optimization</a></li></ul></li><li class="current"><a class="toctext" href="">Tutorials</a><ul class="internal"><li><a class="toctext" href="#Surrogates-101-1">Surrogates 101</a></li><li><a class="toctext" href="#Kriging-standard-error-1">Kriging standard error</a></li><li><a class="toctext" href="#Lobachesky-integral-1">Lobachesky integral</a></li></ul></li><li><a class="toctext" href="../contributing/">Contributing</a></li></ul></nav><article id="docs"><header><nav><ul><li><a href="">Tutorials</a></li></ul><a class="edit-page" href="https://github.com/JuliaDiffEq/Surrogates.jl/blob/master/docs/src/tutorials.md"><span class="fa"></span> Edit on GitHub</a></nav><hr/><div id="topbar"><span>Tutorials</span><a class="fa fa-bars" href="#"></a></div></header><h2><a class="nav-anchor" href="#Surrogates-101-1" id="Surrogates-101-1">Surrogates 101</a></h2><p>Let's start with something easy to get our hands dirty. I want to build a surrogate for <span>$f(x) = log(x)*x^2+x^3$</span>. Let's choose the radial basis surrogate.</p><pre><code class="language-none">using Surrogates
 f = x -&gt; log(x)*x^2+x^3
 lb = 1.0
 ub = 10.0
@@ -10,7 +51,7 @@ q = 2
 my_radial_basis = RadialBasis(x,y,lb,ub,thin_plate_spline,q)
 
 #I want an approximation at 5.4
-approx = my_radial_basis(5.4)</code></pre><p>Let&#39;s now see an example in 2D.</p><pre><code class="language-none">using Surrogates
+approx = my_radial_basis(5.4)</code></pre><p>Let's now see an example in 2D.</p><pre><code class="language-none">using Surrogates
 f = x -&gt; x[1]*x[2]
 lb = [1.0,2.0]
 ub = [10.0,8.5]
@@ -21,7 +62,7 @@ q = 1
 my_radial_basis = RadialBasis(x,y,[lb,ub],linear,q)
 
 #I want an approximation at (1.0,1.4)
-approx = my_radial_basis((1.0,1.4))</code></pre><h2><a class="nav-anchor" id="Kriging-standard-error-1" href="#Kriging-standard-error-1">Kriging standard error</a></h2><p>Let&#39;s now use the Kriging surrogate, which is a single output Gaussian process. This surrogate has a nice feature:not only it approximates the solution at a point, it also calculates the standard error at such point. Let&#39;s see an example:</p><pre><code class="language-none">using Surrogates
+approx = my_radial_basis((1.0,1.4))</code></pre><h2><a class="nav-anchor" href="#Kriging-standard-error-1" id="Kriging-standard-error-1">Kriging standard error</a></h2><p>Let's now use the Kriging surrogate, which is a single output Gaussian process. This surrogate has a nice feature:not only it approximates the solution at a point, it also calculates the standard error at such point. Let's see an example:</p><pre><code class="language-none">using Surrogates
 f = x -&gt; exp(x)*x^2+x^3
 lb = 0.0
 ub = 10.0
@@ -34,7 +75,7 @@ my_krig = Kriging(x,y,p)
 approx = my_krig(5.4)
 
 #I want to find the standard error at 5.4
-std_err = std_error_at_point(my_krig,5.4)</code></pre><p>Let&#39;s now optimize the Kriging surrogate using Lower confidence bound method, this is just a one-liner:</p><pre><code class="language-none">surrogate_optimize(f,LCBS(),a,b,my_krig,UniformSample())</code></pre><h2><a class="nav-anchor" id="Lobachesky-integral-1" href="#Lobachesky-integral-1">Lobachesky integral</a></h2><p>The Lobachesky surrogate has the nice feature of having a closed formula for its integral, which is something that other surrogates are missing. Let&#39;s compare it with QuadGK.</p><pre><code class="language-none">using Surrogates
+std_err = std_error_at_point(my_krig,5.4)</code></pre><p>Let's now optimize the Kriging surrogate using Lower confidence bound method, this is just a one-liner:</p><pre><code class="language-none">surrogate_optimize(f,LCBS(),a,b,my_krig,UniformSample())</code></pre><h2><a class="nav-anchor" href="#Lobachesky-integral-1" id="Lobachesky-integral-1">Lobachesky integral</a></h2><p>The Lobachesky surrogate has the nice feature of having a closed formula for its integral, which is something that other surrogates are missing. Let's compare it with QuadGK.</p><pre><code class="language-none">using Surrogates
 using QuadGK
 obj = x -&gt; 3*x + log(x)
 a = 1.0
@@ -49,4 +90,4 @@ my_loba = LobacheskySurrogate(x,y,alpha,n,a,b)
 int_1D = lobachesky_integral(my_loba,a,b)
 int = quadgk(obj,a,b)
 int_val_true = int[1]-int[2]
-@test abs(int_1D - int_val_true) &lt; 10^-5</code></pre><footer><hr/><a class="previous" href="../optimizations/"><span class="direction">Previous</span><span class="title">Optimization</span></a><a class="next" href="../contributing/"><span class="direction">Next</span><span class="title">Contributing</span></a></footer></article></body></html>
+@test abs(int_1D - int_val_true) &lt; 10^-5</code></pre><footer><hr/><a class="previous" href="../optimizations/"><span class="direction">Previous</span><span class="title">Optimization</span></a><a class="next" href="../contributing/"><span class="direction">Next</span><span class="title">Contributing</span></a></footer></article></body></HTML>
