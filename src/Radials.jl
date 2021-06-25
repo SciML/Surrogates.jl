@@ -18,12 +18,11 @@ mutable struct RadialFunction{Q,P}
     phi::P
 end
 
-linearRadial = RadialFunction(0,z->norm(z))
+const linearRadial = RadialFunction(0,z->norm(z))
+const cubicRadial = RadialFunction(1,z->norm(z)^3)
+const multiquadricRadial = RadialFunction(1,z->sqrt(norm(z)^2+1))
 
-cubicRadial = RadialFunction(1,z->norm(z)^3)
-multiquadricRadial = RadialFunction(1,z->sqrt(norm(z)^2+1))
-
-thinplateRadial = RadialFunction(2, z->begin
+const thinplateRadial = RadialFunction(2, z->begin
     result = norm(z)^2 * log(norm(z))
     ifelse(iszero(z), zero(result), result)
 end)
@@ -200,7 +199,13 @@ function _approx_rbf(val, rad)
     central_point = _center_bounds(first(rad.x), lb, ub)
 
     approx = zero(rad.coeff[1, :])
-    @views approx += sum( rad.coeff[i, :] * rad.phi( (val .- rad.x[i]) ./rad.scale_factor) for i = 1:n)
+    tmp = copy(val)
+
+    for i in 1:n
+        @. tmp = (val - rad.x[i]) /rad.scale_factor
+        approx .+= rad.coeff[i, :] .* rad.phi(tmp)
+    end
+
     for k = 1:num_poly_terms
         @views approx += rad.coeff[n+k, :] .* multivar_poly_basis(val, k-1, d, q)
     end
