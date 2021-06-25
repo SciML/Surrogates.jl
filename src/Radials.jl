@@ -57,7 +57,7 @@ function _calc_coeffs(x, y, lb, ub, phi, q, scale_factor, sparse)
 
     D = _construct_rbf_interp_matrix(x, first(x), lb, ub, phi, q, scale_factor, sparse)
     Y = _construct_rbf_y_matrix(y, first(y), length(y) + num_poly_terms)
-    coeff = D \ Y
+    coeff = copy(transpose(D \ Y))
     return coeff
 end
 
@@ -178,12 +178,12 @@ function _approx_rbf(val::Number, rad::R) where R
     num_poly_terms = binomial(q + 1, q)
     lb = rad.lb
     ub = rad.ub
-    approx = zero(rad.coeff[1, :])
+    approx = zero(rad.coeff[:,1])
     for i = 1:n
-        approx += rad.coeff[i, :] * rad.phi( (val .- rad.x[i]) / rad.scale_factor)
+        approx += rad.coeff[:,i] * rad.phi( (val .- rad.x[i]) / rad.scale_factor)
     end
     for k = 1:num_poly_terms
-        approx += rad.coeff[n+k, :] * _scaled_chebyshev(val, k-1, lb, ub)
+        approx += rad.coeff[:,n+k] * _scaled_chebyshev(val, k-1, lb, ub)
     end
     return approx
 end
@@ -198,8 +198,8 @@ function _approx_rbf(val, rad::R) where R
     mean_half_diameter = sum_half_diameter/d
     central_point = _center_bounds(first(rad.x), lb, ub)
 
-    l = size(rad.coeff, 2)
-    approx = Buffer(zeros(eltype(rad.coeff), l), false)
+    approx = rad.coeff[:,1]
+    approx .= false
 
     if rad.phi === linearRadial.phi
         for i in 1:n
@@ -208,33 +208,20 @@ function _approx_rbf(val, rad::R) where R
                 tmp += ((val[j] - rad.x[i][j]) /rad.scale_factor)^2
             end
             tmp = sqrt(tmp)
-            @simd ivdep for j in 1:size(rad.coeff,2)
-                approx[j] += rad.coeff[i, j] * tmp
+            @simd ivdep for j in 1:size(rad.coeff,1)
+                approx[j] += rad.coeff[j,i] * tmp
             end
         end
     else
         tmp = collect(val)
         for i in 1:n
             @. tmp = (val - rad.x[i]) /rad.scale_factor
-            # approx .+= @view(rad.coeff[i, :]) .* rad.phi(tmp)
-            @simd ivdep for j in 1:size(rad.coeff,2)
-                approx[j] += rad.coeff[i, j] * rad.phi(tmp)
-            end
+            approx .+= @view(rad.coeff[:,i]) .* rad.phi(tmp)
         end
     end
 
     for k = 1:num_poly_terms
-        if q == 0
-            for j in 1:size(rad.coeff,2)
-                approx[j] += rad.coeff[n+k, j]
-            end
-        else
-            # approx .+= @view(rad.coeff[n+k, :]) .* multivar_poly_basis(val, k-1, d, q)
-            mpb = multivar_poly_basis(val, k-1, d, q)
-            for j in 1:size(rad.coeff,2)
-                approx[j] += rad.coeff[n+k, j] * mpb
-            end
-        end
+        @views approx += rad.coeff[:,n+k] .* multivar_poly_basis(val, k-1, d, q)
     end
     return copy(approx)
 end
