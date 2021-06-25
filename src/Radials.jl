@@ -172,7 +172,7 @@ function (rad::RadialBasis)(val)
     return _match_container(approx, first(rad.y))
 end
 
-function _approx_rbf(val::Number, rad)
+function _approx_rbf(val::Number, rad::R) where R
     n = length(rad.x)
     q = rad.dim_poly
     num_poly_terms = binomial(q + 1, q)
@@ -187,7 +187,7 @@ function _approx_rbf(val::Number, rad)
     end
     return approx
 end
-function _approx_rbf(val, rad)
+function _approx_rbf(val, rad::R) where R
     n = length(rad.x)
     d = length(rad.x[1])
     q = rad.dim_poly
@@ -198,16 +198,36 @@ function _approx_rbf(val, rad)
     mean_half_diameter = sum_half_diameter/d
     central_point = _center_bounds(first(rad.x), lb, ub)
 
-    approx = zero(rad.coeff[1, :])
-    tmp = copy(val)
+    approx = rad.coeff[1, :]
+    approx .= false
 
-    for i in 1:n
-        @. tmp = (val - rad.x[i]) /rad.scale_factor
-        approx .+= rad.coeff[i, :] .* rad.phi(tmp)
+    if rad.phi === linearRadial.phi
+        for i in 1:n
+            tmp = zero(eltype(val))
+            @simd ivdep for j in 1:length(val)
+                tmp += ((val[j] - rad.x[i][j]) /rad.scale_factor)^2
+            end
+            tmp = sqrt(tmp)
+            @simd ivdep for j in 1:size(rad.coeff,2)
+                approx[j] += rad.coeff[i, j] * tmp
+            end
+        end
+    else
+        tmp = copy(val)
+        for i in 1:n
+            @. tmp = (val - rad.x[i]) /rad.scale_factor
+            approx .+= @view(rad.coeff[i, :]) .* rad.phi(tmp)
+        end
     end
 
     for k = 1:num_poly_terms
-        @views approx += rad.coeff[n+k, :] .* multivar_poly_basis(val, k-1, d, q)
+        if q == 0
+            for j in 1:size(rad.coeff,2)
+                approx[j] += rad.coeff[n+k, j]
+            end
+        else
+            approx .+= @view(rad.coeff[n+k, :]) .* multivar_poly_basis(val, k-1, d, q)
+        end
     end
     return approx
 end
