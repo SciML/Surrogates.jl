@@ -221,7 +221,13 @@ function _approx_rbf(val, rad::R) where R
     end
 
     for k = 1:num_poly_terms
-        @views approx += rad.coeff[:,n+k] .* multivar_poly_basis(val, k-1, d, q)
+        if q == 0
+            @simd ivdep for j in 1:size(rad.coeff,1)
+                approx[j] += rad.coeff[j,n+k]
+            end
+        else
+            @views approx .+= rad.coeff[:,n+k] .* multivar_poly_basis(val, k-1, d, q)
+        end
     end
     return copy(approx)
 end
