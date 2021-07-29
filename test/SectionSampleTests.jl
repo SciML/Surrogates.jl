@@ -8,7 +8,6 @@
 using Surrogates
 using Test
 
-
 lb = [ 0.0, 0.0, 0.0]
 ub = [10.0,10.0,10.0]
 x = Surrogates.sample(10,lb,ub,LatinHypercubeSample())
