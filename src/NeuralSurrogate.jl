@@ -1,11 +1,6 @@
 using Flux
 using Flux: @epochs
 
-### NOTICE: the thee lines below are a workaround for <https://github.com/FluxML/Zygote.jl/pull/962>
-using Base
-using Zygote
-Base.setindex!(dict::IdDict, dx::Zygote.OneElement, x) = dict[x] = collect(dx)
-
 mutable struct NeuralSurrogate{X,Y,M,L,O,P,N,A,U} <: AbstractSurrogate
     x::X
     y::Y
