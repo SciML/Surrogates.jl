@@ -95,7 +95,7 @@ export AbstractSurrogate, SamplingAlgorithm
 export Kriging, RadialBasis, add_point!, current_estimate, std_error_at_point
 export linearRadial,cubicRadial,multiquadricRadial,thinplateRadial
 export sample, GridSample, UniformSample, SobolSample, LatinHypercubeSample, LowDiscrepancySample
-export RandomSample, KroneckerSample, GoldenSample
+export RandomSample, KroneckerSample, GoldenSample, SectionSample
 export SRBF,LCBS,EI,DYCORS,SOP,EGO,RTEA,SMB,surrogate_optimize
 export LobachevskySurrogate, lobachevsky_integral, lobachevsky_integrate_dimension
 export LinearSurrogate

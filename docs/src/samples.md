@@ -34,6 +34,12 @@ LowDiscrepancySample{T}
 sample(n,lb,ub,S::LowDiscrepancySample)
 ```
 
+* Sample on section
+```@docs
+SectionSample
+sample(n,lb,ub,S::SectionSample)
+```
+
 ## Adding a new sampling method
 
 Adding a new sampling method is a two- step process:
