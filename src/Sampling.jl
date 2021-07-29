@@ -275,7 +275,6 @@ function sample(n,lb,ub,section_sampler::SectionSample)
                 out_as_vec[y,xi] = new_samples[y][xi]
             end
         end
-        out = [Tuple(out_as_vec[y,:]) for y in 1:size(out_as_vec,1)]
-        return out
+        [Tuple(out_as_vec[y,:]) for y in 1:size(out_as_vec,1)]
     end
 end
