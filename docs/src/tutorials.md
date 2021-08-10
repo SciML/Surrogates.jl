@@ -1,6 +1,6 @@
 ## Surrogates 101
 Let's start with something easy to get our hands dirty.
-I want to build a surrogate for ``f(x) = log(x)*x^2+x^3``.
+I want to build a surrogate for ``f(x) = \log(x) \cdot x^2+x^3``.
 Let's choose the radial basis surrogate.
 ```@example
 using Surrogates
