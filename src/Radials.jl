@@ -198,15 +198,8 @@ function _approx_rbf(val, rad::R) where R
     mean_half_diameter = sum_half_diameter/d
     central_point = _center_bounds(first(rad.x), lb, ub)
 
-    #approx = rad.coeff[1, :]
-    #approx .= false
-    approx = Buffer(rad.coeff[1,:], length(rad.coeff[1,:]))
-    # approx .= 0
-    for i = 1:length(approx)
-        approx[i] = zero(eltype(rad.coeff))
-    end
-
-   #  @views approx += sum( rad.coeff[i, :] * rad.phi( (val .- rad.x[i]) ./rad.scale_factor) for i = 1:n)
+    l = size(rad.coeff, 2)
+    approx = Buffer(zeros(eltype(rad.coeff), l), false)
 
     if rad.phi === linearRadial.phi
         for i in 1:n
@@ -229,9 +222,6 @@ function _approx_rbf(val, rad::R) where R
             end
         end
     end
-    #=for k = 1:num_poly_terms
-        @views approx += rad.coeff[n+k, :] .* multivar_poly_basis(val, k-1, d, q)
-    end=#
 
     for k = 1:num_poly_terms
         if q == 0
@@ -248,24 +238,6 @@ function _approx_rbf(val, rad::R) where R
     end
     return copy(approx)
 end
-
-#=    n = length(rad.x)
-    d = length(rad.x[1])
-    q = rad.dim_poly
-    num_poly_terms = binomial(q + d, q)
-    lb = rad.lb
-    ub = rad.ub
-    sum_half_diameter = sum((ub[k]-lb[k])/2 for k = 1:d)
-    mean_half_diameter = sum_half_diameter/d
-    central_point = _center_bounds(first(rad.x), lb, ub)
-
-    approx = zero(rad.coeff[1, :])
-    @views approx += sum( rad.coeff[i, :] * rad.phi( (val .- rad.x[i]) ./rad.scale_factor) for i = 1:n)
-    for k = 1:num_poly_terms
-        @views approx += rad.coeff[n+k, :] .* multivar_poly_basis(val, k-1, d, q)
-    end
-    return approx
-end=#
 
 _scaled_chebyshev(x, k, lb, ub) = cos(k*acos(-1 + 2*(x-lb)/(ub-lb)))
 _center_bounds(x::Tuple, lb, ub) = ntuple(i -> (ub[i] - lb[i])/2, length(x))
