@@ -115,7 +115,7 @@ end
 _construct_rbf_y_matrix(y, y_el::Number, m) = [i <= length(y) ? y[i] : zero(y_el) for i = 1:m]
 _construct_rbf_y_matrix(y, y_el, m) = [i <= length(y) ? y[i][j] : zero(first(y_el)) for i=1:m, j=1:length(y_el)]
 
-using Zygote: @nograd
+using Zygote: @nograd, Buffer
 
 function _make_combination(n, d, ix)
     exponents_combinations = [
@@ -198,8 +198,15 @@ function _approx_rbf(val, rad::R) where R
     mean_half_diameter = sum_half_diameter/d
     central_point = _center_bounds(first(rad.x), lb, ub)
 
-    approx = rad.coeff[1, :]
-    approx .= false
+    #approx = rad.coeff[1, :]
+    #approx .= false
+    approx = Buffer(rad.coeff[1,:], length(rad.coeff[1,:]))
+    # approx .= 0
+    for i = 1:length(approx)
+        approx[i] = zero(eltype(rad.coeff))
+    end
+
+   #  @views approx += sum( rad.coeff[i, :] * rad.phi( (val .- rad.x[i]) ./rad.scale_factor) for i = 1:n)
 
     if rad.phi === linearRadial.phi
         for i in 1:n
@@ -213,12 +220,18 @@ function _approx_rbf(val, rad::R) where R
             end
         end
     else
-        tmp = copy(val)
+        tmp = collect(val)
         for i in 1:n
             @. tmp = (val - rad.x[i]) /rad.scale_factor
-            approx .+= @view(rad.coeff[i, :]) .* rad.phi(tmp)
+            # approx .+= @view(rad.coeff[i, :]) .* rad.phi(tmp)
+            @simd ivdep for j in 1:size(rad.coeff,2)
+                approx[j] += rad.coeff[i, j] * rad.phi(tmp)
+            end
         end
     end
+    #=for k = 1:num_poly_terms
+        @views approx += rad.coeff[n+k, :] .* multivar_poly_basis(val, k-1, d, q)
+    end=#
 
     for k = 1:num_poly_terms
         if q == 0
@@ -226,11 +239,33 @@ function _approx_rbf(val, rad::R) where R
                 approx[j] += rad.coeff[n+k, j]
             end
         else
-            approx .+= @view(rad.coeff[n+k, :]) .* multivar_poly_basis(val, k-1, d, q)
+            # approx .+= @view(rad.coeff[n+k, :]) .* multivar_poly_basis(val, k-1, d, q)
+            mpb = multivar_poly_basis(val, k-1, d, q)
+            for j in 1:size(rad.coeff,2)
+                approx[j] += rad.coeff[n+k, j] * mpb
+            end
         end
     end
-    return approx
+    return copy(approx)
 end
+
+#=    n = length(rad.x)
+    d = length(rad.x[1])
+    q = rad.dim_poly
+    num_poly_terms = binomial(q + d, q)
+    lb = rad.lb
+    ub = rad.ub
+    sum_half_diameter = sum((ub[k]-lb[k])/2 for k = 1:d)
+    mean_half_diameter = sum_half_diameter/d
+    central_point = _center_bounds(first(rad.x), lb, ub)
+
+    approx = zero(rad.coeff[1, :])
+    @views approx += sum( rad.coeff[i, :] * rad.phi( (val .- rad.x[i]) ./rad.scale_factor) for i = 1:n)
+    for k = 1:num_poly_terms
+        @views approx += rad.coeff[n+k, :] .* multivar_poly_basis(val, k-1, d, q)
+    end
+    return approx
+end=#
 
 _scaled_chebyshev(x, k, lb, ub) = cos(k*acos(-1 + 2*(x-lb)/(ub-lb)))
 _center_bounds(x::Tuple, lb, ub) = ntuple(i -> (ub[i] - lb[i])/2, length(x))
