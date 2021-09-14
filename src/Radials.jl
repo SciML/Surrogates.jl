@@ -1,6 +1,8 @@
 using LinearAlgebra
 using ExtendableSparse
 
+Base.copy(t::Tuple) = t
+
 mutable struct RadialBasis{F,Q,X,Y,L,U,C,S,D} <: AbstractSurrogate
     phi::F
     dim_poly::Q
@@ -215,7 +217,7 @@ function _approx_rbf(val, rad::R) where R
     else
         tmp = collect(val)
         for i in 1:n
-            @. tmp = (val - rad.x[i]) /rad.scale_factor
+            tmp = (val .- rad.x[i]) ./ rad.scale_factor
             approx .+= @view(rad.coeff[:,i]) .* rad.phi(tmp)
         end
     end
