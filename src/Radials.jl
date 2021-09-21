@@ -200,8 +200,9 @@ function _approx_rbf(val, rad::R) where R
     mean_half_diameter = sum_half_diameter/d
     central_point = _center_bounds(first(rad.x), lb, ub)
 
-    approx = rad.coeff[:,1]
-    approx .= false
+    l = size(rad.coeff, 1)
+    approx = Buffer(zeros(eltype(rad.coeff), l), false)
+
 
     if rad.phi === linearRadial.phi
         for i in 1:n
@@ -218,7 +219,10 @@ function _approx_rbf(val, rad::R) where R
         tmp = collect(val)
         for i in 1:n
             tmp = (val .- rad.x[i]) ./ rad.scale_factor
-            approx .+= @view(rad.coeff[:,i]) .* rad.phi(tmp)
+            # approx .+= @view(rad.coeff[:,i]) .* rad.phi(tmp)
+            @simd ivdep for j in 1:size(rad.coeff,1)
+                approx[j] += rad.coeff[j, i] * rad.phi(tmp)
+            end
         end
     end
 
@@ -228,7 +232,11 @@ function _approx_rbf(val, rad::R) where R
                 approx[j] += rad.coeff[j,n+k]
             end
         else
-            @views approx .+= rad.coeff[:,n+k] .* multivar_poly_basis(val, k-1, d, q)
+            # @views approx .+= rad.coeff[:,n+k] .* multivar_poly_basis(val, k-1, d, q)
+            mpb = multivar_poly_basis(val, k-1, d, q)
+            for j in 1:size(rad.coeff,1)
+                approx[j] += rad.coeff[j,n+k] * mpb
+            end
         end
     end
     return copy(approx)
