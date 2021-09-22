@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>NeuralSurrogate · Surrogates.jl</title><link href="https://fonts.googleapis.com/css?family=Lato|Roboto+Mono" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.11.2/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.11.2/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.11.2/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.11.1/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL=".."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../assets/documenter.js"></script><script src="../siteinfo.js"></script><script src="../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/documenter-dark.css" data-theme-name="documenter-dark"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><div class="docs-package-name"><span class="docs-autofit">Surrogates.jl</span></div><form class="docs-search" action="../search/"><input class="docs-search-query" id="documenter-search-query" name="q" type="text" placeholder="Search docs"/></form><ul class="docs-menu"><li><a class="tocitem" href="../">Overview</a></li><li><span class="tocitem">Tutorials</span><ul><li><a class="tocitem" href="../tutorials/">Basics</a></li><li><a class="tocitem" href="../radials/">Radials</a></li><li><a class="tocitem" href="../kriging/">Kriging</a></li><li><a class="tocitem" href="../lobachevsky/">Lobachevsky</a></li><li><a class="tocitem" href="../LinearSurrogate/">Linear</a></li><li><a class="tocitem" href="../InverseDistance/">InverseDistance</a></li><li><a class="tocitem" href="../randomforest/">RandomForest</a></li><li><a class="tocitem" href="../secondorderpoly/">SecondOrderPolynomial</a></li><li class="is-active"><a class="tocitem" href>NeuralSurrogate</a><ul class="internal"><li><a class="tocitem" href="#Sampling-1"><span>Sampling</span></a></li><li><a class="tocitem" href="#Building-a-surrogate-1"><span>Building a surrogate</span></a></li><li><a class="tocitem" href="#Optimization-1"><span>Optimization</span></a></li></ul></li><li><a class="tocitem" href="../wendland/">Wendland</a></li><li><a class="tocitem" href="../polychaos/">Polynomial Chaos</a></li><li><a class="tocitem" href="../variablefidelity/">Variable Fidelity</a></li><li><a class="tocitem" href="../gek/">Gradient Enhanced Kriging</a></li></ul></li><li><span class="tocitem">User guide</span><ul><li><a class="tocitem" href="../samples/">Samples</a></li><li><a class="tocitem" href="../surrogate/">Surrogates</a></li><li><a class="tocitem" href="../optimizations/">Optimization</a></li></ul></li><li><span class="tocitem">Benchmarks</span><ul><li><a class="tocitem" href="../sphere_function/">Sphere function</a></li><li><a class="tocitem" href="../lp/">Lp norm</a></li><li><a class="tocitem" href="../rosenbrock/">Rosenbrock</a></li><li><a class="tocitem" href="../tensor_prod/">Tensor product</a></li><li><a class="tocitem" href="../cantilever/">Cantilever beam</a></li><li><a class="tocitem" href="../water_flow/">Water Flow function</a></li><li><a class="tocitem" href="../welded_beam/">Welded beam function</a></li><li><a class="tocitem" href="../BraninFunction/">Branin function</a></li><li><a class="tocitem" href="../ackley/">Ackley function</a></li><li><a class="tocitem" href="../gramacylee/">Gramacy &amp; Lee Function</a></li><li><a class="tocitem" href="../Salustowicz/">Salustowicz Benchmark</a></li><li><a class="tocitem" href="../multi_objective_opt/">Multi objective optimization</a></li></ul></li><li><a class="tocitem" href="../contributing/">Contributing</a></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><nav class="breadcrumb"><ul class="is-hidden-mobile"><li><a class="is-disabled">Tutorials</a></li><li class="is-active"><a href>NeuralSurrogate</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>NeuralSurrogate</a></li></ul></nav><div class="docs-right"><a class="docs-edit-link" href="https://github.com/SciML/Surrogates.jl/blob/master/docs/src/neural.md" title="Edit on GitHub"><span class="docs-icon fab"></span><span class="docs-label is-hidden-touch">Edit on GitHub</span></a><a class="docs-settings-button fas fa-cog" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-sidebar-button fa fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a></div></header><article class="content" id="documenter-page"><h1 id="Neural-network-tutorial-1"><a class="docs-heading-anchor" href="#Neural-network-tutorial-1">Neural network tutorial</a><a class="docs-heading-anchor-permalink" href="#Neural-network-tutorial-1" title="Permalink"></a></h1><p>It&#39;s possible to define a neural network as a surrogate, using Flux. This is useful because we can call optimization methods on it.</p><p>First of all we will define the <code>Schaffer</code> function we are going to build surrogate for.</p><pre><code class="language-julia">using Plots
+using Surrogates
+using Flux
+
+function schaffer(x)
+    x1=x[1]
+    x2=x[2]
+    fact1 = x1 ^2;
+    fact2 = x2 ^2;
+    y = fact1 + fact2;
+end</code></pre><pre><code class="language-none">schaffer (generic function with 1 method)</code></pre><h2 id="Sampling-1"><a class="docs-heading-anchor" href="#Sampling-1">Sampling</a><a class="docs-heading-anchor-permalink" href="#Sampling-1" title="Permalink"></a></h2><p>Let&#39;s define our bounds, this time we are working in two dimensions. In particular we want our first dimension <code>x</code> to have bounds <code>0, 8</code>, and <code>0, 8</code> for the second dimension. We are taking 60 samples of the space using Sobol Sequences. We then evaluate our function on all of the sampling points.</p><pre><code class="language-julia">n_samples = 60
+lower_bound = [0.0, 0.0]
+upper_bound = [8.0, 8.0]
+
+xys = sample(n_samples, lower_bound, upper_bound, SobolSample())
+zs = schaffer.(xys);</code></pre><pre><code class="language-none">60-element Array{Float64,1}:
+   4.65625
+  56.65625
+  40.65625
+  22.65625
+  12.65625
+  80.65625
+  38.65625
+  52.65625
+   3.90625
+  55.90625
+   ⋮
+  56.7578125
+  31.0078125
+ 126.0078125
+  39.0078125
+  39.0078125
+   8.0078125
+  71.0078125
+  55.5078125
+  31.5078125</code></pre><pre><code class="language-">x, y = 0:8, 0:8 # hide
+p1 = surface(x, y, (x1,x2) -&gt; schaffer((x1,x2))) # hide
+xs = [xy[1] for xy in xys] # hide
+ys = [xy[2] for xy in xys] # hide
+scatter!(xs, ys, zs) # hide
+p2 = contour(x, y, (x1,x2) -&gt; schaffer((x1,x2))) # hide
+scatter!(xs, ys) # hide
+plot(p1, p2, title=&quot;True function&quot;) # hide</code></pre><h2 id="Building-a-surrogate-1"><a class="docs-heading-anchor" href="#Building-a-surrogate-1">Building a surrogate</a><a class="docs-heading-anchor-permalink" href="#Building-a-surrogate-1" title="Permalink"></a></h2><p>You can specify your own model, optimization function, loss functions and epochs. As always, getting the model right is hardest thing.</p><pre><code class="language-">model1 = Chain(
+  Dense(1, 5, σ),
+  Dense(5,2,σ),
+  Dense(2, 1)
+)
+neural = NeuralSurrogate(x, y, lb, ub, model = model1, n_echos = 10)</code></pre><h2 id="Optimization-1"><a class="docs-heading-anchor" href="#Optimization-1">Optimization</a><a class="docs-heading-anchor-permalink" href="#Optimization-1" title="Permalink"></a></h2><p>We can now call an optimization function on the neural network:</p><pre><code class="language-">surrogate_optimize(schaffer, SRBF(), lower_bound, upper_bound, neura, SobolSample(), maxiters=20, num_new_samples=10)</code></pre></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../secondorderpoly/">« SecondOrderPolynomial</a><a class="docs-footer-nextpage" href="../wendland/">Wendland »</a></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> on <span class="colophon-date" title="Wednesday 22 September 2021 16:47">Wednesday 22 September 2021</span>. Using Julia version 1.4.2.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
