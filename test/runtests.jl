@@ -11,7 +11,7 @@ using Surrogates
 #@testset "SVMSurrogate" begin include("SVMSurrogate.jl") end
 @testset "NeuralSurrogate" begin include("neuralSurrogate.jl") end
 @testset "InverseDistanceSurrogate" begin include("inverseDistanceSurrogate.jl") end
-@testset "SecondOrderPolynomialSurrogate" begin include("secondOrderPolynomialSurrogate.jl") end=#
+@testset "SecondOrderPolynomialSurrogate" begin include("secondOrderPolynomialSurrogate.jl") end
 @testset "AD_Compatibility" begin include("AD_compatibility.jl") end
 @testset "SthenoKriging.jl" begin include("SthenoKriging.jl") end
 @testset "Wendland" begin include("Wendland.jl") end
