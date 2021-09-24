@@ -189,7 +189,7 @@ function _approx_rbf(val::Number, rad::R) where R
     end
     return approx
 end
-function _approx_rbf(val, rad::R) where R
+function _approx_rbf(val, rad::R) where {R}
     n = length(rad.x)
     d = length(rad.x[1])
     q = rad.dim_poly
@@ -201,7 +201,7 @@ function _approx_rbf(val, rad::R) where R
     central_point = _center_bounds(first(rad.x), lb, ub)
 
     l = size(rad.coeff, 1)
-    approx = Buffer(zeros(eltype(rad.coeff), l), false)
+    approx = Buffer(zeros(eltype(val), l), false)
 
 
     if rad.phi === linearRadial.phi
