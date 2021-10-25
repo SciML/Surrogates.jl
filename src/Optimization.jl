@@ -515,8 +515,8 @@ function surrogate_optimize(obj::Function,::EI,lb::Number,ub::Number,krig,sample
                 #new_min_x has to have some distance from krig.x
                 if false in bit_x
                     #The new_point is not actually that new, discard it!
-                    deleteat!(evaluations,index_max)
-                    deleteat!(new_sample,index_max)
+                    deleteat!(evaluations,index_min)
+                    deleteat!(new_sample,index_min)
                     if length(new_sample) == 0
                         println("Out of sampling points")
                         index = argmin(krig.y)
