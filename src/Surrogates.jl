@@ -18,14 +18,20 @@ function __init__()
     @require Stheno="8188c328-b5d6-583d-959b-9690869a5511" begin 
         include("SthenoKriging.jl")
     end
+    
+    @require Flux="587475ba-b771-5e3f-ad9e-33799f191a9c"
+        include("NeuralSurrogate.jl")
+    end
+
+    @require PolyChaos="8d666b04-775d-5f6e-b778-5ac7c70f65a3"
+        include("PolynomialChaos.jl")
+    end
 end
 
 include("RandomForestSurrogate.jl")
-include("NeuralSurrogate.jl")
 include("Wendland.jl")
 include("MOE.jl") #rewrite gaussian mixture with own algorithm to fix deps issue
 include("VariableFidelity.jl")
-include("PolynomialChaos.jl")
 include("Earth.jl")
 include("GEK.jl")
 
