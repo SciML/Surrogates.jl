@@ -19,11 +19,11 @@ function __init__()
         include("SthenoKriging.jl")
     end
     
-    @require Flux="587475ba-b771-5e3f-ad9e-33799f191a9c"
+    @require Flux="587475ba-b771-5e3f-ad9e-33799f191a9c" begin
         include("NeuralSurrogate.jl")
     end
 
-    @require PolyChaos="8d666b04-775d-5f6e-b778-5ac7c70f65a3"
+    @require PolyChaos="8d666b04-775d-5f6e-b778-5ac7c70f65a3" begin
         include("PolynomialChaos.jl")
     end
 end
