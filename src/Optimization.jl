@@ -355,7 +355,7 @@ function surrogate_optimize(obj::Function,::SRBF,lb::Number,ub::Number,surr::Abs
                     index = argmin(surr.y)
                     return (surr.x[index],surr.y[index])
                 end
-                sucess = 0
+                success = 0
                 failure = 0
             end
         end
