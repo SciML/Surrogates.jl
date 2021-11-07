@@ -2,6 +2,7 @@ using Surrogates
 using LinearAlgebra
 using Flux
 using Flux: @epochs
+using PolyChaos
 
 #######SRBF############
 ##### 1D #####
