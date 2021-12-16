@@ -40,7 +40,7 @@ plot(p1, p2, title="True function")
 Fitting different Surrogates:
 ```@example rosen
 mypoly = PolynomialChaosSurrogate(xys, zs,  lb, ub)
-loba = LobachevskySurrogate(xys, xs, lb, ub)
+loba = LobachevskySurrogate(xys, zs, lb, ub)
 inver = InverseDistanceSurrogate(xys, zs,  lb, ub)
 ```
 
