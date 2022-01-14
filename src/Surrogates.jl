@@ -14,6 +14,7 @@ include("LinearSurrogate.jl")
 include("InverseDistanceSurrogate.jl")
 include("SecondOrderPolynomialSurrogate.jl")
 
+
 function __init__()
     @require Stheno="8188c328-b5d6-583d-959b-9690869a5511" begin 
         include("SthenoKriging.jl")
@@ -28,6 +29,7 @@ function __init__()
     end
 end
 
+include("SVMSurrogate.jl") 
 include("RandomForestSurrogate.jl")
 include("Wendland.jl")
 include("MOE.jl") #rewrite gaussian mixture with own algorithm to fix deps issue
@@ -37,12 +39,13 @@ include("GEK.jl")
 
 current_surrogates = ["Kriging","LinearSurrogate","LobachevskySurrogate","NeuralSurrogate",
                       "RadialBasis","RandomForestSurrogate","SecondOrderPolynomialSurrogate",
-                      "Wendland","GEK","PolynomialChaosSurrogate"]
+                      "Wendland","GEK","PolynomialChaosSurrogate", "SVMSurrogate"] 
 
 #Radial structure:
 function RadialBasisStructure(;radial_function,scale_factor,sparse)
     return (name = "RadialBasis", radial_function = radial_function, scale_factor = scale_factor, sparse = sparse)
 end
+
 
 #Kriging structure:
 function KrigingStructure(;p,theta)

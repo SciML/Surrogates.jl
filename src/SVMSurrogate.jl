@@ -1,3 +1,4 @@
+using LIBSVM 
 mutable struct SVMSurrogate{X,Y,M,L,U} <: AbstractSurrogate
     x::X
     y::Y
@@ -5,7 +6,6 @@ mutable struct SVMSurrogate{X,Y,M,L,U} <: AbstractSurrogate
     lb::L
     ub::U
 end
-
 
 function SVMSurrogate(x,y,lb::Number,ub::Number)
     xn = reshape(x,length(x),1)

@@ -15,6 +15,7 @@ Sobol = "ed01d8cd-4d21-5b2a-85b4-cc3bdc58bad4"
 SparseArrays = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
 XGBoost = "009559a3-9522-5dbb-924b-0b6ed2b22bb9"
 Zygote = "e88e6eb3-aa80-5325-afca-941959d7151f"
+LIBSVM = "b1bec4e5-fd48-53fe-b0cb-9723c09d164b" 
 
 [compat]
 Distributions = "0.21, 0.22, 0.23, 0.24, 0.25"
