@@ -14,6 +14,9 @@ include("LinearSurrogate.jl")
 include("InverseDistanceSurrogate.jl")
 include("SecondOrderPolynomialSurrogate.jl")
 
+include("GEKPLS.jl") #vik
+
+
 function __init__()
     @require Stheno="8188c328-b5d6-583d-959b-9690869a5511" begin 
         include("SthenoKriging.jl")
@@ -37,7 +40,7 @@ include("GEK.jl")
 
 current_surrogates = ["Kriging","LinearSurrogate","LobachevskySurrogate","NeuralSurrogate",
                       "RadialBasis","RandomForestSurrogate","SecondOrderPolynomialSurrogate",
-                      "Wendland","GEK","PolynomialChaosSurrogate"]
+                      "Wendland","GEK","PolynomialChaosSurrogate", "GEKPLS"] #vik
 
 #Radial structure:
 function RadialBasisStructure(;radial_function,scale_factor,sparse)
@@ -93,6 +96,11 @@ function PolyChaosStructure(; op)
     return (name = "PolynomialChaosSurrogate", op = op)
 end
 
+
+
+
+export GEKPLS #vik
+
 export current_surrogates
 export RadialBasisStructure, KrigingStructure, LinearStructure, InverseDistanceStructure
 export LobachevskyStructure, NeuralStructure, RandomForestStructure, SecondOrderPolynomialStructure
@@ -120,4 +128,6 @@ export VariableFidelitySurrogate
 export PolynomialChaosSurrogate
 export EarthSurrogate
 export GEK
+
+
 end
