@@ -1,7 +1,8 @@
 using Test
 using Surrogates
 
-# @testset "Radials.jl" begin include("Radials.jl") end
+
+#@testset "Radials.jl" begin include("Radials.jl") end
 # @testset "Kriging.jl" begin include("Kriging.jl") end
 # @testset "Sampling" begin include("sampling.jl") end
 # @testset "Optimization" begin include("optimization.jl") end
@@ -20,4 +21,4 @@ using Surrogates
 # @testset "Earth" begin include("earth.jl") end
 # @testset "Gradient Enhanced Kriging" begin include("GEK.jl") end
 # @testset "Section Samplers" begin include("SectionSampleTests.jl") end
-@testset "GEKPLS" begin include("GEKPLS.jl") end #vik
+@testset "GEKPLS" begin include("GEKPLS.jl") end 

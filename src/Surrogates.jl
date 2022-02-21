@@ -3,6 +3,9 @@ using LinearAlgebra
 using Distributions
 using Requires 
 
+
+__precompile__(false) #needed for sklearn pls in GEKPLS.jl; please refer https://github.com/cstjean/ScikitLearn.jl/issues/50
+
 abstract type AbstractSurrogate <: Function end
 include("utils.jl")
 include("Radials.jl")
@@ -14,7 +17,7 @@ include("LinearSurrogate.jl")
 include("InverseDistanceSurrogate.jl")
 include("SecondOrderPolynomialSurrogate.jl")
 
-include("GEKPLS.jl") #vik
+include("GEKPLS.jl") 
 
 
 function __init__()
@@ -40,7 +43,7 @@ include("GEK.jl")
 
 current_surrogates = ["Kriging","LinearSurrogate","LobachevskySurrogate","NeuralSurrogate",
                       "RadialBasis","RandomForestSurrogate","SecondOrderPolynomialSurrogate",
-                      "Wendland","GEK","PolynomialChaosSurrogate", "GEKPLS"] #vik
+                      "Wendland","GEK","PolynomialChaosSurrogate", "GEKPLS"] 
 
 #Radial structure:
 function RadialBasisStructure(;radial_function,scale_factor,sparse)
@@ -99,7 +102,7 @@ end
 
 
 
-export GEKPLS #vik
+export GEKPLS 
 
 export current_surrogates
 export RadialBasisStructure, KrigingStructure, LinearStructure, InverseDistanceStructure
