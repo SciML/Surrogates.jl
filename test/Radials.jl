@@ -140,3 +140,14 @@ lb = [0.0,3.0,6.0]
 ub = [4.0,7.0,10.0]
 #bounds = [[0.0, 3.0, 6.0], [4.0, 7.0, 10.0]]
 my_rad = RadialBasis(x, y, lb, ub, sparse = true)
+
+
+#test to verify multiquadricRadial with default scale_factor
+lb = [0.0, 0.0, 0.0]
+ub = [3.0, 3.0, 3.0]
+n_samples = 100
+g(x) = sqrt(x[1]^2 + x[2]^2 + x[3]^2) 
+x = sample(n_samples, lb, ub, SobolSample()) 
+y = g.(x) 
+mq_rad = RadialBasis(x, y, lb, ub, rad = multiquadricRadial) 
+@test isapprox( mq_rad([2.0, 2.0, 1.0]), g([2.0, 2.0, 1.0]), atol = .0001)
