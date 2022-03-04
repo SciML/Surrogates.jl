@@ -34,7 +34,7 @@ end)
 
 Constructor for RadialBasis surrogate.
 """
-function RadialBasis(x, y, lb::Number, ub::Number; rad::RadialFunction=linearRadial, scale_factor::Real=1.0, sparse = false)
+function RadialBasis(x, y, lb::Number, ub::Number; rad::RadialFunction=linearRadial, scale_factor::Real=0.5, sparse = false)
     q = rad.q
     phi = rad.phi
     coeff = _calc_coeffs(x, y, lb, ub, phi, q,scale_factor, sparse)
@@ -46,7 +46,7 @@ RadialBasis(x,y,lb,ub,rad::RadialFunction, scale_factor::Float = 1.0)
 
 Constructor for RadialBasis surrogate
 """
-function RadialBasis(x, y, lb, ub; rad::RadialFunction = linearRadial, scale_factor::Real=1.0, sparse = false)
+function RadialBasis(x, y, lb, ub; rad::RadialFunction = linearRadial, scale_factor::Real=0.5, sparse = false)
     q = rad.q
     phi = rad.phi
     coeff = _calc_coeffs(x, y, lb, ub, phi, q, scale_factor, sparse)
@@ -56,63 +56,50 @@ end
 function _calc_coeffs(x, y, lb, ub, phi, q, scale_factor, sparse)
     nd = length(first(x))
     num_poly_terms = binomial(q + nd, q)
-
     D = _construct_rbf_interp_matrix(x, first(x), lb, ub, phi, q, scale_factor, sparse)
     Y = _construct_rbf_y_matrix(y, first(y), length(y) + num_poly_terms)
-    coeff = copy(transpose(D \ Y))
+    if (typeof(y) == Vector{Float64}) #single output case
+        coeff = copy(transpose(D \ y))
+    else 
+        coeff = copy(transpose(D \ Y[1:size(D)[1], : ] )) #if y is multi output; 
+    end
     return coeff
 end
 
 function _construct_rbf_interp_matrix(x, x_el::Number, lb, ub, phi, q, scale_factor, sparse)
     n = length(x)
-
-    num_poly_terms = binomial(q + 1, q)
-    m = n + num_poly_terms
-
     if sparse
-        D = ExtendableSparseMatrix{eltype(x_el),Int}(m,m)
+        D = ExtendableSparseMatrix{eltype(x_el),Int}(n,n) 
     else
-        D = zeros(eltype(x_el), m, m)
+        D = zeros(eltype(x_el), n, n) 
     end
     @inbounds for i = 1:n
         for j = 1:n
             D[i,j] = phi( (x[i] .- x[j]) ./ scale_factor )
         end
-        if i <= n
-            for k = 1:num_poly_terms
-                    D[i,n+k] = _scaled_chebyshev(x[i], k-1, lb, ub)
-            end
-        end
     end
     D_sym = Symmetric(D, :U)
     return D_sym
 end
 
-function _construct_rbf_interp_matrix(x, x_el, lb, ub, phi, q, scale_factor,sparse)
+
+function _construct_rbf_interp_matrix(x, x_el, lb, ub, phi, q, scale_factor,sparse) 
     n = length(x)
     nd = length(x_el)
-
-    num_poly_terms = binomial(q + nd, q)
-    m = n + num_poly_terms
-
     if sparse
-        D = ExtendableSparseMatrix{eltype(x_el),Int}(m,m)
+        D = ExtendableSparseMatrix{eltype(x_el),Int}(n,n) 
     else
-        D = zeros(eltype(x_el), m, m)
+        D = zeros(eltype(x_el), n, n) 
     end
     @inbounds for i = 1:n
         for j = 1:n
             D[i,j] = phi( (x[i] .- x[j]) ./ scale_factor)
         end
-        if i < n + 1
-            for k = 1:num_poly_terms
-                D[i,n+k] = multivar_poly_basis(x[i], k-1, nd, q)
-            end
-        end
     end
     D_sym = Symmetric(D, :U)
     return D_sym
 end
+
 
 _construct_rbf_y_matrix(y, y_el::Number, m) = [i <= length(y) ? y[i] : zero(y_el) for i = 1:m]
 _construct_rbf_y_matrix(y, y_el, m) = [i <= length(y) ? y[i][j] : zero(first(y_el)) for i=1:m, j=1:length(y_el)]
@@ -184,9 +171,6 @@ function _approx_rbf(val::Number, rad::R) where R
     for i = 1:n
         approx += rad.coeff[:,i] * rad.phi( (val .- rad.x[i]) / rad.scale_factor)
     end
-    for k = 1:num_poly_terms
-        approx += rad.coeff[:,n+k] * _scaled_chebyshev(val, k-1, lb, ub)
-    end
     return approx
 end
 function _approx_rbf(val, rad::R) where {R}
@@ -222,20 +206,6 @@ function _approx_rbf(val, rad::R) where {R}
             # approx .+= @view(rad.coeff[:,i]) .* rad.phi(tmp)
             @simd ivdep for j in 1:size(rad.coeff,1)
                 approx[j] += rad.coeff[j, i] * rad.phi(tmp)
-            end
-        end
-    end
-
-    for k = 1:num_poly_terms
-        if q == 0
-            @simd ivdep for j in 1:size(rad.coeff,1)
-                approx[j] += rad.coeff[j,n+k]
-            end
-        else
-            # @views approx .+= rad.coeff[:,n+k] .* multivar_poly_basis(val, k-1, d, q)
-            mpb = multivar_poly_basis(val, k-1, d, q)
-            for j in 1:size(rad.coeff,1)
-                approx[j] += rad.coeff[j,n+k] * mpb
             end
         end
     end
