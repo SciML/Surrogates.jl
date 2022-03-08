@@ -3,7 +3,7 @@ One-dimensional Kriging method, following this paper:
 "A Taxonomy of Global Optimization Methods Based on Response Surfaces"
 by DONALD R. JONES
 =#
-mutable struct Kriging{X,Y,L,U,P,T,M,B,S,R} <: AbstractSurrogate
+mutable struct Kriging{X,Y,L,U,P,T,M,B,S,R,F} <: AbstractSurrogate
     x::X
     y::Y
     lb::L
@@ -14,6 +14,7 @@ mutable struct Kriging{X,Y,L,U,P,T,M,B,S,R} <: AbstractSurrogate
     b::B
     sigma::S
     inverse_of_R::R
+    phi::F
  end
 
  """
@@ -53,7 +54,7 @@ mutable struct Kriging{X,Y,L,U,P,T,M,B,S,R} <: AbstractSurrogate
  Gives the current estimate for 'val' with respect to the Kriging object k.
  """
  function (k::Kriging)(val::Number)
-     phi = z -> exp(-(abs(z))^k.p)
+     phi = k.phi
      n = length(k.x)
      prediction = zero(eltype(k.x[1]))
      for i = 1:n
@@ -100,7 +101,8 @@ function Kriging(x,y,lb::Number,ub::Number;p=1.0,theta=1.0)
         return
     end
     mu,b,sigma,inverse_of_R = _calc_kriging_coeffs(x,y,p,theta)
-    Kriging(x,y,lb,ub,p,theta,mu,b,sigma,inverse_of_R)
+    phi = z -> exp(-(abs(z))^p)
+    Kriging(x,y,lb,ub,p,theta,mu,b,sigma,inverse_of_R,phi)
 end
 
 function _calc_kriging_coeffs(x,y,p::Number,theta::Number)
