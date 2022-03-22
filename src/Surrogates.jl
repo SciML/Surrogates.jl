@@ -13,11 +13,9 @@ include("Lobachevsky.jl")
 include("LinearSurrogate.jl")
 include("InverseDistanceSurrogate.jl")
 include("SecondOrderPolynomialSurrogate.jl")
+include("AbstractGP.jl")
 
 function __init__()
-    @require Stheno="8188c328-b5d6-583d-959b-9690869a5511" begin 
-        include("SthenoKriging.jl")
-    end
     
     @require Flux="587475ba-b771-5e3f-ad9e-33799f191a9c" begin
         include("NeuralSurrogate.jl")
@@ -110,7 +108,6 @@ export SVMSurrogate
 export NeuralSurrogate
 export InverseDistanceSurrogate
 export SecondOrderPolynomialSurrogate
-export SthenoKriging
 export Wendland
 export RadialBasisStructure, KrigingStructure, LinearStructure, InverseDistanceStructure
 export LobachevskyStructure, NeuralStructure, RandomForestStructure, SecondOrderPolynomialStructure
@@ -120,4 +117,5 @@ export VariableFidelitySurrogate
 export PolynomialChaosSurrogate
 export EarthSurrogate
 export GEK
+export AbstractGPSurrogate, var_at_point, logpdf_surrogate
 end
