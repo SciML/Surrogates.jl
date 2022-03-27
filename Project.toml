@@ -1,7 +1,7 @@
 name = "Surrogates"
 uuid = "6fc51010-71bc-11e9-0e15-a3fcc6593c49"
 authors = ["ludoro <ludovicobessi@gmail.com>"]
-version = "4.1.0"
+version = "4.2.0"
 
 [deps]
 AbstractGPs = "99985d1d-32ba-4be9-9821-2ec096f28918"
