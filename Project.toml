@@ -14,13 +14,13 @@ LatinHypercubeSampling = "a5e1c1ea-c99a-51d3-a14d-a9a37257b02d"
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 PolyChaos = "8d666b04-775d-5f6e-b778-5ac7c70f65a3"
 Requires = "ae029012-a4dd-5104-9daa-d747884805df"
-SafeTestsets = "1bc83da4-3b8d-516f-aca4-4fe02f6d838f"
 Sobol = "ed01d8cd-4d21-5b2a-85b4-cc3bdc58bad4"
 SparseArrays = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
 XGBoost = "009559a3-9522-5dbb-924b-0b6ed2b22bb9"
 Zygote = "e88e6eb3-aa80-5325-afca-941959d7151f"
 
 [compat]
+AbstractGPs = "0.5"
 Distributions = "0.21, 0.22, 0.23, 0.24, 0.25"
 ExtendableSparse = "0.4, 0.5, 0.6"
 Flux = "0.11, 0.12"
@@ -40,9 +40,10 @@ Flux = "587475ba-b771-5e3f-ad9e-33799f191a9c"
 ForwardDiff = "f6369f11-7733-5829-9624-2563aa707210"
 PolyChaos = "8d666b04-775d-5f6e-b778-5ac7c70f65a3"
 QuadGK = "1fd47b50-473d-5c70-9696-f719f8f3bcdc"
+SafeTestsets = "1bc83da4-3b8d-516f-aca4-4fe02f6d838f"
 Stheno = "8188c328-b5d6-583d-959b-9690869a5511"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 Tracker = "9f7883ad-71c0-57eb-9f7f-b5c9e6d3789c"
 
 [targets]
-test = ["Cubature", "Flux", "ForwardDiff", "PolyChaos", "QuadGK", "Stheno", "Test", "Tracker"]
+test = ["Cubature", "SafeTestsets", "Flux", "ForwardDiff", "PolyChaos", "QuadGK", "Stheno", "Test", "Tracker"]
