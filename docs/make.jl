@@ -7,6 +7,7 @@ makedocs(
         "Basics" => "tutorials.md",
         "Radials" => "radials.md",
         "Kriging" => "kriging.md",
+        "Gaussian Process" =>"abstractgps.md",
         "Lobachevsky" => "lobachevsky.md",
         "Linear" => "LinearSurrogate.md",
         "InverseDistance" => "InverseDistance.md",
@@ -17,7 +18,7 @@ makedocs(
         "Polynomial Chaos" => "polychaos.md",
         "Variable Fidelity" => "variablefidelity.md",
         "Gradient Enhanced Kriging" => "gek.md"
-        ]
+       ]
     "User guide" => [
         "Samples" => "samples.md",
         "Surrogates" => "surrogate.md",
