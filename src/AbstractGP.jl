@@ -1,6 +1,6 @@
 using AbstractGPs
 
-mutable struct AbstractGPStruct{X, Y, GP, GP_P, S} <: AbstractSurrogate
+mutable struct AbstractGPSurrogate{X, Y, GP, GP_P, S} <: AbstractSurrogate
     x::X
     y::Y
     gp::GP 
@@ -10,18 +10,18 @@ mutable struct AbstractGPStruct{X, Y, GP, GP_P, S} <: AbstractSurrogate
 
 # constructor
 function AbstractGPSurrogate(x, y; gp = GP(Matern52Kernel()), Σy = 0.1)
-    AbstractGPStruct(x, y, gp, posterior(gp(x, Σy),y), Σy)
+    AbstractGPSurrogate(x, y, gp, posterior(gp(x, Σy),y), Σy)
  end
 
 # predictor 
-function (g::AbstractGPStruct)(val)
+function (g::AbstractGPSurrogate)(val::Real)
     return first(mean(g.gp_posterior([val])))
 end
 
 # for add point
 # copies of x and y need to be made because we get 
 #"Error: cannot resize array with shared data " if we push! directly to x and y  
-function add_point!(g::AbstractGPStruct, new_x, new_y)
+function add_point!(g::AbstractGPSurrogate, new_x, new_y)
     if new_x in g.x
         println("Adding a sample that already exists, cannot build AbstracgGPSurrogate.")
         return
@@ -37,16 +37,16 @@ end
 
 
 # returns diagonal elements of cov(f)
-function var_at_point(g::AbstractGPStruct, val)
+function var_at_point(g::AbstractGPSurrogate, val::AbstractVector)
     return var(g.gp_posterior(val))
 end
 
-function std_error_at_point(g::AbstractGPStruct, val)
+function std_error_at_point(g::AbstractGPSurrogate, val::Real)
     return sqrt(first(var(g.gp_posterior([val]))))
 end
 
 
 # Log marginal posterior predictive probability.
-function logpdf_surrogate(g::AbstractGPStruct)
+function logpdf_surrogate(g::AbstractGPSurrogate)
     return logpdf(g.gp_posterior(g.x), g.y)
 end
