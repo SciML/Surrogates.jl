@@ -17,7 +17,7 @@ x = sample(n,lb,ub,SobolSample())
 y = f.(x)
 n_test = 1000
 x_test = sample(n_test,lb,ub,GoldenSample());
-y_true = f.(x_test);</code></pre><pre><code class="language-none">1000-element Array{Float64,1}:
+y_true = f.(x_test);</code></pre><pre><code class="language-none">1000-element Vector{Float64}:
  6740.508578587182
  1197.1253800426875
  1915.2458846101658
@@ -50,4 +50,4 @@ print(&quot;MSE Kriging: $mse_krig&quot;)
 my_loba = LobachevskySurrogate(x,y,lb,ub)
 y_loba = my_loba.(x_test)
 mse_rad = norm(y_true - y_loba,2)/n_test
-print(&quot;MSE Lobachevsky: $mse_rad&quot;)</code></pre><pre><code class="language-none">MSE Radial: 16.649600969336692MSE Kriging: 13.119384472603583MSE Lobachevsky: 6.8613860111071</code></pre></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../water_flow/">« Water Flow function</a><a class="docs-footer-nextpage" href="../BraninFunction/">Branin function »</a></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> on <span class="colophon-date" title="Sunday 27 March 2022 04:59">Sunday 27 March 2022</span>. Using Julia version 1.4.2.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+print(&quot;MSE Lobachevsky: $mse_rad&quot;)</code></pre><pre><code class="language-none">MSE Radial: 16.649600969336763MSE Kriging: 13.119384472603576MSE Lobachevsky: 6.861386011105517</code></pre></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../water_flow/">« Water Flow function</a><a class="docs-footer-nextpage" href="../BraninFunction/">Branin function »</a></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> on <span class="colophon-date" title="Monday 28 March 2022 16:50">Monday 28 March 2022</span>. Using Julia version 1.7.2.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
