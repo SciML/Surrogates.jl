@@ -14,7 +14,7 @@ function AbstractGPSurrogate(x, y; gp = GP(Matern52Kernel()), Σy = 0.1)
  end
 
 # predictor 
-function (g::AbstractGPSurrogate)(val::Real)
+function (g::AbstractGPSurrogate)(val)
     return only(mean(g.gp_posterior([val])))
 end
 
@@ -37,11 +37,11 @@ end
 
 
 # returns diagonal elements of cov(f)
-function var_at_point(g::AbstractGPSurrogate, val::AbstractVector)
-    return var(g.gp_posterior(val))
+function var_at_point(g::AbstractGPSurrogate, val)
+    return only(var(g.gp_posterior([val])))
 end
 
-function std_error_at_point(g::AbstractGPSurrogate, val::Real)
+function std_error_at_point(g::AbstractGPSurrogate, val)
     return sqrt(only(var(g.gp_posterior([val]))))
 end
 
