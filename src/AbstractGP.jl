@@ -15,7 +15,7 @@ function AbstractGPSurrogate(x, y; gp = GP(Matern52Kernel()), Σy = 0.1)
 
 # predictor 
 function (g::AbstractGPSurrogate)(val::Real)
-    return first(mean(g.gp_posterior([val])))
+    return only(mean(g.gp_posterior([val])))
 end
 
 # for add point
@@ -42,7 +42,7 @@ function var_at_point(g::AbstractGPSurrogate, val::AbstractVector)
 end
 
 function std_error_at_point(g::AbstractGPSurrogate, val::Real)
-    return sqrt(first(var(g.gp_posterior([val]))))
+    return sqrt(only(var(g.gp_posterior([val]))))
 end
 
 
