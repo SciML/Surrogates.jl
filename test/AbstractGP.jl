@@ -69,7 +69,7 @@ end
     x = sample(5,lb,ub,SobolSample())
     y = f.(x)
     agp1D = AbstractGPSurrogate(x,y, gp=GP(SqExponentialKernel()), Σy=0.05)
-    x_new = [2.5]
+    x_new = 2.5
     var_at_point(agp1D, x_new)
 end
 
@@ -80,9 +80,9 @@ end
     x = sample(25,lb,ub,SobolSample())
     y = f.(x)
     agpND = AbstractGPSurrogate(x, y, gp = GP(SqExponentialKernel()), Σy = 0.05)
-    x_new = [(-0.8,0.8,0.8)]
+    x_new = (-0.8,0.8,0.8)
     var_at_point(agpND, x_new)
-    @test isapprox(agpND(first(x_new)), f(first(x_new)), atol=0.2)
+    @test agpND(x_new) ≈ f(x_new) atol=0.2
 end
 
 @testset "Optimization 1D" begin
