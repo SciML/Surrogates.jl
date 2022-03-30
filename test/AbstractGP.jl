@@ -62,18 +62,7 @@ end
 end
 
 
-@testset "check working of variance 1D" begin
-    lb = 0.0
-    ub = 3.0
-    f = x -> log(x)*exp(x);
-    x = sample(5,lb,ub,SobolSample())
-    y = f.(x)
-    agp1D = AbstractGPSurrogate(x,y, gp=GP(SqExponentialKernel()), Σy=0.05)
-    x_new = 2.5
-    var_at_point(agp1D, x_new)
-end
-
-@testset "check working of variance ND along with prediction" begin
+@testset "check ND prediction" begin
     lb = [-1.0;-1.0;-1.0]
     ub = [1.0;1.0;1.0]
     f = x ->hypot(x...)
@@ -81,7 +70,6 @@ end
     y = f.(x)
     agpND = AbstractGPSurrogate(x, y, gp = GP(SqExponentialKernel()), Σy = 0.05)
     x_new = (-0.8,0.8,0.8)
-    var_at_point(agpND, x_new)
     @test agpND(x_new) ≈ f(x_new) atol=0.2
 end
 

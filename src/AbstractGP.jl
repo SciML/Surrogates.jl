@@ -35,16 +35,9 @@ function add_point!(g::AbstractGPSurrogate, new_x, new_y)
     nothing
 end
 
-
-# returns diagonal elements of cov(f)
-function var_at_point(g::AbstractGPSurrogate, val)
-    return only(var(g.gp_posterior([val])))
-end
-
 function std_error_at_point(g::AbstractGPSurrogate, val)
     return sqrt(only(var(g.gp_posterior([val]))))
 end
-
 
 # Log marginal posterior predictive probability.
 function logpdf_surrogate(g::AbstractGPSurrogate)
