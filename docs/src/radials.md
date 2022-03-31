@@ -43,7 +43,7 @@ radial_surrogate = RadialBasis(x, y, lower_bound, upper_bound, cubicRadial)
 val = radial_surrogate(5.4)
 ```
 
-Currently available radial basis functions are `linearRadial` (the default), `cubicRadial`, and `multiquadricRadial`.
+Currently available radial basis functions are `linearRadial` (the default), `cubicRadial`, `multiquadricRadial`, and `thinplateRadial`.
 
 Now, we will simply plot `radial_surrogate`:
 
