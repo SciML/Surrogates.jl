@@ -22,7 +22,7 @@ end
 
 linearRadial() = RadialFunction(0,z->norm(z))
 cubicRadial() = RadialFunction(1,z->norm(z)^3)
-multiquadricRadial(ϵ = 1.0) = RadialFunction(1,z->sqrt((ϵ*norm(z))^2+1))
+multiquadricRadial(c = 1.0) = RadialFunction(1,z->sqrt((c*norm(z))^2+1))
 
 thinplateRadial() = RadialFunction(2, z->begin
     result = norm(z)^2 * log(norm(z))
