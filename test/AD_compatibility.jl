@@ -119,7 +119,7 @@ end
 
 #Radials
 @testset "Radials 1D" begin
-    my_rad = RadialBasis(x,y,lb,ub,rad = linearRadial)
+    my_rad = RadialBasis(x,y,lb,ub,rad = linearRadial())
     g = x -> my_rad'(x)
     g(5.0)
 end
@@ -231,7 +231,7 @@ y = f.(x)
 
 #Radials
 @testset "Radials ND" begin
-    my_rad = RadialBasis(x,y,lb,ub,rad = linearRadial, scale_factor = 2.1)
+    my_rad = RadialBasis(x,y,lb,ub,rad = linearRadial(), scale_factor = 2.1)
     g = x -> Zygote.gradient(my_rad,x)
     g((2.0,5.0))
 end
@@ -355,7 +355,7 @@ y = f.(x)
     my_neural = NeuralSurrogate(x,y,lb,ub,model=my_model,loss=my_loss,opt=my_opt,n_echos=1)
     Zygote.gradient(x -> sum(my_neural(x)), (2.0, 5.0))
 
-    my_rad = RadialBasis(x,y,lb,ub,rad = linearRadial)
+    my_rad = RadialBasis(x,y,lb,ub,rad = linearRadial())
     Zygote.gradient(x -> sum(my_rad(x)), (2.0, 5.0))
 
     my_p = 1.4

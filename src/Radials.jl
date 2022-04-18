@@ -20,21 +20,21 @@ mutable struct RadialFunction{Q,P}
     phi::P
 end
 
-const linearRadial = RadialFunction(0,z->norm(z))
-const cubicRadial = RadialFunction(1,z->norm(z)^3)
-const multiquadricRadial = RadialFunction(1,z->sqrt(norm(z)^2+1))
+linearRadial() = RadialFunction(0,z->norm(z))
+cubicRadial() = RadialFunction(1,z->norm(z)^3)
+multiquadricRadial(c = 1.0) = RadialFunction(1,z->sqrt((c*norm(z))^2+1))
 
-const thinplateRadial = RadialFunction(2, z->begin
+thinplateRadial() = RadialFunction(2, z->begin
     result = norm(z)^2 * log(norm(z))
     ifelse(iszero(z), zero(result), result)
 end)
 
 """
-    RadialBasis(x,y,lb::Number,ub::Number; rad::RadialFunction = linearRadial,scale::Real=1.0)
+    RadialBasis(x,y,lb::Number,ub::Number; rad::RadialFunction = linearRadial(),scale::Real=1.0)
 
 Constructor for RadialBasis surrogate.
 """
-function RadialBasis(x, y, lb::Number, ub::Number; rad::RadialFunction=linearRadial, scale_factor::Real=0.5, sparse = false)
+function RadialBasis(x, y, lb::Number, ub::Number; rad::RadialFunction=linearRadial(), scale_factor::Real=0.5, sparse = false)
     q = rad.q
     phi = rad.phi
     coeff = _calc_coeffs(x, y, lb, ub, phi, q,scale_factor, sparse)
@@ -46,7 +46,7 @@ RadialBasis(x,y,lb,ub,rad::RadialFunction, scale_factor::Float = 1.0)
 
 Constructor for RadialBasis surrogate
 """
-function RadialBasis(x, y, lb, ub; rad::RadialFunction = linearRadial, scale_factor::Real=0.5, sparse = false)
+function RadialBasis(x, y, lb, ub; rad::RadialFunction = linearRadial(), scale_factor::Real=0.5, sparse = false)
     q = rad.q
     phi = rad.phi
     coeff = _calc_coeffs(x, y, lb, ub, phi, q, scale_factor, sparse)
@@ -188,7 +188,7 @@ function _approx_rbf(val, rad::R) where {R}
     approx = Buffer(zeros(eltype(val), l), false)
 
 
-    if rad.phi === linearRadial.phi
+    if rad.phi === linearRadial().phi
         for i in 1:n
             tmp = zero(eltype(val))
             @simd ivdep for j in 1:length(val)
