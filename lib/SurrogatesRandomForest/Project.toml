@@ -1,0 +1,4 @@
+name = "SurrogatesRandomForest"
+uuid = "3fee2672-df33-422b-aa65-d915eeac013a"
+authors = ["Ranjan Anantharaman <ranjan.anantharaman@gmail.com>"]
+version = "0.1.0"
