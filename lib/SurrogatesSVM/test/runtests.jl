@@ -1,7 +1,8 @@
 using SafeTestsets
-using Surrogates, LIBSVM
 
 @safetestset "SVMSurrogate" begin 
+using Surrogates, LIBSVM
+using SurrogatesSVM
 
 #1D
 

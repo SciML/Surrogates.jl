@@ -1,10 +1,12 @@
 using SafeTestsets, Test
+using Surrogates: sample, SobolSample
 
 @safetestset "AbstractGPSurrogate" begin 
 
 using Surrogates
 using SurrogatesAbstractGPs
 using AbstractGPs
+using Zygote
 
 @testset "1D -> 1D" begin 
     lb = 0.0
@@ -121,5 +123,34 @@ end
     agpND = AbstractGPSurrogate(x,y, gp=GP(SqExponentialKernel()), Σy=0.05)
     logpdf_surrogate(agpND)
 end
+
+lb = 0.0
+ub = 3.0
+n = 10
+x = sample(n,lb,ub,SobolSample())
+f = x -> x^2
+y = f.(x)
+
+#AbstractGP 1D
+@testset "AbstractGP 1D" begin
+    agp1D = AbstractGPSurrogate(x,y, gp=GP(SqExponentialKernel()), Σy=0.05)
+    g = x -> agp1D'(x)
+    g([2.0])
+end
+
+lb = [0.0,0.0]
+ub = [10.0,10.0]
+n = 5
+x = sample(n,lb,ub,SobolSample())
+f = x -> x[1]*x[2]
+y = f.(x)
+
+# AbstractGP ND
+@testset "AbstractGPSurrogate ND" begin
+    my_agp = AbstractGPSurrogate(x,y, gp=GP(SqExponentialKernel()), Σy=0.05)
+    g = x ->Zygote.gradient(my_agp, x)
+    #g([(2.0,5.0)])
+    g((2.0,5.0))
+ end
 
 end
