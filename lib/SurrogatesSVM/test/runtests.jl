@@ -1,4 +1,7 @@
+using SafeTestsets
 using Surrogates, LIBSVM
+
+@safetestset "SVMSurrogate" begin 
 
 #1D
 
@@ -22,3 +25,5 @@ my_svm_ND = SVMSurrogate(x,y,lb,ub)
 val = my_svm_ND((5.0,1.2))
 add_point!(my_svm_ND,(1.0,1.0),1.0)
 add_point!(my_svm_ND,[(1.2,1.2),(1.5, 1.5)],[1.728,3.375])
+
+end

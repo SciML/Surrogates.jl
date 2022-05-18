@@ -1,6 +1,6 @@
 module SurrogatesAbstractGPs
 
-import Surrogates: add_point!, AbstractSurrogate
+import Surrogates: add_point!, AbstractSurrogate, std_error_at_point
 export AbstractGPSurrogate, var_at_point, logpdf_surrogate
 
 using AbstractGPs

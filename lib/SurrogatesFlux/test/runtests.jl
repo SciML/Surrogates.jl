@@ -1,6 +1,10 @@
+using SafeTestsets
 using Surrogates
 using Flux
 using Flux: @epochs
+using QuasiMonteCarlo
+
+@safetestset "SurrogatesFlux" begin
 
 #1D
 a = 0.0
@@ -62,3 +66,5 @@ surrogate((1.0, 2.0))
 x_new = (2.0, 2.0)
 y_new = f(x_new)
 add_point!(surrogate, x_new, y_new)
+
+end

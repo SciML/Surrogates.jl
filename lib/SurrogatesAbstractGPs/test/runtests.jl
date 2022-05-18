@@ -1,6 +1,10 @@
-using Surrogates
-using AbstractGPs
+using SafeTestsets, Test
 
+@safetestset "AbstractGPSurrogate" begin 
+
+using Surrogates
+using SurrogatesAbstractGPs
+using AbstractGPs
 
 @testset "1D -> 1D" begin 
     lb = 0.0
@@ -116,4 +120,6 @@ end
     y = f.(x)
     agpND = AbstractGPSurrogate(x,y, gp=GP(SqExponentialKernel()), Σy=0.05)
     logpdf_surrogate(agpND)
+end
+
 end

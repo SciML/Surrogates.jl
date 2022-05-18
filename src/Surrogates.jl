@@ -1,7 +1,6 @@
 module Surrogates
 using LinearAlgebra
 using Distributions
-using Requires 
 
 abstract type AbstractSurrogate <: Function end
 include("utils.jl")
@@ -13,7 +12,6 @@ include("Lobachevsky.jl")
 include("LinearSurrogate.jl")
 include("InverseDistanceSurrogate.jl")
 include("SecondOrderPolynomialSurrogate.jl")
-include("AbstractGP.jl")
 
 include("Wendland.jl")
 include("MOE.jl") #rewrite gaussian mixture with own algorithm to fix deps issue

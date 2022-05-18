@@ -1,4 +1,7 @@
+using SafeTestsets
 using Surrogates, XGBoost
+
+@safetestset "RandomForestSurrogate" begin 
 
 #1D
 obj_1D = x -> 3*x+1
@@ -24,3 +27,5 @@ my_forest_kwarg = RandomForestSurrogate(x,y,lb,ub)
 val = my_forest_ND((1.0,1.0,1.0))
 add_point!(my_forest_ND,(1.0,1.0,1.0),1.0)
 add_point!(my_forest_ND,[(1.2,1.2,1.0),(1.5,1.5,1.0)],[1.728,3.375])
+
+end

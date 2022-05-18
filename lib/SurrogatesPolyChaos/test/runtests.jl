@@ -1,6 +1,8 @@
+using SafeTestsets
 using Surrogates
 using PolyChaos
 
+@safetestset begin "PolynomialChaosSurrogates" begin 
 
 #1D
 n = 20
@@ -32,3 +34,5 @@ op2 = Beta01OrthoPoly(2,2,1.2)
 ops = [op1,op2]
 multi_poly = MultiOrthoPoly(ops,min(1,2))
 my_pce_changed = PolynomialChaosSurrogate(x,y,lb,ub,op = multi_poly)
+
+end
