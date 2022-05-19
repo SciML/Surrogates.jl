@@ -1,3 +1,8 @@
+module SurrogatesAbstractGPs
+
+import Surrogates: add_point!, AbstractSurrogate, std_error_at_point
+export AbstractGPSurrogate, var_at_point, logpdf_surrogate
+
 using AbstractGPs
 
 mutable struct AbstractGPSurrogate{X, Y, GP, GP_P, S} <: AbstractSurrogate
@@ -43,3 +48,5 @@ end
 function logpdf_surrogate(g::AbstractGPSurrogate)
     return logpdf(g.gp_posterior(g.x), g.y)
 end
+
+end # module

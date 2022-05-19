@@ -1,3 +1,10 @@
+module SurrogatesSVM
+
+import Surrogates: AbstractSurrogate, add_point!
+export SVMSurrogate
+
+using LIBSVM
+
 mutable struct SVMSurrogate{X,Y,M,L,U} <: AbstractSurrogate
     x::X
     y::Y
@@ -69,3 +76,4 @@ function add_point!(svmsurr::SVMSurrogate,x_new,y_new)
      end
      nothing
  end
+end # module

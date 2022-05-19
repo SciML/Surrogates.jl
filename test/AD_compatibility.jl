@@ -1,10 +1,6 @@
 using Surrogates
-using AbstractGPs
 using LinearAlgebra
-using Flux
-using Flux: @epochs
 using Zygote
-using PolyChaos
 using Test
 #using Zygote: @nograd
 #=
@@ -110,13 +106,6 @@ x = sample(n,lb,ub,SobolSample())
 f = x -> x^2
 y = f.(x)
 
-#AbstractGP 1D
-@testset "AbstractGP 1D" begin
-    agp1D = AbstractGPSurrogate(x,y, gp=GP(SqExponentialKernel()), Σy=0.05)
-    g = x -> agp1D'(x)
-    g([2.0])
-end
-
 #Radials
 @testset "Radials 1D" begin
     my_rad = RadialBasis(x,y,lb,ub,rad = linearRadial())
@@ -163,16 +152,6 @@ end
     g(0.0)
 end
 
-#NN
-@testset "NN" begin
-    my_model = Chain(Dense(1,1), first)
-    my_loss(x, y) = Flux.mse(my_model(x), y)
-    my_opt = Descent(0.01)
-    n_echos = 1
-    my_neural = NeuralSurrogate(x,y,lb,ub,model=my_model,loss=my_loss,opt=my_opt,n_echos=1)
-    g = x->my_neural'(x)
-    g(3.4)
-end
 
 #Wendland
 @testset "Wendland" begin
@@ -184,15 +163,6 @@ end
 # MOE and VariableFidelity for free because they are Linear combinations
 # of differentiable surrogates
 
-# #Polynomialchaos
-@testset "Polynomial Chaos" begin
-    n = 50
-    x = sample(n,lb,ub,SobolSample())
-    y = f.(x)
-    my_poli = PolynomialChaosSurrogate(x,y,lb,ub)
-    g = x -> my_poli'(x)
-    g(3.0)
-end
 
 # #Gek
 @testset "GEK" begin
@@ -221,13 +191,6 @@ x = sample(n,lb,ub,SobolSample())
 f = x -> x[1]*x[2]
 y = f.(x)
 
-# AbstractGP ND
-@testset "AbstractGPSurrogate ND" begin
-    my_agp = AbstractGPSurrogate(x,y, gp=GP(SqExponentialKernel()), Σy=0.05)
-    g = x ->Zygote.gradient(my_agp, x)
-    #g([(2.0,5.0)])
-    g((2.0,5.0))
- end
 
 #Radials
 @testset "Radials ND" begin
@@ -278,16 +241,6 @@ g((2.0,5.0))
     g((2.0,5.0))
 end 
 
-#NN
-@testset "NN ND" begin
-    my_model = Chain(Dense(2,1), first)
-    my_loss(x, y) = Flux.mse(my_model(x), y)
-    my_opt = Descent(0.01)
-    n_echos = 1
-    my_neural = NeuralSurrogate(x,y,lb,ub,model=my_model,loss=my_loss,opt=my_opt,n_echos=1)
-    g = x -> Zygote.gradient(my_neural, x)
-    g((2.0,5.0))
-end
 
 #wendland
 @testset "Wendland ND" begin
@@ -299,70 +252,3 @@ end
 # #of differentiable surrogates
 
 
-# #PolynomialChaos
-@testset "Polynomial Chaos ND" begin
-    n = 50
-    lb = [0.0,0.0]
-    ub = [10.0,10.0]
-    x = sample(n,lb,ub,SobolSample())
-    f = x -> x[1]*x[2]
-    y = f.(x)
-    my_poli_ND = PolynomialChaosSurrogate(x,y,lb,ub)
-    g = x -> Zygote.gradient(my_poli_ND,x)
-    g((1.0,1.0))
-
-    n = 10
-    d = 2
-    lb = [0.0,0.0]
-    ub = [5.0,5.0]
-    x = sample(n,lb,ub,SobolSample())
-    f = x -> x[1]^2 + x[2]^2
-    y1 = f.(x)
-    grad1 = x -> 2*x[1]
-    grad2 = x -> 2*x[2]
-    function create_grads(n,d,grad1,grad2,y)
-        c = 0
-        y2 = zeros(eltype(y[1]),n*d)
-        for i = 1:n
-            y2[i+c] = grad1(x[i])
-            y2[i+c+1] = grad2(x[i])
-            c = c+1
-        end
-        return y2
-    end
-    y2 = create_grads(n,d,grad1,grad2,y)
-    y = vcat(y1,y2)
-    my_gek_ND = GEK(x,y,lb,ub)
-    g = x -> Zygote.gradient(my_gek_ND,x)
-    g((2.0,5.0))
-end
-
-# ###### ND -> ND ######
-
-lb = [0.0, 0.0]
-ub = [10.0, 2.0]
-n = 5
-x = sample(n,lb,ub,SobolSample())
-f = x -> [x[1]^2, x[2]]
-y = f.(x)
-
-#NN
-@testset "NN ND -> ND" begin
-    my_model = Chain(Dense(2,2))
-    my_loss(x, y) = Flux.mse(my_model(x), y)
-    my_opt = Descent(0.01)
-    n_echos = 1
-    my_neural = NeuralSurrogate(x,y,lb,ub,model=my_model,loss=my_loss,opt=my_opt,n_echos=1)
-    Zygote.gradient(x -> sum(my_neural(x)), (2.0, 5.0))
-
-    my_rad = RadialBasis(x,y,lb,ub,rad = linearRadial())
-    Zygote.gradient(x -> sum(my_rad(x)), (2.0, 5.0))
-
-    my_p = 1.4
-    my_inverse = InverseDistanceSurrogate(x,y,lb,ub,p=my_p)
-    my_inverse((2.0, 5.0))
-    Zygote.gradient(x -> sum(my_inverse(x)), (2.0, 5.0))
-
-    my_second = SecondOrderPolynomialSurrogate(x,y,lb,ub)
-    Zygote.gradient(x -> sum(my_second(x)), (2.0, 5.0))
-end

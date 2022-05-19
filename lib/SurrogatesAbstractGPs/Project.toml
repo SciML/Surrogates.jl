@@ -1,0 +1,20 @@
+name = "SurrogatesAbstractGPs"
+uuid = "78aa1720-c2af-471b-b307-964fd38f9b5f"
+authors = ["Ranjan Anantharaman <ranjan.anantharaman@gmail.com>"]
+version = "0.1.0"
+
+[deps]
+AbstractGPs = "99985d1d-32ba-4be9-9821-2ec096f28918"
+Surrogates = "6fc51010-71bc-11e9-0e15-a3fcc6593c49"
+
+[compat]
+AbstractGPs = "0.5"
+julia = "1.6"
+
+[extras]
+SafeTestsets = "1bc83da4-3b8d-516f-aca4-4fe02f6d838f"
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+Zygote = "e88e6eb3-aa80-5325-afca-941959d7151f"
+
+[targets]
+test = ["SafeTestsets", "Test", "Zygote"]
