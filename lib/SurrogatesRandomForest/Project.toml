@@ -9,7 +9,7 @@ XGBoost = "009559a3-9522-5dbb-924b-0b6ed2b22bb9"
 
 [compat]
 Surrogates = "6"
-XGBoost = "1.15"
+XGBoost = "1.5"
 
 [extras]
 SafeTestsets = "1bc83da4-3b8d-516f-aca4-4fe02f6d838f"
