@@ -58,7 +58,7 @@ function sample(n,lb,ub,S::GridSample)
 end
 
 """
-sample(n,lb,ub,::UniformRandom)
+sample(n,lb,ub,::UniformSample)
 
 Returns a Tuple containing uniform random numbers.
 """
@@ -73,7 +73,7 @@ function sample(n,lb,ub,::UniformSample)
 end
 
 """
-sample(n,lb,ub,::SobolSampling)
+sample(n,lb,ub,::SobolSample)
 
 Returns a Tuple containing Sobol sequences.
 """
@@ -88,7 +88,7 @@ function sample(n,lb,ub,::SobolSample)
 end
 
 """
-sample(n,lb,ub,::LatinHypercube)
+sample(n,lb,ub,::LatinHypercubeSample)
 
 Returns a Tuple containing LatinHypercube sequences.
 """
