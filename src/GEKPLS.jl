@@ -133,6 +133,42 @@ function _squar_exp(theta, d)
     theta = reshape(theta, (1,n_components))
     return exp.(-sum(theta .* d, dims=2))
 end
+    
+function _cross_distances(X)
+    """
+    Computes the nonzero componentwise cross-distances between the vectors
+    in X
+
+    Parameters
+    ----------
+
+    X: [n_obs, dim]
+
+    Returns
+    -------
+    D:  [n_obs * (n_obs - 1) / 2, dim]
+        - The cross-distances between the vectors in X.
+
+    ij: [n_obs * (n_obs - 1) / 2, 2]
+            - The indices i and j of the vectors in X associated to the cross-
+              distances in D.
+    """
+    n_samples, n_features = size(X)
+    n_nonzero_cross_dist = ( n_samples * (n_samples - 1) ) ÷ 2
+    ij = zeros((n_nonzero_cross_dist, 2))
+    D = zeros((n_nonzero_cross_dist, n_features))
+    ll_1 = 0
+    
+    for k in 1:n_samples - 1 
+        ll_0 = ll_1 + 1
+        ll_1 = ll_0 + n_samples - k - 1
+        ij[ll_0:ll_1, 1] .= k
+        ij[ll_0:ll_1, 2] = k+1:1:n_samples
+        D[ll_0:ll_1, :] = -(X[(k + 1) : n_samples,:] .- X[k,:]')
+        
+    end
+    return D, Int.(ij)
+end
 
 ######start of bbdesign######
 
