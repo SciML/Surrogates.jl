@@ -127,7 +127,6 @@ function _check_param()
     nothing
 end
 
-
 function _squar_exp(theta, d)
     n_components = size(d)[2]
     theta = reshape(theta, (1,n_components))
@@ -169,6 +168,54 @@ function _cross_distances(X)
     end
     return D, Int.(ij)
 end
+
+function _componentwise_distance_PLS(D, corr, n_comp, coeff_pls)
+    """
+        Computes the nonzero componentwise cross-spatial-correlation-distance
+        between the vectors in X.
+
+        Equivalent of https://github.com/SMTorg/smt/blob/4a4df255b9259965439120091007f9852f41523e/smt/utils/kriging_utils.py#L1257
+        with some simplifications (removed theta and return_derivative as it's not required for GEKPLS)
+
+        Parameters
+        ----------
+
+        D: [n_obs * (n_obs - 1) / 2, dim]
+            - The L1 cross-distances between the vectors in X.
+
+        corr: str
+                - Name of the correlation function used.
+                squar_exp or abs_exp.
+
+        n_comp: int
+                - Number of principal components used.
+
+        coeff_pls: [dim, n_comp]
+                - The PLS-coefficients.
+
+        Returns
+        -------
+
+        D_corr: [n_obs * (n_obs - 1) / 2, n_comp]
+                - The componentwise cross-spatial-correlation-distance between the
+                vectors in X.
+
+    """
+    
+    #todo
+    #figure out how to handle this computation in the case of very large matrices
+    #similar to what SMT has done
+    #at https://github.com/SMTorg/smt/blob/4a4df255b9259965439120091007f9852f41523e/smt/utils/kriging_utils.py#L1257
+    D_corr = zeros((size(D)[1], n_comp))
+
+    if corr == "squar_exp"
+        D_corr = D.^2 * coeff_pls.^2
+    else #abs_exp
+        D_corr = abs.(D) * abs.(coeff_pls)
+    end
+    return D_corr
+end
+
 
 ######start of bbdesign######
 
