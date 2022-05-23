@@ -107,17 +107,47 @@ function _ge_compute_pls(X, y, n_comp, grads, delta_x, xlimits, extra_points)
     return pls_mean, X, y
 end
 
-function _standardization()
-    nothing
+function _standardization(X,y)
+    """
+    We substract the mean from each variable. Then, we divide the values of each
+    variable by its standard deviation. 
+
+    Parameters
+    ----------
+
+    X - The input variables.
+    y - The output variable.
+
+    Returns
+    -------
+
+    X: [n_obs, dim]
+       The standardized input matrix.
+
+    y: [n_obs, 1]
+       The standardized output vector.
+
+    X_offset: The mean (or the min if scale_X_to_unit=True) of each input variable.
+
+    y_mean: The mean of the output variable.
+
+    X_scale:  The standard deviation of each input variable.
+
+    y_std: The standard deviation of the output variable.
+
+    """
+    X_offset = mean(X, dims = 1)
+    X_scale = std(X, dims = 1)
+    X_scale = map(x -> (x==0.0) ? x=1 : x=x, X_scale) #to prevent division by 0 below
+    y_mean = mean(y)
+    y_std = std(y)
+    y_std = map(y -> (y==0) ? y=1 : y=y, y_std) #to prevent division by 0 below
+    X = (X.-X_offset) ./ X_scale
+    y = (y .- y_mean) ./ y_std
+    return X, y, X_offset, y_mean, X_scale, y_std
+
 end
 
-function _cross_distances()
-    nothing
-end
-
-function _componentwise_distance_PLS()
-    nothing
-end
 
 function _reduced_likelihood_function()
     nothing
