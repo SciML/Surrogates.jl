@@ -128,7 +128,11 @@ function _check_param()
 end
 
 
-
+function _squar_exp(theta, d)
+    n_components = size(d)[2]
+    theta = reshape(theta, (1,n_components))
+    return exp.(-sum(theta .* d, dims=2))
+end
 
 ######start of bbdesign######
 
