@@ -1,4 +1,6 @@
 # Neural network tutorial
+!!! note
+    This surrogate requires the 'SurrogatesFlux' module which can be added by inputting "]add SurrogatesFlux" from the Julia command line. 
 
 It's possible to define a neural network as a surrogate, using Flux.
 This is useful because we can call optimization methods on it.
@@ -10,6 +12,7 @@ using Plots
 default(c=:matter, legend=false, xlabel="x", ylabel="y") # hide
 using Surrogates
 using Flux
+using SurrogatesFlux
 
 function schaffer(x)
     x1=x[1]
