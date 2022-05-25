@@ -149,9 +149,57 @@ function _standardization(X,y)
 end
 
 
-function _reduced_likelihood_function()
-    nothing
+function _reduced_likelihood_function(theta, kernel_type, d, nt, ij, y_norma, noise=0.0)
+    """
+    This function is a loose translation of SMT code from 
+    https://github.com/SMTorg/smt/blob/4a4df255b9259965439120091007f9852f41523e/smt/surrogate_models/krg_based.py#L247
+    It  determines the BLUP parameters and evaluates the reduced likelihood function for the given theta.
+    
+    Parameters
+    ----------
+    theta: array containing the parameters at which the Gaussian Process model parameters should be determined.
+    kernel_type: name of the correlation function.
+    d: The componentwise cross-spatial-correlation-distance between the vectors in X.
+    nt: number of training points
+    ij: The indices i and j of the vectors in X associated to the cross-distances in D.
+    y_norma: Standardized y values
+    noise: noise hyperparameter - increasing noise reduces reduced_likelihood_function_value
+
+
+    Returns
+    -------
+    reduced_likelihood_function_value: real
+        - The value of the reduced likelihood function associated with the given autocorrelation parameters theta. 
+    beta:  Generalized least-squares regression weights
+    gamma: Gaussian Process weights.
+
+    """
+    reduced_likelihood_function_value = -Inf
+    nugget = 1000000.0 * eps() #a jitter for numerical stability; reducing the multiple from 1000000.0 results in positive definite error for Cholesky decomposition;
+    if kernel_type =="squar_exp" #todo - add other kernel types like abs_exp, matern52 etc.
+        r = squar_exp(theta,d)
+    end
+    R = (I + zeros(12,12)) .* (1.0 + nugget + noise)
+    for k in 1:size(ij)[1] #todo - speed up using @inbounds / @simd where required
+        R[ij[k,1],ij[k,2]]=r[k]
+        R[ij[k,2],ij[k,1]]=r[k]
+    end
+    C = cholesky(R).L #todo - #values diverge at this point from SMT code; verify impact
+    F = ones(nt,1) #todo - examine if this should be a parameter for this function
+    Ft = C\F 
+    Q, G = qr(Ft)
+    Q = Array(Q)
+    Yt = C\y_norma
+    #todo - in smt, they check if the matrix is ill-conditioned using SVD. Verify and include if necessary
+    beta = G \ [(transpose(Q) ⋅ Yt)]
+    rho = Yt .- (Ft .* beta)
+    gamma = transpose(C) \ rho
+    sigma2 = sum((rho).^2, dims=1)/nt
+    detR = prod(diag(C).^(2.0/nt))
+    reduced_likelihood_function_value = - nt * log10(sum(sigma2)) - nt * log10(detR)
+    return beta, gamma, reduced_likelihood_function_value
 end
+
 
 function _check_param()
     nothing
