@@ -31,10 +31,19 @@ With our sampled points we can build the **Radial Surrogate** using the `RadialB
 
 We can simply calculate `radial_surrogate` for any value.
 
-```@example RadialBasisSurrogate
+```@example LinearRadialBasisSurrogate
 radial_surrogate = RadialBasis(x, y, lower_bound, upper_bound)
 val = radial_surrogate(5.4)
 ```
+
+We can also use cubic radial basis functions.
+
+```@example CubicRadialBasisSurrogate
+radial_surrogate = RadialBasis(x, y, lower_bound, upper_bound, cubicRadial)
+val = radial_surrogate(5.4)
+```
+
+Currently available radial basis functions are `linearRadial` (the default), `cubicRadial`, `multiquadricRadial`, and `thinplateRadial`.
 
 Now, we will simply plot `radial_surrogate`:
 

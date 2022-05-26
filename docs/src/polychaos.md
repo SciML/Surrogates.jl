@@ -1,24 +1,22 @@
 # Polynomial chaos surrogate
 
+!!! note
+    This surrogate requires the 'SurrogatesPolyChaos' module which can be added by inputting "]add SurrogatesPolyChaos" from the Julia command line. 
+
 We can create a surrogate using a polynomial expansion,
 with a different polynomial basis depending on the distribution of the data
 we are trying to fit. Under the hood, PolyChaos.jl has been used.
 It is possible to specify a type of polynomial for each dimension of the problem.
-
-```@example polychaos
-using Surrogates
-using Plots
-default()
-```
-
-
 ### Sampling
 
 We choose to sample f in 25 points between 0 and 10 using the `sample` function. The sampling points are chosen using a Low Discrepancy, this can be done by passing `LowDiscrepancySample()` to the `sample` function.
 
 ```@example polychaos
 using Surrogates
+using SurrogatesPolyChaos
 using Plots
+default()
+
 n = 20
 lower_bound = 1.0
 upper_bound = 6.0

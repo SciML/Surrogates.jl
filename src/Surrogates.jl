@@ -1,7 +1,6 @@
 module Surrogates
 using LinearAlgebra
 using Distributions
-using Requires 
 
 abstract type AbstractSurrogate <: Function end
 include("utils.jl")
@@ -14,18 +13,9 @@ include("LinearSurrogate.jl")
 include("InverseDistanceSurrogate.jl")
 include("SecondOrderPolynomialSurrogate.jl")
 
-function __init__()
-    @require Stheno="8188c328-b5d6-583d-959b-9690869a5511" begin 
-        include("SthenoKriging.jl")
-    end
-end
-
-include("RandomForestSurrogate.jl")
-include("NeuralSurrogate.jl")
 include("Wendland.jl")
 include("MOE.jl") #rewrite gaussian mixture with own algorithm to fix deps issue
 include("VariableFidelity.jl")
-include("PolynomialChaos.jl")
 include("Earth.jl")
 include("GEK.jl")
 
@@ -99,19 +89,15 @@ export RandomSample, KroneckerSample, GoldenSample, SectionSample
 export SRBF,LCBS,EI,DYCORS,SOP,EGO,RTEA,SMB,surrogate_optimize
 export LobachevskySurrogate, lobachevsky_integral, lobachevsky_integrate_dimension
 export LinearSurrogate
-export RandomForestSurrogate
 export SVMSurrogate
-export NeuralSurrogate
 export InverseDistanceSurrogate
 export SecondOrderPolynomialSurrogate
-export SthenoKriging
 export Wendland
 export RadialBasisStructure, KrigingStructure, LinearStructure, InverseDistanceStructure
 export LobachevskyStructure, NeuralStructure, RandomForestStructure, SecondOrderPolynomialStructure
 export WendlandStructure
 #export MOE
 export VariableFidelitySurrogate
-export PolynomialChaosSurrogate
 export EarthSurrogate
 export GEK
 end

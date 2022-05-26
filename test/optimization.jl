@@ -2,6 +2,7 @@ using Surrogates
 using LinearAlgebra
 using Flux
 using Flux: @epochs
+using PolyChaos
 
 #######SRBF############
 ##### 1D #####
@@ -24,16 +25,11 @@ my_k_SRBF1 = Kriging(x,y,lb,ub)
 surrogate_optimize(objective_function,SRBF(),a,b,my_k_SRBF1,UniformSample())
 
 #Using RadialBasis
-my_rad_SRBF1 = RadialBasis(x,y,a,b,rad = linearRadial)
+my_rad_SRBF1 = RadialBasis(x,y,a,b,rad = linearRadial())
 surrogate_optimize(objective_function,SRBF(),a,b,my_rad_SRBF1,UniformSample())
 
 my_wend_1d = Wendland(x,y,lb,ub)
 surrogate_optimize(objective_function,SRBF(),a,b,my_wend_1d,UniformSample())
-
-x = sample(20,lb,ub,SobolSample())
-y = objective_function.(x)
-my_poly1d = PolynomialChaosSurrogate(x,y,lb,ub)
-surrogate_optimize(objective_function,SRBF(),a,b,my_poly1d,LowDiscrepancySample(2))
 
 my_earth1d = EarthSurrogate(x,y,lb,ub)
 surrogate_optimize(objective_function,SRBF(),a,b,my_earth1d,LowDiscrepancySample(2))
@@ -59,7 +55,7 @@ ub = [6.0,6.0]
 x = sample(5,lb,ub,SobolSample())
 objective_function_ND = z -> 3*norm(z)+1
 y = objective_function_ND.(x)
-my_rad_SRBFN = RadialBasis(x,y,lb,ub,rad = linearRadial)
+my_rad_SRBFN = RadialBasis(x,y,lb,ub,rad = linearRadial())
 surrogate_optimize(objective_function_ND,SRBF(),lb,ub,my_rad_SRBFN,UniformSample())
 
 # Lobachevsky
@@ -89,29 +85,6 @@ my_SVM_ND = SVMSurrogate(x,y,lb,ub)
 surrogate_optimize(objective_function_ND,SRBF(),lb,ub,my_SVM_ND,SobolSample(),maxiters=15)
 =#
 
-#Neural
-lb = [1.0,1.0]
-ub = [6.0,6.0]
-x = sample(5,lb,ub,SobolSample())
-objective_function_ND = z -> 3*norm(z)+1
-y = objective_function_ND.(x)
-model = Chain(Dense(2,1), first)
-loss(x, y) = Flux.mse(model(x), y)
-opt = Descent(0.01)
-n_echos = 1
-my_neural_ND_neural = NeuralSurrogate(x,y,lb,ub)
-surrogate_optimize(objective_function_ND,SRBF(),lb,ub,my_neural_ND_neural,SobolSample(),maxiters=15)
-
-#Random Forest
-using XGBoost
-lb = [1.0,1.0]
-ub = [6.0,6.0]
-x = sample(5,lb,ub,SobolSample())
-objective_function_ND = z -> 3*norm(z)+1
-y = objective_function_ND.(x)
-num_round = 2
-my_forest_ND_SRBF = RandomForestSurrogate(x,y,lb,ub,num_round=2)
-surrogate_optimize(objective_function_ND,SRBF(),lb,ub,my_forest_ND_SRBF,SobolSample(),maxiters=15)
 
 #Inverse distance surrogate
 lb = [1.0,1.0]
@@ -131,12 +104,6 @@ x = sample(15,lb,ub,UniformSample())
 y = obj_ND.(x)
 my_second_order_poly_ND = SecondOrderPolynomialSurrogate(x,y,lb,ub)
 surrogate_optimize(obj_ND,SRBF(),lb,ub,my_second_order_poly_ND,SobolSample(),maxiters=15)
-
-obj_ND = x -> log(x[1])*exp(x[2])
-x = sample(40,lb,ub,UniformSample())
-y = obj_ND.(x)
-my_polyND = PolynomialChaosSurrogate(x,y,lb,ub)
-surrogate_optimize(obj_ND,SRBF(),lb,ub,my_polyND,SobolSample(),maxiters=15)
 
 ####### LCBS #########
 ######1D######
@@ -208,7 +175,7 @@ ub = 6.0
 my_k_DYCORS1 = Kriging(x,y,lb,ub,p=1.9)
 surrogate_optimize(objective_function,DYCORS(),lb,ub,my_k_DYCORS1,UniformSample())
 
-my_rad_DYCORS1 = RadialBasis(x,y,lb,ub,rad = linearRadial)
+my_rad_DYCORS1 = RadialBasis(x,y,lb,ub,rad = linearRadial())
 surrogate_optimize(objective_function,DYCORS(),lb,ub,my_rad_DYCORS1,UniformSample())
 
 
@@ -225,7 +192,7 @@ ub = [6.0,6.0]
 my_k_DYCORSN = Kriging(x,y,lb,ub)
 surrogate_optimize(objective_function_ND,DYCORS(),lb,ub,my_k_DYCORSN,UniformSample(),maxiters=30)
 
-my_rad_DYCORSN = RadialBasis(x,y,lb,ub,rad = linearRadial)
+my_rad_DYCORSN = RadialBasis(x,y,lb,ub,rad = linearRadial())
 surrogate_optimize(objective_function_ND,DYCORS(),lb,ub,my_rad_DYCORSN,UniformSample(),maxiters=30)
 
 my_wend_ND = Wendland(x,y,lb,ub)
@@ -263,7 +230,7 @@ lb = 1.0
 ub = 10.0
 x  = sample(100, lb, ub, SobolSample())
 y  = f.(x)
-my_radial_basis_smb = RadialBasis(x, y, lb, ub, rad = linearRadial)
+my_radial_basis_smb = RadialBasis(x, y, lb, ub, rad = linearRadial())
 surrogate_optimize(f,SMB(),lb,ub,my_radial_basis_ego,SobolSample())
 
 
@@ -273,7 +240,7 @@ lb = 1.0
 ub = 10.0
 x  = sample(100, lb, ub, SobolSample())
 y  = f.(x)
-my_radial_basis_rtea = RadialBasis(x, y, lb, ub, rad = linearRadial)
+my_radial_basis_rtea = RadialBasis(x, y, lb, ub, rad = linearRadial())
 Z = 0.8 #percentage
 K = 2 #number of revaluations
 p_cross = 0.5 #crossing vs copy

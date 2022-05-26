@@ -19,7 +19,7 @@ val = my_loba(3.83)
 int_1D = lobachevsky_integral(my_loba,a,b)
 int = quadgk(obj,a,b)
 int_val_true = int[1]-int[2]
-@test abs(int_1D - int_val_true) < 10^-5
+@test abs(int_1D - int_val_true) < 2*10^-5
 add_point!(my_loba,3.7,12.1)
 add_point!(my_loba,[1.23,3.45],[5.20,109.67])
 

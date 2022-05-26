@@ -1,3 +1,8 @@
+module SurrogatesRandomForest
+
+import Surrogates: add_point!, AbstractSurrogate
+export RandomForestSurrogate
+
 using XGBoost
 mutable struct RandomForestSurrogate{X,Y,B,L,U,N} <: AbstractSurrogate
     x::X
@@ -69,3 +74,4 @@ function add_point!(rndfor::RandomForestSurrogate,x_new,y_new)
     end
     nothing
 end
+end # module

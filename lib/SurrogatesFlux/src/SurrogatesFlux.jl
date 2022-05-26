@@ -1,3 +1,8 @@
+module SurrogatesFlux
+
+import Surrogates: add_point!, AbstractSurrogate
+export NeuralSurrogate
+
 using Flux
 using Flux: @epochs
 
@@ -53,3 +58,5 @@ function add_point!(my_n::NeuralSurrogate, x_new, y_new)
     @epochs my_n.n_echos Flux.train!(my_n.loss, my_n.ps, data, my_n.opt)
     nothing
 end
+
+end # module

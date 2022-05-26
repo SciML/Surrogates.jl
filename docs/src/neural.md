@@ -1,4 +1,6 @@
 # Neural network tutorial
+!!! note
+    This surrogate requires the 'SurrogatesFlux' module which can be added by inputting "]add SurrogatesFlux" from the Julia command line. 
 
 It's possible to define a neural network as a surrogate, using Flux.
 This is useful because we can call optimization methods on it.
@@ -10,6 +12,7 @@ using Plots
 default(c=:matter, legend=false, xlabel="x", ylabel="y") # hide
 using Surrogates
 using Flux
+using SurrogatesFlux
 
 function schaffer(x)
     x1=x[1]
@@ -52,15 +55,15 @@ As always, getting the model right is hardest thing.
 
 ```@example Neural_surrogate
 model1 = Chain(
-  Dense(1, 5, σ),
+  Dense(2, 5, σ),
   Dense(5,2,σ),
   Dense(2, 1)
 )
-neural = NeuralSurrogate(x, y, lb, ub, model = model1, n_echos = 10)
+neural = NeuralSurrogate(xys, zs, lower_bound, upper_bound, model = model1, n_echos = 10)
 ```
 
 ## Optimization
 We can now call an optimization function on the neural network:
 ```@example Neural_surrogate
-surrogate_optimize(schaffer, SRBF(), lower_bound, upper_bound, neura, SobolSample(), maxiters=20, num_new_samples=10)
+surrogate_optimize(schaffer, SRBF(), lower_bound, upper_bound, neural, SobolSample(), maxiters=20, num_new_samples=10)
 ```

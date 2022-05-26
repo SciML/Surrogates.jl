@@ -11,8 +11,8 @@ end
 
 function VariableFidelitySurrogate(x,y,lb,ub;
                                    num_high_fidel = Int(floor(length(x)/2)),
-                                   low_fid_structure = RadialBasisStructure(radial_function = linearRadial, scale_factor=1.0, sparse = false),
-                                   high_fid_structure = RadialBasisStructure(radial_function = cubicRadial ,scale_factor=1.0,sparse=false))
+                                   low_fid_structure = RadialBasisStructure(radial_function = linearRadial(), scale_factor=1.0, sparse = false),
+                                   high_fid_structure = RadialBasisStructure(radial_function = cubicRadial() ,scale_factor=1.0,sparse=false))
 
             x_high = x[1:num_high_fidel]
             x_low = x[num_high_fidel+1:end]

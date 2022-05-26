@@ -20,8 +20,8 @@ ub = 6.0
 n = 10
 x = sample(n,lb,ub,LowDiscrepancySample(2))
 y = f.(x)
-scatter(x, y, label="Sampled points", xlims=(lower_bound, upper_bound))
-plot!(f, label="True function", xlims=(lower_bound, upper_bound))
+scatter(x, y, label="Sampled points", xlims=(lb, ub))
+plot!(f, label="True function", xlims=(lb, ub))
 ```
 
 ## Building the surrogate
