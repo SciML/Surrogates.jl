@@ -55,3 +55,10 @@ Surrogates.sample(5,lb,ub,KroneckerSample([sqrt(2),3.1415],[0,0]))
 
 #Golden
 Surrogates.sample(5,lb,ub,GoldenSample())
+
+# SectionSample on constrained space
+constrained_val = 1.0
+s = Surrogates.sample(n, lb, ub, SectionSample([NaN64, constrained_val], UniformSample()))
+@test all(x -> x[end] == constrained_val, s)
+@test isa(s,Array{Tuple{typeof(s[1][1]),typeof(s[1][1])},1}) == true
+@test all(x -> lb[1] ≤ x[1] ≤ ub[1], s)

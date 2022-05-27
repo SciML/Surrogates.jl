@@ -2,7 +2,6 @@ using Surrogates
 using LinearAlgebra
 using Flux
 using Flux: @epochs
-using PolyChaos
 
 #######SRBF############
 ##### 1D #####
@@ -25,11 +24,16 @@ my_k_SRBF1 = Kriging(x,y,lb,ub)
 surrogate_optimize(objective_function,SRBF(),a,b,my_k_SRBF1,UniformSample())
 
 #Using RadialBasis
-my_rad_SRBF1 = RadialBasis(x,y,a,b,rad = linearRadial())
+my_rad_SRBF1 = RadialBasis(x,y,a,b,rad = linearRadial)
 surrogate_optimize(objective_function,SRBF(),a,b,my_rad_SRBF1,UniformSample())
 
 my_wend_1d = Wendland(x,y,lb,ub)
 surrogate_optimize(objective_function,SRBF(),a,b,my_wend_1d,UniformSample())
+
+x = sample(20,lb,ub,SobolSample())
+y = objective_function.(x)
+my_poly1d = PolynomialChaosSurrogate(x,y,lb,ub)
+surrogate_optimize(objective_function,SRBF(),a,b,my_poly1d,LowDiscrepancySample(2))
 
 my_earth1d = EarthSurrogate(x,y,lb,ub)
 surrogate_optimize(objective_function,SRBF(),a,b,my_earth1d,LowDiscrepancySample(2))
@@ -55,7 +59,7 @@ ub = [6.0,6.0]
 x = sample(5,lb,ub,SobolSample())
 objective_function_ND = z -> 3*norm(z)+1
 y = objective_function_ND.(x)
-my_rad_SRBFN = RadialBasis(x,y,lb,ub,rad = linearRadial())
+my_rad_SRBFN = RadialBasis(x,y,lb,ub,rad = linearRadial)
 surrogate_optimize(objective_function_ND,SRBF(),lb,ub,my_rad_SRBFN,UniformSample())
 
 # Lobachevsky
@@ -85,6 +89,29 @@ my_SVM_ND = SVMSurrogate(x,y,lb,ub)
 surrogate_optimize(objective_function_ND,SRBF(),lb,ub,my_SVM_ND,SobolSample(),maxiters=15)
 =#
 
+#Neural
+lb = [1.0,1.0]
+ub = [6.0,6.0]
+x = sample(5,lb,ub,SobolSample())
+objective_function_ND = z -> 3*norm(z)+1
+y = objective_function_ND.(x)
+model = Chain(Dense(2,1), first)
+loss(x, y) = Flux.mse(model(x), y)
+opt = Descent(0.01)
+n_echos = 1
+my_neural_ND_neural = NeuralSurrogate(x,y,lb,ub)
+surrogate_optimize(objective_function_ND,SRBF(),lb,ub,my_neural_ND_neural,SobolSample(),maxiters=15)
+
+#Random Forest
+using XGBoost
+lb = [1.0,1.0]
+ub = [6.0,6.0]
+x = sample(5,lb,ub,SobolSample())
+objective_function_ND = z -> 3*norm(z)+1
+y = objective_function_ND.(x)
+num_round = 2
+my_forest_ND_SRBF = RandomForestSurrogate(x,y,lb,ub,num_round=2)
+surrogate_optimize(objective_function_ND,SRBF(),lb,ub,my_forest_ND_SRBF,SobolSample(),maxiters=15)
 
 #Inverse distance surrogate
 lb = [1.0,1.0]
@@ -104,6 +131,12 @@ x = sample(15,lb,ub,UniformSample())
 y = obj_ND.(x)
 my_second_order_poly_ND = SecondOrderPolynomialSurrogate(x,y,lb,ub)
 surrogate_optimize(obj_ND,SRBF(),lb,ub,my_second_order_poly_ND,SobolSample(),maxiters=15)
+
+obj_ND = x -> log(x[1])*exp(x[2])
+x = sample(40,lb,ub,UniformSample())
+y = obj_ND.(x)
+my_polyND = PolynomialChaosSurrogate(x,y,lb,ub)
+surrogate_optimize(obj_ND,SRBF(),lb,ub,my_polyND,SobolSample(),maxiters=15)
 
 ####### LCBS #########
 ######1D######
@@ -134,38 +167,79 @@ surrogate_optimize(objective_function_ND,LCBS(),lb,ub,my_k_LCBSN,UniformSample()
 
 
 ##### EI ######
+@testset "EI" begin
+    ###1D###
+    objective_function = x -> (x+1)^2 - x + 2# Minimum of this function is at x = -0.5, y = -2.75
+    true_min_x = -0.5
+    true_min_y = objective_function(true_min_x)
+    lb = -5
+    ub = 5
+    x = sample(5, lb, ub, SobolSample())
+    y = objective_function.(x)
+    my_k_EI1 = Kriging(x,y,lb,ub; p = 2)
+    surrogate_optimize(objective_function,EI(),lb,ub,my_k_EI1, SobolSample(),maxiters=200,num_new_samples=155)
 
-###1D###
-objective_function = x -> 2*x+1
-x = [2.0,4.0,6.0]
-y = [5.0,9.0,13.0]
-lb = 0.0
-ub = 15.0
-p = 2
-a = 2
-b = 6
-my_k_EI1 = Kriging(x,y,lb,ub)
-surrogate_optimize(objective_function,EI(),a,b,my_k_EI1,UniformSample(),maxiters=200,num_new_samples=155)
+    # Check that EI is correctly minimizing the objective
+    y_min, index_min = findmin(my_k_EI1.y)
+    x_min = my_k_EI1.x[index_min]
+    @test norm(x_min - true_min_x) < 0.05 * norm(ub .- lb)
+    @test abs(y_min - true_min_y) < 0.05 * (objective_function(ub) - objective_function(lb))
 
+    ###ND###
+    objective_function_ND = z -> 3*norm(z)+1 # this is minimized at x = (0, 0), y = 1
+    true_min_x = (0.0, 0.0)
+    true_min_y = objective_function_ND(true_min_x)
+    x = [(1.2,3.0),(3.0,3.5),(5.2,5.7)]
+    y = objective_function_ND.(x)
+    min_y = minimum(y)
+    p = [1.2,1.2]
+    theta = [2.0,2.0]
+    lb = [-1.0,-1.0]
+    ub = [6.0,6.0]
 
-###ND###
-objective_function_ND = z -> 3*norm(z)+1
-x = [(1.2,3.0),(3.0,3.5),(5.2,5.7)]
-y = objective_function_ND.(x)
-p = [1.2,1.2]
-theta = [2.0,2.0]
-lb = [1.0,1.0]
-ub = [6.0,6.0]
+    #Kriging
+    my_k_EIN = Kriging(x,y,lb,ub)
+    surrogate_optimize(objective_function_ND,EI(),lb,ub,my_k_EIN,SobolSample())
 
-#Kriging
-my_k_E1N = Kriging(x,y,lb,ub)
-surrogate_optimize(objective_function_ND,EI(),lb,ub,my_k_E1N,UniformSample())
+    # Check that EI is correctly minimizing instead of maximizing
+    y_min, index_min = findmin(my_k_EIN.y)
+    x_min = my_k_EIN.x[index_min]
+    @test norm(x_min .- true_min_x) < 0.05 * norm(ub .- lb)
+    @test abs(y_min - true_min_y) < 0.05 * (objective_function_ND(ub) - objective_function_ND(lb))
 
+    ###ND with SectionSampler###
+    # We will make sure the EI function finds the minimum when constrained to a specific slice of 3D space
+    objective_function_section = x -> x[1]^2 + x[2]^2 + x[3]^2 # this is minimized at x = (0, 0, 0), y = 0
+
+    # We will constrain x[2] to some value
+    x2_constraint = 2.0
+    true_min_x = (0.0, x2_constraint, 0.0)
+    true_min_y = objective_function_section(true_min_x)
+
+    sampler = SectionSample([NaN64, x2_constraint, NaN64], SobolSample())
+    lb = [-1.0,x2_constraint,-1.0]
+    ub = [6.0,x2_constraint,6.0]
+    x = sample(5, lb, ub, sampler)
+    y = objective_function_section.(x)
+    p = [1.2,1.2,1.2]
+    theta = [2.0,2.0,2.0]
+
+    #Kriging
+    my_k_EIN_section = Kriging(x,y,lb,ub; p = p)
+    # Constrain our sampling to the plane where x[2] = 1
+    surrogate_optimize(objective_function_section,EI(),lb,ub,my_k_EIN_section, sampler)
+
+    # Check that EI is correctly minimizing instead of maximizing
+    y_min, index_min = findmin(my_k_EIN_section.y)
+    x_min = my_k_EIN_section.x[index_min]
+    @test norm(x_min .- true_min_x) < 0.05 * norm(ub .- lb)
+    @test abs(y_min - true_min_y) < 0.05 * (objective_function_section(ub) - objective_function_section(lb))
+end
 
 ## DYCORS ##
 
 #1D#
-objective_function = x -> 3*x+1
+zobjective_function = x -> 3*x+1
 x = [2.1,2.5,4.0,6.0]
 y = objective_function.(x)
 p = 1.9
@@ -175,7 +249,7 @@ ub = 6.0
 my_k_DYCORS1 = Kriging(x,y,lb,ub,p=1.9)
 surrogate_optimize(objective_function,DYCORS(),lb,ub,my_k_DYCORS1,UniformSample())
 
-my_rad_DYCORS1 = RadialBasis(x,y,lb,ub,rad = linearRadial())
+my_rad_DYCORS1 = RadialBasis(x,y,lb,ub,rad = linearRadial)
 surrogate_optimize(objective_function,DYCORS(),lb,ub,my_rad_DYCORS1,UniformSample())
 
 
@@ -192,7 +266,7 @@ ub = [6.0,6.0]
 my_k_DYCORSN = Kriging(x,y,lb,ub)
 surrogate_optimize(objective_function_ND,DYCORS(),lb,ub,my_k_DYCORSN,UniformSample(),maxiters=30)
 
-my_rad_DYCORSN = RadialBasis(x,y,lb,ub,rad = linearRadial())
+my_rad_DYCORSN = RadialBasis(x,y,lb,ub,rad = linearRadial)
 surrogate_optimize(objective_function_ND,DYCORS(),lb,ub,my_rad_DYCORSN,UniformSample(),maxiters=30)
 
 my_wend_ND = Wendland(x,y,lb,ub)
@@ -230,7 +304,7 @@ lb = 1.0
 ub = 10.0
 x  = sample(100, lb, ub, SobolSample())
 y  = f.(x)
-my_radial_basis_smb = RadialBasis(x, y, lb, ub, rad = linearRadial())
+my_radial_basis_smb = RadialBasis(x, y, lb, ub, rad = linearRadial)
 surrogate_optimize(f,SMB(),lb,ub,my_radial_basis_ego,SobolSample())
 
 
@@ -240,7 +314,7 @@ lb = 1.0
 ub = 10.0
 x  = sample(100, lb, ub, SobolSample())
 y  = f.(x)
-my_radial_basis_rtea = RadialBasis(x, y, lb, ub, rad = linearRadial())
+my_radial_basis_rtea = RadialBasis(x, y, lb, ub, rad = linearRadial)
 Z = 0.8 #percentage
 K = 2 #number of revaluations
 p_cross = 0.5 #crossing vs copy

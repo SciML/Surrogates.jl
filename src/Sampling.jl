@@ -58,7 +58,7 @@ function sample(n,lb,ub,S::GridSample)
 end
 
 """
-sample(n,lb,ub,::UniformSample)
+sample(n,lb,ub,::UniformRandom)
 
 Returns a Tuple containing uniform random numbers.
 """
@@ -73,7 +73,7 @@ function sample(n,lb,ub,::UniformSample)
 end
 
 """
-sample(n,lb,ub,::SobolSample)
+sample(n,lb,ub,::SobolSampling)
 
 Returns a Tuple containing Sobol sequences.
 """
@@ -88,7 +88,7 @@ function sample(n,lb,ub,::SobolSample)
 end
 
 """
-sample(n,lb,ub,::LatinHypercubeSample)
+sample(n,lb,ub,::LatinHypercube)
 
 Returns a Tuple containing LatinHypercube sequences.
 """
@@ -250,29 +250,33 @@ free_dimensions(
     x->x == true, isnan.(section_sampler.x0))
 
 """
-sample(n,d,K::SectionSample)
+sample(n,lb,ub,K::SectionSample)
 
 Returns Tuples constrained to a section.
 
 In surrogate-based identification and control, optimization can alternate between unconstrained sampling in the full-dimensional parameter space, and sampling constrained on specific sections (e.g. a planes in a 3D volume),
 
 A SectionSampler allows sampling and optimizing on a subset of 'free' dimensions while keeping 'fixed' ones constrained.
-The sampler is defined as in e.g. 
+The sampler is defined as in e.g.
 
-section_sampler_y_is_10 = SectionSample([NaN64, NaN64, 10.0, 10.0], Surrogates.UniformSample())
+`section_sampler_y_is_10 = SectionSample([NaN64, NaN64, 10.0, 10.0], Surrogates.UniformSample())`
 
 where the first argument is a Vector{T} in which numbers are fixed coordinates and `NaN`s correspond to free dimensions, and the second argument is a SamplingAlgorithm which is used to sample in the free dimensions.
 """
 function sample(n,lb,ub,section_sampler::SectionSample)
     if lb isa Number
-        return rand(Uniform(lb,ub),n)
+        if isnan(section_sampler.x0[1])
+            return rand(section_sampler.sa(lb,ub),n)
+        else
+            return section_sampler.x0[1]
+        end
     else
         d_free = Surrogates.free_dimensions(section_sampler)
         new_samples = sample(n, lb[d_free], ub[d_free], section_sampler.sa)
         out_as_vec = repeat(section_sampler.x0', n, 1)
         for y in 1:size(out_as_vec,1)
-            for xi in 1:length(d_free)
-                out_as_vec[y,xi] = new_samples[y][xi]
+            for (xi, d) in enumerate(d_free)
+                out_as_vec[y,d] = new_samples[y][xi]
             end
         end
         [Tuple(out_as_vec[y,:]) for y in 1:size(out_as_vec,1)]
