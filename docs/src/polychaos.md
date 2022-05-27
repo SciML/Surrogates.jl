@@ -33,7 +33,7 @@ plot!(f, label="True function", xlims=(lower_bound, upper_bound), legend=:top)
 
 ```@example polychaos
 poly1 = PolynomialChaosSurrogate(x,y,lower_bound,upper_bound)
-poly2 = PolynomialChaosSurrogate(x,y,lower_bound,upper_bound, op = PolyChaos.GaussOrthoPoly(5))
+poly2 = PolynomialChaosSurrogate(x,y,lower_bound,upper_bound, op = SurrogatesPolyChaos.GaussOrthoPoly(5))
 plot(x, y, seriestype=:scatter, label="Sampled points", xlims=(lower_bound, upper_bound), legend=:top)
 plot!(f, label="True function",  xlims=(lower_bound, upper_bound), legend=:top)
 plot!(poly1, label="First polynomial",  xlims=(lower_bound, upper_bound), legend=:top)
