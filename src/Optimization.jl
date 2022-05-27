@@ -490,26 +490,34 @@ function surrogate_optimize(obj::Function,::EI,lb::Number,ub::Number,krig,sample
         dtol = 1e-3*norm(ub-lb)
         eps = 0.01
         for i = 1:maxiters
+            # Sample lots of points from the design space -- we will evaluate the EI function at these points
             new_sample = sample(num_new_samples,lb,ub,sample_type)
-            f_max = maximum(krig.y)
-            evaluations = zeros(eltype(krig.x[1]),num_new_samples)
-            point_found = false
-            new_x_max = zero(eltype(krig.x[1]))
-            new_y_max = zero(eltype(krig.x[1]))
+
+            # Find the best point so far
+            f_min = minimum(krig.y)
+
+            # Allocate some arrays
+            evaluations = zeros(eltype(krig.x[1]),num_new_samples)  # Holds EI function evaluations
+            point_found = false                                     # Whether we have found a new point to test
+            new_x_max = zero(eltype(krig.x[1]))                     # New x point
+            new_EI_max = zero(eltype(krig.x[1]))                    # EI at new x point
             while point_found == false
+                # For each point in the sample set, evaluate the Expected Improvement function
                 for j = 1:length(new_sample)
                     std = std_error_at_point(krig,new_sample[j])
                     u = krig(new_sample[j])
                     if abs(std) > 1e-6
-                        z = (u - f_max - eps)/std
+                        z = (f_min - u - eps)/std
                     else
                         z = 0
                     end
-                    evaluations[j] = (u-f_max-eps)*cdf(Normal(),z) + std*pdf(Normal(),z)
+                    # Evaluate EI at point new_sample[j]
+                    evaluations[j] = (f_min - u - eps)*cdf(Normal(),z) + std*pdf(Normal(),z)
                 end
+                # find the sample which maximizes the EI function
                 index_max = argmax(evaluations)
-                x_new = new_sample[index_max]
-                y_new = maximum(evaluations)
+                x_new = new_sample[index_max]   # x point which maximized EI
+                y_new = maximum(evaluations)    # EI at the new point
                 diff_x = abs.(krig.x .- x_new)
                 bit_x = diff_x .> dtol
                 #new_min_x has to have some distance from krig.x
@@ -525,16 +533,20 @@ function surrogate_optimize(obj::Function,::EI,lb::Number,ub::Number,krig,sample
                  else
                     point_found = true
                     new_x_max = x_new
-                    new_y_max = y_new
+                    new_EI_max = y_new
                 end
             end
-            if new_y_max < 1e-6*norm(maximum(krig.y)-minimum(krig.y))
+            # if the EI is less than some tolerance times the difference between the maximum and minimum points
+            # in the surrogate, then we terminate the optimizer.
+            if new_EI_max < 1e-6*norm(maximum(krig.y)-minimum(krig.y))
                 index = argmin(krig.y)
+                println("Termination tolerance reached.")
                 return (krig.x[index],krig.y[index])
             end
+            # Otherwise, evaluate the true objective function at the new point and repeat.
             add_point!(krig,new_x_max,obj(new_x_max))
         end
-        println("Completed maximum number of iterations")
+    println("Completed maximum number of iterations")
 end
 
 """
@@ -552,27 +564,35 @@ function surrogate_optimize(obj::Function,::EI,lb,ub,krig,sample_type::SamplingA
         eps = 0.01
         for i = 1:maxiters
             d = length(krig.x)
+            # Sample lots of points from the design space -- we will evaluate the EI function at these points
             new_sample = sample(num_new_samples,lb,ub,sample_type)
-            f_max = maximum(krig.y)
-            evaluations = zeros(eltype(krig.x[1]),num_new_samples)
-            point_found = false
-            new_x_max = zero(eltype(krig.x[1]))
-            new_y_max = zero(eltype(krig.x[1]))
+
+            # Find the best point so far
+            f_min = minimum(krig.y)
+
+            # Allocate some arrays
+            evaluations = zeros(eltype(krig.x[1]),num_new_samples)  # Holds EI function evaluations
+            point_found = false                                     # Whether we have found a new point to test
+            new_x_max = zero(eltype(krig.x[1]))                     # New x point
+            new_EI_max = zero(eltype(krig.x[1]))                    # EI at new x point
             diff_x = zeros(eltype(krig.x[1]),d)
             while point_found == false
+                # For each point in the sample set, evaluate the Expected Improvement function
                 for j = 1:length(new_sample)
                     std = std_error_at_point(krig,new_sample[j])
                     u = krig(new_sample[j])
                     if abs(std) > 1e-6
-                        z = (u - f_max - eps)/std
+                        z = (f_min - u - eps)/std
                     else
                         z = 0
                     end
-                    evaluations[j] = (u-f_max-eps)*cdf(Normal(),z) + std*pdf(Normal(),z)
+                    # Evaluate EI at point new_sample[j]
+                    evaluations[j] = (f_min - u - eps)*cdf(Normal(),z) + std*pdf(Normal(),z)
                 end
+                # find the sample which maximizes the EI function
                 index_max = argmax(evaluations)
-                x_new = new_sample[index_max]
-                y_new = maximum(evaluations)
+                x_new = new_sample[index_max]    # x point which maximized EI
+                EI_new = maximum(evaluations)    # EI at the new point
                 for l = 1:d
                     diff_x[l] = norm(krig.x[l] .- x_new)
                 end
@@ -583,23 +603,27 @@ function surrogate_optimize(obj::Function,::EI,lb,ub,krig,sample_type::SamplingA
                     deleteat!(evaluations,index_max)
                     deleteat!(new_sample,index_max)
                     if length(new_sample) == 0
-                        println("Out of sampling points")
+                        println("Out of sampling points.")
                         index = argmin(krig.y)
                         return (krig.x[index],krig.y[index])
                     end
                  else
                     point_found = true
                     new_x_max = x_new
-                    new_y_max = y_new
+                    new_EI_max = EI_new
                 end
             end
-            if new_y_max < 1e-6*norm(maximum(krig.y)-minimum(krig.y))
+            # if the EI is less than some tolerance times the difference between the maximum and minimum points
+            # in the surrogate, then we terminate the optimizer.
+            if new_EI_max < 1e-6*norm(maximum(krig.y)-minimum(krig.y))
                 index = argmin(krig.y)
+                println("Termination tolerance reached.")
                 return (krig.x[index],krig.y[index])
             end
+            # Otherwise, evaluate the true objective function at the new point and repeat.
             add_point!(krig,Tuple(new_x_max),obj(new_x_max))
         end
-        println("Completed maximum number of iterations")
+        println("Completed maximum number of iterations.")
 end
 
 
@@ -1718,27 +1742,36 @@ function surrogate_optimize(obj::Function,::EI,lb,ub,krig,sample_type::SectionSa
     eps = 0.01
     for i = 1:maxiters
         d = length(krig.x)
+        # Sample lots of points from the design space -- we will evaluate the EI function at these points
         new_sample = sample(num_new_samples,lb,ub,sample_type)
-        f_max = maximum(krig.y)
-        evaluations = zeros(eltype(krig.x[1]),num_new_samples)
-        point_found = false
-        new_x_max = zero(eltype(krig.x[1]))
-        new_y_max = zero(eltype(krig.x[1]))
+
+        # Find the best point so far
+        f_min = minimum(krig.y)
+
+        # Allocate some arrays
+        evaluations = zeros(eltype(krig.x[1]),num_new_samples)  # Holds EI function evaluations
+        point_found = false                                     # Whether we have found a new point to test
+        new_x_max = zero(eltype(krig.x[1]))                     # New x point
+        new_EI_max = zero(eltype(krig.x[1]))                    # EI at new x point
         diff_x = zeros(eltype(krig.x[1]),d)
+
+        # For each point in the sample set, evaluate the Expected Improvement function
         while point_found == false
             for j = 1:length(new_sample)
                 std = std_error_at_point(krig,new_sample[j])
                 u = krig(new_sample[j])
                 if abs(std) > 1e-6
-                    z = (u - f_max - eps)/std
+                    z = (f_min - u - eps)/std
                 else
                     z = 0
                 end
-                evaluations[j] = (u-f_max-eps)*cdf(Normal(),z) + std*pdf(Normal(),z)
+                # Evaluate EI at point new_sample[j]
+                evaluations[j] = (f_min - u - eps)*cdf(Normal(),z) + std*pdf(Normal(),z)
             end
+            # find the sample which maximizes the EI function
             index_max = argmax(evaluations)
-            x_new = new_sample[index_max]
-            y_new = maximum(evaluations)
+            x_new = new_sample[index_max]   # x point which maximized EI
+            EI_new = maximum(evaluations)   # EI at the new point
             for l = 1:d
                 diff_x[l] = norm(krig.x[l] .- x_new)
             end
@@ -1749,21 +1782,24 @@ function surrogate_optimize(obj::Function,::EI,lb,ub,krig,sample_type::SectionSa
                 deleteat!(evaluations,index_max)
                 deleteat!(new_sample,index_max)
                 if length(new_sample) == 0
-                    println("Out of sampling points")
+                    println("Out of sampling points.")
                     return section_sampler_returner(sample_type, krig.x, krig.y, lb, ub, krig)
                 end
              else
                 point_found = true
                 new_x_max = x_new
-                new_y_max = y_new
+                new_EI_max = EI_new
             end
         end
-        if new_y_max < 1e-6*norm(maximum(krig.y)-minimum(krig.y))
+        # if the EI is less than some tolerance times the difference between the maximum and minimum points
+        # in the surrogate, then we terminate the optimizer.
+        if new_EI_max < 1e-6*norm(maximum(krig.y)-minimum(krig.y))
+            println("Termination tolerance reached.")
             return section_sampler_returner(sample_type, krig.x, krig.y, lb, ub, krig)
         end
         add_point!(krig,Tuple(new_x_max),obj(new_x_max))
     end
-    println("Completed maximum number of iterations")
+    println("Completed maximum number of iterations.")
 end
 
 function section_sampler_returner(

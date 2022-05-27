@@ -41,7 +41,7 @@ ub = [6.0,6.0]
 x = sample(5,lb,ub,SobolSample())
 y = objective_function_ND.(x)
 p = [1.5,1.5]
-theta = [1.0,1.0]
+theta = [1.0,1.0]
 
 #Kriging
 
@@ -124,7 +124,7 @@ objective_function_ND = z -> 3*norm(z)+1
 x = [(1.2,3.0),(3.0,3.5),(5.2,5.7)]
 y = objective_function_ND.(x)
 p = [1.2,1.2]
-theta = [2.0,2.0]
+theta = [2.0,2.0]
 lb = [1.0,1.0]
 ub = [6.0,6.0]
 
@@ -136,31 +136,71 @@ surrogate_optimize(objective_function_ND,LCBS(),lb,ub,my_k_LCBSN,UniformSample()
 ##### EI ######
 
 ###1D###
-objective_function = x -> 2*x+1
-x = [2.0,4.0,6.0]
-y = [5.0,9.0,13.0]
-lb = 0.0
-ub = 15.0
-p = 2
-a = 2
-b = 6
-my_k_EI1 = Kriging(x,y,lb,ub)
-surrogate_optimize(objective_function,EI(),a,b,my_k_EI1,UniformSample(),maxiters=200,num_new_samples=155)
+objective_function = x -> (x+1)^2 - x + 2# Minimum of this function is at x = -0.5, y = -2.75
+true_min_x = -0.5
+true_min_y = objective_function(true_min_x)
+lb = -5
+ub = 5
+x = sample(5, lb, ub, SobolSample())
+y = objective_function.(x)
+my_k_EI1 = Kriging(x,y,lb,ub; p = 2)
+surrogate_optimize(objective_function,EI(),lb,ub,my_k_EI1, SobolSample(),maxiters=200,num_new_samples=155)
 
+# Check that EI is correctly minimizing the objective
+y_min, index_min = findmin(my_k_EI1.y)
+x_min = my_k_EI1.x[index_min]
+@test norm(x_min - true_min_x) < 0.05 * norm(ub .- lb)
+@test abs(y_min - true_min_y) < 0.05 * (objective_function(ub) - objective_function(lb))
 
 ###ND###
-objective_function_ND = z -> 3*norm(z)+1
+objective_function_ND = z -> 3*norm(z)+1 # this is minimized at x = (0, 0), y = 1
+true_min_x = (0.0, 0.0)
+true_min_y = objective_function_ND(true_min_x)
 x = [(1.2,3.0),(3.0,3.5),(5.2,5.7)]
 y = objective_function_ND.(x)
+min_y = minimum(y)
 p = [1.2,1.2]
 theta = [2.0,2.0]
-lb = [1.0,1.0]
+lb = [-1.0,-1.0]
 ub = [6.0,6.0]
 
 #Kriging
-my_k_E1N = Kriging(x,y,lb,ub)
-surrogate_optimize(objective_function_ND,EI(),lb,ub,my_k_E1N,UniformSample())
+my_k_EIN = Kriging(x,y,lb,ub)
+surrogate_optimize(objective_function_ND,EI(),lb,ub,my_k_EIN,SobolSample())
 
+# Check that EI is correctly minimizing instead of maximizing
+y_min, index_min = findmin(my_k_EIN.y)
+x_min = my_k_EIN.x[index_min]
+@test norm(x_min .- true_min_x) < 0.05 * norm(ub .- lb)
+@test abs(y_min - true_min_y) < 0.05 * (objective_function_ND(ub) - objective_function_ND(lb))
+
+###ND with SectionSampler###
+# We will make sure the EI function finds the minimum when constrained to a specific slice of 3D space
+objective_function_section = x -> x[1]^2 + x[2]^2 + x[3]^2 # this is minimized at x = (0, 0, 0), y = 0
+
+# We will constrain x[2] to some value
+x2_constraint = 2.0
+true_min_x = (0.0, x2_constraint, 0.0)
+true_min_y = objective_function_section(true_min_x)
+
+sampler = SectionSample([NaN64, x2_constraint, NaN64], SobolSample())
+lb = [-1.0,x2_constraint,-1.0]
+ub = [6.0,x2_constraint,6.0]
+x = sample(5, lb, ub, sampler)
+y = objective_function_section.(x)
+p = [1.2,1.2,1.2]
+theta = [2.0,2.0,2.0]
+
+#Kriging
+my_k_EIN_section = Kriging(x,y,lb,ub; p = p)
+# Constrain our sampling to the plane where x[2] = 1
+surrogate_optimize(objective_function_section,EI(),lb,ub,my_k_EIN_section, sampler)
+
+# Check that EI is correctly minimizing instead of maximizing
+y_min, index_min = findmin(my_k_EIN_section.y)
+x_min = my_k_EIN_section.x[index_min]
+@test norm(x_min .- true_min_x) < 0.05 * norm(ub .- lb)
+@test abs(y_min - true_min_y) < 0.05 * (objective_function_section(ub) - objective_function_section(lb))
 
 ## DYCORS ##
 
@@ -184,7 +224,7 @@ objective_function_ND = z -> 2*norm(z)+1
 x = [(2.3,2.2),(1.4,1.5)]
 y = objective_function_ND.(x)
 p = [1.5,1.5]
-theta = [2.0,2.0]
+theta = [2.0,2.0]
 lb = [1.0,1.0]
 ub = [6.0,6.0]
 
@@ -214,14 +254,12 @@ objective_function_ND = z -> 2*norm(z)+1
 x = [(2.3,2.2),(1.4,1.5)]
 y = objective_function_ND.(x)
 p = [1.5,1.5]
-theta = [2.0,2.0]
+theta = [2.0,2.0]
 lb = [1.0,1.0]
 ub = [6.0,6.0]
 my_k_SOPND = Kriging(x,y,lb,ub)
 num_centers = 2
 surrogate_optimize(objective_function_ND,SOP(num_centers),lb,ub,my_k_SOPND,SobolSample(),maxiters=20)
-
-
 
 #multi optimization
 #=
