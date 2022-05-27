@@ -14,7 +14,6 @@ We choose to sample f in 25 points between 0 and 10 using the `sample` function.
 ```@example polychaos
 using Surrogates
 using SurrogatesPolyChaos
-using PolyChaos #required to call on GaussOrthoPoly below
 using Plots
 default()
 
