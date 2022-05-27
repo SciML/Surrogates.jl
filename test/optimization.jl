@@ -249,7 +249,7 @@ ub = 6.0
 my_k_DYCORS1 = Kriging(x,y,lb,ub,p=1.9)
 surrogate_optimize(objective_function,DYCORS(),lb,ub,my_k_DYCORS1,UniformSample())
 
-my_rad_DYCORS1 = RadialBasis(x,y,lb,ub,rad = linearRadial)
+my_rad_DYCORS1 = RadialBasis(x,y,lb,ub,rad = linearRadial())
 surrogate_optimize(objective_function,DYCORS(),lb,ub,my_rad_DYCORS1,UniformSample())
 
 
