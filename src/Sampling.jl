@@ -1,188 +1,36 @@
-using Sobol
-using LatinHypercubeSampling
+using QuasiMonteCarlo
+using QuasiMonteCarlo: SamplingAlgorithm
 
-
-abstract type SamplingAlgorithm end
-
-"""
-GridSample{T}
-
-T is the step dx for lb:dx:ub
-"""
-struct GridSample{T} <: SamplingAlgorithm
-    dx::T
+# We need to convert the matrix that QuasiMonteCarlo produces into a vector of Tuples like Surrogates expects
+function sample(args...; kwargs...)
+    s = QuasiMonteCarlo.sample(args...; kwargs...)
+    if s isa Vector
+        return s
+    else
+        _, npoints = size(s)
+        s_reduced = [s[:, i] for i in 1:npoints]
+        return Tuple.(s_reduced)
+    end
 end
 
-struct UniformSample <: SamplingAlgorithm end
-struct SobolSample <: SamplingAlgorithm end
-struct LatinHypercubeSample <: SamplingAlgorithm end
-
-"""
-LowDiscrepancySample{T}
-
-T is the base for the sequence
-"""
-struct LowDiscrepancySample{T} <: SamplingAlgorithm
-    base::T
-end
-
-struct RandomSample <: SamplingAlgorithm end
-
-struct KroneckerSample{A,B} <: SamplingAlgorithm
+struct KroneckerSample{A,B} <: QuasiMonteCarlo.SamplingAlgorithm
     alpha::A
     s0::B
 end
 
-struct GoldenSample <: SamplingAlgorithm end
+struct GoldenSample <: QuasiMonteCarlo.SamplingAlgorithm end
 
-struct SectionSample{T} <: SamplingAlgorithm
+struct SectionSample{T} <: QuasiMonteCarlo.SamplingAlgorithm
     x0::Vector{T}
-    sa::SamplingAlgorithm
+    sa::QuasiMonteCarlo.SamplingAlgorithm
 end
-
-"""
-sample(n,lb,ub,S::GridSample)
-
-Returns a tuple containing numbers in a grid.
-
-"""
-function sample(n,lb,ub,S::GridSample)
-    dx = S.dx
-    if lb isa Number
-        return vec(rand(lb:S.dx:ub,n))
-    else
-        d = length(lb)
-        x = [[rand(lb[j]:dx[j]:ub[j]) for j = 1:d] for i in 1:n]
-        return Tuple.(x)
-    end
-end
-
-"""
-sample(n,lb,ub,::UniformRandom)
-
-Returns a Tuple containing uniform random numbers.
-"""
-function sample(n,lb,ub,::UniformSample)
-    if lb isa Number
-        return rand(Uniform(lb,ub),n)
-    else
-        d = length(lb)
-        x = [[rand(Uniform(lb[j],ub[j])) for j in 1:d] for i in 1:n]
-        return Tuple.(x)
-    end
-end
-
-"""
-sample(n,lb,ub,::SobolSampling)
-
-Returns a Tuple containing Sobol sequences.
-"""
-function sample(n,lb,ub,::SobolSample)
-    s = SobolSeq(lb,ub)
-    skip(s,n)
-    if lb isa Number
-        return [next!(s)[1] for i = 1:n]
-    else
-        return Tuple.([next!(s) for i = 1:n])
-    end
-end
-
-"""
-sample(n,lb,ub,::LatinHypercube)
-
-Returns a Tuple containing LatinHypercube sequences.
-"""
-function sample(n,lb,ub,::LatinHypercubeSample)
-    d = length(lb)
-    if lb isa Number
-        x = vec(LHCoptim(n,d,1)[1])
-        # x∈[0,n], so affine transform
-        return @. (ub-lb) * x/(n) + lb
-    else
-        lib_out = float(LHCoptim(n,d,1)[1])
-        # x∈[0,n], so affine transform column-wise
-        @inbounds for c = 1:d
-            lib_out[:,c] = (ub[c]-lb[c])*lib_out[:,c]/n .+ lb[c]
-        end
-        x = [lib_out[i,:] for i = 1:n]
-        return Tuple.(x)
-    end
-end
-
-
-"""
-sample(n,lb,ub,S::LowDiscrepancySample)
-
-Low discrepancy sample:
-- Dimension 1: Van der Corput sequence
-- Dimension > 1: Halton sequence
-If dimension d > 1, all bases must be coprime with each other.
-"""
-function sample(n,lb,ub,S::LowDiscrepancySample)
-    d = length(lb)
-    if d == 1
-        #Van der Corput
-        b = S.base
-        x = zeros(Float32,n)
-        for i = 1:n
-            expansion = digits(i,base = b)
-            L = length(expansion)
-            val = zero(Float32)
-            for k = 1:L
-                val += expansion[k]*float(b)^(-(k-1)-1)
-            end
-            x[i] = val
-        end
-        # It is always defined on the unit interval, resizing:
-        return @. (ub-lb) * x + lb
-    else
-        #Halton sequence
-        x = zeros(Float32,n,d)
-        for j = 1:d
-            b = S.base[j]
-            for i = 1:n
-                val = zero(Float32)
-                expansion = digits(i, base = b)
-                L = length(expansion)
-                val = zero(Float32)
-                for k = 1:L
-                    val += expansion[k]*float(b)^(-(k-1)-1)
-                end
-                x[i,j] = val
-            end
-        end
-        #Resizing
-        # x∈[0,1], so affine transform column-wise
-        @inbounds for c = 1:d
-            x[:,c] = (ub[c]-lb[c])*x[:,c] .+ lb[c]
-        end
-
-        y = [x[i,:] for i = 1:n]
-        return Tuple.(y)
-    end
-end
-
-"""
-sample(n,d,D::Distribution)
-
-Returns a Tuple containing numbers distributed as D
-"""
-function sample(n,d,D::Distribution)
-    if d == 1
-        return rand(D,n)
-    else
-        x = [[rand(D) for j in 1:d] for i in 1:n]
-        return Tuple.(x)
-    end
-end
-
 
 """
 sample(n,d,K::KroneckerSample)
 
 Returns a Tuple containing numbers following the Kronecker sample
 """
-function sample(n,lb,ub,K::KroneckerSample)
+function QuasiMonteCarlo.sample(n,lb,ub,K::KroneckerSample)
     d = length(lb)
     alpha = K.alpha
     s0 = K.s0
@@ -205,12 +53,12 @@ function sample(n,lb,ub,K::KroneckerSample)
             x[:,c] = (ub[c]-lb[c])*x[:,c] .+ lb[c]
         end
 
-        y = [x[i,:] for i = 1:n]
-        return Tuple.(y)
+        y = collect(x')
+        return y
     end
 end
 
-function sample(n,lb,ub,G::GoldenSample)
+function QuasiMonteCarlo.sample(n,lb,ub, G::GoldenSample)
     d = length(lb)
     if d == 1
         x = zeros(n)
@@ -236,8 +84,8 @@ function sample(n,lb,ub,G::GoldenSample)
         @inbounds for c = 1:d
             x[:,c] = (ub[c]-lb[c])*x[:,c] .+ lb[c]
         end
-        y = [x[i,:] for i = 1:n]
-        return Tuple.(y)
+        y = collect(x')
+        return y
     end
 end
 
@@ -263,22 +111,22 @@ The sampler is defined as in e.g.
 
 where the first argument is a Vector{T} in which numbers are fixed coordinates and `NaN`s correspond to free dimensions, and the second argument is a SamplingAlgorithm which is used to sample in the free dimensions.
 """
-function sample(n,lb,ub,section_sampler::SectionSample)
+function QuasiMonteCarlo.sample(n,lb,ub,section_sampler::SectionSample)
     if lb isa Number
         if isnan(section_sampler.x0[1])
-            return rand(section_sampler.sa(lb,ub),n)
+            return sample(n, lb, ub, section_sampler.sa)
         else
-            return section_sampler.x0[1]
+            return fill(section_sampler.x0[1], n)
         end
     else
         d_free = Surrogates.free_dimensions(section_sampler)
         new_samples = sample(n, lb[d_free], ub[d_free], section_sampler.sa)
-        out_as_vec = repeat(section_sampler.x0', n, 1)
-        for y in 1:size(out_as_vec,1)
+        out_as_vec = collect(repeat(section_sampler.x0', n, 1)')
+        for y in 1:size(out_as_vec,2)
             for (xi, d) in enumerate(d_free)
-                out_as_vec[y,d] = new_samples[y][xi]
+                out_as_vec[d,y] = new_samples[y][xi]
             end
         end
-        [Tuple(out_as_vec[y,:]) for y in 1:size(out_as_vec,1)]
+        return out_as_vec
     end
 end
