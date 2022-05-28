@@ -1,5 +1,7 @@
 # Samples
 
+Sampling methods are provided by the [QuasiMonteCarlo package](https://github.com/SciML/QuasiMonteCarlo.jl).
+
 The syntax for sampling in an interval or region is the following:
 ```
 sample(n,lb,ub,S::SamplingAlgorithm)
@@ -49,7 +51,7 @@ Adding a new sampling method is a two- step process:
 
 **Example**
 ```
-struct NewAmazingSamplingAlgorithm{OPTIONAL} <: SamplingAlgorithm end
+struct NewAmazingSamplingAlgorithm{OPTIONAL} <: QuasiMonteCarlo.SamplingAlgorithm end
 
 function sample(n,lb,ub,::NewAmazingSamplingAlgorithm)
     if lb is  Number
