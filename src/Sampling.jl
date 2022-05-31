@@ -5,11 +5,11 @@ using QuasiMonteCarlo: SamplingAlgorithm
 function sample(args...; kwargs...)
     s = QuasiMonteCarlo.sample(args...; kwargs...)
     if s isa Vector
+        # 1D case: s is a Vector
         return s
     else
-        _, npoints = size(s)
-        s_reduced = [s[:, i] for i in 1:npoints]
-        return Tuple.(s_reduced)
+        # ND case: s is a d x n matrix, where d is the dimension and n is the number of samples
+        return reinterpret(reshape, NTuple{size(s, 1), eltype(s)}, s)
     end
 end
 
