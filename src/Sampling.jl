@@ -11,6 +11,6 @@ function sample(args...; kwargs...)
         return s
     else
         # ND case: s is a d x n matrix, where d is the dimension and n is the number of samples
-        return reinterpret(reshape, NTuple{size(s, 1), eltype(s)}, s)
+        return collect(reinterpret(reshape, NTuple{size(s, 1), eltype(s)}, s))
     end
 end
