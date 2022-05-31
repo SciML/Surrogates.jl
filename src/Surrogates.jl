@@ -83,9 +83,14 @@ export LobachevskyStructure, NeuralStructure, RandomForestStructure, SecondOrder
 export WendlandStructure
 export AbstractSurrogate, SamplingAlgorithm
 export Kriging, RadialBasis, add_point!, current_estimate, std_error_at_point
+# radial basis functions
 export linearRadial,cubicRadial,multiquadricRadial,thinplateRadial
+
+# samplers
 export sample, GridSample, UniformSample, SobolSample, LatinHypercubeSample, LowDiscrepancySample
 export RandomSample, KroneckerSample, GoldenSample, SectionSample
+
+# Optimization algorithms
 export SRBF,LCBS,EI,DYCORS,SOP,EGO,RTEA,SMB,surrogate_optimize
 export LobachevskySurrogate, lobachevsky_integral, lobachevsky_integrate_dimension
 export LinearSurrogate

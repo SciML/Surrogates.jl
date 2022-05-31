@@ -1736,7 +1736,6 @@ end
      return pareto_set,pareto_front
  end
 
-
 function surrogate_optimize(obj::Function,::EI,lb,ub,krig,sample_type::SectionSample;maxiters=100,num_new_samples=100)
     dtol = 1e-3*norm(ub-lb)
     eps = 0.01

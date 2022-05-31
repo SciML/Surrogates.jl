@@ -1,4 +1,5 @@
 using QuasiMonteCarlo
+using QuasiMonteCarlo: SamplingAlgorithm
 
 # We need to convert the matrix that QuasiMonteCarlo produces into a vector of Tuples like Surrogates expects
 # This will eventually be removed once we refactor the rest of the code to work with d x n matrices instead
