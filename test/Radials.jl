@@ -153,3 +153,21 @@ mq_rad = RadialBasis(x, y, lb, ub, rad = multiquadricRadial())
 @test isapprox( mq_rad([2.0, 2.0, 1.0]), g([2.0, 2.0, 1.0]), atol = .0001)
 mq_rad = RadialBasis(x, y, lb, ub, rad = multiquadricRadial(0.9)) # different shape parameter should not be as accurate
 @test !isapprox( mq_rad([2.0, 2.0, 1.0]), g([2.0, 2.0, 1.0]), atol = .0001)
+
+# Issue 316
+
+x = sample(1024, [-0.45 -0.4 -0.9], [0.40 0.55 0.35], SobolSample())
+
+function mockvalues(in)
+	x, y, z = in
+    p1 = reverse(vec([1.09903695e+01 -1.01500500e+01 -4.06629740e+01 -1.41834931e+01 1.00604784e+01 4.34951623e+00 -1.06519689e-01 -1.93335202e-03]))
+    p2 = vec([2.12791877 2.12791877 4.23881665 -1.05464575])
+    f = evalpoly(z, p1)
+    f += p2[1] * x^2 + p2[2] * y^2 + p2[3] * x^2 * y + p2[4] * x * y^2
+    f
+end
+
+y = mockvalues.(x)
+rbf = RadialBasis(x, y, lb, ub, rad = multiquadricRadial(1.788))
+test = (lb .+ ub) ./ 2
+@test isapprox( rbf(test), mockvalues(test), atol = .001)
