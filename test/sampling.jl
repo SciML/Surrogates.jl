@@ -46,19 +46,19 @@ s = Surrogates.sample(n,d,Normal(0,4))
 ## Sampling methods specific to Surrogates.jl ##
 
 # KroneckerSample
-s = Surrogates.sample(n,lb,ub,KroneckerSample(sqrt(2),0))
+s = Surrogates.sample(n,lb,ub,Surrogates.KroneckerSample(sqrt(2),0))
 @test s isa Vector{Float64} && length(s) == n && all(x -> lb ≤ x ≤ ub, s)
 
 # GoldenSample
-s = Surrogates.sample(n,lb,ub,GoldenSample())
+s = Surrogates.sample(n,lb,ub,Surrogates.GoldenSample())
 @test s isa Vector{Float64} && length(s) == n && all(x -> lb ≤ x ≤ ub, s)
 
 # SectionSample
 constrained_val = 1.0
-s = Surrogates.sample(n, lb, ub, SectionSample([NaN64], UniformSample()))
+s = Surrogates.sample(n, lb, ub, Surrogates.SectionSample([NaN64], UniformSample()))
 @test s isa Vector{Float64} && length(s) == n && all(x -> lb ≤ x ≤ ub, s)
 
-s = Surrogates.sample(n, lb, ub, SectionSample([constrained_val], UniformSample()))
+s = Surrogates.sample(n, lb, ub, Surrogates.SectionSample([constrained_val], UniformSample()))
 @test s isa Vector{Float64} && length(s) == n && all(x -> lb ≤ x ≤ ub, s)
 @test all(==(constrained_val), s)
 
@@ -72,7 +72,7 @@ n = 5
 d = 2
 
 #GridSample{T}
-s = Surrogates.sample(n,lb,ub,GridSample([0.1,0.5]))
+s = Surrogates.sample(n,lb,ub,Surrogates.GridSample([0.1,0.5]))
 @test isa(s,Array{Tuple{typeof(s[1][1]),typeof(s[1][1])},1}) == true
 
 #UniformSample()
@@ -100,16 +100,16 @@ s = Surrogates.sample(n,d,Normal(3,5))
 @test isa(s,Array{Tuple{typeof(s[1][1]),typeof(s[1][1])},1}) == true
 
 #Kronecker
-s = Surrogates.sample(n,lb,ub,KroneckerSample([sqrt(2),3.1415],[0,0]))
+s = Surrogates.sample(n,lb,ub,Surrogates.KroneckerSample([sqrt(2),3.1415],[0,0]))
 @test isa(s,Array{Tuple{typeof(s[1][1]),typeof(s[1][1])},1}) == true
 
 #Golden
-s = Surrogates.sample(n,lb,ub,GoldenSample())
+s = Surrogates.sample(n,lb,ub,Surrogates.GoldenSample())
 @test isa(s,Array{Tuple{typeof(s[1][1]),typeof(s[1][1])},1}) == true
 
 # SectionSample
 constrained_val = 1.0
-s = Surrogates.sample(n, lb, ub, SectionSample([NaN64, constrained_val], UniformSample()))
+s = Surrogates.sample(n, lb, ub, Surrogates.SectionSample([NaN64, constrained_val], UniformSample()))
 @test all(x -> x[end] == constrained_val, s)
 @test isa(s,Array{Tuple{typeof(s[1][1]),typeof(s[1][1])},1}) == true
 @test all(x -> lb[1] ≤ x[1] ≤ ub[1], s)
