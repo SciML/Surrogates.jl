@@ -157,6 +157,8 @@ mq_rad = RadialBasis(x, y, lb, ub, rad = multiquadricRadial(0.9)) # different sh
 # Issue 316
 
 x = sample(1024, [-0.45 -0.4 -0.9], [0.40 0.55 0.35], SobolSample())
+lb = [-0.45 -0.4 -0.9]
+ub = [0.40 0.55 0.35]
 
 function mockvalues(in)
 	x, y, z = in
