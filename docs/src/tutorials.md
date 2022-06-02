@@ -2,6 +2,7 @@
 Let's start with something easy to get our hands dirty.
 I want to build a surrogate for ``f(x) = \log(x) \cdot x^2+x^3``.
 Let's choose the radial basis surrogate.
+
 ```@example
 using Surrogates
 f = x -> log(x)*x^2+x^3
@@ -14,7 +15,9 @@ my_radial_basis = RadialBasis(x,y,lb,ub)
 #I want an approximation at 5.4
 approx = my_radial_basis(5.4)
 ```
+
 Let's now see an example in 2D.
+
 ```@example
 using Surrogates
 using LinearAlgebra
@@ -34,6 +37,7 @@ Let's now use the Kriging surrogate, which is a single-output Gaussian process.
 This surrogate has a nice feature: not only does it approximate the solution at a
 point, it also calculates the standard error at such point.
 Let's see an example:
+
 ```@example kriging
 using Surrogates
 f = x -> exp(x)*x^2+x^3
@@ -52,16 +56,19 @@ std_err = std_error_at_point(my_krig,5.4)
 ```
 
 Let's now optimize the Kriging surrogate using Lower confidence bound method, this is just a one-liner:
+
 ```@example kriging
 surrogate_optimize(f,LCBS(),lb,ub,my_krig,UniformSample())
 ```
+
 Surrogate optimization methods have two purposes: they both sample the space in unknown regions and look for the minima at the same time.
 
 ## Lobachevsky integral
 The Lobachevsky surrogate has the nice feature of having a closed formula for its
 integral, which is something that other surrogates are missing.
 Let's compare it with QuadGK:
-```@examples
+
+```@example
 using Surrogates
 using QuadGK
 obj = x -> 3*x + log(x)
@@ -83,6 +90,7 @@ int_val_true = int[1]-int[2]
 
 ## Example of NeuralSurrogate
 Basic example of fitting a neural network on a simple function of two variables.
+
 ```@example
 using Surrogates
 using Flux
