@@ -1736,7 +1736,6 @@ end
      return pareto_set,pareto_front
  end
 
-
 function surrogate_optimize(obj::Function,::EI,lb,ub,krig,sample_type::SectionSample;maxiters=100,num_new_samples=100)
     dtol = 1e-3*norm(ub-lb)
     eps = 0.01
@@ -1805,7 +1804,7 @@ end
 function section_sampler_returner(
         sample_type::SectionSample, surrn_x, surrn_y, 
         lb, ub, surrn)
-    d_fixed = Surrogates.fixed_dimensions(sample_type)
+    d_fixed = QuasiMonteCarlo.fixed_dimensions(sample_type)
     @assert length(surrn_y) == size(surrn_x)[1]
     surrn_xy = [(surrn_x[y], surrn_y[y]) for y in 1:length(surrn_y)]
     section_surr1_xy = filter(
