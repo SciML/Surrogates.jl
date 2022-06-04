@@ -1,5 +1,6 @@
 using Surrogates
 using QuasiMonteCarlo
+using QuasiMonteCarlo: KroneckerSample, SectionSample, GoldenSample
 using Distributions: Cauchy, Normal
 using Test
 
