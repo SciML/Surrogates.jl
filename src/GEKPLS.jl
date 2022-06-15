@@ -460,6 +460,7 @@ function _modified_pls(X,Y, n_components)
         _x_scores[:,k] = x_scores 
         x_loadings_[:,k] = vec(x_loadings)
     end
+
     x_rotations_ = x_weights_ * pinv(transpose(x_loadings_)x_weights_)
     return x_rotations_
 end

@@ -64,9 +64,7 @@ y_true = water_flow.(x_test)
     g = GEKPLS(X, y, grads, n_comp, delta_x, xlimits, extra_points, initial_theta) #change hard-coded 2 param to variable
     y_pred = g(X_test)
     rmse = sqrt(sum(((y_pred - y_true).^2)/n_test))
-    println()
-    println("rmse: ", rmse) #rmse: 0.028999713540341848
-    #@test isapprox(rmse, 0.02, atol=0.01) #score tolerance with sklearn's PLS
+    println("rmse: ", rmse) # ~.039 with custom Julia PLS regressor; ~.029 with sklearn's PLS regressor
     @test isapprox(rmse, 0.02, atol=0.02)
 
 end
@@ -79,7 +77,7 @@ end
     g = GEKPLS(X, y, grads, n_comp, delta_x, xlimits, extra_points, initial_theta) #change hard-coded 2 param to variable
     y_pred = g(X_test)
     rmse = sqrt(sum(((y_pred - y_true).^2)/n_test))
-    println("rmse: ", rmse) #rmse: 0.024098165334772537
+    println("rmse: ", rmse) # ~.027 with our custom PLS regressor; ~0.024 with sklearn's PLS regressor
     @test isapprox(rmse, 0.02, atol=0.01)
 end
 
@@ -88,9 +86,58 @@ end
     delta_x = 0.0001
     extra_points = 3
     initial_theta = 0.01
-    g = GEKPLS(X, y, grads, n_comp, delta_x, xlimits, extra_points, initial_theta) #change hard-coded 2 param to variable
+    g = GEKPLS(X, y, grads, n_comp, delta_x, xlimits, extra_points, initial_theta) 
     y_pred = g(X_test)
     rmse = sqrt(sum(((y_pred - y_true).^2)/n_test))
-    println("rmse: ", rmse) #0.023712136706924902
+    println("rmse: ", rmse) # ~.027 with our custom PLS regressor; ~0.024 with sklearn's PLS regressor
     @test isapprox(rmse, 0.02, atol=0.01)
+end
+
+
+function welded_beam(x)
+    h = x[1]
+    l = x[2]
+    t = x[3]
+    a = 6000/(sqrt(2)*h*l)
+    b = (6000*(14+0.5*l)*sqrt(0.25*(l^2+(h+t)^2)))/(2*(0.707*h*l*(l^2/12 + 0.25*(h+t)^2)))
+    return (sqrt(a^2+b^2 + l*a*b))/(sqrt(0.25*(l^2+(h+t)^2)))
+end
+
+n = 1000
+d = 3
+lb = [0.125,5.0,5.0]
+ub = [1.,10.,10.]
+x = sample(n,lb,ub,SobolSample())
+X = vector_of_tuples_to_matrix(x)
+grads = vector_of_tuples_to_matrix2(gradient.(welded_beam, x))
+y = reshape(welded_beam.(x),(size(x,1),1))
+xlimits = hcat(lb, ub)
+n_test = 100 
+x_test = sample(n_test,lb,ub,GoldenSample()) 
+X_test = vector_of_tuples_to_matrix(x_test) 
+y_true = welded_beam.(x_test)
+
+@testset "Welded Beam Function Test (dimensions = 3; n_comp = 2; extra_points = 2; initial_theta=.01)" begin 
+    n_comp = 2
+    delta_x = 0.0001
+    extra_points = 2
+    initial_theta = 0.01
+    g = GEKPLS(X, y, grads, n_comp, delta_x, xlimits, extra_points, initial_theta) 
+    y_pred = g(X_test)
+    rmse = sqrt(sum(((y_pred - y_true).^2)/n_test))
+    println("rmse: ", rmse) #rmse: 39.48
+    @test isapprox(rmse, 39.5, atol=0.5)
+end
+
+#increasing extra points increases accuracy
+@testset "Welded Beam Function Test (dimensions = 3; n_comp = 2; extra_points = 4; initial_theta=.01)" begin 
+    n_comp = 2
+    delta_x = 0.0001
+    extra_points = 4
+    initial_theta = 0.01
+    g = GEKPLS(X, y, grads, n_comp, delta_x, xlimits, extra_points, initial_theta) 
+    y_pred = g(X_test)
+    rmse = sqrt(sum(((y_pred - y_true).^2)/n_test))
+    println("rmse: ", rmse) #rmse: 37.87
+    @test isapprox(rmse, 37.5, atol=0.5)
 end

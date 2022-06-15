@@ -12,12 +12,12 @@ include("Lobachevsky.jl")
 include("LinearSurrogate.jl")
 include("InverseDistanceSurrogate.jl")
 include("SecondOrderPolynomialSurrogate.jl")
-
 include("Wendland.jl")
 include("MOE.jl") #rewrite gaussian mixture with own algorithm to fix deps issue
 include("VariableFidelity.jl")
 include("Earth.jl")
 include("GEK.jl")
+include("GEKPLS.jl")
 
 current_surrogates = ["Kriging", "LinearSurrogate", "LobachevskySurrogate",
     "NeuralSurrogate",
@@ -81,6 +81,7 @@ function PolyChaosStructure(; op)
 end
 
 export current_surrogates
+export GEKPLS 
 export RadialBasisStructure, KrigingStructure, LinearStructure, InverseDistanceStructure
 export LobachevskyStructure, NeuralStructure, RandomForestStructure,
        SecondOrderPolynomialStructure
