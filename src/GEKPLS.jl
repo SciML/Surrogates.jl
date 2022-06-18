@@ -77,21 +77,41 @@ function _ge_compute_pls(X, y, n_comp, grads, delta_x, xlimits, extra_points)
     yy = zeros(0,size(y)[2])
     #_pls = PLSRegression(n_comp) #todo: relic from sklearn versiom. REMOVE.
     coeff_pls = zeros((dim, n_comp, nt))
+    
     for i in 1:nt
-        if dim >= 3 #to do ... this is consistent with SMT but inefficient. Move outside for loop and evaluate dim >= 3 just once.
+        if dim >= 3 
             bb_vals = circshift(boxbehnken(dim, 1),1)
-            _X = zeros((size(bb_vals)[1], dim)) 
-            _y = zeros((size(bb_vals)[1], 1)) 
-            bb_vals = bb_vals .* (delta_x * (xlimits[:, 2] - xlimits[:, 1]))' #smt calls this sign. I've called it bb_vals
-            _X = X[i, :]' .+ bb_vals 
-            bb_vals =  bb_vals .* grads[i,:]'  
-            _y = y[i, :] .+ sum(bb_vals, dims=2) 
+            # _X = zeros((size(bb_vals)[1], dim)) 
+            # _y = zeros((size(bb_vals)[1], 1)) 
+            # bb_vals = bb_vals .* (delta_x * (xlimits[:, 2] - xlimits[:, 1]))' #smt calls this sign. I've called it bb_vals
+            # _X = X[i, :]' .+ bb_vals 
+            # bb_vals =  bb_vals .* grads[i,:]'  
+            # _y = y[i, :] .+ sum(bb_vals, dims=2) 
         else
-            println("GEKPLS for less than 3 dimensions is coming soon")
+            bb_vals = [
+                0.0 0.0; #center
+                1.0 0.0; #right
+                0.0 1.0; #up
+                -1.0 0.0; #left
+                0.0 -1.0; #down
+                1.0 1.0; #right up
+                -1.0 1.0; #left up
+                -1.0 -1.0; #left down
+                1.0 -1.0; #right down
+            ] 
         end
+        _X = zeros((size(bb_vals)[1], dim)) 
+        _y = zeros((size(bb_vals)[1], 1)) 
+        bb_vals = bb_vals .* (delta_x * (xlimits[:, 2] - xlimits[:, 1]))' #smt calls this sign. I've called it bb_vals
+        _X = X[i, :]' .+ bb_vals 
+        bb_vals =  bb_vals .* grads[i,:]'  
+        _y = y[i, :] .+ sum(bb_vals, dims=2)
+        
         #_pls.fit(_X, _y) #todo: relic from sklearn versiom. REMOVE.
         #coeff_pls[:, :, i] = _pls.x_rotations_ #size of _pls.x_rotations_ is (dim, n_comp) #todo: relic from sklearn versiom. REMOVE.
+
         coeff_pls[:, :, i] = _modified_pls(_X, _y, n_comp)
+
         if extra_points != 0
             start_index = max(1, length(coeff_pls[:,1,i])-extra_points+1) #todo: evaluate just once
             max_coeff = sortperm(broadcast(abs,coeff_pls[:,1,i]))[start_index:end]
@@ -107,6 +127,7 @@ function _ge_compute_pls(X, y, n_comp, grads, delta_x, xlimits, extra_points)
         X = [X; XX]
         y = [y; yy]
     end
+
     pls_mean = mean(broadcast(abs,coeff_pls),dims=3)
     return pls_mean, X, y
 end
@@ -312,6 +333,7 @@ function componentwise_distance_PLS(D, corr, n_comp, coeff_pls)
     else #abs_exp
         D_corr = abs.(D) * abs.(coeff_pls)
     end
+
     return D_corr
 end
 
@@ -370,14 +392,16 @@ function _reduced_likelihood_function(theta, kernel_type, d, nt, ij, y_norma, no
     #equivalent of https://github.com/SMTorg/smt/blob/4a4df255b9259965439120091007f9852f41523e/smt/surrogate_models/krg_based.py#L247
     reduced_likelihood_function_value = -Inf
     nugget = 1000000.0 * eps() #a jitter for numerical stability; reducing the multiple from 1000000.0 results in positive definite error for Cholesky decomposition;
-    if kernel_type =="squar_exp" #todo - add other kernel types like abs_exp, matern52 etc.
+    if kernel_type =="squar_exp" #todo - add other kernel type abs_exp etc.
         r = squar_exp(theta,d)
     end
     R = (I + zeros(nt,nt)) .* (1.0 + nugget + noise)
+
     for k in 1:size(ij)[1] #todo - speed up using @inbounds / @simd where required
         R[ij[k,1],ij[k,2]]=r[k]
         R[ij[k,2],ij[k,1]]=r[k]
     end
+
     C = cholesky(R).L #todo - #values diverge at this point from SMT code; verify impact
     F = ones(nt,1) #todo - examine if this should be a parameter for this function
     Ft = C\F 
