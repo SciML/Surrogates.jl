@@ -56,7 +56,7 @@ x_test = sample(n_test,lb,ub,GoldenSample())
 X_test = vector_of_tuples_to_matrix(x_test) 
 y_true = water_flow.(x_test)
 
-@testset "Water Flow Function Test (dimensions = 8; n_comp = 2; extra_points = 2; initial_theta=.01)" begin 
+@testset "Test 1: Water Flow Function Test (dimensions = 8; n_comp = 2; extra_points = 2)" begin 
     n_comp = 2
     delta_x = 0.0001
     extra_points = 2
@@ -64,11 +64,10 @@ y_true = water_flow.(x_test)
     g = GEKPLS(X, y, grads, n_comp, delta_x, xlimits, extra_points, initial_theta) #change hard-coded 2 param to variable
     y_pred = g(X_test)
     rmse = sqrt(sum(((y_pred - y_true).^2)/n_test))
-    println("rmse: ", rmse) # ~.039 with custom Julia PLS regressor; ~.029 with sklearn's PLS regressor
-    @test isapprox(rmse, 0.02, atol=0.02)
+    @test isapprox(rmse, 0.03, atol=0.02) #rmse: 0.039
 end
 
-@testset "Water Flow Function Test (dimensions = 8; n_comp = 3; extra_points = 2; initial_theta=.01)" begin 
+@testset "Test 2: Water Flow Function Test (dimensions = 8; n_comp = 3; extra_points = 2)" begin 
     n_comp = 3
     delta_x = 0.0001
     extra_points = 2
@@ -76,11 +75,10 @@ end
     g = GEKPLS(X, y, grads, n_comp, delta_x, xlimits, extra_points, initial_theta) #change hard-coded 2 param to variable
     y_pred = g(X_test)
     rmse = sqrt(sum(((y_pred - y_true).^2)/n_test))
-    println("rmse: ", rmse) # ~.027 with our custom PLS regressor; ~0.024 with sklearn's PLS regressor
-    @test isapprox(rmse, 0.02, atol=0.01)
+    @test isapprox(rmse, 0.02, atol=0.01) #rmse: 0.027
 end
 
-@testset "Water Flow Function Test (dimensions = 8; n_comp = 3; extra_points = 3; initial_theta=.01)" begin 
+@testset "Test 3: Water Flow Function Test (dimensions = 8; n_comp = 3; extra_points = 3)" begin 
     n_comp = 3
     delta_x = 0.0001
     extra_points = 3
@@ -88,8 +86,7 @@ end
     g = GEKPLS(X, y, grads, n_comp, delta_x, xlimits, extra_points, initial_theta) 
     y_pred = g(X_test)
     rmse = sqrt(sum(((y_pred - y_true).^2)/n_test))
-    println("rmse: ", rmse) # ~.027 with our custom PLS regressor; ~0.024 with sklearn's PLS regressor
-    @test isapprox(rmse, 0.02, atol=0.01)
+    @test isapprox(rmse, 0.02, atol=0.01) #rmse: 0.027
 end
 
 # welded beam tests
@@ -116,7 +113,18 @@ x_test = sample(n_test,lb,ub,GoldenSample())
 X_test = vector_of_tuples_to_matrix(x_test) 
 y_true = welded_beam.(x_test)
 
-@testset "Welded Beam Function Test (dimensions = 3; n_comp = 2; extra_points = 2; initial_theta=.01)" begin 
+@testset "Test 4: Welded Beam Function Test (dimensions = 3; n_comp = 3; extra_points = 2)" begin 
+    n_comp = 3
+    delta_x = 0.0001
+    extra_points = 2
+    initial_theta = 0.01
+    g = GEKPLS(X, y, grads, n_comp, delta_x, xlimits, extra_points, initial_theta) 
+    y_pred = g(X_test)
+    rmse = sqrt(sum(((y_pred - y_true).^2)/n_test))
+    @test isapprox(rmse, 39.0, atol=0.5) #rmse: 38.988
+end
+
+@testset "Test 5: Welded Beam Function Test (dimensions = 3; n_comp = 2; extra_points = 2)" begin 
     n_comp = 2
     delta_x = 0.0001
     extra_points = 2
@@ -124,12 +132,11 @@ y_true = welded_beam.(x_test)
     g = GEKPLS(X, y, grads, n_comp, delta_x, xlimits, extra_points, initial_theta) 
     y_pred = g(X_test)
     rmse = sqrt(sum(((y_pred - y_true).^2)/n_test))
-    println("rmse: ", rmse) #rmse: 39.48
-    @test isapprox(rmse, 39.5, atol=0.5)
+    @test isapprox(rmse, 39.5, atol=0.5) #rmse: 39.481
 end
 
 #increasing extra points increases accuracy
-@testset "Welded Beam Function Test (dimensions = 3; n_comp = 2; extra_points = 4; initial_theta=.01)" begin 
+@testset "Test 6: Welded Beam Function Test (dimensions = 3; n_comp = 2; extra_points = 4)" begin 
     n_comp = 2
     delta_x = 0.0001
     extra_points = 4
@@ -137,8 +144,7 @@ end
     g = GEKPLS(X, y, grads, n_comp, delta_x, xlimits, extra_points, initial_theta) 
     y_pred = g(X_test)
     rmse = sqrt(sum(((y_pred - y_true).^2)/n_test))
-    println("rmse: ", rmse) #rmse: 37.87
-    @test isapprox(rmse, 37.5, atol=0.5)
+    @test isapprox(rmse, 37.5, atol=0.5) #rmse: 37.87
 end
 
 #sphere function tests
@@ -161,7 +167,7 @@ x_test = sample(n_test,lb,ub,GoldenSample())
 X_test = vector_of_tuples_to_matrix(x_test) 
 y_true = sphere_function.(x_test)
 
-@testset "Sphere Function Test (dimensions = 3; n_comp = 2; extra_points = 2; initial_theta = .01" begin
+@testset "Test 7: Sphere Function Test (dimensions = 3; n_comp = 2; extra_points = 2)" begin
     n_comp = 2
     delta_x = 0.0001
     extra_points = 2
@@ -169,17 +175,15 @@ y_true = sphere_function.(x_test)
     g = GEKPLS(X, y, grads, n_comp, delta_x, xlimits, extra_points, initial_theta) 
     y_pred = g(X_test)
     rmse = sqrt(sum(((y_pred - y_true).^2)/n_test))
-    println("rmse: ", rmse) #rmse: 0.0008
-    @test isapprox(rmse, 0.001, atol=0.05)
+    @test isapprox(rmse, 0.001, atol=0.05) #rmse: 0.00083
 end
 
 #2D
-n = 20 # for vals > ~30 and < ~7 "PosDefException: matrix is not Hermitian; Cholesky factorization failed."
+n = 50 
 d = 2
 lb = [-10.0, -10.0]
 ub = [10.0, 10.0]
 x = sample(n,lb,ub,SobolSample())
-#x[1] = (-1.0, 2.0) #LINE INSERTED BY VIK FOR TEMPORARY TESTING OF 2D BB OUTPUTS; DELETE [ALSO, setting to (-1.0, 1.0) throws error]
 X = vector_of_tuples_to_matrix(x)
 grads = vector_of_tuples_to_matrix2(gradient.(sphere_function, x))
 y = reshape(sphere_function.(x),(size(x,1),1))
@@ -189,7 +193,7 @@ x_test = sample(n_test,lb,ub,GoldenSample())
 X_test = vector_of_tuples_to_matrix(x_test) 
 y_true = sphere_function.(x_test)
 
-@testset "Sphere Function Test (dimensions = 2; n_comp = 2; extra_points = 2; initial_theta = .01" begin
+@testset "Test 8: Sphere Function Test (dimensions = 2; n_comp = 2; extra_points = 2" begin
     n_comp = 2
     delta_x = 0.0001
     extra_points = 2
@@ -197,6 +201,5 @@ y_true = sphere_function.(x_test)
     g = GEKPLS(X, y, grads, n_comp, delta_x, xlimits, extra_points, initial_theta) 
     y_pred = g(X_test)
     rmse = sqrt(sum(((y_pred - y_true).^2)/n_test))
-    println("rmse: ", rmse) #rmse: 0.01
-    @test isapprox(rmse, 0.1, atol=0.5)
+    @test isapprox(rmse, 0.1, atol=0.5) #rmse: 0.0022
 end

@@ -106,7 +106,7 @@ function _ge_compute_pls(X, y, n_comp, grads, delta_x, xlimits, extra_points)
         _X = X[i, :]' .+ bb_vals 
         bb_vals =  bb_vals .* grads[i,:]'  
         _y = y[i, :] .+ sum(bb_vals, dims=2)
-        
+
         #_pls.fit(_X, _y) #todo: relic from sklearn versiom. REMOVE.
         #coeff_pls[:, :, i] = _pls.x_rotations_ #size of _pls.x_rotations_ is (dim, n_comp) #todo: relic from sklearn versiom. REMOVE.
 
@@ -420,20 +420,24 @@ end
 
 
 ### MODIFIED PLS BELOW ###
+# Note for developers: 
+# The code below is a simplified version of 
+# SKLearn's PLS
+# https://github.com/scikit-learn/scikit-learn/blob/80598905e/sklearn/cross_decomposition/_pls.py
+
 
 function _center_scale(X,Y)
     x_mean = mean(X, dims = 1)
     X .-= x_mean
     y_mean = mean(Y, dims = 1)
     Y .-= y_mean
-
     x_std = std(X, dims = 1) 
     x_std[x_std .== 0] .= 1.0
     X ./= x_std
     y_std = std(Y, dims = 1) 
     y_std[y_std .==0] .= 1.0
     Y ./= y_std
-    return X, Y, x_mean, y_mean, x_std, y_std
+    return X,Y
 end
 
 function _svd_flip_1d(u,v)
@@ -446,36 +450,35 @@ function _svd_flip_1d(u,v)
 end
 
 function _get_first_singular_vectors_power_method(X,Y)
-    #todo - do a check for Y residual being constant 
-    #as in https://github.com/scikit-learn/scikit-learn/blob/80598905e517759b4696c74ecc35c6e2eb508cff/sklearn/cross_decomposition/_pls.py#L66
-    x_weights_old = 100
+    my_eps = eps()
     y_score = vec(Y)
     x_weights = transpose(X)y_score / dot(y_score, y_score)
-    my_eps = eps()
     x_weights ./= (sqrt(dot(x_weights,x_weights)) + my_eps)
     x_score = X * x_weights
     y_weights = transpose(Y)x_score / dot(x_score, x_score)
     y_score = Y * y_weights / (dot(y_weights, y_weights) + my_eps)
-    x_weights_diff = x_weights .- x_weights_old
+    #Equivalent in intent to https://github.com/scikit-learn/scikit-learn/blob/80598905e517759b4696c74ecc35c6e2eb508cff/sklearn/cross_decomposition/_pls.py#L66
+    if any(isnan.(x_weights)) || any(isnan.(y_weights))
+        return false, false
+    end
     return x_weights, y_weights
 end
 
 function _modified_pls(X,Y, n_components)
     x_weights_  = zeros(size(X,2),n_components)
-    y_weights_  = zeros(1, n_components)
     _x_scores = zeros(size(X,1), n_components)
-    _y_scores = zeros(size(Y,1), n_components)
     x_loadings_ = zeros(size(X,2),n_components)
-    y_loadings_ = zeros(1, n_components)
+    Xk, Yk = _center_scale(X,Y)
 
-    Xk, Yk, x_mean, y_mean, x_std, y_std = _center_scale(X,Y)
-    
     for k in 1:n_components
-        x_weights, y_weights = _get_first_singular_vectors_power_method(Xk,Yk)
+        x_weights, y_weights = _get_first_singular_vectors_power_method(Xk,Yk) 
+
+        if x_weights == false
+            break
+        end        
+        
         _svd_flip_1d(x_weights, y_weights) 
         x_scores = Xk * x_weights
-        y_ss = dot(y_weights, y_weights)
-        y_scores = (Yk * y_weights) ./ y_ss
         x_loadings = transpose(x_scores)Xk / dot(x_scores, x_scores)
         Xk = Xk - (x_scores * x_loadings)
         y_loadings = transpose(x_scores)*Yk / dot(x_scores, x_scores)
