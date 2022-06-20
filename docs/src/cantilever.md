@@ -1,4 +1,4 @@
-# Cantilever beam function
+# Cantilever Beam Function
 The Cantilever Beam function is defined as:
 ``f(w,t) = \frac{4L^3}{Ewt}*\sqrt{ (\frac{Y}{t^2})^2 + (\frac{X}{w^2})^2 }``
 With parameters L,E,X and Y given.

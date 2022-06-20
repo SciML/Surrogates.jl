@@ -1,4 +1,4 @@
-# Ackley function
+# Ackley Function
 
 The Ackley function is defined as:
 ``f(x) = -a*exp(-b\sqrt{\frac{1}{d}\sum_{i=1}^d x_i^2}) - exp(\frac{1}{d} \sum_{i=1}^d cos(cx_i)) + a + exp(1)``

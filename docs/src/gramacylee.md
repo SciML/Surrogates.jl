@@ -1,6 +1,6 @@
 ## Gramacy & Lee Function
 
-Gramacy & Lee Function is a continues function. It is not convex. The function is defined on 1-dimensional space. It is an unimodal. The function can be defined on any input domain but it is usually evaluated on
+Gramacy & Lee Function is a continuous function. It is not convex. The function is defined on 1-dimensional space. It is an unimodal. The function can be defined on any input domain but it is usually evaluated on
 ``x \in [-0.5, 2.5]``.
 
 The Gramacy & Lee is as follows:
