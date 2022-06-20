@@ -15,7 +15,7 @@ y = f.(x)
 my_radial_basis = RadialBasis(x,y,lb,ub)
 
 #I want an approximation at 5.4
-approx = my_radial_basis(5.4)</code></pre><pre><code class="language-none">206.83097750423212</code></pre><p>Let&#39;s now see an example in 2D.</p><pre><code class="language-julia">using Surrogates
+approx = my_radial_basis(5.4)</code></pre><pre><code class="language-none">206.8309775042323</code></pre><p>Let&#39;s now see an example in 2D.</p><pre><code class="language-julia">using Surrogates
 using LinearAlgebra
 f = x -&gt; x[1]*x[2]
 lb = [1.0,2.0]
@@ -25,7 +25,7 @@ y = f.(x)
 my_radial_basis = RadialBasis(x,y,lb,ub)
 
 #I want an approximation at (1.0,1.4)
-approx = my_radial_basis((1.0,1.4))</code></pre><pre><code class="language-none">7.393838848775807</code></pre><h2 id="Kriging-standard-error-1"><a class="docs-heading-anchor" href="#Kriging-standard-error-1">Kriging standard error</a><a class="docs-heading-anchor-permalink" href="#Kriging-standard-error-1" title="Permalink"></a></h2><p>Let&#39;s now use the Kriging surrogate, which is a single-output Gaussian process. This surrogate has a nice feature: not only does it approximate the solution at a point, it also calculates the standard error at such point. Let&#39;s see an example:</p><pre><code class="language-julia">using Surrogates
+approx = my_radial_basis((1.0,1.4))</code></pre><pre><code class="language-none">7.393838848775778</code></pre><h2 id="Kriging-standard-error-1"><a class="docs-heading-anchor" href="#Kriging-standard-error-1">Kriging standard error</a><a class="docs-heading-anchor-permalink" href="#Kriging-standard-error-1" title="Permalink"></a></h2><p>Let&#39;s now use the Kriging surrogate, which is a single-output Gaussian process. This surrogate has a nice feature: not only does it approximate the solution at a point, it also calculates the standard error at such point. Let&#39;s see an example:</p><pre><code class="language-julia">using Surrogates
 f = x -&gt; exp(x)*x^2+x^3
 lb = 0.0
 ub = 10.0
@@ -38,7 +38,7 @@ my_krig = Kriging(x,y,lb,ub,p=p)
 approx = my_krig(5.4)
 
 #I want to find the standard error at 5.4
-std_err = std_error_at_point(my_krig,5.4)</code></pre><pre><code class="language-none">9306.787648369676</code></pre><p>Let&#39;s now optimize the Kriging surrogate using Lower confidence bound method, this is just a one-liner:</p><pre><code class="language-julia">surrogate_optimize(f,LCBS(),lb,ub,my_krig,UniformSample())</code></pre><p>Surrogate optimization methods have two purposes: they both sample the space in unknown regions and look for the minima at the same time.</p><h2 id="Lobachevsky-integral-1"><a class="docs-heading-anchor" href="#Lobachevsky-integral-1">Lobachevsky integral</a><a class="docs-heading-anchor-permalink" href="#Lobachevsky-integral-1" title="Permalink"></a></h2><p>The Lobachevsky surrogate has the nice feature of having a closed formula for its integral, which is something that other surrogates are missing. Let&#39;s compare it with QuadGK:</p><pre><code class="language-">using Surrogates
+std_err = std_error_at_point(my_krig,5.4)</code></pre><pre><code class="language-none">11366.527976803163</code></pre><p>Let&#39;s now optimize the Kriging surrogate using Lower confidence bound method, this is just a one-liner:</p><pre><code class="language-julia">surrogate_optimize(f,LCBS(),lb,ub,my_krig,UniformSample())</code></pre><p>Surrogate optimization methods have two purposes: they both sample the space in unknown regions and look for the minima at the same time.</p><h2 id="Lobachevsky-integral-1"><a class="docs-heading-anchor" href="#Lobachevsky-integral-1">Lobachevsky integral</a><a class="docs-heading-anchor-permalink" href="#Lobachevsky-integral-1" title="Permalink"></a></h2><p>The Lobachevsky surrogate has the nice feature of having a closed formula for its integral, which is something that other surrogates are missing. Let&#39;s compare it with QuadGK:</p><pre><code class="language-">using Surrogates
 using QuadGK
 obj = x -&gt; 3*x + log(x)
 a = 1.0
@@ -77,4 +77,4 @@ sgt = NeuralSurrogate(x_train, y_train, bounds..., model=model, loss=loss, opt=o
 
 # Testing the new model
 x_test = sample(30, bounds..., SobolSample())
-test_error = mean(abs2, sgt(x)[1] - f(x) for x in x_test)</code></pre></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../">« Overview</a><a class="docs-footer-nextpage" href="../radials/">Radials »</a></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> on <span class="colophon-date" title="Monday 6 June 2022 01:08">Monday 6 June 2022</span>. Using Julia version 1.7.3.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+test_error = mean(abs2, sgt(x)[1] - f(x) for x in x_test)</code></pre></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../">« Overview</a><a class="docs-footer-nextpage" href="../radials/">Radials »</a></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> on <span class="colophon-date" title="Monday 20 June 2022 21:51">Monday 20 June 2022</span>. Using Julia version 1.7.3.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
