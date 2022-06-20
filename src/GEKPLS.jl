@@ -107,13 +107,13 @@ function _ge_compute_pls(X, y, n_comp, grads, delta_x, xlimits, extra_points)
         bb_vals =  bb_vals .* grads[i,:]'  
         _y = y[i, :] .+ sum(bb_vals, dims=2)
 
-        #_pls.fit(_X, _y) #todo: relic from sklearn versiom. REMOVE.
-        #coeff_pls[:, :, i] = _pls.x_rotations_ #size of _pls.x_rotations_ is (dim, n_comp) #todo: relic from sklearn versiom. REMOVE.
+        #_pls.fit(_X, _y) # relic from sklearn versiom; retained for future reference.
+        #coeff_pls[:, :, i] = _pls.x_rotations_ #relic from sklearn versiom; retained for future reference.
 
-        coeff_pls[:, :, i] = _modified_pls(_X, _y, n_comp)
+        coeff_pls[:, :, i] = _modified_pls(_X, _y, n_comp) #_modified_pls returns the equivalent of SKLearn's _pls.x_rotations_
 
         if extra_points != 0
-            start_index = max(1, length(coeff_pls[:,1,i])-extra_points+1) #todo: evaluate just once
+            start_index = max(1, length(coeff_pls[:,1,i])-extra_points+1) 
             max_coeff = sortperm(broadcast(abs,coeff_pls[:,1,i]))[start_index:end]
             for ii in max_coeff
                 XX = [XX; transpose(X[i, :])]
@@ -420,7 +420,7 @@ end
 
 
 ### MODIFIED PLS BELOW ###
-# Note for developers: 
+
 # The code below is a simplified version of 
 # SKLearn's PLS
 # https://github.com/scikit-learn/scikit-learn/blob/80598905e/sklearn/cross_decomposition/_pls.py
@@ -476,7 +476,7 @@ function _modified_pls(X,Y, n_components)
         if x_weights == false
             break
         end        
-        
+
         _svd_flip_1d(x_weights, y_weights) 
         x_scores = Xk * x_weights
         x_loadings = transpose(x_scores)Xk / dot(x_scores, x_scores)

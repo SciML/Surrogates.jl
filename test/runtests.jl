@@ -15,16 +15,6 @@ for pkg in ["SurrogatesAbstractGPs", "SurrogatesFlux", "SurrogatesPolyChaos",
     end
 end
 
-<<<<<<< HEAD
-@time @safetestset "Radials.jl" begin include("Radials.jl") end
-@time @safetestset "Kriging.jl" begin include("Kriging.jl") end
-@time @safetestset "Sampling" begin include("sampling.jl") end
-@time @safetestset "Optimization" begin include("optimization.jl") end
-@time @safetestset "LinearSurrogate" begin include("linearSurrogate.jl") end
-@time @safetestset "Lobachevsky" begin include("lobachevsky.jl") end
-@time @safetestset "InverseDistanceSurrogate" begin include("inverseDistanceSurrogate.jl") end
-@time @safetestset "SecondOrderPolynomialSurrogate" begin include("secondOrderPolynomialSurrogate.jl") end
-=======
 @time @safetestset  "GEKPLS.jl" begin include("GEKPLS.jl") end
 @time @safetestset  "Radials.jl" begin include("Radials.jl") end
 @time @safetestset  "Kriging.jl" begin include("Kriging.jl") end
@@ -34,7 +24,6 @@ end
 @time @safetestset  "Lobachevsky" begin include("lobachevsky.jl") end
 @time @safetestset  "InverseDistanceSurrogate" begin include("inverseDistanceSurrogate.jl") end
 @time @safetestset  "SecondOrderPolynomialSurrogate" begin include("secondOrderPolynomialSurrogate.jl") end
->>>>>>> 838e708 (add more tests for GEKPLS)
 # @time @safetestset  "AD_Compatibility" begin include("AD_compatibility.jl") end
 @time @safetestset "Wendland" begin include("Wendland.jl") end
 @time @safetestset "VariableFidelity" begin include("VariableFidelity.jl") end
