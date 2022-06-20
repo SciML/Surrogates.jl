@@ -45,7 +45,7 @@ plot!(xs, f.(xs), label="True function", legend=:top)
 plot!(xs, kriging_surrogate.(xs), label="Surrogate function", ribbon=p->std_error_at_point(kriging_surrogate, p), legend=:top)
 ```
 ### Optimizing
-Having built a surrogate, we can now use it to search for minimas in our original function `f`.
+Having built a surrogate, we can now use it to search for minima in our original function `f`.
 
 To optimize using our surrogate we call `surrogate_optimize` method. We choose to use Stochastic RBF as optimization technique and again Sobol sampling as sampling technique.
 
@@ -119,7 +119,7 @@ plot(p1, p2, title="Surrogate") # hide
 ```
 
 ### Optimizing
-With our surrogate we can now search for the minimas of the branin function.
+With our surrogate we can now search for the minima of the branin function.
 
 Notice how the new sampled points, which were created during the optimization process, are appended to the `xys` array.
 This is why its size changes.

@@ -1,6 +1,6 @@
 The **Inverse Distance Surrogate** is an interpolating method and in this method the unknown points are calculated with a weighted average of the sampling points. This model uses the inverse distance between the unknown and training points to predict the unknown point. We do not need to fit this model because the response of an unknown point x is computed with respect to the distance between x and the training points.
 
-Let's optimize following function to use Inverse Distance Surrogate:
+Let's optimize the following function to use Inverse Distance Surrogate:
 
 $f(x) = sin(x) + sin(x)^2 + sin(x)^3$.
 
@@ -51,7 +51,7 @@ plot!(InverseDistance, label="Surrogate function",  xlims=(lower_bound, upper_bo
 
 ## Optimizing
 
-Having built a surrogate, we can now use it to search for minimas in our original function `f`.
+Having built a surrogate, we can now use it to search for minima in our original function `f`.
 
 To optimize using our surrogate we call `surrogate_optimize` method. We choose to use Stochastic RBF as optimization technique and again Sobol sampling as sampling technique.
 
@@ -124,7 +124,7 @@ plot(p1, p2, title="Surrogate") # hide
 
 
 ### Optimizing
-With our surrogate we can now search for the minimas of the function.
+With our surrogate we can now search for the minima of the function.
 
 Notice how the new sampled points, which were created during the optimization process, are appended to the `xys` array.
 This is why its size changes.
