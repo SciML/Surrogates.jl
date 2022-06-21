@@ -21,8 +21,28 @@ mutable struct GEKPLS <: AbstractSurrogate
     y_std::Float64 #17
 end
 
+function bounds_error(x, xl)
+    num_x_rows = size(x,1)
+    num_dim = size(xl, 1)
+    for i in 1:num_x_rows
+        for j in 1:num_dim
+            if (x[i, j] < xl[j,1] || x[i,j] > xl[j,2])
+                return true
+            end
+        end
+    end
+    return false
+end
+
 #constructor for GEKPLS Struct
 function GEKPLS(X, y, grads, n_comp, delta_x, xlimits, extra_points, θ)
+    
+    #ensure that X values are within the upper and lower bounds
+    if bounds_error(X, xlimits)
+        println("X values outside bounds")
+        return
+    end
+
     theta = [θ for i in 1:n_comp]
     pls_mean, X_after_PLS, y_after_PLS = _ge_compute_pls(X, y, n_comp, grads, delta_x, xlimits, extra_points)
     X_after_std, y_after_std, X_offset, y_mean, X_scale, y_std = standardization(X_after_PLS, y_after_PLS)
@@ -49,6 +69,32 @@ function (g::GEKPLS)(X_test)
     y_ = (f * g.beta) + (r * g.gamma)
     y = g.y_mean .+ g.y_std * y_
     return y
+end
+
+
+function add_point!(g::GEKPLS, new_x, new_y, new_grads)
+    if new_x in g.x
+        println("Adding a sample that already exists. Cannot build GEKPLS")
+        return
+    end
+
+    if bounds_error(new_x, g.xl)
+        println("x values outside bounds")
+        return 
+    end
+
+
+    g.x = vcat(g.x, new_x)
+    g.y = vcat(g.y, new_y)
+    g.grads = vcat(g.grads, new_grads)
+    pls_mean, X_after_PLS, y_after_PLS = _ge_compute_pls(g.x, g.y, g.num_components, g.grads, g.delta, g.xl, g.extra_points)
+    g.X_after_std, y_after_std, g.X_offset, g.y_mean, g.X_scale, g.y_std = standardization(X_after_PLS, y_after_PLS)
+    D, ij = cross_distances(g.X_after_std)
+    #pls_mean_reshaped = reshape(pls_mean, (size(g.x, 2), g.num_components))
+    g.pls_mean = reshape(pls_mean, (size(g.x, 2), g.num_components))
+    d = componentwise_distance_PLS(D, "squar_exp", g.num_components, g.pls_mean)
+    nt, nd = size(X_after_PLS)
+    g.beta, g.gamma, g.reduced_likelihood_function_value = _reduced_likelihood_function(g.theta, "squar_exp", d, nt, ij, y_after_std)
 end
 
 function _ge_compute_pls(X, y, n_comp, grads, delta_x, xlimits, extra_points)
