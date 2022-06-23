@@ -6,7 +6,7 @@ export NeuralSurrogate
 using Flux
 using Flux: @epochs
 
-mutable struct NeuralSurrogate{X,Y,M,L,O,P,N,A,U} <: AbstractSurrogate
+mutable struct NeuralSurrogate{X, Y, M, L, O, P, N, A, U} <: AbstractSurrogate
     x::X
     y::Y
     model::M
@@ -16,34 +16,35 @@ mutable struct NeuralSurrogate{X,Y,M,L,O,P,N,A,U} <: AbstractSurrogate
     n_echos::N
     lb::A
     ub::U
- end
+end
 
+"""
+NeuralSurrogate(x,y,lb,ub,model,loss,opt,n_echos)
 
- """
- NeuralSurrogate(x,y,lb,ub,model,loss,opt,n_echos)
+- model: Flux layers
+- loss: loss function
+- opt: optimization function
 
- - model: Flux layers
- - loss: loss function
- - opt: optimization function
+"""
+function NeuralSurrogate(x, y, lb, ub; model = Chain(Dense(length(x[1]), 1), first),
+                         loss = (x, y) -> Flux.mse(model(x), y), opt = Descent(0.01),
+                         n_echos::Int = 1)
+    X = vec.(collect.(x))
+    data = zip(X, y)
+    ps = Flux.params(model)
+    @epochs n_echos Flux.train!(loss, ps, data, opt)
+    return NeuralSurrogate(x, y, model, loss, opt, ps, n_echos, lb, ub)
+end
 
- """
- function NeuralSurrogate(x,y,lb,ub; model = Chain(Dense(length(x[1]),1), first), loss = (x,y) -> Flux.mse(model(x), y),opt = Descent(0.01),n_echos::Int = 1)
-     X = vec.(collect.(x))
-     data = zip(X, y)
-     ps = Flux.params(model)
-     @epochs n_echos Flux.train!(loss, ps, data, opt)
-     return NeuralSurrogate(x,y,model,loss,opt,ps,n_echos,lb,ub)
- end
-
- function (my_neural::NeuralSurrogate)(val)
-     v = [val...]
-     out = my_neural.model(v)
-     if length(out) == 1
-         return out[1]
-     else
-         return out
-     end
- end
+function (my_neural::NeuralSurrogate)(val)
+    v = [val...]
+    out = my_neural.model(v)
+    if length(out) == 1
+        return out[1]
+    else
+        return out
+    end
+end
 
 function add_point!(my_n::NeuralSurrogate, x_new, y_new)
     if eltype(x_new) == eltype(my_n.x)

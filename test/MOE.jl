@@ -17,8 +17,6 @@ my_local_kind = [InverseDistanceStructure(p = 1.0),
                  KrigingStructure(p=1.0, theta=1.0)]
 my_moe = MOE(x,y,lb,ub,k = 2,local_kind = my_local_kind)
 
-
-
 #ND MOE
 n = 30
 lb = [0.0,0.0]

@@ -8,15 +8,15 @@ using AbstractGPs
 mutable struct AbstractGPSurrogate{X, Y, GP, GP_P, S} <: AbstractSurrogate
     x::X
     y::Y
-    gp::GP 
+    gp::GP
     gp_posterior::GP_P
     Σy::S
- end
+end
 
 # constructor
 function AbstractGPSurrogate(x, y; gp = GP(Matern52Kernel()), Σy = 0.1)
-    AbstractGPSurrogate(x, y, gp, posterior(gp(x, Σy),y), Σy)
- end
+    AbstractGPSurrogate(x, y, gp, posterior(gp(x, Σy), y), Σy)
+end
 
 # predictor 
 function (g::AbstractGPSurrogate)(val)
@@ -34,7 +34,7 @@ function add_point!(g::AbstractGPSurrogate, new_x, new_y)
     x_copy = copy(g.x)
     push!(x_copy, new_x)
     y_copy = copy(g.y)
-    push!(y_copy, new_y) 
+    push!(y_copy, new_y)
     updated_posterior = posterior(g.gp(x_copy, g.Σy), y_copy)
     g.x, g.y, g.gp_posterior = x_copy, y_copy, updated_posterior
     nothing
