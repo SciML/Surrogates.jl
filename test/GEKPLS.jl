@@ -201,7 +201,6 @@ y_true = sphere_function.(x_test)
     g = GEKPLS(X, y, grads, n_comp, delta_x, xlimits, extra_points, initial_theta) 
     y_pred = g(X_test)
     rmse = sqrt(sum(((y_pred - y_true).^2)/n_test))
-    println("rmse: ", rmse)
     @test isapprox(rmse, 0.1, atol=0.5) #rmse: 0.0022
 end
 

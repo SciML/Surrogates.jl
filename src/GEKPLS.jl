@@ -1,24 +1,24 @@
 using LinearAlgebra
 using Statistics
 
-mutable struct GEKPLS <: AbstractSurrogate
-    x::Matrix{Float64} #1
-    y::Matrix{Float64} #2
-    grads::Matrix{Float64} #3
-    xl::Matrix{Float64} #xlimits #4
-    delta:: Float64 #5
-    extra_points::Int64 #6
-    num_components::Int64 #7
-    beta::Vector{Float64} #8
-    gamma::Matrix{Float64} #9
-    theta::Vector{Float64} #10
-    reduced_likelihood_function_value:: Float64 #11
-    X_offset::Matrix{Float64} #12
-    X_scale::Matrix{Float64} #13
-    X_after_std::Matrix{Float64} #14 - X after standardization
-    pls_mean::Matrix{Float64} #15
-    y_mean::Float64 #16
-    y_std::Float64 #17
+mutable struct GEKPLS{T<:AbstractFloat} <: AbstractSurrogate
+    x::Matrix{T} #1
+    y::Matrix{T} #2
+    grads::Matrix{T} #3
+    xl::Matrix{T} #xlimits #4
+    delta:: T #5
+    extra_points::Int #6
+    num_components::Int #7
+    beta::Vector{T} #8
+    gamma::Matrix{T} #9
+    theta::Vector{T} #10
+    reduced_likelihood_function_value:: T #11
+    X_offset::Matrix{T} #12
+    X_scale::Matrix{T} #13
+    X_after_std::Matrix{T} #14 - X after standardization
+    pls_mean::Matrix{T} #15
+    y_mean::T #16
+    y_std::T #17
 end
 
 function bounds_error(x, xl)
@@ -90,7 +90,6 @@ function add_point!(g::GEKPLS, new_x, new_y, new_grads)
     pls_mean, X_after_PLS, y_after_PLS = _ge_compute_pls(g.x, g.y, g.num_components, g.grads, g.delta, g.xl, g.extra_points)
     g.X_after_std, y_after_std, g.X_offset, g.y_mean, g.X_scale, g.y_std = standardization(X_after_PLS, y_after_PLS)
     D, ij = cross_distances(g.X_after_std)
-    #pls_mean_reshaped = reshape(pls_mean, (size(g.x, 2), g.num_components))
     g.pls_mean = reshape(pls_mean, (size(g.x, 2), g.num_components))
     d = componentwise_distance_PLS(D, "squar_exp", g.num_components, g.pls_mean)
     nt, nd = size(X_after_PLS)
@@ -121,18 +120,11 @@ function _ge_compute_pls(X, y, n_comp, grads, delta_x, xlimits, extra_points)
     nt, dim = size(X)
     XX = zeros(0,dim)
     yy = zeros(0,size(y)[2])
-    #_pls = PLSRegression(n_comp) #todo: relic from sklearn versiom. REMOVE.
     coeff_pls = zeros((dim, n_comp, nt))
     
     for i in 1:nt
         if dim >= 3 
             bb_vals = circshift(boxbehnken(dim, 1),1)
-            # _X = zeros((size(bb_vals)[1], dim)) 
-            # _y = zeros((size(bb_vals)[1], 1)) 
-            # bb_vals = bb_vals .* (delta_x * (xlimits[:, 2] - xlimits[:, 1]))' #smt calls this sign. I've called it bb_vals
-            # _X = X[i, :]' .+ bb_vals 
-            # bb_vals =  bb_vals .* grads[i,:]'  
-            # _y = y[i, :] .+ sum(bb_vals, dims=2) 
         else
             bb_vals = [
                 0.0 0.0; #center
@@ -152,12 +144,11 @@ function _ge_compute_pls(X, y, n_comp, grads, delta_x, xlimits, extra_points)
         _X = X[i, :]' .+ bb_vals 
         bb_vals =  bb_vals .* grads[i,:]'  
         _y = y[i, :] .+ sum(bb_vals, dims=2)
-
+        
         #_pls.fit(_X, _y) # relic from sklearn versiom; retained for future reference.
         #coeff_pls[:, :, i] = _pls.x_rotations_ #relic from sklearn versiom; retained for future reference.
 
         coeff_pls[:, :, i] = _modified_pls(_X, _y, n_comp) #_modified_pls returns the equivalent of SKLearn's _pls.x_rotations_
-
         if extra_points != 0
             start_index = max(1, length(coeff_pls[:,1,i])-extra_points+1) 
             max_coeff = sortperm(broadcast(abs,coeff_pls[:,1,i]))[start_index:end]
@@ -443,7 +434,7 @@ function _reduced_likelihood_function(theta, kernel_type, d, nt, ij, y_norma, no
     end
     R = (I + zeros(nt,nt)) .* (1.0 + nugget + noise)
 
-    for k in 1:size(ij)[1] #todo - speed up using @inbounds / @simd where required
+    for k in 1:size(ij)[1] 
         R[ij[k,1],ij[k,2]]=r[k]
         R[ij[k,2],ij[k,1]]=r[k]
     end
