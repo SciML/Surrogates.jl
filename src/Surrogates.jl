@@ -81,7 +81,7 @@ function PolyChaosStructure(; op)
 end
 
 export current_surrogates
-export GEKPLS 
+export GEKPLS
 export RadialBasisStructure, KrigingStructure, LinearStructure, InverseDistanceStructure
 export LobachevskyStructure, NeuralStructure, RandomForestStructure,
        SecondOrderPolynomialStructure

@@ -4,7 +4,7 @@ pages = [
         "Basics" => "tutorials.md",
         "Radials" => "radials.md",
         "Kriging" => "kriging.md",
-        "Gaussian Process" =>"abstractgps.md",
+        "Gaussian Process" => "abstractgps.md",
         "Lobachevsky" => "lobachevsky.md",
         "Linear" => "LinearSurrogate.md",
         "InverseDistance" => "InverseDistance.md",
@@ -15,13 +15,13 @@ pages = [
         "Polynomial Chaos" => "polychaos.md",
         "Variable Fidelity" => "variablefidelity.md",
         "Gradient Enhanced Kriging" => "gek.md",
-        "GEKPLS" => "gekpls.md"
-       ]
+        "GEKPLS" => "gekpls.md",
+    ]
     "User guide" => [
         "Samples" => "samples.md",
         "Surrogates" => "surrogate.md",
-        "Optimization" => "optimizations.md"
-        ]
+        "Optimization" => "optimizations.md",
+    ]
     "Benchmarks" => [
         "Sphere function" => "sphere_function.md",
         "Lp norm" => "lp.md",
@@ -34,7 +34,7 @@ pages = [
         "Ackley function" => "ackley.md",
         "Gramacy & Lee Function" => "gramacylee.md",
         "Salustowicz Benchmark" => "Salustowicz.md",
-        "Multi objective optimization" => "multi_objective_opt.md"
-        ]
-    "Contributing" => "contributing.md"
+        "Multi objective optimization" => "multi_objective_opt.md",
     ]
+    "Contributing" => "contributing.md"
+]
