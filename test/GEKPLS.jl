@@ -44,7 +44,6 @@ function water_flow(x)
 end
 
 n = 1000
-d = 8
 lb = [0.05, 100, 63070, 990, 63.1, 700, 1120, 9855]
 ub = [0.15, 50000, 115600, 1110, 116, 820, 1680, 12045]
 x = sample(n, lb, ub, SobolSample())
@@ -103,7 +102,6 @@ function welded_beam(x)
 end
 
 n = 1000
-d = 3
 lb = [0.125, 5.0, 5.0]
 ub = [1.0, 10.0, 10.0]
 x = sample(n, lb, ub, SobolSample())
@@ -157,7 +155,6 @@ end
 
 ## 3D
 n = 100
-d = 3
 lb = [-5.0, -5.0, -5.0]
 ub = [5.0, 5.0, 5.0]
 x = sample(n, lb, ub, SobolSample())
@@ -183,7 +180,6 @@ end
 
 ## 2D
 n = 50
-d = 2
 lb = [-10.0, -10.0]
 ub = [10.0, 10.0]
 x = sample(n, lb, ub, SobolSample())

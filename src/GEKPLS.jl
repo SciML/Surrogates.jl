@@ -73,7 +73,7 @@ function GEKPLS(X, y, grads, n_comp, delta_x, xlimits, extra_points, θ)
         y_mean,
         y_std,
     )
-    println("struct created")
+    
 end
 
 
@@ -140,6 +140,7 @@ function _ge_compute_pls(X, y, n_comp, grads, delta_x, xlimits, extra_points)
     # this function is equivalent to a combination of 
     # https://github.com/SMTorg/smt/blob/f124c01ffa78c04b80221dded278a20123dac742/smt/utils/kriging_utils.py#L1036
     # and https://github.com/SMTorg/smt/blob/f124c01ffa78c04b80221dded278a20123dac742/smt/surrogate_models/gekpls.py#L48
+
     nt, dim = size(X)
     XX = zeros(0, dim)
     yy = zeros(0, size(y)[2])
@@ -167,10 +168,6 @@ function _ge_compute_pls(X, y, n_comp, grads, delta_x, xlimits, extra_points)
         _X = X[i, :]' .+ bb_vals
         bb_vals = bb_vals .* grads[i, :]'
         _y = y[i, :] .+ sum(bb_vals, dims = 2)
-
-        #_pls.fit(_X, _y) # relic from sklearn versiom; retained for future reference.
-        #coeff_pls[:, :, i] = _pls.x_rotations_ #relic from sklearn versiom; retained for future reference.
-
         coeff_pls[:, :, i] = _modified_pls(_X, _y, n_comp) #_modified_pls returns the equivalent of SKLearn's _pls.x_rotations_
         if extra_points != 0
             start_index = max(1, length(coeff_pls[:, 1, i]) - extra_points + 1)
