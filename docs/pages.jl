@@ -14,6 +14,7 @@ pages = ["index.md"
              "Polynomial Chaos" => "polychaos.md",
              "Variable Fidelity" => "variablefidelity.md",
              "Gradient Enhanced Kriging" => "gek.md",
+             "GEKPLS" => "gekpls.md",
          ]
          "User guide" => [
              "Samples" => "samples.md",

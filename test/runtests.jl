@@ -15,6 +15,7 @@ for pkg in ["SurrogatesAbstractGPs", "SurrogatesFlux", "SurrogatesPolyChaos",
     end
 end
 
+@time @safetestset "GEKPLS.jl" begin include("GEKPLS.jl") end
 @time @safetestset "Radials.jl" begin include("Radials.jl") end
 @time @safetestset "Kriging.jl" begin include("Kriging.jl") end
 @time @safetestset "Sampling" begin include("sampling.jl") end
