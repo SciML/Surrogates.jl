@@ -75,10 +75,11 @@ y_true = water_flow.(x_test)
 n_comp = 2
 delta_x = 0.0001
 extra_points = 2
-initial_theta = 0.01
+initial_theta = [0.01 for i in 1:n_comp]
 g = GEKPLS(X, y, grads, n_comp, delta_x, xlimits, extra_points, initial_theta)
 y_pred = g(X_test)
 rmse = sqrt(sum(((y_pred - y_true).^2)/n_test)) #root mean squared error
-println(rmse)
+println(rmse) #0.0347
+
 ```
 
