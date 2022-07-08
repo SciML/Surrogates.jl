@@ -35,7 +35,7 @@ function bounds_error(x, xl)
 end
 
 #constructor for GEKPLS Struct
-function GEKPLS(X, y, grads, n_comp, delta_x, xlimits, extra_points, θ)
+function GEKPLS(X, y, grads, n_comp, delta_x, xlimits, extra_points, theta)
 
     #ensure that X values are within the upper and lower bounds
     if bounds_error(X, xlimits)
@@ -43,7 +43,6 @@ function GEKPLS(X, y, grads, n_comp, delta_x, xlimits, extra_points, θ)
         return
     end
 
-    theta = [θ for i in 1:n_comp]
     pls_mean, X_after_PLS, y_after_PLS = _ge_compute_pls(X, y, n_comp, grads, delta_x,
                                                          xlimits, extra_points)
     X_after_std, y_after_std, X_offset, y_mean, X_scale, y_std = standardization(X_after_PLS,
