@@ -108,11 +108,10 @@ end
 function _calc_kriging_coeffs(x, y, p::Number, theta::Number)
     n = length(x)
     R = zeros(eltype(x[1]), n, n)
-    @inbounds for i in 1:n
-        for j in 1:n
-            R[i, j] = exp(-theta * abs(x[i] - x[j])^p)
-        end
-    end
+
+    R = [exp(-theta * abs(x[i] - x[j])^p)
+         for j in 1:n, i in 1:n]
+
     one = ones(eltype(x[1]), n, 1)
     one_t = one'
     inverse_of_R = inv(R)
@@ -146,22 +145,28 @@ end
 function _calc_kriging_coeffs(x, y, p, theta)
     n = length(x)
     d = length(x[1])
-    R = zeros(float(eltype(x[1])), n, n)
-    @inbounds for i in 1:n
-        for j in 1:n
-            sum = zero(eltype(x[1]))
-            for l in 1:d
-                sum = sum + theta[l] * norm(x[i][l] - x[j][l])^p[l]
-            end
-            R[i, j] = exp(-sum)
-        end
-    end
+
+    R = [let
+             sum = zero(eltype(x[1]))
+             for l in 1:d
+                 sum = sum + theta[l] * norm(x[i][l] - x[j][l])^p[l]
+             end
+             exp(-sum)
+         end
+         for j in 1:n, i in 1:n]
+
     one = ones(n, 1)
     one_t = one'
     inverse_of_R = inv(R)
+
     mu = (one_t * inverse_of_R * y) / (one_t * inverse_of_R * one)
-    b = inverse_of_R * (y - one * mu)
-    sigma = ((y - one * mu)' * inverse_of_R * (y - one * mu)) / n
+
+    y_minus_1μ = y - one * mu
+
+    b = inverse_of_R * y_minus_1μ
+
+    sigma = (y_minus_1μ' * inverse_of_R * y_minus_1μ) / n
+
     mu[1], b, sigma[1], inverse_of_R
 end
 
