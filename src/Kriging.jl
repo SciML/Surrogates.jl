@@ -88,7 +88,8 @@ Constructor for type Kriging.
    smoothness of the function being approximated, 0-> rough  2-> C^infinity
 - theta: value > 0 modeling how much the function is changing in the i-th variable.
 """
-function Kriging(x, y, lb::Number, ub::Number; p = 2.0, theta = 0.5 / std(x)^p)
+function Kriging(x, y, lb::Number, ub::Number; p = 2.0,
+                 theta = 0.5 / max(1e-6 * abs(ub - lb), std(x))^p)
     if length(x) != length(unique(x))
         println("There exists a repetion in the samples, cannot build Kriging.")
         return
@@ -98,7 +99,7 @@ function Kriging(x, y, lb::Number, ub::Number; p = 2.0, theta = 0.5 / std(x)^p)
         throw(ArgumentError("Hyperparameter p must be between 0 and 2! Got: $p."))
     end
 
-    if theta < 0
+    if theta ≤ 0
         throw(ArgumentError("Hyperparameter theta must be positive! Got: $theta"))
     end
 
@@ -152,7 +153,8 @@ Constructor for Kriging surrogate.
           changing in the i-th variable.
 """
 function Kriging(x, y, lb, ub; p = 2 .* collect(one.(x[1])),
-                 theta = [0.5 / std(x_i[i] for x_i in x)^p[i] for i in 1:length(x[1])])
+                 theta = [0.5 / max(1e-6 * norm(ub .- lb), std(x_i[i] for x_i in x))^p[i]
+                          for i in 1:length(x[1])])
     if length(x) != length(unique(x))
         println("There exists a repetition in the samples, cannot build Kriging.")
         return
@@ -163,7 +165,7 @@ function Kriging(x, y, lb, ub; p = 2 .* collect(one.(x[1])),
             throw(ArgumentError("All p must be between 0 and 2! Got: $p."))
         end
 
-        if theta[i] < 0.0
+        if theta[i] ≤ 0.0
             throw(ArgumentError("All theta must be positive! Got: $theta."))
         end
     end
@@ -188,8 +190,8 @@ function _calc_kriging_coeffs(x, y, p, theta)
     # Estimate nugget based on maximum allowed condition number
     # This regularizes R to allow for points being close to eachother without R becoming
     # singular, at the cost of slightly relaxing the interpolation condition
-
     λ = eigen(R).values
+
     λmax = λ[end]
     λmin = λ[1]
 

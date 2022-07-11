@@ -1,8 +1,5 @@
 using Surrogates
 using LinearAlgebra
-#using Flux
-#using Flux: @epochs
-#using PolyChaos
 
 #######SRBF############
 ##### 1D #####
@@ -210,11 +207,9 @@ lb = [-1.0, x2_constraint, -1.0]
 ub = [6.0, x2_constraint, 6.0]
 x = sample(5, lb, ub, sampler)
 y = objective_function_section.(x)
-p = [1.2, 1.2, 1.2]
-theta = [2.0, 2.0, 2.0]
 
 #Kriging
-my_k_EIN_section = Kriging(x, y, lb, ub; p = p)
+my_k_EIN_section = Kriging(x, y, lb, ub)
 # Constrain our sampling to the plane where x[2] = 1
 surrogate_optimize(objective_function_section, EI(), lb, ub, my_k_EIN_section, sampler)
 
