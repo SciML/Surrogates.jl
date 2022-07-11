@@ -25,7 +25,7 @@ pred = my_k(5.5)
 
 @test 238.86 ≤ pred ≤ 722.84
 @test my_k(5.0) ≈ 238.86
-@test std_error_at_point(my_k, 5.0) < 1e-5 * my_k(5.0)
+@test std_error_at_point(my_k, 5.0) < 1e-3 * my_k(5.0)
 
 #WITHOUT ADD POINT
 x = [1.0, 2.0, 3.0]
