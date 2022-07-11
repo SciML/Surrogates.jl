@@ -111,8 +111,26 @@ function _calc_kriging_coeffs(x, y, p::Number, theta::Number)
 
     R = [exp(-theta * abs(x[i] - x[j])^p) for i in 1:n, j in 1:n]
 
-    one = ones(eltype(x[1]), n, 1)
+    # Estimate nugget based on maximum allowed condition number
+    # This regularizes R to allow for points being close to eachother without R becoming
+    # singular, at the cost of slightly relaxing the interpolation condition
+    λ = eigen(R).values
+    λmax = λ[end]
+    λmin = λ[1]
+
+    κmax = 1e8
+    λdiff = λmax - κmax * λmin
+    if λdiff ≥ 0
+        nugget = λdiff / (κmax - 1)
+    else
+        nugget = 0.0
+    end
+
+    one = ones(eltype(x[1]), n)
     one_t = one'
+
+    R = R + Diagonal(nugget * one)
+
     inverse_of_R = inv(R)
 
     mu = (one_t * inverse_of_R * y) / (one_t * inverse_of_R * one)
@@ -167,8 +185,26 @@ function _calc_kriging_coeffs(x, y, p, theta)
          end
          for j in 1:n, i in 1:n]
 
-    one = ones(n, 1)
+    # Estimate nugget based on maximum allowed condition number
+    # This regularizes R to allow for points being close to eachother without R becoming
+    # singular, at the cost of slightly relaxing the interpolation condition
+
+    λ = eigen(R).values
+    λmax = λ[end]
+    λmin = λ[1]
+
+    κmax = 1e8
+    λdiff = λmax - κmax * λmin
+    if λdiff ≥ 0
+        nugget = λdiff / (κmax - 1)
+    else
+        nugget = 0.0
+    end
+
+    one = ones(eltype(x[1]), n)
     one_t = one'
+
+    R = R + Diagonal(nugget * one[:, 1])
     inverse_of_R = inv(R)
 
     mu = (one_t * inverse_of_R * y) / (one_t * inverse_of_R * one)
