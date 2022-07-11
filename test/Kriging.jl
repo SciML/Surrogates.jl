@@ -17,7 +17,7 @@ my_p = 1.9
 @test_throws ArgumentError my_k=Kriging(x, y, lb, ub, theta = -2.0)
 
 my_k = Kriging(x, y, lb, ub, p = my_p)
-@test my_k.theta ≈ 0.5 / var(x)
+@test my_k.theta ≈ 0.5 * std(x)^(-my_p)
 
 add_point!(my_k, 4.0, 75.68)
 add_point!(my_k, [5.0, 6.0], [238.86, 722.84])
@@ -107,6 +107,10 @@ std_err = std_error_at_point(my_k, (10.0, 11.0, 12.0))
 
 #test kwargs ND (hyperparameter initialization)
 kwarg_krig_ND = Kriging(x, y, lb, ub)
+
+@test_throws ArgumentError Kriging(x, y, lb, ub, p = 3 * my_p)
+@test_throws ArgumentError Kriging(x, y, lb, ub, p = -my_p)
+@test_throws ArgumentError Kriging(x, y, lb, ub, theta = -my_theta)
 
 d = length(x[3])
 

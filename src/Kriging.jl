@@ -88,7 +88,7 @@ Constructor for type Kriging.
    smoothness of the function being approximated, 0-> rough  2-> C^infinity
 - theta: value > 0 modeling how much the function is changing in the i-th variable.
 """
-function Kriging(x, y, lb::Number, ub::Number; p = 2.0, theta = 0.5 / var(x))
+function Kriging(x, y, lb::Number, ub::Number; p = 2.0, theta = 0.5 / std(x)^p)
     if length(x) != length(unique(x))
         println("There exists a repetion in the samples, cannot build Kriging.")
         return
@@ -134,7 +134,7 @@ Constructor for Kriging surrogate.
           changing in the i-th variable.
 """
 function Kriging(x, y, lb, ub; p = 2 .* collect(one.(x[1])),
-                 theta = [0.5 / var(x_i[i] for x_i in x) for i in 1:length(x[1])])
+                 theta = [0.5 / std(x_i[i] for x_i in x)^p[i] for i in 1:length(x[1])])
     if length(x) != length(unique(x))
         println("There exists a repetition in the samples, cannot build Kriging.")
         return
