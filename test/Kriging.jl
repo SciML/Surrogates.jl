@@ -12,9 +12,9 @@ y = f.(x)
 my_p = 1.9
 
 # Check input validation for 1D Kriging
-@test_throws ArgumentError my_k = Kriging(x, y, lb, ub, p = -1.0)
-@test_throws ArgumentError my_k = Kriging(x, y, lb, ub, p = 3.0)
-@test_throws ArgumentError my_k = Kriging(x, y, lb, ub, theta = -2.0)
+@test_throws ArgumentError my_k=Kriging(x, y, lb, ub, p = -1.0)
+@test_throws ArgumentError my_k=Kriging(x, y, lb, ub, p = 3.0)
+@test_throws ArgumentError my_k=Kriging(x, y, lb, ub, theta = -2.0)
 
 my_k = Kriging(x, y, lb, ub, p = my_p)
 @test my_k.theta ≈ 0.5 / var(x)
@@ -22,7 +22,6 @@ my_k = Kriging(x, y, lb, ub, p = my_p)
 add_point!(my_k, 4.0, 75.68)
 add_point!(my_k, [5.0, 6.0], [238.86, 722.84])
 pred = my_k(5.5)
-
 
 @test 238.86 ≤ pred ≤ 722.84
 @test my_k(5.0) ≈ 238.86
@@ -112,4 +111,4 @@ kwarg_krig_ND = Kriging(x, y, lb, ub)
 d = length(x[3])
 
 @test all(==(2.0), kwarg_krig_ND.p)
-@test all(kwarg_krig_ND.theta .≈ [0.5/var(x_i[ℓ] for x_i in x) for ℓ in 1:3])
+@test all(kwarg_krig_ND.theta .≈ [0.5 / var(x_i[ℓ] for x_i in x) for ℓ in 1:3])

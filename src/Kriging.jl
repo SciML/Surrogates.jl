@@ -1,7 +1,8 @@
 #=
-One-dimensional Kriging method, following this paper:
+One-dimensional Kriging method, following these papers:
+"Efficient Global Optimization of Expensive Black Box Functions" and
 "A Taxonomy of Global Optimization Methods Based on Response Surfaces"
-by DONALD R. JONES
+both by DONALD R. JONES
 =#
 mutable struct Kriging{X, Y, L, U, P, T, M, B, S, R} <: AbstractSurrogate
     x::X
@@ -35,23 +36,21 @@ function std_error_at_point(k::Kriging, val)
     n = length(k.x)
     d = length(k.x[1])
     r = zeros(eltype(k.x[1]), n, 1)
-    r = [
-        let
-            sum = zero(eltype(k.x[1]))
-            for l in 1:d
-                sum = sum + k.theta[l] * norm(val[l] - k.x[i][l])^(k.p[l])
-            end
-            exp(-sum)
-        end
-    for i in 1:n]
+    r = [let
+             sum = zero(eltype(k.x[1]))
+             for l in 1:d
+                 sum = sum + k.theta[l] * norm(val[l] - k.x[i][l])^(k.p[l])
+             end
+             exp(-sum)
+         end
+         for i in 1:n]
 
     one = ones(eltype(k.x[1]), n, 1)
     one_t = one'
     a = r' * k.inverse_of_R * r
     b = one_t * k.inverse_of_R * one
-    c = one_t * k.inverse_of_R * r
 
-    mean_squared_error = k.sigma * (1 - a[1] + (1 - c[1])^2 / b[1])
+    mean_squared_error = k.sigma * (1 - a[1] + (1 - a[1])^2 / b[1])
     return sqrt(abs(mean_squared_error))
 end
 
@@ -68,16 +67,13 @@ end
 """
 function std_error_at_point(k::Kriging, val::Number)
     n = length(k.x)
-    r = [
-        exp(-k.theta * abs(val - k.x[i])^k.p) for i in 1:n
-    ]
+    r = [exp(-k.theta * abs(val - k.x[i])^k.p) for i in 1:n]
     one = ones(eltype(k.x), n)
     one_t = one'
     a = r' * k.inverse_of_R * r
     b = one_t * k.inverse_of_R * one
-    c = one_t * k.inverse_of_R * r
 
-    mean_squared_error = k.sigma * (1 - a[1] + (1 - c[1])^2 / b[1])
+    mean_squared_error = k.sigma * (1 - a[1] + (1 - a[1])^2 / b[1])
     return sqrt(abs(mean_squared_error))
 end
 
@@ -92,7 +88,7 @@ Constructor for type Kriging.
    smoothness of the function being approximated, 0-> rough  2-> C^infinity
 - theta: value > 0 modeling how much the function is changing in the i-th variable.
 """
-function Kriging(x, y, lb::Number, ub::Number; p = 2.0, theta = 0.5/var(x))
+function Kriging(x, y, lb::Number, ub::Number; p = 2.0, theta = 0.5 / var(x))
     if length(x) != length(unique(x))
         println("There exists a repetion in the samples, cannot build Kriging.")
         return
@@ -113,9 +109,7 @@ end
 function _calc_kriging_coeffs(x, y, p::Number, theta::Number)
     n = length(x)
 
-    R = [
-        exp(-theta * abs(x[i] - x[j])^p) for i in 1:n, j in 1:n
-    ]
+    R = [exp(-theta * abs(x[i] - x[j])^p) for i in 1:n, j in 1:n]
 
     one = ones(eltype(x[1]), n, 1)
     one_t = one'
@@ -140,8 +134,7 @@ Constructor for Kriging surrogate.
           changing in the i-th variable.
 """
 function Kriging(x, y, lb, ub; p = 2 .* collect(one.(x[1])),
-                theta = [0.5 / var(x_i[i] for x_i in x) for i in 1:length(x[1])])
-
+                 theta = [0.5 / var(x_i[i] for x_i in x) for i in 1:length(x[1])])
     if length(x) != length(unique(x))
         println("There exists a repetition in the samples, cannot build Kriging.")
         return

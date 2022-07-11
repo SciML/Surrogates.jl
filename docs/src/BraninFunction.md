@@ -40,29 +40,29 @@ lower_bound = [-5, 0]
 upper_bound = [10,15]
 xys = sample(n_samples, lower_bound, upper_bound, SobolSample())
 zs = branin.(xys);
-x, y = -5:10, 0:15 # hide
-p1 = surface(x, y, (x1,x2) -> branin((x1,x2))) # hide
-xs = [xy[1] for xy in xys] # hide
-ys = [xy[2] for xy in xys] # hide
-scatter!(xs, ys, zs) # hide
-p2 = contour(x, y, (x1,x2) -> branin((x1,x2))) # hide
-scatter!(xs, ys) # hide
-plot(p1, p2, title="True function") # hide
+x, y = -5:10, 0:15
+p1 = surface(x, y, (x1,x2) -> branin((x1,x2)))
+xs = [xy[1] for xy in xys]
+ys = [xy[2] for xy in xys]
+scatter!(xs, ys, zs)
+p2 = contour(x, y, (x1,x2) -> branin((x1,x2)))
+scatter!(xs, ys)
+plot(p1, p2, title="True function")
 ```
 
-Now it's time to fitting different surrogates and then we will plot them.
-We will have a look on `Kriging Surrogate`:
+Now it's time to try fitting different surrogates and then we will plot them.
+We will have a look at the kriging surrogate `Kriging Surrogate`. :
 
 ```@example BraninFunction
-kriging_surrogate = Kriging(xys, zs, lower_bound, upper_bound, p=[1.9, 1.9])
+kriging_surrogate = Kriging(xys, zs, lower_bound, upper_bound)
 ```
 
 ```@example BraninFunction
-p1 = surface(x, y, (x, y) -> kriging_surrogate([x y])) # hide
-scatter!(xs, ys, zs, marker_z=zs) # hide
-p2 = contour(x, y, (x, y) -> kriging_surrogate([x y])) # hide
-scatter!(xs, ys, marker_z=zs) # hide
-plot(p1, p2, title="Kriging Surrogate") # hide
+p1 = surface(x, y, (x, y) -> kriging_surrogate([x y]))
+scatter!(xs, ys, zs, marker_z=zs)
+p2 = contour(x, y, (x, y) -> kriging_surrogate([x y]))
+scatter!(xs, ys, marker_z=zs)
+plot(p1, p2, title="Kriging Surrogate")
 ```
 
 Now, we will have a look on `Inverse Distance Surrogate`:
