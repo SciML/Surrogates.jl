@@ -32,6 +32,8 @@ function PolynomialChaosSurrogate(x, y, lb::Number, ub::Number;
 end
 
 function (pc::PolynomialChaosSurrogate)(val::Number)
+    # Check to make sure dimensions of input matches expected dimension of surrogate
+    _check_dimension(pc, val)
     return sum([pc.coeff[i] * PolyChaos.evaluate(val, pc.ortopolys)[i]
                 for i in 1:(pc.num_of_multi_indexes)])
 end
@@ -66,6 +68,8 @@ function PolynomialChaosSurrogate(x, y, lb, ub;
 end
 
 function (pcND::PolynomialChaosSurrogate)(val)
+    # Check to make sure dimensions of input matches expected dimension of surrogate
+    _check_dimension(pcND, val)
     sum = zero(eltype(val[1]))
     for i in 1:(pcND.num_of_multi_indexes)
         sum = sum +

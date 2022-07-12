@@ -57,6 +57,9 @@ function LobachevskySurrogate(x, y, lb::Number, ub::Number; alpha::Number = 1.0,
 end
 
 function (loba::LobachevskySurrogate)(val::Number)
+    # Check to make sure dimensions of input matches expected dimension of surrogate
+    _check_dimension(loba, val)
+
     return sum(loba.coeff[j] * phi_nj1D(val, loba.x[j], loba.alpha, loba.n)
                for j in 1:length(loba.x))
 end
@@ -95,6 +98,8 @@ function LobachevskySurrogate(x, y, lb, ub; alpha = collect(one.(x[1])), n::Int 
 end
 
 function (loba::LobachevskySurrogate)(val)
+    # Check to make sure dimensions of input matches expected dimension of surrogate
+    _check_dimension(loba, val)
     return sum(loba.coeff[j] * phi_njND(val, loba.x[j], loba.alpha, loba.n)
                for j in 1:length(loba.x))
 end

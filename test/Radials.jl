@@ -92,6 +92,10 @@ y = f.(x)
 my_radial_basis = RadialBasis(x, y, lb, ub, rad = linearRadial())
 @test my_radial_basis((1.0, 2.0)) ≈ 2
 
+# Test that input dimension is properly checked
+@test_throws ArgumentError my_radial_basis((1.0,))
+@test_throws ArgumentError my_radial_basis((2.0, 3.0, 4.0))
+
 # Multi-output
 f = x -> [x^2, x]
 lb = 1.0

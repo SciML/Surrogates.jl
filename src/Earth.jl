@@ -161,6 +161,8 @@ function EarthSurrogate(x, y, lb::Number, ub::Number; penalty::Number = 2.0,
 end
 
 function (earth::EarthSurrogate)(val::Number)
+    # Check to make sure dimensions of input matches expected dimension of surrogate
+    _check_dimension(earth, val)
     return sum([earth.coeff[i] * earth.basis[i](val) for i in 1:length(earth.coeff)]) +
            earth.intercept
 end
@@ -328,6 +330,8 @@ function EarthSurrogate(x, y, lb, ub; penalty::Number = 2.0, n_min_terms::Int = 
 end
 
 function (earth::EarthSurrogate)(val)
+    # Check to make sure dimensions of input matches expected dimension of surrogate
+    _check_dimension(earth, val)
     return sum([earth.coeff[i] * prod([earth.basis[i][j](val[j]) for j in 1:length(val)])
                 for i in 1:length(earth.coeff)]) + earth.intercept
 end

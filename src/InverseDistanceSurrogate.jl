@@ -20,6 +20,9 @@ function InverseDistanceSurrogate(x, y, lb, ub; p::Number = 1.0)
 end
 
 function (inverSurr::InverseDistanceSurrogate)(val)
+    # Check to make sure dimensions of input matches expected dimension of surrogate
+    _check_dimension(inverSurr, val)
+
     if val in inverSurr.x
         return inverSurr.y[findfirst(x -> x == val, inverSurr.x)]
     else

@@ -54,6 +54,9 @@ function _calc_gek_coeffs(x, y, p::Number, theta::Number)
 end
 
 function std_error_at_point(k::GEK, val::Number)
+    # Check to make sure dimensions of input matches expected dimension of surrogate
+    _check_dimension(k, val)
+
     phi(z) = exp(-(abs(z))^k.p)
     nd1 = length(k.y)
     n = length(k.x)
@@ -75,6 +78,9 @@ function std_error_at_point(k::GEK, val::Number)
 end
 
 function (k::GEK)(val::Number)
+    # Check to make sure dimensions of input matches expected dimension of surrogate
+    _check_dimension(k, val)
+
     phi = z -> exp(-(abs(z))^k.p)
     n = length(k.x)
     prediction = zero(eltype(k.x[1]))
@@ -159,6 +165,10 @@ function _calc_gek_coeffs(x, y, p, theta)
 end
 
 function std_error_at_point(k::GEK, val)
+
+    # Check to make sure dimensions of input matches expected dimension of surrogate
+    _check_dimension(k, val)
+
     nd1 = length(k.y)
     n = length(k.x)
     d = length(k.x[1])
@@ -184,6 +194,9 @@ function std_error_at_point(k::GEK, val)
 end
 
 function (k::GEK)(val)
+    # Check to make sure dimensions of input matches expected dimension of surrogate
+    _check_dimension(k, val)
+
     d = length(val)
     n = length(k.x)
     return k.mu +

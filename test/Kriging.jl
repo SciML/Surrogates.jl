@@ -11,13 +11,17 @@ x = sample(5, lb, ub, SobolSample())
 y = f.(x)
 my_p = 1.9
 
-# Check input validation for 1D Kriging
+# Check input validation for constructing 1D Kriging surrogates
 @test_throws ArgumentError my_k=Kriging(x, y, lb, ub, p = -1.0)
 @test_throws ArgumentError my_k=Kriging(x, y, lb, ub, p = 3.0)
 @test_throws ArgumentError my_k=Kriging(x, y, lb, ub, theta = -2.0)
 
 my_k = Kriging(x, y, lb, ub, p = my_p)
 @test my_k.theta ≈ 0.5 * std(x)^(-my_p)
+
+# Check input dimension validation for 1D Kriging surrogates
+@test_throws ArgumentError my_k(rand(3))
+@test_throws ArgumentError my_k(Float64[])
 
 add_point!(my_k, 4.0, 75.68)
 add_point!(my_k, [5.0, 6.0], [238.86, 722.84])
@@ -108,11 +112,18 @@ std_err = std_error_at_point(my_k, (10.0, 11.0, 12.0))
 #test kwargs ND (hyperparameter initialization)
 kwarg_krig_ND = Kriging(x, y, lb, ub)
 
+# Check hyperparameter validation for ND kriging surrogate construction
 @test_throws ArgumentError Kriging(x, y, lb, ub, p = 3 * my_p)
 @test_throws ArgumentError Kriging(x, y, lb, ub, p = -my_p)
 @test_throws ArgumentError Kriging(x, y, lb, ub, theta = -my_theta)
 
-d = length(x[3])
+# Check input dimension validation for ND kriging surrogates
+@test_throws ArgumentError kwarg_krig_ND(1.0)
+@test_throws ArgumentError kwarg_krig_ND([1.0])
+@test_throws ArgumentError kwarg_krig_ND([2.0, 3.0])
+@test_throws ArgumentError kwarg_krig_ND(ones(5))
 
-@test all(==(2.0), kwarg_krig_ND.p)
-@test all(kwarg_krig_ND.theta .≈ [0.5 / var(x_i[ℓ] for x_i in x) for ℓ in 1:3])
+# Test hyperparameter initialization
+d = length(x[3])
+@test all(==(1), kwarg_krig_ND.p)
+@test all(kwarg_krig_ND.theta .≈ [0.5 / std(x_i[ℓ] for x_i in x)^1.99 for ℓ in 1:3])

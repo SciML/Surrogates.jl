@@ -50,6 +50,9 @@ function Wendland(x, y, lb, ub; eps = 1.0, maxiters = 300, tol = 1e-6)
 end
 
 function (wend::Wendland)(val)
+    # Check to make sure dimensions of input matches expected dimension of surrogate
+    _check_dimension(wend, val)
+
     return sum(wend.coeff[j] * _wendland(val, wend.eps) for j in 1:length(wend.coeff))
 end
 

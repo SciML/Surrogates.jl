@@ -1,6 +1,6 @@
 module SurrogatesFlux
 
-import Surrogates: add_point!, AbstractSurrogate
+import Surrogates: add_point!, AbstractSurrogate, _check_dimension
 export NeuralSurrogate
 
 using Flux
@@ -37,6 +37,8 @@ function NeuralSurrogate(x, y, lb, ub; model = Chain(Dense(length(x[1]), 1), fir
 end
 
 function (my_neural::NeuralSurrogate)(val)
+    # Check to make sure dimensions of input matches expected dimension of surrogate
+    _check_dimension(my_neural, val)
     v = [val...]
     out = my_neural.model(v)
     if length(out) == 1
