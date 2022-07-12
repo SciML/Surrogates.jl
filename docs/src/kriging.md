@@ -38,7 +38,7 @@ With our sampled points we can build the Kriging surrogate using the `Kriging` f
 `kriging_surrogate` behaves like an ordinary function which we can simply plot. A nice statistical property of this surrogate is being able to calculate the error of the function at each point, we plot this as a confidence interval using the `ribbon` argument.
 
 ```@example kriging_tutorial1d
-kriging_surrogate = Kriging(x, y, lower_bound, upper_bound, p=1.9);
+kriging_surrogate = Kriging(x, y, lower_bound, upper_bound);
 
 plot(x, y, seriestype=:scatter, label="Sampled points", xlims=(lower_bound, upper_bound), ylims=(-7, 17), legend=:top)
 plot!(xs, f.(xs), label="True function", legend=:top)
@@ -107,7 +107,7 @@ plot(p1, p2, title="True function") # hide
 Using the sampled points we build the surrogate, the steps are analogous to the 1-dimensional case.
 
 ```@example kriging_tutorialnd
-kriging_surrogate = Kriging(xys, zs, lower_bound, upper_bound, p=[1.9, 1.9])
+kriging_surrogate = Kriging(xys, zs, lower_bound, upper_bound, p=[2.0, 2.0], theta=[0.03, 0.003])
 ```
 
 ```@example kriging_tutorialnd

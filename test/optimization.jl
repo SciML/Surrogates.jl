@@ -1,8 +1,5 @@
 using Surrogates
 using LinearAlgebra
-using Flux
-using Flux: @epochs
-using PolyChaos
 
 #######SRBF############
 ##### 1D #####
@@ -21,18 +18,32 @@ a = 2
 b = 6
 
 #Using Kriging
-my_k_SRBF1 = Kriging(x, y, lb, ub)
-surrogate_optimize(objective_function, SRBF(), a, b, my_k_SRBF1, UniformSample())
+
+x = [2.5, 4.0, 6.0]
+y = [6.0, 9.0, 13.0]
+my_k_SRBF1 = Kriging(x, y, lb, ub; p)
+xstar, fstar = surrogate_optimize(objective_function, SRBF(), a, b, my_k_SRBF1,
+                                  UniformSample())
 
 #Using RadialBasis
+
+x = [2.5, 4.0, 6.0]
+y = [6.0, 9.0, 13.0]
 my_rad_SRBF1 = RadialBasis(x, y, a, b, rad = linearRadial())
-surrogate_optimize(objective_function, SRBF(), a, b, my_rad_SRBF1, UniformSample())
+(xstar, fstar) = surrogate_optimize(objective_function, SRBF(), a, b, my_rad_SRBF1,
+                                    UniformSample())
 
+x = [2.5, 4.0, 6.0]
+y = [6.0, 9.0, 13.0]
 my_wend_1d = Wendland(x, y, lb, ub)
-surrogate_optimize(objective_function, SRBF(), a, b, my_wend_1d, UniformSample())
+xstar, fstar = surrogate_optimize(objective_function, SRBF(), a, b, my_wend_1d,
+                                  UniformSample())
 
+x = [2.5, 4.0, 6.0]
+y = [6.0, 9.0, 13.0]
 my_earth1d = EarthSurrogate(x, y, lb, ub)
-surrogate_optimize(objective_function, SRBF(), a, b, my_earth1d, LowDiscrepancySample(2))
+xstar, fstar = surrogate_optimize(objective_function, SRBF(), a, b, my_earth1d,
+                                  LowDiscrepancySample(2))
 
 ##### ND #####
 objective_function_ND = z -> 3 * norm(z) + 1
@@ -40,8 +51,6 @@ lb = [1.0, 1.0]
 ub = [6.0, 6.0]
 x = sample(5, lb, ub, SobolSample())
 y = objective_function_ND.(x)
-p = [1.5, 1.5]
-theta = [1.0, 1.0]
 
 #Kriging
 
@@ -66,6 +75,7 @@ alpha = [2.0, 2.0]
 n = 4
 my_loba_ND = LobachevskySurrogate(x, y, lb, ub)
 surrogate_optimize(objective_function_ND, SRBF(), lb, ub, my_loba_ND, UniformSample())
+
 #Linear
 lb = [1.0, 1.0]
 ub = [6.0, 6.0]
@@ -191,11 +201,9 @@ lb = [-1.0, x2_constraint, -1.0]
 ub = [6.0, x2_constraint, 6.0]
 x = sample(5, lb, ub, sampler)
 y = objective_function_section.(x)
-p = [1.2, 1.2, 1.2]
-theta = [2.0, 2.0, 2.0]
 
 #Kriging
-my_k_EIN_section = Kriging(x, y, lb, ub; p = p)
+my_k_EIN_section = Kriging(x, y, lb, ub)
 # Constrain our sampling to the plane where x[2] = 1
 surrogate_optimize(objective_function_section, EI(), lb, ub, my_k_EIN_section, sampler)
 

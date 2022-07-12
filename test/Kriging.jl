@@ -1,6 +1,8 @@
 using LinearAlgebra
 using Surrogates
 using Test
+using Statistics
+
 #1D
 lb = 0.0
 ub = 10.0
@@ -8,10 +10,22 @@ f = x -> log(x) * exp(x)
 x = sample(5, lb, ub, SobolSample())
 y = f.(x)
 my_p = 1.9
-my_k = Kriging(x, y, lb, ub, p = 2.3)
+
+# Check input validation for 1D Kriging
+@test_throws ArgumentError my_k=Kriging(x, y, lb, ub, p = -1.0)
+@test_throws ArgumentError my_k=Kriging(x, y, lb, ub, p = 3.0)
+@test_throws ArgumentError my_k=Kriging(x, y, lb, ub, theta = -2.0)
+
+my_k = Kriging(x, y, lb, ub, p = my_p)
+@test my_k.theta ≈ 0.5 * std(x)^(-my_p)
+
 add_point!(my_k, 4.0, 75.68)
 add_point!(my_k, [5.0, 6.0], [238.86, 722.84])
 pred = my_k(5.5)
+
+@test 238.86 ≤ pred ≤ 722.84
+@test my_k(5.0) ≈ 238.86
+@test std_error_at_point(my_k, 5.0) < 1e-3 * my_k(5.0)
 
 #WITHOUT ADD POINT
 x = [1.0, 2.0, 3.0]
@@ -19,6 +33,7 @@ y = [4.0, 5.0, 6.0]
 my_p = 1.3
 my_k = Kriging(x, y, lb, ub, p = my_p)
 est = my_k(1.0)
+@test est == 4.0
 std_err = std_error_at_point(my_k, 1.0)
 @test std_err < 10^(-6)
 
@@ -42,7 +57,7 @@ est = my_k(4.0)
 std_err = std_error_at_point(my_k, 4.0)
 @test std_err < 10^(-6)
 
-#Testin kwargs 1D
+#Testing kwargs 1D
 kwar_krig = Kriging(x, y, lb, ub);
 
 #ND
@@ -90,5 +105,14 @@ est = my_k((10.0, 11.0, 12.0))
 std_err = std_error_at_point(my_k, (10.0, 11.0, 12.0))
 @test std_err < 10^(-6)
 
-#test kwargs ND
+#test kwargs ND (hyperparameter initialization)
 kwarg_krig_ND = Kriging(x, y, lb, ub)
+
+@test_throws ArgumentError Kriging(x, y, lb, ub, p = 3 * my_p)
+@test_throws ArgumentError Kriging(x, y, lb, ub, p = -my_p)
+@test_throws ArgumentError Kriging(x, y, lb, ub, theta = -my_theta)
+
+d = length(x[3])
+
+@test all(==(2.0), kwarg_krig_ND.p)
+@test all(kwarg_krig_ND.theta .≈ [0.5 / var(x_i[ℓ] for x_i in x) for ℓ in 1:3])
