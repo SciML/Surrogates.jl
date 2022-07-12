@@ -18,38 +18,32 @@ a = 2
 b = 6
 
 #Using Kriging
-begin
-    x = [2.5, 4.0, 6.0]
-    y = [6.0, 9.0, 13.0]
-    my_k_SRBF1 = Kriging(x, y, lb, ub; p)
-    xstar, fstar = surrogate_optimize(objective_function, SRBF(), a, b, my_k_SRBF1,
-                                      UniformSample())
-end
+
+x = [2.5, 4.0, 6.0]
+y = [6.0, 9.0, 13.0]
+my_k_SRBF1 = Kriging(x, y, lb, ub; p)
+xstar, fstar = surrogate_optimize(objective_function, SRBF(), a, b, my_k_SRBF1,
+                                  UniformSample())
 
 #Using RadialBasis
-begin
-    x = [2.5, 4.0, 6.0]
-    y = [6.0, 9.0, 13.0]
-    my_rad_SRBF1 = RadialBasis(x, y, a, b, rad = linearRadial())
-    (xstar, fstar) = surrogate_optimize(objective_function, SRBF(), a, b, my_rad_SRBF1,
-                                        UniformSample())
-end
 
-begin
-    x = [2.5, 4.0, 6.0]
-    y = [6.0, 9.0, 13.0]
-    my_wend_1d = Wendland(x, y, lb, ub)
-    xstar, fstar = surrogate_optimize(objective_function, SRBF(), a, b, my_wend_1d,
-                                      UniformSample())
-end
+x = [2.5, 4.0, 6.0]
+y = [6.0, 9.0, 13.0]
+my_rad_SRBF1 = RadialBasis(x, y, a, b, rad = linearRadial())
+(xstar, fstar) = surrogate_optimize(objective_function, SRBF(), a, b, my_rad_SRBF1,
+                                    UniformSample())
 
-begin
-    x = [2.5, 4.0, 6.0]
-    y = [6.0, 9.0, 13.0]
-    my_earth1d = EarthSurrogate(x, y, lb, ub)
-    xstar, fstar = surrogate_optimize(objective_function, SRBF(), a, b, my_earth1d,
-                                      LowDiscrepancySample(2))
-end
+x = [2.5, 4.0, 6.0]
+y = [6.0, 9.0, 13.0]
+my_wend_1d = Wendland(x, y, lb, ub)
+xstar, fstar = surrogate_optimize(objective_function, SRBF(), a, b, my_wend_1d,
+                                  UniformSample())
+
+x = [2.5, 4.0, 6.0]
+y = [6.0, 9.0, 13.0]
+my_earth1d = EarthSurrogate(x, y, lb, ub)
+xstar, fstar = surrogate_optimize(objective_function, SRBF(), a, b, my_earth1d,
+                                  LowDiscrepancySample(2))
 
 ##### ND #####
 objective_function_ND = z -> 3 * norm(z) + 1

@@ -113,8 +113,10 @@ function _calc_kriging_coeffs(x, y, p::Number, theta::Number)
     R = [exp(-theta * abs(x[i] - x[j])^p) for i in 1:n, j in 1:n]
 
     # Estimate nugget based on maximum allowed condition number
-    # This regularizes R to allow for points being close to eachother without R becoming
+    # This regularizes R to allow for points being close to each other without R becoming
     # singular, at the cost of slightly relaxing the interpolation condition
+    # Derived from "An analytic comparison of regularization methods for Gaussian Processes"
+    # by Mohammadi et al (https://arxiv.org/pdf/1602.00853.pdf)
     λ = eigen(R).values
     λmax = λ[end]
     λmin = λ[1]
@@ -188,8 +190,10 @@ function _calc_kriging_coeffs(x, y, p, theta)
          for j in 1:n, i in 1:n]
 
     # Estimate nugget based on maximum allowed condition number
-    # This regularizes R to allow for points being close to eachother without R becoming
+    # This regularizes R to allow for points being close to each other without R becoming
     # singular, at the cost of slightly relaxing the interpolation condition
+    # Derived from "An analytic comparison of regularization methods for Gaussian Processes"
+    # by Mohammadi et al (https://arxiv.org/pdf/1602.00853.pdf)
     λ = eigen(R).values
 
     λmax = λ[end]
