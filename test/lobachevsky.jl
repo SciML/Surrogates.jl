@@ -15,6 +15,10 @@ n = 6
 my_loba = LobachevskySurrogate(x, y, a, b, alpha = 2.0, n = 6)
 val = my_loba(3.83)
 
+# Test that input dimension is properly checked for 1D Lobachevsky surrogates
+@test_throws ArgumentError my_loba(Float64[])
+@test_throws ArgumentError my_loba((2.0, 3.0, 4.0))
+
 #1D integral
 int_1D = lobachevsky_integral(my_loba, a, b)
 int = quadgk(obj, a, b)
@@ -35,6 +39,12 @@ y = obj.(x)
 my_loba_ND = LobachevskySurrogate(x, y, lb, ub, alpha = [2.4, 2.4], n = 8)
 my_loba_kwargs = LobachevskySurrogate(x, y, lb, ub)
 pred = my_loba_ND((1.0, 2.0))
+
+# Test that input dimension is properly checked for ND Lobachevsky surrogates
+@test_throws ArgumentError my_loba_ND(Float64[])
+@test_throws ArgumentError my_loba_ND(1.0)
+@test_throws ArgumentError my_loba_ND((2.0, 3.0, 4.0))
+
 #ND
 
 int_ND = lobachevsky_integral(my_loba_ND, lb, ub)

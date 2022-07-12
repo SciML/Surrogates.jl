@@ -11,7 +11,7 @@ x = sample(5, lb, ub, SobolSample())
 y = f.(x)
 my_p = 1.9
 
-# Check input validation for constructing 1D Kriging surrogates
+# Check hyperparameter validation for constructing 1D Kriging surrogates
 @test_throws ArgumentError my_k=Kriging(x, y, lb, ub, p = -1.0)
 @test_throws ArgumentError my_k=Kriging(x, y, lb, ub, p = 3.0)
 @test_throws ArgumentError my_k=Kriging(x, y, lb, ub, theta = -2.0)
@@ -63,6 +63,11 @@ std_err = std_error_at_point(my_k, 4.0)
 
 #Testing kwargs 1D
 kwar_krig = Kriging(x, y, lb, ub);
+
+# Check hyperparameter initialization for 1D Kriging surrogates
+p_expected = 2.0
+@test kwar_krig.p == p_expected
+@test kwar_krig.theta == 0.5 / std(x)^p_expected
 
 #ND
 lb = [0.0, 0.0, 1.0]
@@ -125,5 +130,6 @@ kwarg_krig_ND = Kriging(x, y, lb, ub)
 
 # Test hyperparameter initialization
 d = length(x[3])
-@test all(==(1), kwarg_krig_ND.p)
-@test all(kwarg_krig_ND.theta .≈ [0.5 / std(x_i[ℓ] for x_i in x)^1.99 for ℓ in 1:3])
+p_expected = 2.0
+@test all(==(p_expected), kwarg_krig_ND.p)
+@test all(kwarg_krig_ND.theta .≈ [0.5 / std(x_i[ℓ] for x_i in x)^p_expected for ℓ in 1:3])

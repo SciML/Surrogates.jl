@@ -27,6 +27,10 @@ my_rad = RadialBasis(x, y, lb, ub, rad = cubicRadial())
 q = 2
 my_rad = RadialBasis(x, y, lb, ub, rad = multiquadricRadial())
 
+# Test that input dimension is properly checked for 1D radial surrogates
+@test_throws ArgumentError my_rad(Float64[])
+@test_throws ArgumentError my_rad((2.0, 3.0, 4.0))
+
 #ND
 x = [(1.0, 2.0, 3.0), (4.0, 5.0, 6.0), (7.0, 8.0, 9.0)]
 y = [4.0, 5.0, 6.0]
@@ -92,7 +96,7 @@ y = f.(x)
 my_radial_basis = RadialBasis(x, y, lb, ub, rad = linearRadial())
 @test my_radial_basis((1.0, 2.0)) ≈ 2
 
-# Test that input dimension is properly checked
+# Test that input dimension is properly checked for ND radial surrogates
 @test_throws ArgumentError my_radial_basis((1.0,))
 @test_throws ArgumentError my_radial_basis((2.0, 3.0, 4.0))
 
