@@ -4,7 +4,7 @@ One-dimensional Kriging method, following these papers:
 "A Taxonomy of Global Optimization Methods Based on Response Surfaces"
 both by DONALD R. JONES
 =#
-mutable struct Kriging{X, Y, L, U, P, T, M, B, S, R} <: AbstractSurrogate
+mutable struct Kriging{X, Y, L, U, P, T, M, B, S, R, N} <: AbstractSurrogate
     x::X
     y::Y
     lb::L
@@ -15,6 +15,7 @@ mutable struct Kriging{X, Y, L, U, P, T, M, B, S, R} <: AbstractSurrogate
     b::B
     sigma::S
     inverse_of_R::R
+    noise_variance::N
 end
 
 """
@@ -88,8 +89,8 @@ Constructor for type Kriging.
    smoothness of the function being approximated, 0-> rough  2-> C^infinity
 - theta: value > 0 modeling how much the function is changing in the i-th variable.
 """
-function Kriging(x, y, lb::Number, ub::Number; p = 2.0,
-                 theta = 0.5 / max(1e-6 * abs(ub - lb), std(x))^p)
+function Kriging(x, y, lb::Number, ub::Number; p = 1.99,
+                 theta = 0.5 / max(1e-6 * abs(ub - lb), std(x))^p, noise_variance = 0.0)
     if length(x) != length(unique(x))
         println("There exists a repetion in the samples, cannot build Kriging.")
         return
@@ -103,14 +104,16 @@ function Kriging(x, y, lb::Number, ub::Number; p = 2.0,
         throw(ArgumentError("Hyperparameter theta must be positive! Got: $theta"))
     end
 
-    mu, b, sigma, inverse_of_R = _calc_kriging_coeffs(x, y, p, theta)
-    Kriging(x, y, lb, ub, p, theta, mu, b, sigma, inverse_of_R)
+    mu, b, sigma, inverse_of_R, noise_variance = _calc_kriging_coeffs(x, y, p, theta,
+                                                                      noise_variance)
+    Kriging(x, y, lb, ub, p, theta, mu, b, sigma, inverse_of_R, noise_variance)
 end
 
-function _calc_kriging_coeffs(x, y, p::Number, theta::Number)
+function _calc_kriging_coeffs(x, y, p::Number, theta::Number, noise_variance)
     n = length(x)
 
-    R = [exp(-theta * abs(x[i] - x[j])^p) for i in 1:n, j in 1:n]
+    R = [exp(-theta * abs(x[i] - x[j])^p) + (i == j) * noise_variance
+         for i in 1:n, j in 1:n]
 
     # Estimate nugget based on maximum allowed condition number
     # This regularizes R to allow for points being close to each other without R becoming
@@ -138,8 +141,8 @@ function _calc_kriging_coeffs(x, y, p::Number, theta::Number)
 
     mu = (one_t * inverse_of_R * y) / (one_t * inverse_of_R * one)
     b = inverse_of_R * (y - one * mu)
-    sigma = ((y - one * mu)' * inverse_of_R * (y - one * mu)) / n
-    mu[1], b, sigma[1], inverse_of_R
+    sigma = ((y - one * mu)' * b) / n
+    mu[1], b, sigma[1], inverse_of_R, noise_variance
 end
 
 """
@@ -148,13 +151,13 @@ end
 Constructor for Kriging surrogate.
 
 - (x,y): sampled points
-- p: array of values 0<=p<=2 modeling the
+- p: array of values 0<=p<2 modeling the
      smoothness of the function being approximated in the i-th variable.
      low p -> rough, high p -> smooth
 - theta: array of values > 0 modeling how much the function is
           changing in the i-th variable.
 """
-function Kriging(x, y, lb, ub; p = 2 .* collect(one.(x[1])),
+function Kriging(x, y, lb, ub; p = 1.99 .* collect(one.(x[1])), noise_variance = 0.0,
                  theta = [0.5 / max(1e-6 * norm(ub .- lb), std(x_i[i] for x_i in x))^p[i]
                           for i in 1:length(x[1])])
     if length(x) != length(unique(x))
@@ -172,11 +175,11 @@ function Kriging(x, y, lb, ub; p = 2 .* collect(one.(x[1])),
         end
     end
 
-    mu, b, sigma, inverse_of_R = _calc_kriging_coeffs(x, y, p, theta)
-    Kriging(x, y, lb, ub, p, theta, mu, b, sigma, inverse_of_R)
+    mu, b, sigma, inverse_of_R = _calc_kriging_coeffs(x, y, p, theta, noise_variance)
+    Kriging(x, y, lb, ub, p, theta, mu, b, sigma, inverse_of_R, noise_variance)
 end
 
-function _calc_kriging_coeffs(x, y, p, theta)
+function _calc_kriging_coeffs(x, y, p, theta, noise_variance)
     n = length(x)
     d = length(x[1])
 
@@ -185,7 +188,7 @@ function _calc_kriging_coeffs(x, y, p, theta)
              for l in 1:d
                  sum = sum + theta[l] * norm(x[i][l] - x[j][l])^p[l]
              end
-             exp(-sum)
+             exp(-sum) + (i == j) * noise_variance
          end
          for j in 1:n, i in 1:n]
 
@@ -219,7 +222,7 @@ function _calc_kriging_coeffs(x, y, p, theta)
 
     b = inverse_of_R * y_minus_1μ
 
-    sigma = (y_minus_1μ' * inverse_of_R * y_minus_1μ) / n
+    sigma = (y_minus_1μ' * b) / n
 
     mu[1], b, sigma[1], inverse_of_R
 end
@@ -245,6 +248,7 @@ function add_point!(k::Kriging, new_x, new_y)
         append!(k.x, new_x)
         append!(k.y, new_y)
     end
-    k.mu, k.b, k.sigma, k.inverse_of_R = _calc_kriging_coeffs(k.x, k.y, k.p, k.theta)
+    k.mu, k.b, k.sigma, k.inverse_of_R = _calc_kriging_coeffs(k.x, k.y, k.p, k.theta,
+                                                              k.noise_variance)
     nothing
 end
