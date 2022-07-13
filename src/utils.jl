@@ -10,9 +10,7 @@ function _check_dimension(surr, input)
     input_dim = length(input)
 
     if input_dim != expected_dim
-        throw(
-            ArgumentError("This surrogate expects $expected_dim-dimensional inputs, but the input had dimension $input_dim.")
-        )
+        throw(ArgumentError("This surrogate expects $expected_dim-dimensional inputs, but the input had dimension $input_dim."))
     end
     return nothing
 end

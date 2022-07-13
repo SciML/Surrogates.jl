@@ -23,7 +23,7 @@ Gives the current estimate for array 'val' with respect to the Kriging object k.
 function (k::Kriging)(val)
 
     # Check to make sure dimensions of input matches expected dimension of surrogate
-   _check_dimension(k, val)
+    _check_dimension(k, val)
 
     n = length(k.x)
     d = length(val)

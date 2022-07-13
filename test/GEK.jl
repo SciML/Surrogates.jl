@@ -20,7 +20,6 @@ add_point!(my_gek, 2.5, 2.5^2)
 @test_throws ArgumentError my_gek(Float64[])
 @test_throws ArgumentError my_gek((2.0, 3.0, 4.0))
 
-
 #ND
 n = 10
 d = 2
