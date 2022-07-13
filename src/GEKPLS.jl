@@ -63,9 +63,6 @@ end
 
 # predictor
 function (g::GEKPLS)(X_test)
-    # Check to make sure dimensions of input matches expected dimension of surrogate
-    _check_dimension(g, val)
-
     n_eval, n_features_x = size(X_test)
     X_cont = (X_test .- g.X_offset) ./ g.X_scale
     dx = differences(X_cont, g.X_after_std)
