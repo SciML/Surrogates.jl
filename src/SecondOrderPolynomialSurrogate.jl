@@ -43,6 +43,10 @@ _construct_y_matrix(y, y_el::Number) = y
 _construct_y_matrix(y, y_el) = [y[i][j] for i in 1:length(y), j in 1:length(y_el)]
 
 function (my_second_ord::SecondOrderPolynomialSurrogate)(val)
+
+    # Check to make sure dimensions of input matches expected dimension of surrogate
+    _check_dimension(my_second_ord, val)
+
     #just create the val vector as X and multiply
     d = length(val)
 

@@ -1,6 +1,6 @@
 module SurrogatesRandomForest
 
-import Surrogates: add_point!, AbstractSurrogate
+import Surrogates: add_point!, AbstractSurrogate, _check_dimension
 export RandomForestSurrogate
 
 using XGBoost
@@ -19,6 +19,8 @@ function RandomForestSurrogate(x, y, lb::Number, ub::Number; num_round::Int = 1)
 end
 
 function (rndfor::RandomForestSurrogate)(val::Number)
+    # Check to make sure dimensions of input matches expected dimension of surrogate
+    _check_dimension(rndfor, val)
     return XGBoost.predict(rndfor.bst, reshape([val], 1, 1))[1]
 end
 
@@ -38,6 +40,8 @@ function RandomForestSurrogate(x, y, lb, ub; num_round::Int = 1)
 end
 
 function (rndfor::RandomForestSurrogate)(val)
+    # Check to make sure dimensions of input matches expected dimension of surrogate
+    _check_dimension(rndfor, val)
     return XGBoost.predict(rndfor.bst, reshape(collect(val), 1, length(val)))[1]
 end
 

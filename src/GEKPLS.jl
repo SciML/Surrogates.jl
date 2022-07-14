@@ -61,7 +61,7 @@ function GEKPLS(X, y, grads, n_comp, delta_x, xlimits, extra_points, theta)
     println("struct created")
 end
 
-# predictor 
+# predictor
 function (g::GEKPLS)(X_test)
     n_eval, n_features_x = size(X_test)
     X_cont = (X_test .- g.X_offset) ./ g.X_scale
@@ -124,7 +124,7 @@ function _ge_compute_pls(X, y, n_comp, grads, delta_x, xlimits, extra_points)
         X: Concatenation of XX: [extra_points*nt, dim] - Extra points added (when extra_points > 0) and X
         y: Concatenation of yy[extra_points*nt, 1]- Extra points added (when extra_points > 0) and y
         """
-    # this function is equivalent to a combination of 
+    # this function is equivalent to a combination of
     # https://github.com/SMTorg/smt/blob/f124c01ffa78c04b80221dded278a20123dac742/smt/utils/kriging_utils.py#L1036
     # and https://github.com/SMTorg/smt/blob/f124c01ffa78c04b80221dded278a20123dac742/smt/surrogate_models/gekpls.py#L48
 
@@ -180,7 +180,7 @@ end
 
 ######start of bbdesign######
 
-# 
+#
 # Adapted from 'ExperimentalDesign.jl: Design of Experiments in Julia'
 # https://github.com/phrb/ExperimentalDesign.jl
 
@@ -206,7 +206,7 @@ end
 # COPYRIGHT HOLDERS BE  LIABLE FOR ANY CLAIM, DAMAGES OR  OTHER LIABILITY, WHETHER
 # IN  AN ACTION  OF  CONTRACT, TORT  OR  OTHERWISE,  ARISING FROM,  OUT  OF OR  IN
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-# 
+#
 
 function boxbehnken(matrix_size::Int)
     boxbehnken(matrix_size, matrix_size)
@@ -259,7 +259,7 @@ end
 function standardization(X, y)
     """
     We substract the mean from each variable. Then, we divide the values of each
-    variable by its standard deviation. 
+    variable by its standard deviation.
 
     Parameters
     ----------
@@ -410,7 +410,7 @@ end
 
 function _reduced_likelihood_function(theta, kernel_type, d, nt, ij, y_norma, noise = 0.0)
     """
-    This function is a loose translation of SMT code from 
+    This function is a loose translation of SMT code from
     https://github.com/SMTorg/smt/blob/4a4df255b9259965439120091007f9852f41523e/smt/surrogate_models/krg_based.py#L247
     It  determines the BLUP parameters and evaluates the reduced likelihood function for the given theta.
 
@@ -428,7 +428,7 @@ function _reduced_likelihood_function(theta, kernel_type, d, nt, ij, y_norma, no
     Returns
     -------
     reduced_likelihood_function_value: real
-        - The value of the reduced likelihood function associated with the given autocorrelation parameters theta. 
+        - The value of the reduced likelihood function associated with the given autocorrelation parameters theta.
     beta:  Generalized least-squares regression weights
     gamma: Gaussian Process weights.
 
@@ -464,7 +464,7 @@ end
 
 ### MODIFIED PLS BELOW ###
 
-# The code below is a simplified version of 
+# The code below is a simplified version of
 # SKLearn's PLS
 # https://github.com/scikit-learn/scikit-learn/blob/80598905e/sklearn/cross_decomposition/_pls.py
 

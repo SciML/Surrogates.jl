@@ -12,6 +12,10 @@ val = my_second_order_poly(5.0)
 add_point!(my_second_order_poly, 5.0, 238.86)
 add_point!(my_second_order_poly, [6.0, 7.0], [722.84, 2133.94])
 
+# Test that input dimension is properly checked for 1D SecondOrderPolynomial surrogates
+@test_throws ArgumentError my_second_order_poly(Float64[])
+@test_throws ArgumentError my_second_order_poly((2.0, 3.0, 4.0))
+
 #ND
 lb = [0.0, 0.0]
 ub = [10.0, 10.0]
@@ -22,6 +26,11 @@ my_second_order_poly = SecondOrderPolynomialSurrogate(x, y, lb, ub)
 val = my_second_order_poly((5.0, 7.0))
 add_point!(my_second_order_poly, (5.0, 7.0), 1764.96)
 add_point!(my_second_order_poly, [(1.5, 1.5), (3.4, 5.4)], [1.817, 270.95])
+
+# Test that input dimension is properly checked for ND SecondOrderPolynomial surrogates
+@test_throws ArgumentError my_second_order_poly(Float64[])
+@test_throws ArgumentError my_second_order_poly(2.0)
+@test_throws ArgumentError my_second_order_poly((2.0, 3.0, 4.0))
 
 # Multi-output #98
 f = x -> [x^2, x]

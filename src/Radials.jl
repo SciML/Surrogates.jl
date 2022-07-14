@@ -63,7 +63,7 @@ function _calc_coeffs(x, y, lb, ub, phi, q, scale_factor, sparse)
     if (typeof(y) == Vector{Float64}) #single output case
         coeff = copy(transpose(D \ y))
     else
-        coeff = copy(transpose(D \ Y[1:size(D)[1], :])) #if y is multi output; 
+        coeff = copy(transpose(D \ Y[1:size(D)[1], :])) #if y is multi output;
     end
     return coeff
 end
@@ -155,6 +155,9 @@ end
 Calculates current estimate of value 'val' with respect to the RadialBasis object.
 """
 function (rad::RadialBasis)(val)
+    # Check to make sure dimensions of input matches expected dimension of surrogate
+    _check_dimension(rad, val)
+
     approx = _approx_rbf(val, rad)
     return _match_container(approx, first(rad.y))
 end
@@ -171,9 +174,11 @@ function _approx_rbf(val::Number, rad::R) where {R}
     end
     return approx
 end
+
 function _approx_rbf(val, rad::R) where {R}
     n = length(rad.x)
     d = length(rad.x[1])
+
     q = rad.dim_poly
     num_poly_terms = binomial(q + d, q)
     lb = rad.lb

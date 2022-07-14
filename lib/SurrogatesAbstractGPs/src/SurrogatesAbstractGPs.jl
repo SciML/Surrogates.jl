@@ -1,6 +1,6 @@
 module SurrogatesAbstractGPs
 
-import Surrogates: add_point!, AbstractSurrogate, std_error_at_point
+import Surrogates: add_point!, AbstractSurrogate, std_error_at_point, _check_dimension
 export AbstractGPSurrogate, var_at_point, logpdf_surrogate
 
 using AbstractGPs
@@ -18,14 +18,17 @@ function AbstractGPSurrogate(x, y; gp = GP(Matern52Kernel()), Σy = 0.1)
     AbstractGPSurrogate(x, y, gp, posterior(gp(x, Σy), y), Σy)
 end
 
-# predictor 
+# predictor
 function (g::AbstractGPSurrogate)(val)
+    # Check to make sure dimensions of input matches expected dimension of surrogate
+    _check_dimension(g, val)
+
     return only(mean(g.gp_posterior([val])))
 end
 
 # for add point
-# copies of x and y need to be made because we get 
-#"Error: cannot resize array with shared data " if we push! directly to x and y  
+# copies of x and y need to be made because we get
+#"Error: cannot resize array with shared data " if we push! directly to x and y
 function add_point!(g::AbstractGPSurrogate, new_x, new_y)
     if new_x in g.x
         println("Adding a sample that already exists, cannot build AbstracgGPSurrogate.")
