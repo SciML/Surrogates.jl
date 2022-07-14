@@ -1,4 +1,7 @@
 using Surrogates
+using LinearAlgebra
+
+include("test_utils.jl")
 
 #1D
 x = [1.0, 2.0, 3.0]

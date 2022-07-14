@@ -1,6 +1,8 @@
 using Surrogates
 using Test
 
+include("test_utils.jl")
+
 #1D
 lb = 0.0
 ub = 5.0

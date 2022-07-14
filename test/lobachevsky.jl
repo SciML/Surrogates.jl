@@ -4,6 +4,8 @@ using Test
 using QuadGK
 using Cubature
 
+include("test_utils.jl")
+
 #1D
 obj = x -> 3 * x + log(x)
 a = 1.0

@@ -3,6 +3,8 @@ using Test
 using LinearAlgebra
 using Surrogates
 
+include("test_utils.jl")
+
 #1D
 lb = 0.0
 ub = 4.0

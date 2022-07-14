@@ -1,5 +1,7 @@
 using Surrogates
 
+include("test_utils.jl")
+
 #1D
 x = [1.0, 2.0, 3.0]
 y = [1.5, 3.5, 5.3]

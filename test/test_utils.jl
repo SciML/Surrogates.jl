@@ -1,3 +1,5 @@
+using LinearAlgebra
+
 #=
 Properties that surrogates should typically satisfy:
 

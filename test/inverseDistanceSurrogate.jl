@@ -1,5 +1,8 @@
 using Surrogates
 using Test
+using LinearAlgebra
+
+include("test_utils.jl")
 
 #1D
 obj = x -> sin(x) + sin(x)^2 + sin(x)^3
