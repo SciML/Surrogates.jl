@@ -1,10 +1,12 @@
+using Zygote
+
 #=
-One-dimensional Kriging method, following these papers:
+Kriging (Gaussian process interpolation/regression) method, following these papers:
 "Efficient Global Optimization of Expensive Black Box Functions" and
 "A Taxonomy of Global Optimization Methods Based on Response Surfaces"
 both by DONALD R. JONES
 =#
-mutable struct Kriging{X, Y, L, U, P, T, M, B, S, R} <: AbstractSurrogate
+mutable struct Kriging{X, Y, L, U, P, T, M, B, S, R, N} <: AbstractSurrogate
     x::X
     y::Y
     lb::L
@@ -15,6 +17,7 @@ mutable struct Kriging{X, Y, L, U, P, T, M, B, S, R} <: AbstractSurrogate
     b::B
     sigma::S
     inverse_of_R::R
+    noise_variance::N
 end
 
 """
@@ -101,29 +104,35 @@ Constructor for type Kriging.
    smoothness of the function being approximated, 0-> rough  2-> C^infinity
 - theta: value > 0 modeling how much the function is changing in the i-th variable.
 """
-function Kriging(x, y, lb::Number, ub::Number; p = 2.0,
-                 theta = 0.5 / max(1e-6 * abs(ub - lb), std(x))^p)
-    if length(x) != length(unique(x))
-        println("There exists a repetion in the samples, cannot build Kriging.")
-        return
+function Kriging(x, y, lb::Number, ub::Number; p = 1.99,
+                 theta = 0.5 / max(1e-6 * abs(ub - lb), std(x))^p,
+                 noise_variance = 0.0,)
+
+    # Need autodiff to ignore these checks. When optimizing hyperparameters, these won't
+    # matter as the optiization will be constrained to satisfy these by default.
+    Zygote.ignore() do
+        if length(x) != length(unique(x))
+            println("There exists a repetion in the samples, cannot build Kriging.")
+            return
+        end
+
+        if p > 2.0 || p < 0.0
+            throw(ArgumentError("Hyperparameter p must be between 0 and 2! Got: $p."))
+        end
+
+        if theta ≤ 0
+            throw(ArgumentError("Hyperparameter theta must be positive! Got: $theta"))
+        end
     end
 
-    if p > 2.0 || p < 0.0
-        throw(ArgumentError("Hyperparameter p must be between 0 and 2! Got: $p."))
-    end
-
-    if theta ≤ 0
-        throw(ArgumentError("Hyperparameter theta must be positive! Got: $theta"))
-    end
-
-    mu, b, sigma, inverse_of_R = _calc_kriging_coeffs(x, y, p, theta)
-    Kriging(x, y, lb, ub, p, theta, mu, b, sigma, inverse_of_R)
+    mu, b, sigma, inverse_of_R = _calc_kriging_coeffs(x, y, p, theta, noise_variance)
+    Kriging(x, y, lb, ub, p, theta, mu, b, sigma, inverse_of_R, noise_variance)
 end
 
-function _calc_kriging_coeffs(x, y, p::Number, theta::Number)
+function _calc_kriging_coeffs(x, y, p::Number, theta::Number, noise_variance)
     n = length(x)
 
-    R = [exp(-theta * abs(x[i] - x[j])^p) for i in 1:n, j in 1:n]
+    R = [exp(-theta * abs(x[i] - x[j])^p) + (i == j) * noise_variance for i in 1:n, j in 1:n]
 
     # Estimate nugget based on maximum allowed condition number
     # This regularizes R to allow for points being close to each other without R becoming
@@ -167,29 +176,35 @@ Constructor for Kriging surrogate.
 - theta: array of values > 0 modeling how much the function is
           changing in the i-th variable.
 """
-function Kriging(x, y, lb, ub; p = 2.0 .* collect(one.(x[1])),
-                 theta = [0.5 / max(1e-6 * norm(ub .- lb), std(x_i[i] for x_i in x))^p[i]
-                          for i in 1:length(x[1])])
-    if length(x) != length(unique(x))
-        println("There exists a repetition in the samples, cannot build Kriging.")
-        return
-    end
+function Kriging(x, y, lb, ub; p = 1.99 .* collect(one.(x[1])),
+                    theta = [0.5 / max(1e-6 * norm(ub .- lb), std(x_i[i] for x_i in x))^p[i]
+                          for i in 1:length(x[1])],
+                    noise_variance = 0.0)
 
-    for i in 1:length(x[1])
-        if p[i] > 2.0 || p[i] < 0.0
-            throw(ArgumentError("All p must be between 0 and 2! Got: $p."))
+    # Need autodiff to ignore these checks. When optimizing hyperparameters, these won't
+    # matter as the optiization will be constrained to satisfy these by default.
+    Zygote.ignore() do
+        if length(x) != length(unique(x))
+            println("There exists a repetition in the samples, cannot build Kriging.")
+            return
         end
 
-        if theta[i] ≤ 0.0
-            throw(ArgumentError("All theta must be positive! Got: $theta."))
+        for i in 1:length(x[1])
+            if p[i] > 2.0 || p[i] < 0.0
+                throw(ArgumentError("All p must be between 0 and 2! Got: $p."))
+            end
+
+            if theta[i] ≤ 0.0
+                throw(ArgumentError("All theta must be positive! Got: $theta."))
+            end
         end
     end
 
-    mu, b, sigma, inverse_of_R = _calc_kriging_coeffs(x, y, p, theta)
-    Kriging(x, y, lb, ub, p, theta, mu, b, sigma, inverse_of_R)
+    mu, b, sigma, inverse_of_R = _calc_kriging_coeffs(x, y, p, theta, noise_variance)
+    Kriging(x, y, lb, ub, p, theta, mu, b, sigma, inverse_of_R, noise_variance)
 end
 
-function _calc_kriging_coeffs(x, y, p, theta)
+function _calc_kriging_coeffs(x, y, p, theta, noise_variance)
     n = length(x)
     d = length(x[1])
 
@@ -198,7 +213,7 @@ function _calc_kriging_coeffs(x, y, p, theta)
              for l in 1:d
                  sum = sum + theta[l] * norm(x[i][l] - x[j][l])^p[l]
              end
-             exp(-sum)
+             exp(-sum) + (i == j) * noise_variance
          end
          for j in 1:n, i in 1:n]
 
@@ -258,6 +273,28 @@ function add_point!(k::Kriging, new_x, new_y)
         append!(k.x, new_x)
         append!(k.y, new_y)
     end
-    k.mu, k.b, k.sigma, k.inverse_of_R = _calc_kriging_coeffs(k.x, k.y, k.p, k.theta)
+    k.mu, k.b, k.sigma, k.inverse_of_R =
+        _calc_kriging_coeffs(k.x, k.y, k.p, k.theta, k.noise_variance)
+
     nothing
+end
+
+"""
+    kriging_log_likelihood(x, y, p, theta, noise_variance = 0.0)
+Compute the likelihood of the parameters p, theta and noise variance given the data x and y
+for a kriging model. Useful as an objective function in hyperparameter optimization.
+"""
+function kriging_log_likelihood(x, y, p, theta, noise_variance = 0.0)
+
+    mu, b, sigma, inverse_of_R = _calc_kriging_coeffs(x, y, p, theta, noise_variance)
+
+    n = length(y)
+    y_minus_1μ = y - ones(length(y), 1) * mu
+    Rinv = inverse_of_R
+
+    term1 = only(-(y_minus_1μ' * inverse_of_R * y_minus_1μ) / 2 / sigma)
+    term2 = -log((2π * sigma)^(n/2) / sqrt(det(Rinv)))
+
+    logpdf = term1 + term2
+    return logpdf
 end

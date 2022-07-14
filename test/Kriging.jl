@@ -3,6 +3,8 @@ using Surrogates
 using Test
 using Statistics
 
+include("test_utils.jl")
+
 #1D
 lb = 0.0
 ub = 10.0
@@ -18,6 +20,11 @@ my_p = 1.9
 
 my_k = Kriging(x, y, lb, ub, p = my_p)
 @test my_k.theta ≈ 0.5 * std(x)^(-my_p)
+
+# Check to make sure interpolation condition is satisfied
+@test _check_interpolation(my_k)
+
+
 
 # Check input dimension validation for 1D Kriging surrogates
 @test_throws ArgumentError my_k(rand(3))
@@ -65,7 +72,7 @@ std_err = std_error_at_point(my_k, 4.0)
 kwar_krig = Kriging(x, y, lb, ub);
 
 # Check hyperparameter initialization for 1D Kriging surrogates
-p_expected = 2.0
+p_expected = 1.99
 @test kwar_krig.p == p_expected
 @test kwar_krig.theta == 0.5 / std(x)^p_expected
 
@@ -130,6 +137,18 @@ kwarg_krig_ND = Kriging(x, y, lb, ub)
 
 # Test hyperparameter initialization
 d = length(x[3])
-p_expected = 2.0
+p_expected = 1.99
 @test all(==(p_expected), kwarg_krig_ND.p)
 @test all(kwarg_krig_ND.theta .≈ [0.5 / std(x_i[ℓ] for x_i in x)^p_expected for ℓ in 1:3])
+
+num_replicates = 100
+
+for i in 1:num_replicates
+    # Check that interpolation condition is satisfied when noise variance is zero
+    surr = _random_surrogate(Kriging)
+    @test _check_interpolation(surr)
+
+    # Check that we do not satisfy interpolation condition when noise variance isn't zero
+    surr = _random_surrogate(Kriging, noise_variance = 0.2)
+    @test !_check_interpolation(surr)
+end

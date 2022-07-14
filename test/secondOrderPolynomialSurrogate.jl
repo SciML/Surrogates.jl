@@ -73,3 +73,15 @@ x = sample(n, lb, ub, SobolSample())
 y = second_order_target.(x)
 sec = SecondOrderPolynomialSurrogate(x, y, lb, ub)
 @test y ≈ sec.(x)
+
+num_replicates = 100
+for i in 1:num_replicates
+    # Second order polynomial surrogate should not intepolate the data unless the function
+    # is a second-order polynomial
+    surr = _random_surrogate(SecondOrderPolynomialSurrogate)
+    @test !_check_interpolation(surr)
+
+    # Norm squared is a second order polynomial so this should interpolate the data
+    surr = _random_surrogate(SecondOrderPolynomialSurrogate, x->norm(x)^2)
+    @test _check_interpolation(surr)
+end

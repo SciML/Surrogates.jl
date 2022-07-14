@@ -26,7 +26,7 @@ multiquadricRadial(c = 1.0) = RadialFunction(1, z -> sqrt((c * norm(z))^2 + 1))
 
 thinplateRadial() = RadialFunction(2, z -> begin
                                        result = norm(z)^2 * log(norm(z))
-                                       ifelse(iszero(z), zero(result), result)
+                                       ifelse(all(==(0), z), zero(result), result)
                                    end)
 
 """

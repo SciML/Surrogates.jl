@@ -6,8 +6,9 @@ using QuasiMonteCarlo: SamplingAlgorithm
 # of vectors of Tuples
 function sample(args...; kwargs...)
     s = QuasiMonteCarlo.sample(args...; kwargs...)
-    if s isa Vector
-        # 1D case: s is a Vector
+    if size(s, 1) == 1
+        return s[1, :]
+    elseif size(s, 2) == 1
         return s
     else
         # ND case: s is a d x n matrix, where d is the dimension and n is the number of samples

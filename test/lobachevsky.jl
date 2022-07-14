@@ -85,3 +85,10 @@ n = 8
 x = sample(100, lb, ub, SobolSample())
 y = obj.(x)
 my_loba_ND = LobachevskySurrogate(x, y, lb, ub, alpha = [2.4, 2.4], n = 8, sparse = true)
+
+num_replicates = 100
+for i in 1:num_replicates
+    # Check that interpolation condition is satisfied
+    surr = _random_surrogate(LobachevskySurrogate)
+    @test _check_interpolation(surr)
+end

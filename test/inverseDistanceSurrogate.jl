@@ -62,3 +62,10 @@ y_new = f(x_new)
 add_point!(surrogate, x_new, y_new)
 @test surrogate(x_new) ≈ y_new
 surrogate((0.0, 0.0))
+
+num_replicates = 100
+for i in 1:num_replicates
+    # Check that interpolation condition is satisfied
+    surr = _random_surrogate(InverseDistanceSurrogate)
+    @test _check_interpolation(surr)
+end

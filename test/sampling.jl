@@ -63,6 +63,13 @@ s = Surrogates.sample(n, lb, ub, SectionSample([constrained_val], UniformSample(
 @test s isa Vector{Float64} && length(s) == n && all(x -> lb ≤ x ≤ ub, s)
 @test all(==(constrained_val), s)
 
+# ND but 1D
+
+lb = [0.0]
+ub = [5.0]
+s = Surrogates.sample(n, lb, ub, SobolSample())
+@test s isa Vector{Float64} && length(s) == n && all(x -> lb[1] ≤ x ≤ ub[1], s)
+
 # ND
 # Now that we use QuasiMonteCarlo.jl, these tests are to make sure that we transform the output
 # from a Matrix to a Vector of Tuples properly for ND problems.
