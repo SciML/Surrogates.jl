@@ -122,7 +122,7 @@ end
 
     # test gradient with respect to hyperparameters
     obj = ((p, θ),) -> Surrogates.kriging_log_likelihood(x, y, p, θ)
-    obj'((1.99, 1.0),)
+    obj'((1.99, 1.0))
 end
 
 # #Linear Surrogate

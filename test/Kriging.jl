@@ -24,8 +24,6 @@ my_k = Kriging(x, y, lb, ub, p = my_p)
 # Check to make sure interpolation condition is satisfied
 @test _check_interpolation(my_k)
 
-
-
 # Check input dimension validation for 1D Kriging surrogates
 @test_throws ArgumentError my_k(rand(3))
 @test_throws ArgumentError my_k(Float64[])

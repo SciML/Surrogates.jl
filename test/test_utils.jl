@@ -3,7 +3,6 @@ Properties that surrogates should typically satisfy:
 
 1) Interpolate the data
 
-
 =#
 
 # Check that surrogate correctly interpolates data
@@ -18,7 +17,6 @@ end
 # Generate a surrogate of the provided type with a random dimension and number of points
 # By default, the function to be modeled is the l2-norm function
 function _random_surrogate(surr_type, func = norm, sampler = SobolSample(); kwargs...)
-
     d = rand(1:10)
     n = rand(1:3) * 10 * d + 1
 

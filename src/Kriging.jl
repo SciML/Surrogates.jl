@@ -106,7 +106,7 @@ Constructor for type Kriging.
 """
 function Kriging(x, y, lb::Number, ub::Number; p = 1.99,
                  theta = 0.5 / max(1e-6 * abs(ub - lb), std(x))^p,
-                 noise_variance = 0.0,)
+                 noise_variance = 0.0)
 
     # Need autodiff to ignore these checks. When optimizing hyperparameters, these won't
     # matter as the optiization will be constrained to satisfy these by default.
@@ -132,7 +132,8 @@ end
 function _calc_kriging_coeffs(x, y, p::Number, theta::Number, noise_variance)
     n = length(x)
 
-    R = [exp(-theta * abs(x[i] - x[j])^p) + (i == j) * noise_variance for i in 1:n, j in 1:n]
+    R = [exp(-theta * abs(x[i] - x[j])^p) + (i == j) * noise_variance
+         for i in 1:n, j in 1:n]
 
     # Estimate nugget based on maximum allowed condition number
     # This regularizes R to allow for points being close to each other without R becoming
@@ -177,9 +178,9 @@ Constructor for Kriging surrogate.
           changing in the i-th variable.
 """
 function Kriging(x, y, lb, ub; p = 1.99 .* collect(one.(x[1])),
-                    theta = [0.5 / max(1e-6 * norm(ub .- lb), std(x_i[i] for x_i in x))^p[i]
+                 theta = [0.5 / max(1e-6 * norm(ub .- lb), std(x_i[i] for x_i in x))^p[i]
                           for i in 1:length(x[1])],
-                    noise_variance = 0.0)
+                 noise_variance = 0.0)
 
     # Need autodiff to ignore these checks. When optimizing hyperparameters, these won't
     # matter as the optiization will be constrained to satisfy these by default.
@@ -273,8 +274,8 @@ function add_point!(k::Kriging, new_x, new_y)
         append!(k.x, new_x)
         append!(k.y, new_y)
     end
-    k.mu, k.b, k.sigma, k.inverse_of_R =
-        _calc_kriging_coeffs(k.x, k.y, k.p, k.theta, k.noise_variance)
+    k.mu, k.b, k.sigma, k.inverse_of_R = _calc_kriging_coeffs(k.x, k.y, k.p, k.theta,
+                                                              k.noise_variance)
 
     nothing
 end
@@ -285,7 +286,6 @@ Compute the likelihood of the parameters p, theta and noise variance given the d
 for a kriging model. Useful as an objective function in hyperparameter optimization.
 """
 function kriging_log_likelihood(x, y, p, theta, noise_variance = 0.0)
-
     mu, b, sigma, inverse_of_R = _calc_kriging_coeffs(x, y, p, theta, noise_variance)
 
     n = length(y)
@@ -293,7 +293,7 @@ function kriging_log_likelihood(x, y, p, theta, noise_variance = 0.0)
     Rinv = inverse_of_R
 
     term1 = only(-(y_minus_1μ' * inverse_of_R * y_minus_1μ) / 2 / sigma)
-    term2 = -log((2π * sigma)^(n/2) / sqrt(det(Rinv)))
+    term2 = -log((2π * sigma)^(n / 2) / sqrt(det(Rinv)))
 
     logpdf = term1 + term2
     return logpdf

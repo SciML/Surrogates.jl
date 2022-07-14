@@ -82,6 +82,6 @@ for i in 1:num_replicates
     @test !_check_interpolation(surr)
 
     # Norm squared is a second order polynomial so this should interpolate the data
-    surr = _random_surrogate(SecondOrderPolynomialSurrogate, x->norm(x)^2)
+    surr = _random_surrogate(SecondOrderPolynomialSurrogate, x -> norm(x)^2)
     @test _check_interpolation(surr)
 end
