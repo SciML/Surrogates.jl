@@ -120,7 +120,7 @@ add a new point to the dataset.
 function add_point!(g::GEKPLS, x_tup, y_val, grad_tup)
     new_x = prep_data_for_pred(x_tup)
     new_grads = prep_data_for_pred(grad_tup)
-    if (findfirst(==(vec(new_x)), eachrow(g.x_matrix)) !== nothing)
+    if vec(new_x) in eachrow(g.x_matrix)
         println("Adding a sample that already exists. Cannot build GEKPLS")
         return
     end
