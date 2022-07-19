@@ -116,7 +116,6 @@ end
 
 add a new point to the dataset.
 """
-
 function add_point!(g::GEKPLS, x_tup, y_val, grad_tup)
     new_x = prep_data_for_pred(x_tup)
     new_grads = prep_data_for_pred(grad_tup)
