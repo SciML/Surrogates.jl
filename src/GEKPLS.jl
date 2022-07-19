@@ -104,11 +104,7 @@ function (g::GEKPLS)(x_vec)
     f = ones(n_eval, 1)
     y_ = (f * g.beta) + (r * g.gamma)
     y = g.y_mean .+ g.y_std * y_
-    if size(y, 1) > 1
-        return vec(y)
-    else
-        return y[1] #this is necessary for differentiation; Zygote expects a scalar output
-    end
+    return y[1]
 end
 
 """
