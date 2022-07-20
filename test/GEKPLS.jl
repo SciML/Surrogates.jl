@@ -22,7 +22,6 @@ ub = [0.15, 50000, 115600, 1110, 116, 820, 1680, 12045]
 x = sample(n, lb, ub, SobolSample())
 grads = gradient.(water_flow, x)
 y = water_flow.(x)
-xlimits = hcat(lb, ub)
 n_test = 100
 x_test = sample(n_test, lb, ub, GoldenSample())
 y_true = water_flow.(x_test)
@@ -32,7 +31,7 @@ y_true = water_flow.(x_test)
     delta_x = 0.0001
     extra_points = 2
     initial_theta = [0.01 for i in 1:n_comp]
-    g = GEKPLS(x, y, grads, n_comp, delta_x, xlimits, extra_points, initial_theta)
+    g = GEKPLS(x, y, grads, n_comp, delta_x, lb, ub, extra_points, initial_theta)
     y_pred = g.(x_test)
     rmse = sqrt(sum(((y_pred - y_true) .^ 2) / n_test))
     @test isapprox(rmse, 0.03, atol = 0.02) #rmse: 0.039
@@ -43,7 +42,7 @@ end
     delta_x = 0.0001
     extra_points = 2
     initial_theta = [0.01 for i in 1:n_comp]
-    g = GEKPLS(x, y, grads, n_comp, delta_x, xlimits, extra_points, initial_theta)
+    g = GEKPLS(x, y, grads, n_comp, delta_x, lb, ub, extra_points, initial_theta)
     y_pred = g.(x_test)
     rmse = sqrt(sum(((y_pred - y_true) .^ 2) / n_test))
     @test isapprox(rmse, 0.02, atol = 0.01) #rmse: 0.027
@@ -54,7 +53,7 @@ end
     delta_x = 0.0001
     extra_points = 3
     initial_theta = [0.01 for i in 1:n_comp]
-    g = GEKPLS(x, y, grads, n_comp, delta_x, xlimits, extra_points, initial_theta)
+    g = GEKPLS(x, y, grads, n_comp, delta_x, lb, ub, extra_points, initial_theta)
     y_pred = g.(x_test)
     rmse = sqrt(sum(((y_pred - y_true) .^ 2) / n_test))
     @test isapprox(rmse, 0.02, atol = 0.01) #rmse: 0.027
@@ -77,7 +76,6 @@ ub = [1.0, 10.0, 10.0]
 x = sample(n, lb, ub, SobolSample())
 grads = gradient.(welded_beam, x)
 y = welded_beam.(x)
-xlimits = hcat(lb, ub)
 n_test = 100
 x_test = sample(n_test, lb, ub, GoldenSample())
 y_true = welded_beam.(x_test)
@@ -87,7 +85,7 @@ y_true = welded_beam.(x_test)
     delta_x = 0.0001
     extra_points = 2
     initial_theta = [0.01 for i in 1:n_comp]
-    g = GEKPLS(x, y, grads, n_comp, delta_x, xlimits, extra_points, initial_theta)
+    g = GEKPLS(x, y, grads, n_comp, delta_x, lb, ub, extra_points, initial_theta)
     y_pred = g.(x_test)
     rmse = sqrt(sum(((y_pred - y_true) .^ 2) / n_test))
     @test isapprox(rmse, 39.0, atol = 0.5) #rmse: 38.988
@@ -98,7 +96,7 @@ end
     delta_x = 0.0001
     extra_points = 2
     initial_theta = [0.01 for i in 1:n_comp]
-    g = GEKPLS(x, y, grads, n_comp, delta_x, xlimits, extra_points, initial_theta)
+    g = GEKPLS(x, y, grads, n_comp, delta_x, lb, ub, extra_points, initial_theta)
     y_pred = g.(x_test)
     rmse = sqrt(sum(((y_pred - y_true) .^ 2) / n_test))
     @test isapprox(rmse, 39.5, atol = 0.5) #rmse: 39.481
@@ -110,7 +108,7 @@ end
     delta_x = 0.0001
     extra_points = 4
     initial_theta = [0.01 for i in 1:n_comp]
-    g = GEKPLS(x, y, grads, n_comp, delta_x, xlimits, extra_points, initial_theta)
+    g = GEKPLS(x, y, grads, n_comp, delta_x, lb, ub, extra_points, initial_theta)
     y_pred = g.(x_test)
     rmse = sqrt(sum(((y_pred - y_true) .^ 2) / n_test))
     @test isapprox(rmse, 37.5, atol = 0.5) #rmse: 37.87
@@ -128,7 +126,6 @@ ub = [5.0, 5.0, 5.0]
 x = sample(n, lb, ub, SobolSample())
 grads = gradient.(sphere_function, x)
 y = sphere_function.(x)
-xlimits = hcat(lb, ub)
 n_test = 100
 x_test = sample(n_test, lb, ub, GoldenSample())
 y_true = sphere_function.(x_test)
@@ -138,7 +135,7 @@ y_true = sphere_function.(x_test)
     delta_x = 0.0001
     extra_points = 2
     initial_theta = [0.01 for i in 1:n_comp]
-    g = GEKPLS(x, y, grads, n_comp, delta_x, xlimits, extra_points, initial_theta)
+    g = GEKPLS(x, y, grads, n_comp, delta_x, lb, ub, extra_points, initial_theta)
     y_pred = g.(x_test)
     rmse = sqrt(sum(((y_pred - y_true) .^ 2) / n_test))
     @test isapprox(rmse, 0.001, atol = 0.05) #rmse: 0.00083
@@ -146,13 +143,11 @@ end
 
 ## 2D
 n = 50
-d = 2
 lb = [-10.0, -10.0]
 ub = [10.0, 10.0]
 x = sample(n, lb, ub, SobolSample())
 grads = gradient.(sphere_function, x)
 y = sphere_function.(x)
-xlimits = hcat(lb, ub)
 n_test = 10
 x_test = sample(n_test, lb, ub, GoldenSample())
 y_true = sphere_function.(x_test)
@@ -162,7 +157,7 @@ y_true = sphere_function.(x_test)
     delta_x = 0.0001
     extra_points = 2
     initial_theta = [0.01 for i in 1:n_comp]
-    g = GEKPLS(x, y, grads, n_comp, delta_x, xlimits, extra_points, initial_theta)
+    g = GEKPLS(x, y, grads, n_comp, delta_x, lb, ub, extra_points, initial_theta)
     y_pred = g.(x_test)
     rmse = sqrt(sum(((y_pred - y_true) .^ 2) / n_test))
     @test isapprox(rmse, 0.1, atol = 0.5) #rmse: 0.0022
@@ -175,12 +170,11 @@ end
     initial_grads = gradient.(sphere_function, initial_x_vec)
     lb = [-5.0, -5.0, -5.0]
     ub = [10.0, 10.0, 10.0]
-    xlimits = hcat(lb, ub)
     n_comp = 2
     delta_x = 0.0001
     extra_points = 2
     initial_theta = [0.01 for i in 1:n_comp]
-    g = GEKPLS(initial_x_vec, initial_y, initial_grads, n_comp, delta_x, xlimits,
+    g = GEKPLS(initial_x_vec, initial_y, initial_grads, n_comp, delta_x, lb, ub,
                extra_points,
                initial_theta)
     n_test = 100
@@ -205,7 +199,6 @@ end
 @testset "Test 10: Check optimization (dimensions = 3; n_comp = 2; extra_points = 2)" begin
     lb = [-5.0, -5.0, -5.0]
     ub = [10.0, 10.0, 10.0]
-    xlimits = hcat(lb, ub)
     n_comp = 2
     delta_x = 0.0001
     extra_points = 2
@@ -214,7 +207,7 @@ end
     x = sample(n, lb, ub, SobolSample())
     grads = gradient.(sphere_function, x)
     y = sphere_function.(x)
-    g = GEKPLS(x, y, grads, n_comp, delta_x, xlimits, extra_points, initial_theta)
+    g = GEKPLS(x, y, grads, n_comp, delta_x, lb, ub, extra_points, initial_theta)
     x_point, minima = surrogate_optimize(sphere_function, SRBF(), lb, ub, g,
                                          UniformSample(); maxiters = 20,
                                          num_new_samples = 20, needs_gradient = true)
@@ -224,7 +217,6 @@ end
 @testset "Test 11: Check gradient (dimensions = 3; n_comp = 2; extra_points = 2)" begin
     lb = [-5.0, -5.0, -5.0]
     ub = [10.0, 10.0, 10.0]
-    xlimits = hcat(lb, ub)
     n_comp = 2
     delta_x = 0.0001
     extra_points = 2
@@ -233,7 +225,7 @@ end
     x = sample(n, lb, ub, SobolSample())
     grads = gradient.(sphere_function, x)
     y = sphere_function.(x)
-    g = GEKPLS(x, y, grads, n_comp, delta_x, xlimits, extra_points, initial_theta)
+    g = GEKPLS(x, y, grads, n_comp, delta_x, lb, ub, extra_points, initial_theta)
     grad_surr = gradient(g, (1.0, 1.0, 1.0))
     #test at a single point
     grad_true = gradient(sphere_function, (1.0, 1.0, 1.0))
