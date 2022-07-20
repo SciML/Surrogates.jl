@@ -46,19 +46,21 @@ function bounds_error(x, xl)
 end
 
 """
-    GEKPLS(X, y, grads, n_comp, delta_x, xlimits, extra_points, theta)
+    GEKPLS(X, y, grads, n_comp, delta_x, lb, ub, extra_points, theta)
 
 Constructor for GEKPLS Struct
 - x_vec: vector of tuples with x values
 - y_vec: vector of floats with outputs
 - grads_vec: gradients associated with each of the X points
 - n_comp: number of components 
-- xlimits: concatenated array of lower and upper bounds
+- lb: lower bounds
+- ub: upper bounds
 - delta_x: step size while doing Taylor approximation
 - extra_points: number of points to consider
 - theta: initial expected variance of PLS regression components
 """
-function GEKPLS(x_vec, y_vec, grads_vec, n_comp, delta_x, xlimits, extra_points, theta)
+function GEKPLS(x_vec, y_vec, grads_vec, n_comp, delta_x, lb, ub, extra_points, theta)
+    xlimits = hcat(lb, ub)
     X = vector_of_tuples_to_matrix(x_vec)
     y = reshape(y_vec, (size(X, 1), 1))
     grads = vector_of_tuples_to_matrix2(grads_vec)
