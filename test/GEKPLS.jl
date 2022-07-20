@@ -216,9 +216,9 @@ end
     y = sphere_function.(x)
     g = GEKPLS(x, y, grads, n_comp, delta_x, xlimits, extra_points, initial_theta)
     x_point, minima = surrogate_optimize(sphere_function, SRBF(), lb, ub, g,
-                                         UniformSample(); maxiters = 10,
-                                         num_new_samples = 10, needs_gradient = true)
-    @test isapprox(minima, 0.0, atol = 0.00001)
+                                         UniformSample(); maxiters = 20,
+                                         num_new_samples = 20, needs_gradient = true)
+    @test isapprox(minima, 0.0, atol = 0.0001)
 end
 
 @testset "Test 11: Check gradient (dimensions = 3; n_comp = 2; extra_points = 2)" begin
