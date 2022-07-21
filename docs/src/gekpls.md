@@ -82,6 +82,6 @@ This next example demonstrates how this can be accomplished.
     x_point, minima = surrogate_optimize(sphere_function, SRBF(), lb, ub, g,
                                          UniformSample(); maxiters = 20,
                                          num_new_samples = 20, needs_gradient = true)
-    println(minima) # ~4.16e-8
+    println(minima)
 
 ```
