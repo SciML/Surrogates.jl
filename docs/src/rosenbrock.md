@@ -7,6 +7,7 @@ I will treat the 2D version, which is commonly defined as:
 Let's import Surrogates and Plots:
 ```@example rosen
 using Surrogates
+using SurrogatesPolyChaos
 using Plots
 default()
 ```
@@ -66,5 +67,5 @@ p1 = surface(x, y, (x, y) -> inver([x y]))
 scatter!(xs, ys, zs, marker_z=zs)
 p2 = contour(x, y, (x, y) -> inver([x y]))
 scatter!(xs, ys, marker_z=zs)
-plot(p1, p2, title="Inverse distance surrogate")
+plot(p1, p2, title="Inverse distance")
 ```

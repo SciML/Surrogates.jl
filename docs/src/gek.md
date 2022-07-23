@@ -2,7 +2,7 @@
 
 Gradient-enhanced Kriging is an extension of kriging which supports gradient information. GEK is usually more accurate than kriging, however, it is not computationally efficient when the number of inputs, the number of sampling points, or both, are high. This is mainly due to the size of the corresponding correlation matrix that increases proportionally with both the number of inputs and the number of sampling points.
 
-Let's have a look to the following function to use Gradient Enhanced Surrogate:
+Let's have a look at the following function to use Gradient Enhanced Surrogate:
 ``f(x) = sin(x) + 2*x^2``
 
 First of all, we will import `Surrogates` and `Plots` packages:
@@ -37,14 +37,13 @@ plot!(f, label="True function", xlims=(lower_bound, upper_bound), legend=:top)
 With our sampled points we can build the Gradient Enhanced Kriging surrogate using the `GEK` function.
 
 ```@example GEK1D
+
 my_gek = GEK(x, y, lower_bound, upper_bound, p = 1.4);
-```
-```@example @GEK1D
 scatter(x, y1, label="Sampled points", xlims=(lower_bound, upper_bound), legend=:top)
 plot!(f, label="True function",  xlims=(lower_bound, upper_bound), legend=:top)
 plot!(my_gek, label="Surrogate function", ribbon=p->std_error_at_point(my_gek, p), xlims=(lower_bound, upper_bound), legend=:top)
-```
 
+```
 
 ## Gradient Enhanced Kriging Surrogate Tutorial (ND)
 
@@ -73,7 +72,7 @@ end
 Let's define our bounds, this time we are working in two dimensions. In particular we want our first dimension `x` to have bounds `0, 10`, and `0, 10` for the second dimension. We are taking 80 samples of the space using Sobol Sequences. We then evaluate our function on all of the sampling points.
 
 ```@example GEK_ND
-n_samples = 80
+n_samples = 45
 lower_bound = [0, 0]
 upper_bound = [10, 10]
 xys = sample(n_samples, lower_bound, upper_bound, SobolSample())

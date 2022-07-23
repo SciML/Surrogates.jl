@@ -40,7 +40,7 @@ lower_bound = [-5, 0]
 upper_bound = [10,15]
 xys = sample(n_samples, lower_bound, upper_bound, SobolSample())
 zs = branin.(xys);
-x, y = -5:10, 0:15
+x, y = -5.00:10.00, 0.00:15.00
 p1 = surface(x, y, (x1,x2) -> branin((x1,x2)))
 xs = [xy[1] for xy in xys]
 ys = [xy[2] for xy in xys]
@@ -51,18 +51,18 @@ plot(p1, p2, title="True function")
 ```
 
 Now it's time to try fitting different surrogates and then we will plot them.
-We will have a look at the kriging surrogate `Kriging Surrogate`. :
+We will have a look at the radial basis surrogate `Radial Basis Surrogate`. :
 
 ```@example BraninFunction
-kriging_surrogate = Kriging(xys, zs, lower_bound, upper_bound)
+radial_surrogate = RadialBasis(xys, zs, lower_bound, upper_bound)
 ```
 
 ```@example BraninFunction
-p1 = surface(x, y, (x, y) -> kriging_surrogate([x y]))
+p1 = surface(x, y, (x, y) -> radial_surrogate([x y]))
 scatter!(xs, ys, zs, marker_z=zs)
-p2 = contour(x, y, (x, y) -> kriging_surrogate([x y]))
+p2 = contour(x, y, (x, y) -> radial_surrogate([x y]))
 scatter!(xs, ys, marker_z=zs)
-plot(p1, p2, title="Kriging Surrogate")
+plot(p1, p2, title="Radial Surrogate")
 ```
 
 Now, we will have a look on `Inverse Distance Surrogate`:

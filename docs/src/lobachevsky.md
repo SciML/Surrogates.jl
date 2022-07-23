@@ -1,6 +1,6 @@
 # Lobachevsky surrogate tutorial
 
-Lobachevsky splines function is a function that used for univariate and multivariate scattered interpolation. Introduced by Lobachevsky in 1842 to investigate errors in astronomical measurements.
+Lobachevsky splines function is a function that is used for univariate and multivariate scattered interpolation. Introduced by Lobachevsky in 1842 to investigate errors in astronomical measurements.
 
 We are going to use a Lobachevsky surrogate to optimize $f(x)=sin(x)+sin(10/3 * x)$.
 

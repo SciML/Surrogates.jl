@@ -7,12 +7,11 @@ Contributions are **very** welcome! There are many ways do help:
 - Writing more tutorials with your own unique use case of the library
 - Your own idea!
 
-You can also contact me on the Julia slack channel at @ludoro.
+To get started go to https://github.com/SciML/Surrogates.jl/
 
-# List of contributors
+Note: If you are contributing code to Surrogates, please run the following code before making your PR:
 
-- Ludovico Bessi (@ludoro)
-- Chris Rackauckas (@ChrisRackauckas)
-- Rohit Singh Rathaur (@RohitRathore1)
-- Andrea Cognolato (@mrandri19)
-- Kanav Gupta (@kanav99)
+```
+using JuliaFormatter, Surrogates
+format(joinpath(dirname(pathof(Surrogates)), ".."))
+```

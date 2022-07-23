@@ -16,12 +16,12 @@ We choose to sample f in 30 points between 5 to 25 using `sample` function. The 
 ```@example RadialBasisSurrogate
 f(x) = log(x)*x^2 + x^3
 n_samples = 30
-lower_bound = 5
-upper_bound = 25
-x = sample(n_samples, lower_bound, upper_bound, SobolSample())
+lower_bound = 5.0
+upper_bound = 25.0
+x = sort(sample(n_samples, lower_bound, upper_bound, SobolSample()))
 y = f.(x)
 scatter(x, y, label="Sampled Points", xlims=(lower_bound, upper_bound), legend=:top)
-plot!(f, label="True function", scatter(x, y, label="Sampled Points", xlims=(lower_bound, upper_bound), legend=:top)
+plot!(x, y, label="True function", legend=:top)
 ```
 
 
@@ -31,15 +31,15 @@ With our sampled points we can build the **Radial Surrogate** using the `RadialB
 
 We can simply calculate `radial_surrogate` for any value.
 
-```@example LinearRadialBasisSurrogate
+```@example RadialBasisSurrogate
 radial_surrogate = RadialBasis(x, y, lower_bound, upper_bound)
 val = radial_surrogate(5.4)
 ```
 
 We can also use cubic radial basis functions.
 
-```@example CubicRadialBasisSurrogate
-radial_surrogate = RadialBasis(x, y, lower_bound, upper_bound, cubicRadial)
+```@example RadialBasisSurrogate
+radial_surrogate = RadialBasis(x, y, lower_bound, upper_bound, rad = cubicRadial())
 val = radial_surrogate(5.4)
 ```
 
@@ -70,11 +70,11 @@ plot!(radial_surrogate, label="Surrogate function",  xlims=(lower_bound, upper_b
 
 ## Radial Basis Surrogate tutorial (ND)
 
-First of all we will define the `Booth` function we are going to build surrogate for:
+First of all we will define the `Booth` function we are going to build the surrogate for:
 
 $f(x) = (x_1 + 2*x_2 - 7)^2 + (2*x_1 + x_2 - 5)^2$
 
- Notice, one how its argument is a vector of numbers, one for each coordinate, and its output is a scalar.
+ Notice, how its argument is a vector of numbers, one for each coordinate, and its output is a scalar.
 
 ```@example RadialBasisSurrogateND
 using Plots # hide
@@ -104,7 +104,7 @@ zs = booth.(xys);
 ```
 
 ```@example RadialBasisSurrogateND
-x, y = -5:10, 0:15 # hide
+x, y = -5.0:10.0, 0.0:15.0 # hide
 p1 = surface(x, y, (x1,x2) -> booth((x1,x2))) # hide
 xs = [xy[1] for xy in xys] # hide
 ys = [xy[2] for xy in xys] # hide

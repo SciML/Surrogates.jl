@@ -84,11 +84,11 @@ end
 Let's define our bounds, this time we are working in two dimensions. In particular we want our first dimension `x` to have bounds `-5, 10`, and `0, 15` for the second dimension. We are taking 50 samples of the space using Sobol Sequences. We then evaluate our function on all of the sampling points.
 
 ```@example kriging_tutorialnd
-n_samples = 50
+n_samples = 10
 lower_bound = [-5.0, 0.0]
 upper_bound = [10.0, 15.0]
 
-xys = sample(n_samples, lower_bound, upper_bound, SobolSample())
+xys = sample(n_samples, lower_bound, upper_bound, GoldenSample())
 zs = branin.(xys);
 ```
 
@@ -102,7 +102,6 @@ p2 = contour(x, y, (x1,x2) -> branin((x1,x2))) # hide
 scatter!(xs, ys) # hide
 plot(p1, p2, title="True function") # hide
 ```
-
 ### Building a surrogate
 Using the sampled points we build the surrogate, the steps are analogous to the 1-dimensional case.
 
@@ -128,7 +127,8 @@ This is why its size changes.
 size(xys)
 ```
 ```@example kriging_tutorialnd
-surrogate_optimize(branin, SRBF(), lower_bound, upper_bound, kriging_surrogate, SobolSample(), maxiters=10)
+surrogate_optimize(branin, SRBF(), lower_bound, upper_bound, kriging_surrogate, SobolSample(); maxiters = 100, num_new_samples = 10)
+
 ```
 ```@example kriging_tutorialnd
 size(xys)
@@ -144,3 +144,5 @@ p2 = contour(x, y, (x, y) -> kriging_surrogate([x y])) # hide
 scatter!(xs, ys, marker_z=zs) # hide
 plot(p1, p2) # hide
 ```
+
+

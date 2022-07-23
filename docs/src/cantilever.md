@@ -6,6 +6,7 @@ With parameters L,E,X and Y given.
 Let's import Surrogates and Plots:
 ```@example beam
 using Surrogates
+using SurrogatesPolyChaos
 using Plots
 default()
 ```
@@ -30,7 +31,7 @@ lb = [1.0,1.0]
 ub = [8.0,8.0]
 xys = sample(n,lb,ub,SobolSample());
 zs = f.(xys);
-x, y = 0:8, 0:8
+x, y = 0.0:8.0, 0.0:8.0
 p1 = surface(x, y, (x1,x2) -> f((x1,x2)))
 xs = [xy[1] for xy in xys]
 ys = [xy[2] for xy in xys]
@@ -44,7 +45,7 @@ plot(p1, p2, title="True function")
 Fitting different Surrogates:
 ```@example beam
 mypoly = PolynomialChaosSurrogate(xys, zs,  lb, ub)
-loba = PolynomialChaosSurrogate(xys, zs,  lb, ub)
+loba = LobachevskySurrogate(xys, zs,  lb, ub)
 rad = RadialBasis(xys,zs,lb,ub)
 ```
 
@@ -70,5 +71,5 @@ p1 = surface(x, y, (x, y) -> rad([x y]))
 scatter!(xs, ys, zs, marker_z=zs)
 p2 = contour(x, y, (x, y) -> rad([x y]))
 scatter!(xs, ys, marker_z=zs)
-plot(p1, p2, title="Inverse distance surrogate")
+plot(p1, p2, title="Inverse distance")
 ```
