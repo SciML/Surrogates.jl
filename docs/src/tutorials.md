@@ -84,7 +84,8 @@ my_loba = LobachevskySurrogate(x,y,a,b,alpha=alpha,n=n)
 int_1D = lobachevsky_integral(my_loba,a,b)
 int = quadgk(obj,a,b)
 int_val_true = int[1]-int[2]
-@assert int_1D ≈ int_val_true
+println(int_1D)
+println(int_val_true)
 ```
 
 
