@@ -1,4 +1,4 @@
-# Samples
+# Sampling
 
 Sampling methods are provided by the [QuasiMonteCarlo package](https://github.com/SciML/QuasiMonteCarlo.jl).
 
@@ -10,34 +10,34 @@ where lb and ub are, respectively, the lower and upper bounds.
 There are many sampling algorithms to choose from:
 
 * Grid sample
-```@docs
+```
 GridSample{T}
 sample(n,lb,ub,S::GridSample)
 ```
 
 * Uniform sample
-```@docs
+```
 sample(n,lb,ub,::UniformSample)
 ```
 
 * Sobol sample
-```@docs
+```
 sample(n,lb,ub,::SobolSample)
 ```
 
 * Latin Hypercube sample
-```@docs
+```
 sample(n,lb,ub,::LatinHypercubeSample)
 ```
 
 * Low Discrepancy sample
-```@docs
+```
 LowDiscrepancySample{T}
 sample(n,lb,ub,S::LowDiscrepancySample)
 ```
 
 * Sample on section
-```@docs
+```
 SectionSample
 sample(n,lb,ub,S::SectionSample)
 ```

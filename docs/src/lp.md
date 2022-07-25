@@ -6,6 +6,7 @@ The Lp norm function is defined as:
 Let's import Surrogates and Plots:
 ```@example lp
 using Surrogates
+using SurrogatesPolyChaos
 using Plots
 using LinearAlgebra
 default()

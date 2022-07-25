@@ -43,7 +43,7 @@ using Surrogates
 f = x -> exp(x)*x^2+x^3
 lb = 0.0
 ub = 10.0
-x = sample(100,lb,ub,UniformSample())
+x = sample(50,lb,ub,UniformSample())
 y = f.(x)
 p = 1.9
 my_krig = Kriging(x,y,lb,ub,p=p)
@@ -58,7 +58,7 @@ std_err = std_error_at_point(my_krig,5.4)
 Let's now optimize the Kriging surrogate using Lower confidence bound method, this is just a one-liner:
 
 ```@example kriging
-surrogate_optimize(f,LCBS(),lb,ub,my_krig,UniformSample())
+surrogate_optimize(f,LCBS(),lb,ub,my_krig,UniformSample(); maxiters = 10, num_new_samples = 10)
 ```
 
 Surrogate optimization methods have two purposes: they both sample the space in unknown regions and look for the minima at the same time.
@@ -84,7 +84,8 @@ my_loba = LobachevskySurrogate(x,y,a,b,alpha=alpha,n=n)
 int_1D = lobachevsky_integral(my_loba,a,b)
 int = quadgk(obj,a,b)
 int_val_true = int[1]-int[2]
-@assert int_1D ≈ int_val_true
+println(int_1D)
+println(int_val_true)
 ```
 
 
@@ -95,6 +96,7 @@ Basic example of fitting a neural network on a simple function of two variables.
 using Surrogates
 using Flux
 using Statistics
+using SurrogatesFlux
 
 f = x -> x[1]^2 + x[2]^2
 bounds = Float32[-1.0, -1.0], Float32[1.0, 1.0]

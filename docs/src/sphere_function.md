@@ -33,8 +33,8 @@ plot!(xs,sphere_function.(xs), label="True function", legend=:top)
 Fitting RadialSurrogate with different radial basis:
 ```@example sphere_function
 rad_1d_linear = RadialBasis(x,y,lb,ub)
-rad_1d_cubic = RadialBasis(x,y,lb,ub,rad = cubicRadial)
-rad_1d_multiquadric = RadialBasis(x,y,lb,ub, rad = multiquadricRadial)
+rad_1d_cubic = RadialBasis(x,y,lb,ub,rad = cubicRadial())
+rad_1d_multiquadric = RadialBasis(x,y,lb,ub, rad = multiquadricRadial())
 plot(x, y, seriestype=:scatter, label="Sampled points", xlims=(lb, ub), ylims=(-2, 120), legend=:top)
 plot!(xs,sphere_function.(xs), label="True function", legend=:top)
 plot!(xs, rad_1d_linear.(xs), label="Radial surrogate with linear", legend=:top)

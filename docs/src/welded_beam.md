@@ -45,15 +45,10 @@ y_true = f.(x_test);
 my_rad = RadialBasis(x,y,lb,ub)
 y_rad = my_rad.(x_test)
 mse_rad = norm(y_true - y_rad,2)/n_test
-print("MSE Radial: $mse_rad")
-
-my_krig = Kriging(x,y,lb,ub)
-y_krig = my_krig.(x_test)
-mse_krig = norm(y_true - y_krig,2)/n_test
-print("MSE Kriging: $mse_krig")
+println("MSE Radial: $mse_rad")
 
 my_loba = LobachevskySurrogate(x,y,lb,ub)
 y_loba = my_loba.(x_test)
 mse_rad = norm(y_true - y_loba,2)/n_test
-print("MSE Lobachevsky: $mse_rad")
+println("MSE Lobachevsky: $mse_rad")
 ```

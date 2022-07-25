@@ -7,6 +7,7 @@ It has 8 dimension.
 
 ```@example water
 using Surrogates
+using SurrogatesPolyChaos
 using Plots
 using LinearAlgebra
 default()
@@ -46,9 +47,9 @@ y_true = f.(x_test);
 my_rad = RadialBasis(x,y,lb,ub)
 y_rad = my_rad.(x_test)
 my_poly = PolynomialChaosSurrogate(x,y,lb,ub)
-y_poli = my_poli.(x_test)
+y_poly = my_poly.(x_test)
 mse_rad = norm(y_true - y_rad,2)/n_test
-mse_poli = norm(y_true - y_poli,2)/n_test
-print("MSE Radial: $mse_rad")
-print("MSE Radial: $mse_poli")
+mse_poly = norm(y_true - y_poly, 2)/n_test
+println("MSE Radial: $mse_rad")
+println("MSE Radial: $mse_poly")
 ```
