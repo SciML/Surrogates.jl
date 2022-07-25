@@ -24,9 +24,10 @@ end
 @time @safetestset "Lobachevsky" begin include("lobachevsky.jl") end
 @time @safetestset "InverseDistanceSurrogate" begin include("inverseDistanceSurrogate.jl") end
 @time @safetestset "SecondOrderPolynomialSurrogate" begin include("secondOrderPolynomialSurrogate.jl") end
-# @time @safetestset  "AD_Compatibility" begin include("AD_compatibility.jl") end
+#@time @safetestset "AD_Compatibility" begin include("AD_compatibility.jl") end
 @time @safetestset "Wendland" begin include("Wendland.jl") end
 @time @safetestset "VariableFidelity" begin include("VariableFidelity.jl") end
 @time @safetestset "Earth" begin include("earth.jl") end
 @time @safetestset "Gradient Enhanced Kriging" begin include("GEK.jl") end
 @time @safetestset "Section Samplers" begin include("SectionSampleTests.jl") end
+@time @safetestset "Mixture of Experts (MOE)" begin include("MOE.jl") end
