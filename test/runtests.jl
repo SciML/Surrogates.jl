@@ -8,7 +8,7 @@ function dev_subpkg(subpkg)
     Pkg.develop(PackageSpec(path = subpkg_path))
 end
 for pkg in ["SurrogatesAbstractGPs", "SurrogatesFlux", "SurrogatesPolyChaos",
-    "SurrogatesRandomForest", "SurrogatesSVM"]
+    "SurrogatesRandomForest", "SurrogatesSVM", "SurrogatesMOE"]
     @time begin
         dev_subpkg(pkg)
         Pkg.test(pkg)
