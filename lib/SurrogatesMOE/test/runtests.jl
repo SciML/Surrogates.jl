@@ -1,5 +1,3 @@
-println("hello hello hello!")
-
 using Surrogates
 using SurrogatesMOE
 

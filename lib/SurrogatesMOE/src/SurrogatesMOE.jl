@@ -14,6 +14,9 @@ using SurrogatesPolyChaos
 using SurrogatesRandomForest
 using XGBoost
 
+# code below is forked from 
+# https://github.com/SciML/Surrogates.jl/commit/e63a00b259f477190f5ad1ba015b0f4cb4b72894
+# by https://github.com/ludoro and others
 mutable struct MOE{X, Y, L, U, S, K, M, V, W} <: AbstractSurrogate
     x::X
     y::Y
