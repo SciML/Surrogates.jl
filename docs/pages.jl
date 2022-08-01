@@ -34,5 +34,4 @@ pages = ["index.md"
              "Gramacy & Lee Function" => "gramacylee.md",
              "Salustowicz Benchmark" => "Salustowicz.md",
              "Multi objective optimization" => "multi_objective_opt.md",
-         ]
-         "Contributing" => "contributing.md"]
+         ]]
