@@ -1,4 +1,3 @@
-![SurrogatesLogo](images/Surrogates.png)
 # Overview
 A surrogate model is an approximation method that mimics the behavior of a computationally
 expensive simulation. In more mathematical terms: suppose we are attempting to optimize a function
