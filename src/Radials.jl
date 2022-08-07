@@ -164,10 +164,6 @@ end
 
 function _approx_rbf(val::Number, rad::R) where {R}
     n = length(rad.x)
-    q = rad.dim_poly
-    num_poly_terms = binomial(q + 1, q)
-    lb = rad.lb
-    ub = rad.ub
     approx = zero(rad.coeff[:, 1])
     for i in 1:n
         approx += rad.coeff[:, i] * rad.phi((val .- rad.x[i]) / rad.scale_factor)
@@ -177,15 +173,6 @@ end
 
 function _approx_rbf(val, rad::R) where {R}
     n = length(rad.x)
-    d = length(rad.x[1])
-
-    q = rad.dim_poly
-    num_poly_terms = binomial(q + d, q)
-    lb = rad.lb
-    ub = rad.ub
-    sum_half_diameter = sum((ub[k] - lb[k]) / 2 for k in 1:d)
-    mean_half_diameter = sum_half_diameter / d
-    central_point = _center_bounds(first(rad.x), lb, ub)
 
     l = size(rad.coeff, 1)
     approx = Buffer(zeros(eltype(val), l), false)
