@@ -175,7 +175,7 @@ end
 function _add_tmp_to_approx!(approx::Base.RefValue, i, tmp,
                              rad::RadialBasis{F, Q, X, <:AbstractArray{<:Number}};
                              f = identity) where {F, Q, X}
-    @inbounds @simd ivdep for j in 1:1 # i have no idea why but like this it's crazy fast
+    @inbounds @simd ivdep for j in 1:size(rad.coeff, 1)
         approx[] += rad.coeff[j, i] * f(tmp)
     end
 end
@@ -185,6 +185,11 @@ _ret_copy(v) = copy(v)
 
 function _approx_rbf(val, rad::RadialBasis)
     n = length(rad.x)
+
+    # make sure @inbounds is safe
+    if n > size(rad.coeff, 2)
+        throw("Length of model's x vector exceeds number of calculated coefficients ($n != $(size(rad.coeff, 2))).")
+    end
 
     approx = _make_approx(val, rad)
 
