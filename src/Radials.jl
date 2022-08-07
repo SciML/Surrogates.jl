@@ -30,19 +30,6 @@ thinplateRadial() = RadialFunction(2, z -> begin
                                    end)
 
 """
-    RadialBasis(x,y,lb::Number,ub::Number; rad::RadialFunction = linearRadial(),scale::Real=1.0)
-
-Constructor for RadialBasis surrogate.
-"""
-function RadialBasis(x, y, lb::Number, ub::Number; rad::RadialFunction = linearRadial(),
-                     scale_factor::Real = 0.5, sparse = false)
-    q = rad.q
-    phi = rad.phi
-    coeff = _calc_coeffs(x, y, lb, ub, phi, q, scale_factor, sparse)
-    return RadialBasis(phi, q, x, y, lb, ub, coeff, scale_factor, sparse)
-end
-
-"""
 RadialBasis(x,y,lb,ub,rad::RadialFunction, scale_factor::Float = 1.0)
 
 Constructor for RadialBasis surrogate
@@ -162,12 +149,8 @@ function (rad::RadialBasis)(val)
     return _match_container(approx, first(rad.y))
 end
 
-function _approx_rbf(val::Number, rad::R) where {R}
+function _approx_rbf(val::Number, rad::RadialBasis)
     n = length(rad.x)
-    q = rad.dim_poly
-    num_poly_terms = binomial(q + 1, q)
-    lb = rad.lb
-    ub = rad.ub
     approx = zero(rad.coeff[:, 1])
     for i in 1:n
         approx += rad.coeff[:, i] * rad.phi((val .- rad.x[i]) / rad.scale_factor)
@@ -175,43 +158,59 @@ function _approx_rbf(val::Number, rad::R) where {R}
     return approx
 end
 
-function _approx_rbf(val, rad::R) where {R}
-    n = length(rad.x)
-    d = length(rad.x[1])
-
-    q = rad.dim_poly
-    num_poly_terms = binomial(q + d, q)
-    lb = rad.lb
-    ub = rad.ub
-    sum_half_diameter = sum((ub[k] - lb[k]) / 2 for k in 1:d)
-    mean_half_diameter = sum_half_diameter / d
-    central_point = _center_bounds(first(rad.x), lb, ub)
-
+function _make_approx(val, rad::RadialBasis)
     l = size(rad.coeff, 1)
-    approx = Buffer(zeros(eltype(val), l), false)
+    return Buffer(zeros(eltype(val), l), false)
+end
+function _add_tmp_to_approx!(approx, i, tmp, rad::RadialBasis; f = identity)
+    @inbounds @simd ivdep for j in 1:size(rad.coeff, 1)
+        approx[j] += rad.coeff[j, i] * f(tmp)
+    end
+end
+# specialise when only single output dimension
+function _make_approx(val,
+                      ::RadialBasis{F, Q, X, <:AbstractArray{<:Number}}) where {F, Q, X}
+    return Ref(zero(eltype(val)))
+end
+function _add_tmp_to_approx!(approx::Base.RefValue, i, tmp,
+                             rad::RadialBasis{F, Q, X, <:AbstractArray{<:Number}};
+                             f = identity) where {F, Q, X}
+    @inbounds @simd ivdep for j in 1:size(rad.coeff, 1)
+        approx[] += rad.coeff[j, i] * f(tmp)
+    end
+end
+
+_ret_copy(v::Base.RefValue) = v[]
+_ret_copy(v) = copy(v)
+
+function _approx_rbf(val, rad::RadialBasis)
+    n = length(rad.x)
+
+    # make sure @inbounds is safe
+    if n > size(rad.coeff, 2)
+        throw("Length of model's x vector exceeds number of calculated coefficients ($n != $(size(rad.coeff, 2))).")
+    end
+
+    approx = _make_approx(val, rad)
 
     if rad.phi === linearRadial().phi
         for i in 1:n
             tmp = zero(eltype(val))
-            @simd ivdep for j in 1:length(val)
+            @inbounds @simd ivdep for j in 1:length(val)
                 tmp += ((val[j] - rad.x[i][j]) / rad.scale_factor)^2
             end
             tmp = sqrt(tmp)
-            @simd ivdep for j in 1:size(rad.coeff, 1)
-                approx[j] += rad.coeff[j, i] * tmp
-            end
+            _add_tmp_to_approx!(approx, i, tmp, rad)
         end
     else
         tmp = collect(val)
-        for i in 1:n
+        @inbounds for i in 1:n
             tmp = (val .- rad.x[i]) ./ rad.scale_factor
-            # approx .+= @view(rad.coeff[:,i]) .* rad.phi(tmp)
-            @simd ivdep for j in 1:size(rad.coeff, 1)
-                approx[j] += rad.coeff[j, i] * rad.phi(tmp)
-            end
+            _add_tmp_to_approx!(approx, i, tmp, rad; f = rad.phi)
         end
     end
-    return copy(approx)
+
+    return _ret_copy(approx)
 end
 
 _scaled_chebyshev(x, k, lb, ub) = cos(k * acos(-1 + 2 * (x - lb) / (ub - lb)))
