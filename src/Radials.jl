@@ -30,19 +30,6 @@ thinplateRadial() = RadialFunction(2, z -> begin
                                    end)
 
 """
-    RadialBasis(x,y,lb::Number,ub::Number; rad::RadialFunction = linearRadial(),scale::Real=1.0)
-
-Constructor for RadialBasis surrogate.
-"""
-function RadialBasis(x, y, lb::Number, ub::Number; rad::RadialFunction = linearRadial(),
-                     scale_factor::Real = 0.5, sparse = false)
-    q = rad.q
-    phi = rad.phi
-    coeff = _calc_coeffs(x, y, lb, ub, phi, q, scale_factor, sparse)
-    return RadialBasis(phi, q, x, y, lb, ub, coeff, scale_factor, sparse)
-end
-
-"""
 RadialBasis(x,y,lb,ub,rad::RadialFunction, scale_factor::Float = 1.0)
 
 Constructor for RadialBasis surrogate
@@ -162,7 +149,7 @@ function (rad::RadialBasis)(val)
     return _match_container(approx, first(rad.y))
 end
 
-function _approx_rbf(val::Number, rad::R) where {R}
+function _approx_rbf(val::Number, rad::RadialBasis)
     n = length(rad.x)
     approx = zero(rad.coeff[:, 1])
     for i in 1:n
@@ -171,7 +158,7 @@ function _approx_rbf(val::Number, rad::R) where {R}
     return approx
 end
 
-function _approx_rbf(val, rad::R) where {R}
+function _approx_rbf(val, rad::RadialBasis)
     n = length(rad.x)
 
     l = size(rad.coeff, 1)
