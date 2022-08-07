@@ -158,34 +158,51 @@ function _approx_rbf(val::Number, rad::RadialBasis)
     return approx
 end
 
+function _make_approx(val, rad::RadialBasis)
+    l = size(rad.coeff, 1)
+    Buffer(zeros(eltype(val), l), false)
+end
+function _make_approx(val, ::RadialBasis{F, Q, X, <:AbstractArray{<:Number}}) where {F, Q, X}
+    Ref(zero(eltype(val)))
+end
+
+function _add_tmp!(approx, i, tmp, rad::RadialBasis; f=identity)
+    @inbounds @simd ivdep for j in 1:size(rad.coeff, 1)
+        approx[j] += rad.coeff[j, i] * f(tmp)
+    end
+end
+function _add_tmp!(approx::Base.RefValue, i, tmp, rad::RadialBasis{F, Q, X, <:AbstractArray{<:Number}}; f=identity) where {F, Q, X}
+    @inbounds @simd ivdep for j in 1:1
+        approx[] += rad.coeff[j, i] * f(tmp)
+    end
+end
+
+_ret_copy(v::Base.RefValue) = v[]
+_ret_copy(v) = copy(v)
+
 function _approx_rbf(val, rad::RadialBasis)
     n = length(rad.x)
 
-    l = size(rad.coeff, 1)
-    approx = Buffer(zeros(eltype(val), l), false)
+    approx = _make_approx(val, rad)
 
     if rad.phi === linearRadial().phi
         for i in 1:n
             tmp = zero(eltype(val))
-            @simd ivdep for j in 1:length(val)
+            @inbounds @simd ivdep for j in 1:length(val)
                 tmp += ((val[j] - rad.x[i][j]) / rad.scale_factor)^2
             end
             tmp = sqrt(tmp)
-            @simd ivdep for j in 1:size(rad.coeff, 1)
-                approx[j] += rad.coeff[j, i] * tmp
-            end
+            _add_tmp!(approx, i, tmp, rad)
         end
     else
         tmp = collect(val)
-        for i in 1:n
+        @inbounds for i in 1:n
             tmp = (val .- rad.x[i]) ./ rad.scale_factor
-            # approx .+= @view(rad.coeff[:,i]) .* rad.phi(tmp)
-            @simd ivdep for j in 1:size(rad.coeff, 1)
-                approx[j] += rad.coeff[j, i] * rad.phi(tmp)
-            end
+            _add_tmp!(approx, i, tmp, rad; f = rad.phi)
         end
     end
-    return copy(approx)
+
+    return _ret_copy(approx)
 end
 
 _scaled_chebyshev(x, k, lb, ub) = cos(k * acos(-1 + 2 * (x - lb) / (ub - lb)))
