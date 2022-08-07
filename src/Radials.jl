@@ -160,18 +160,21 @@ end
 
 function _make_approx(val, rad::RadialBasis)
     l = size(rad.coeff, 1)
-    Buffer(zeros(eltype(val), l), false)
+    return Buffer(zeros(eltype(val), l), false)
 end
-function _add_tmp_to_approx!(approx, i, tmp, rad::RadialBasis; f=identity)
+function _add_tmp_to_approx!(approx, i, tmp, rad::RadialBasis; f = identity)
     @inbounds @simd ivdep for j in 1:size(rad.coeff, 1)
         approx[j] += rad.coeff[j, i] * f(tmp)
     end
 end
 # specialise when only single output dimension
-function _make_approx(val, ::RadialBasis{F, Q, X, <:AbstractArray{<:Number}}) where {F, Q, X}
-    Ref(zero(eltype(val)))
+function _make_approx(val,
+                      ::RadialBasis{F, Q, X, <:AbstractArray{<:Number}}) where {F, Q, X}
+    return Ref(zero(eltype(val)))
 end
-function _add_tmp_to_approx!(approx::Base.RefValue, i, tmp, rad::RadialBasis{F, Q, X, <:AbstractArray{<:Number}}; f=identity) where {F, Q, X}
+function _add_tmp_to_approx!(approx::Base.RefValue, i, tmp,
+                             rad::RadialBasis{F, Q, X, <:AbstractArray{<:Number}};
+                             f = identity) where {F, Q, X}
     @inbounds @simd ivdep for j in 1:1 # i have no idea why but like this it's crazy fast
         approx[] += rad.coeff[j, i] * f(tmp)
     end
