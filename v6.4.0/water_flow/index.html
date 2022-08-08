@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Water Flow function · Surrogates.jl</title><script async src="https://www.googletagmanager.com/gtag/js?id=UA-90474609-3"></script><script>  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'UA-90474609-3', {'page_path': location.pathname + location.search + location.hash});
+</script><script data-outdated-warner src="../assets/warner.js"></script><link rel="canonical" href="https://surrogates.sciml.ai/stable/water_flow/"/><link href="https://cdnjs.cloudflare.com/ajax/libs/lato-font/3.0.0/css/lato-font.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/juliamono/0.045/juliamono.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.13.24/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL=".."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../assets/documenter.js"></script><script src="../siteinfo.js"></script><script src="../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../assets/themeswap.js"></script><link href="../assets/favicon.ico" rel="icon" type="image/x-icon"/></head><body><div id="documenter"><nav class="docs-sidebar"><div class="docs-package-name"><span class="docs-autofit"><a href="../">Surrogates.jl</a></span></div><form class="docs-search" action="../search/"><input class="docs-search-query" id="documenter-search-query" name="q" type="text" placeholder="Search docs"/></form><ul class="docs-menu"><li><a class="tocitem" href="../">Overview</a></li><li><span class="tocitem">Tutorials</span><ul><li><a class="tocitem" href="../tutorials/">Basics</a></li><li><a class="tocitem" href="../radials/">Radials</a></li><li><a class="tocitem" href="../kriging/">Kriging</a></li><li><a class="tocitem" href="../abstractgps/">Gaussian Process</a></li><li><a class="tocitem" href="../lobachevsky/">Lobachevsky</a></li><li><a class="tocitem" href="../LinearSurrogate/">Linear</a></li><li><a class="tocitem" href="../InverseDistance/">InverseDistance</a></li><li><a class="tocitem" href="../randomforest/">RandomForest</a></li><li><a class="tocitem" href="../secondorderpoly/">SecondOrderPolynomial</a></li><li><a class="tocitem" href="../neural/">NeuralSurrogate</a></li><li><a class="tocitem" href="../wendland/">Wendland</a></li><li><a class="tocitem" href="../polychaos/">Polynomial Chaos</a></li><li><a class="tocitem" href="../variablefidelity/">Variable Fidelity</a></li><li><a class="tocitem" href="../gek/">Gradient Enhanced Kriging</a></li><li><a class="tocitem" href="../gekpls/">GEKPLS</a></li></ul></li><li><span class="tocitem">User guide</span><ul><li><a class="tocitem" href="../samples/">Samples</a></li><li><a class="tocitem" href="../surrogate/">Surrogates</a></li><li><a class="tocitem" href="../optimizations/">Optimization</a></li></ul></li><li><span class="tocitem">Benchmarks</span><ul><li><a class="tocitem" href="../sphere_function/">Sphere function</a></li><li><a class="tocitem" href="../lp/">Lp norm</a></li><li><a class="tocitem" href="../rosenbrock/">Rosenbrock</a></li><li><a class="tocitem" href="../tensor_prod/">Tensor product</a></li><li><a class="tocitem" href="../cantilever/">Cantilever beam</a></li><li class="is-active"><a class="tocitem" href>Water Flow function</a></li><li><a class="tocitem" href="../welded_beam/">Welded beam function</a></li><li><a class="tocitem" href="../BraninFunction/">Branin function</a></li><li><a class="tocitem" href="../ackley/">Ackley function</a></li><li><a class="tocitem" href="../gramacylee/">Gramacy &amp; Lee Function</a></li><li><a class="tocitem" href="../Salustowicz/">Salustowicz Benchmark</a></li><li><a class="tocitem" href="../multi_objective_opt/">Multi objective optimization</a></li></ul></li><li><a class="tocitem" href="../contributing/">Contributing</a></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><nav class="breadcrumb"><ul class="is-hidden-mobile"><li><a class="is-disabled">Benchmarks</a></li><li class="is-active"><a href>Water Flow function</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>Water Flow function</a></li></ul></nav><div class="docs-right"><a class="docs-edit-link" href="https://github.com/SciML/Surrogates.jl/blob/master/docs/src/water_flow.md" title="Edit on GitHub"><span class="docs-icon fab"></span><span class="docs-label is-hidden-touch">Edit on GitHub</span></a><a class="docs-settings-button fas fa-cog" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-sidebar-button fa fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a></div></header><article class="content" id="documenter-page"><h1 id="Water-flow-function"><a class="docs-heading-anchor" href="#Water-flow-function">Water flow function</a><a id="Water-flow-function-1"></a><a class="docs-heading-anchor-permalink" href="#Water-flow-function" title="Permalink"></a></h1><p>The water flow function is defined as: <span>$f(r_w,r,T_u,H_u,T_l,H_l,L,K_w) = \frac{2*\pi*T_u(H_u - H_l)}{log(\frac{r}{r_w})*[1 + \frac{2LT_u}{log(\frac{r}{r_w})*r_w^2*K_w}+ \frac{T_u}{T_l} ]}$</span></p><p>It has 8 dimension.</p><pre><code class="language-julia hljs">using Surrogates
+using SurrogatesPolyChaos
+using Plots
+using LinearAlgebra
+default()</code></pre><p>Define the objective function:</p><pre><code class="language-julia hljs">function f(x)
+    r_w = x[1]
+    r = x[2]
+    T_u = x[3]
+    H_u = x[4]
+    T_l = x[5]
+    H_l = x[6]
+    L = x[7]
+    K_w = x[8]
+    log_val = log(r/r_w)
+    return (2*pi*T_u*(H_u - H_l))/ ( log_val*(1 + (2*L*T_u/(log_val*r_w^2*K_w)) + T_u/T_l))
+end</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">f (generic function with 1 method)</code></pre><pre><code class="language-julia hljs">n = 180
+d = 8
+lb = [0.05,100,63070,990,63.1,700,1120,9855]
+ub = [0.15,50000,115600,1110,116,820,1680,12045]
+x = sample(n,lb,ub,SobolSample())
+y = f.(x)
+n_test = 1000
+x_test = sample(n_test,lb,ub,GoldenSample());
+y_true = f.(x_test);</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">1000-element Vector{Float64}:
+  23.88799363535057
+  95.7141642577067
+  56.55624229132355
+  84.40343937168049
+  47.26810269934988
+ 127.93614384465133
+  65.13089342006397
+  34.71568969517481
+ 130.85209271290404
+  55.740683463585434
+   ⋮
+  50.24592194098488
+ 163.01736401977075
+  50.66415146947934
+  85.72112318428717
+  43.31294074028943
+  30.457082889921352
+ 114.28117310019348
+  48.51629300181345
+ 148.46958056042945</code></pre><pre><code class="language-julia hljs">my_rad = RadialBasis(x,y,lb,ub)
+y_rad = my_rad.(x_test)
+my_poly = PolynomialChaosSurrogate(x,y,lb,ub)
+y_poly = my_poly.(x_test)
+mse_rad = norm(y_true - y_rad,2)/n_test
+mse_poly = norm(y_true - y_poly, 2)/n_test
+println(&quot;MSE Radial: $mse_rad&quot;)
+println(&quot;MSE Radial: $mse_poly&quot;)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">MSE Radial: 1.686370398755797
+MSE Radial: 0.05515820080902288</code></pre></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../cantilever/">« Cantilever beam</a><a class="docs-footer-nextpage" href="../welded_beam/">Welded beam function »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 0.27.22 on <span class="colophon-date" title="Monday 8 August 2022 00:02">Monday 8 August 2022</span>. Using Julia version 1.7.3.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
