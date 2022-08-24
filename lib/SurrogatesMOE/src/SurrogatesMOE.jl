@@ -3,7 +3,7 @@ module SurrogatesMOE
 import Surrogates: AbstractSurrogate, linearRadial, cubicRadial, multiquadricRadial,
                    thinplateRadial, RadialBasisStructure, RadialBasis,
                    InverseDistanceSurrogate, Kriging, LobachevskyStructure,
-                   LobachevskySurrogate, NeuralStructure, PolyChaosStructure
+                   LobachevskySurrogate, NeuralStructure, PolyChaosStructure, LinearSurrogate
 
 export MOE
 
@@ -86,7 +86,7 @@ predictor for ndimensional inputs
 
 """
 function (moe::MOE)(val)
-    val = val
+    val = collect(val) #to handle inputs that may sometimes be tuples
     weights = GaussianMixtures.weights(moe.c)
     rvs = [Distributions.pdf(moe.d[k], val) for k in 1:length(weights)]
     probs = weights .* rvs
@@ -274,7 +274,10 @@ function _surrogate_builder(local_kind, k, x, y, lb, ub)
             push!(local_surr,  my_local_i)
 
         elseif local_kind[i][1] == "Kriging"
-            x = [a[1] for a in x] #because Kriging takes abs of two vectors
+            #because Kriging takes abs of two vectors
+            if(length(lb) == 1)
+                x = [a[1] for a in x] 
+            end
 
             my_local_i = Kriging(x, y, lb, ub, p = local_kind[i].p,
                                  theta = local_kind[i].theta)
