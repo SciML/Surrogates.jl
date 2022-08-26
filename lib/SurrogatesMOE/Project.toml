@@ -14,7 +14,6 @@ SurrogatesFlux = "4f55584b-dac4-4b1c-802a-b7c47b72cb4c"
 SurrogatesPolyChaos = "50679fc6-c85c-4a6e-ac63-dc3c8bd8cb1c"
 SurrogatesRandomForest = "3fee2672-df33-422b-aa65-d915eeac013a"
 Surrogates = "6fc51010-71bc-11e9-0e15-a3fcc6593c49"
-Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 XGBoost = "009559a3-9522-5dbb-924b-0b6ed2b22bb9"
 
 [compat]
@@ -29,5 +28,8 @@ XGBoost = "1.5.2"
 Flux = "0.13"
 
 [extras]
-SafeTestsets = "1bc83da4-3b8d-516f-aca4-4fe02f6d838f"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+SafeTestsets = "1bc83da4-3b8d-516f-aca4-4fe02f6d838f"
+
+[targets]
+test = ["Test", "SafeTestsets"]
