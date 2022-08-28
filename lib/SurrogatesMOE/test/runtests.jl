@@ -1,8 +1,3 @@
-# using Surrogates
-# using SurrogatesMOE
-# using SurrogatesFlux
-# using Flux
-# using SurrogatesPolyChaos
 using SafeTestsets
 
 #test 1D function that is discontinuous
