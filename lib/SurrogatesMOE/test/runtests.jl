@@ -90,14 +90,14 @@ end
     rbf_rmse = rmse(true_vals, rbf_pred_vals)
     @test (rbf_rmse > moe_rmse)
 
-    # expert_types = [KrigingStructure(p = [1.0, 1.0], theta = [1.0, 1.0]), LinearStructure()]
-    # MOE_ND_KRIG_LIN = MOE(x, y, expert_types, ndim = 2)
-    # MOE_pred_vals = MOE_ND_KRIG_LIN.(x_test)
-    # krig = Kriging(x, y, lb, ub, p = [1.0, 1.0], theta = [1.0, 1.0])
-    # krig_pred_vals = krig.(x_test)
-    # krig_rmse = rmse(true_vals, krig_pred_vals)
-    # moe_rmse = rmse(true_vals, MOE_pred_vals)
-    # @test krig_rmse > moe_rmse
+    expert_types_krig_lin = [KrigingStructure(p = [1.0, 1.0], theta = [1.0, 1.0]), LinearStructure()]
+    MOE_ND_KRIG_LIN = MOE(x, y, expert_types_krig_lin, ndim = 2)
+    MOE_pred_vals_krig_lin = MOE_ND_KRIG_LIN.(x_test)
+    krig = Kriging(x, y, lb, ub, p = [1.0, 1.0], theta = [1.0, 1.0])
+    krig_pred_vals = krig.(x_test)
+    krig_rmse = rmse(true_vals, krig_pred_vals)
+    moe_rmse_krig_lin = rmse(true_vals, MOE_pred_vals_krig_lin)
+    @test krig_rmse > moe_rmse_krig_lin
 end
 
 @safetestset "Miscellaneous" begin
