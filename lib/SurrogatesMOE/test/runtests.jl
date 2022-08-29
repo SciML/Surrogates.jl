@@ -77,7 +77,8 @@ end
     y = discont_NDIM.(x)
     x_test = sample(10, lb, ub, GoldenSample())
 
-    expert_types = [InverseDistanceStructure(p = 1.0),
+    expert_types = [#InverseDistanceStructure(p = 1.0),
+        KrigingStructure(p = [1.0, 1.0], theta = [1.0, 1.0]),
         RadialBasisStructure(radial_function = linearRadial(), scale_factor = 1.0,
                              sparse = false),
     ]
@@ -88,19 +89,11 @@ end
     rbf = RadialBasis(x, y, lb, ub)
     rbf_pred_vals = rbf.(x_test)
     rbf_rmse = rmse(true_vals, rbf_pred_vals)
-    @test (rbf_rmse > moe_rmse)
-
-    expert_types_krig_lin = [
-        KrigingStructure(p = [1.0, 1.0], theta = [1.0, 1.0]),
-        LinearStructure(),
-    ]
-    MOE_ND_KRIG_LIN = MOE(x, y, expert_types_krig_lin, ndim = 2)
-    MOE_pred_vals_krig_lin = MOE_ND_KRIG_LIN.(x_test)
     krig = Kriging(x, y, lb, ub, p = [1.0, 1.0], theta = [1.0, 1.0])
     krig_pred_vals = krig.(x_test)
     krig_rmse = rmse(true_vals, krig_pred_vals)
-    moe_rmse_krig_lin = rmse(true_vals, MOE_pred_vals_krig_lin)
-    @test krig_rmse > moe_rmse_krig_lin
+    @test (rbf_rmse > moe_rmse)
+    @test (krig_rmse > moe_rmse)
 end
 
 @safetestset "Miscellaneous" begin
