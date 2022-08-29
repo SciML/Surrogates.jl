@@ -6,7 +6,6 @@ version = "0.1.0"
 [deps]
 Clustering = "aaaa29a8-35af-508c-8bc3-b662a17a0fe5"
 Distributions = "31c24e10-a181-5473-b8eb-7969acd0382f"
-Flux = "587475ba-b771-5e3f-ad9e-33799f191a9c"
 GaussianMixtures = "cc18c42c-b769-54ff-9e2a-b28141a64aae"
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
@@ -25,11 +24,11 @@ SurrogatesFlux = "0.1.0"
 SurrogatesPolyChaos = "0.1.0"
 SurrogatesRandomForest = "0.1.0"
 XGBoost = "1.5.2"
-Flux = "0.13"
 
 [extras]
+Flux = "587475ba-b771-5e3f-ad9e-33799f191a9c"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 SafeTestsets = "1bc83da4-3b8d-516f-aca4-4fe02f6d838f"
 
 [targets]
-test = ["Test", "SafeTestsets"]
+test = ["Flux", "Test", "SafeTestsets"]

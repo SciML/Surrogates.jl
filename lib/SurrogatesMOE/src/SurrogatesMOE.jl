@@ -18,12 +18,15 @@ using SurrogatesPolyChaos
 using SurrogatesRandomForest
 using XGBoost
 
-mutable struct MOE{X, Y, C, D, M} <: AbstractSurrogate
+mutable struct MOE{X, Y, C, D, M, E, ND, NC} <: AbstractSurrogate
     x::X
     y::Y
     c::C #clusters (C) - vector of gaussian mixture clusters
     d::D #distributions (D) - vector of frozen multivariate distributions
     m::M # models (M) - vector of trained models correspnoding to clusters (C) and distributions (D)
+    e::E #expert types
+    nd::ND #number of dimensions
+    nc::NC #number of clusters
 end
 
 """
@@ -33,9 +36,12 @@ constructor for MOE; takes in x, y and expert types and returns an MOE struct
 function MOE(x, y, expert_types; ndim = 1, n_clusters = 2)
     quantile = 10
     if (ndim > 1)
-        x = _vector_of_tuples_to_matrix(x)
+        #x = _vector_of_tuples_to_matrix(x)
+        X = _vector_of_tuples_to_matrix(x)
+        values = hcat(X, y)
+    else
+        values = hcat(x, y)
     end
-    values = hcat(x, y)
 
     x_and_y_test, x_and_y_train = _extract_part(values, quantile)
     # We get posdef error without jitter; And if values repeat we get NaN vals 
@@ -54,9 +60,12 @@ function MOE(x, y, expert_types; ndim = 1, n_clusters = 2)
                                       expert_types)
         push!(best_models, best_model)
     end
-    X = values[:, 1:ndim]
-    y = values[:, 2]
-    return MOE(X, y, gm_cluster, mvn_distributions, best_models)
+    # X = values[:, 1:ndim]
+    # y = values[:, 2]
+
+    #return MOE(X, y, gm_cluster, mvn_distributions, best_models)
+    return MOE(x, y, gm_cluster, mvn_distributions, best_models, expert_types, ndim,
+               n_clusters)
 end
 
 """
@@ -331,6 +340,46 @@ function _surrogate_builder(local_kind, k, x, y, lb, ub)
         end
     end
     return local_surr
+end
+
+"""
+    add_point!(m::MOE, new_x, new_y)
+
+add a new point to the dataset.
+"""
+function add_point!(m::MOE, x, y)
+    #function add_point!(m) #this works
+    push!(m.x, x)
+    push!(m.y, y)
+
+    quantile = 10
+
+    if (m.nd > 1) #numbef of dimensions
+        X = _vector_of_tuples_to_matrix(m.x)
+        values = hcat(X, m.y)
+    else
+        values = hcat(m.x, m.y)
+    end
+    x_and_y_test, x_and_y_train = _extract_part(values, quantile)
+    # We get posdef error without jitter; And if values repeat we get NaN vals 
+    # https://github.com/davidavdav/GaussianMixtures.jl/issues/21 
+    jitter_vals = ((rand(eltype(x_and_y_train), size(x_and_y_train))) ./ 10000)
+    gm_cluster = GMM(m.nc, x_and_y_train + jitter_vals, kind = :full, nInit = 50,
+                     nIter = 20)
+    mvn_distributions = _create_clusters_distributions(gm_cluster, m.nd, m.nc)
+    cluster_classifier_train = _cluster_predict(gm_cluster, x_and_y_train)
+    clusters_train = _cluster_values(x_and_y_train, cluster_classifier_train, m.nc)
+    cluster_classifier_test = _cluster_predict(gm_cluster, x_and_y_test)
+    clusters_test = _cluster_values(x_and_y_test, cluster_classifier_test, m.nc)
+    best_models = []
+    for i in 1:(m.nc)
+        best_model = _find_best_model(clusters_train[i], clusters_test[i], m.nd,
+                                      m.e)
+        push!(best_models, best_model)
+    end
+    m.c = gm_cluster
+    m.d = mvn_distributions
+    m.m = best_models
 end
 
 """
