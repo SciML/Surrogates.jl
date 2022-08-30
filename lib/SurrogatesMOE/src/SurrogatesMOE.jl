@@ -4,7 +4,7 @@ import Surrogates: AbstractSurrogate, linearRadial, cubicRadial, multiquadricRad
                    thinplateRadial, RadialBasisStructure, RadialBasis,
                    InverseDistanceSurrogate, Kriging, LobachevskyStructure,
                    LobachevskySurrogate, NeuralStructure, PolyChaosStructure,
-                   LinearSurrogate
+                   LinearSurrogate, add_point!
 
 export MOE
 

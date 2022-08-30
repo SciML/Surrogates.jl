@@ -1,6 +1,6 @@
 using SafeTestsets
 
-#test 1D function that is discontinuous
+# #test 1D function that is discontinuous
 @safetestset "1D" begin
     using Surrogates
     using SurrogatesMOE
@@ -72,8 +72,8 @@ end
     end
     lb = [-1.0, -1.0]
     ub = [1.0, 1.0]
-    n = 100
-    x = sample(n, lb, ub, UniformSample())
+    n = 150
+    x = sample(n, lb, ub, SobolSample())
     y = discont_NDIM.(x)
     x_test = sample(10, lb, ub, GoldenSample())
 
@@ -112,7 +112,7 @@ end
     end
     lb = [-1.0, -1.0]
     ub = [1.0, 1.0]
-    n = 100
+    n = 120
     x = sample(n, lb, ub, UniformSample())
     y = discont_NDIM.(x)
     x_test = sample(10, lb, ub, GoldenSample())
@@ -163,7 +163,7 @@ end
                              sparse = false),
     ]
     moe = MOE(x, y, expert_types)
-    SurrogatesMOE.add_point!(moe, 0.5, 5.0)
+    add_point!(moe, 0.5, 5.0)
 end
 
 @safetestset "Add Point ND" begin
@@ -180,15 +180,13 @@ end
     end
     lb = [-1.0, -1.0]
     ub = [1.0, 1.0]
-    n = 100
+    n = 110
     x = sample(n, lb, ub, UniformSample())
     y = discont_NDIM.(x)
-    x_test = sample(10, lb, ub, GoldenSample())
-
     expert_types = [InverseDistanceStructure(p = 1.0),
         RadialBasisStructure(radial_function = linearRadial(), scale_factor = 1.0,
                              sparse = false),
     ]
     moe_nd_inv_rad = MOE(x, y, expert_types, ndim = 2)
-    SurrogatesMOE.add_point!(moe_nd_inv_rad, (0.5, 0.5), sum((0.5, 0.5) .^ 2) + 5)
+    add_point!(moe_nd_inv_rad, (0.5, 0.5), sum((0.5, 0.5) .^ 2) + 5)
 end
