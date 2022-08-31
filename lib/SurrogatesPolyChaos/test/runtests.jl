@@ -87,7 +87,8 @@ using SafeTestsets
         f = x -> x[1] * x[2]
         y = f.(x)
         my_poli_ND = PolynomialChaosSurrogate(x, y, lb, ub)
-        g = x -> Zygote.gradient(my_poli_ND, x)
+        #g = x -> Zygote.gradient(my_poli_ND, x)
+        g = x -> my_poli_ND'(x)
         g((1.0, 1.0))
 
         n = 10
@@ -112,7 +113,8 @@ using SafeTestsets
         y2 = create_grads(n, d, grad1, grad2, y)
         y = vcat(y1, y2)
         my_gek_ND = GEK(x, y, lb, ub)
-        g = x -> Zygote.gradient(my_gek_ND, x)
+        #g = x -> Zygote.gradient(my_gek_ND, x)
+        g = x -> my_gek_ND'(x)
         g((2.0, 5.0))
     end
 end
