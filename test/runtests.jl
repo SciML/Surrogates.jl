@@ -7,9 +7,9 @@ function dev_subpkg(subpkg)
     subpkg_path = joinpath(dirname(@__DIR__), "lib", subpkg)
     Pkg.develop(PackageSpec(path = subpkg_path))
 end
-for pkg in [#"SurrogatesMOE", 
+for pkg in [
     "SurrogatesAbstractGPs", "SurrogatesFlux",
-    "SurrogatesPolyChaos",
+    "SurrogatesPolyChaos", "SurrogatesMOE", 
     "SurrogatesRandomForest", "SurrogatesSVM"]
     @time begin
         dev_subpkg(pkg)
