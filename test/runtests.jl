@@ -9,7 +9,7 @@ function dev_subpkg(subpkg)
 end
 for pkg in [
     "SurrogatesAbstractGPs", "SurrogatesFlux",
-    "SurrogatesPolyChaos", "SurrogatesMOE", 
+    "SurrogatesPolyChaos", "SurrogatesMOE",
     "SurrogatesRandomForest", "SurrogatesSVM"]
     @time begin
         dev_subpkg(pkg)
