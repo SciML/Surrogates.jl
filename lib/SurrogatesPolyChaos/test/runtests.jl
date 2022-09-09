@@ -113,6 +113,6 @@ using SafeTestsets
         y = vcat(y1, y2)
         my_gek_ND = GEK(x, y, lb, ub)
         g = x -> Zygote.gradient(my_gek_ND, x)
-        #g((2.0, 5.0)) #breaks after Zygote version 0.6.43
+        @test_broken g((2.0, 5.0)) #breaks after Zygote version 0.6.43
     end
 end
