@@ -17,6 +17,7 @@ XGBoost = "009559a3-9522-5dbb-924b-0b6ed2b22bb9"
 
 [compat]
 Clustering = "0.14.2"
+Distributions = "0.25.71"
 GaussianMixtures = "0.3.6"
 julia = "1.6"
 Surrogates = "6.0"
