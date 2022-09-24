@@ -15,7 +15,7 @@ pages = ["index.md"
              "Variable Fidelity" => "variablefidelity.md",
              "Gradient Enhanced Kriging" => "gek.md",
              "GEKPLS" => "gekpls.md",
-             "MOE" => "moe.md"
+             "MOE" => "moe.md",
          ]
          "User guide" => [
              "Samples" => "samples.md",

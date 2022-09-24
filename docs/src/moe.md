@@ -1,4 +1,8 @@
 ## Mixture of Experts (MOE)
+
+!!! note
+    This surrogate requires the 'SurrogatesMOE' module which can be added by inputting "]add SurrogatesMOE" from the Julia command line. 
+
 The Mixture of Experts (MOE) Surrogate model represents the interpolating function as a combination of other surrogate models. SurrogatesMOE is a Julia implementation of the [Python version from SMT](https://smt.readthedocs.io/en/latest/_src_docs/applications/moe.html).
 
 MOE is most useful when we have a discontinuous function. For example, let's say we want to build a surrogate for:
