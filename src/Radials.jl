@@ -63,7 +63,7 @@ function _construct_rbf_interp_matrix(x, x_el::Number, lb, ub, phi, q, scale_fac
         D = zeros(eltype(x_el), n, n)
     end
     @inbounds for i in 1:n
-        for j in 1:n
+        for j in i:n
             D[i, j] = phi((x[i] .- x[j]) ./ scale_factor)
         end
     end
@@ -80,7 +80,7 @@ function _construct_rbf_interp_matrix(x, x_el, lb, ub, phi, q, scale_factor, spa
         D = zeros(eltype(x_el), n, n)
     end
     @inbounds for i in 1:n
-        for j in 1:n
+        for j in i:n
             D[i, j] = phi((x[i] .- x[j]) ./ scale_factor)
         end
     end
