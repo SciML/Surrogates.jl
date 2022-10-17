@@ -29,7 +29,7 @@ s = Surrogates.sample(n, lb, ub, LatinHypercubeSample())
 @test s isa Vector{Float64} && length(s) == n && all(x -> lb ≤ x ≤ ub, s)
 
 # LowDiscrepancySample
-s = Surrogates.sample(20, lb, ub, LowDiscrepancySample(10))
+s = Surrogates.sample(20, lb, ub, LowDiscrepancySample(;base=10))
 @test s isa Vector{Float64} && length(s) == 20 && all(x -> lb ≤ x ≤ ub, s)
 
 # LatticeRuleSample (not originally in Surrogates.jl, now available through QuasiMonteCarlo.jl)
