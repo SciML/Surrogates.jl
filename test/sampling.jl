@@ -89,7 +89,7 @@ s = Surrogates.sample(n, lb, ub, LatinHypercubeSample())
 @test isa(s, Array{Tuple{typeof(s[1][1]), typeof(s[1][1])}, 1}) == true
 
 #LDS
-s = Surrogates.sample(n, lb, ub, LowDiscrepancySample([10, 3]))
+s = Surrogates.sample(n, lb, ub, LowDiscrepancySample(;base=[10, 3]))
 @test isa(s, Array{Tuple{typeof(s[1][1]), typeof(s[1][1])}, 1}) == true
 
 #Distribution 1
