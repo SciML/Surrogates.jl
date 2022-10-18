@@ -23,7 +23,7 @@ f(x) = sin(x) + sin(x)^2 + sin(x)^3
 n_samples = 25
 lower_bound = 0.0
 upper_bound = 10.0
-x = sample(n_samples, lower_bound, upper_bound, LowDiscrepancySample(2))
+x = sample(n_samples, lower_bound, upper_bound, LowDiscrepancySample(;base=2))
 y = f.(x)
 
 scatter(x, y, label="Sampled points", xlims=(lower_bound, upper_bound), legend=:top)
