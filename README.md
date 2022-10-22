@@ -1,8 +1,7 @@
 ## Surrogates.jl
 
 [![Join the chat at https://julialang.zulipchat.com #sciml-bridged](https://img.shields.io/static/v1?label=Zulip&message=chat&color=9558b2&labelColor=389826)](https://julialang.zulipchat.com/#narrow/stream/279055-sciml-bridged)
-[![Stable](https://img.shields.io/badge/docs-stable-blue.svg)](http://surrogates.sciml.ai/stable/)
-[![Global Docs](https://img.shields.io/badge/docs-SciML-blue.svg)](https://docs.sciml.ai/dev/modules/Surrogates/)
+[![Global Docs](https://img.shields.io/badge/docs-SciML-blue.svg)](https://docs.sciml.ai/Surrogates/stable/)
 
 [![codecov](https://codecov.io/gh/SciML/Surrogates.jl/branch/master/graph/badge.svg)](https://codecov.io/gh/SciML/Surrogates.jl)
 [![Build Status](https://github.com/SciML/Surrogates.jl/workflows/CI/badge.svg)](https://github.com/SciML/Surrogates.jl/actions?query=workflow%3ACI)
