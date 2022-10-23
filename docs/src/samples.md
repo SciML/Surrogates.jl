@@ -1,6 +1,6 @@
 # Sampling
 
-Sampling methods are provided by the [QuasiMonteCarlo package](https://github.com/SciML/QuasiMonteCarlo.jl).
+Sampling methods are provided by the [QuasiMonteCarlo package](https://docs.sciml.ai/QuasiMonteCarlo/stable/).
 
 The syntax for sampling in an interval or region is the following:
 ```
