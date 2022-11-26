@@ -37,12 +37,12 @@ jobs:
         with:
           directories: >
                   src,
-                  lib/SurrogatesAbstractGPs,
-                  lib/SurrogatesFlux,
-                  lib/SurrogatesMOE,
-                  lib/SurrogatesPolyChaos,
-                  lib/SurrogatesRandomForest,
-                  lib/SurrogatesSVM
+                  lib/SurrogatesAbstractGPs/src,
+                  lib/SurrogatesFlux/src,
+                  lib/SurrogatesMOE/src,
+                  lib/SurrogatesPolyChaos/src,
+                  lib/SurrogatesRandomForest/src,
+                  lib/SurrogatesSVM/src
       - uses: codecov/codecov-action@v3
         with:
           file: lcov.info
