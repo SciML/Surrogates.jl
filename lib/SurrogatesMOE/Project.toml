@@ -9,27 +9,27 @@ Distributions = "31c24e10-a181-5473-b8eb-7969acd0382f"
 GaussianMixtures = "cc18c42c-b769-54ff-9e2a-b28141a64aae"
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
+Surrogates = "6fc51010-71bc-11e9-0e15-a3fcc6593c49"
 SurrogatesFlux = "4f55584b-dac4-4b1c-802a-b7c47b72cb4c"
 SurrogatesPolyChaos = "50679fc6-c85c-4a6e-ac63-dc3c8bd8cb1c"
 SurrogatesRandomForest = "3fee2672-df33-422b-aa65-d915eeac013a"
-Surrogates = "6fc51010-71bc-11e9-0e15-a3fcc6593c49"
 XGBoost = "009559a3-9522-5dbb-924b-0b6ed2b22bb9"
 
 [compat]
-Clustering = "0.14.2"
+Clustering = "0.14.2, 0.15"
 Distributions = "0.25.71"
 GaussianMixtures = "0.3.6"
-julia = "1.6"
 Surrogates = "6.0"
 SurrogatesFlux = "0.1.0"
 SurrogatesPolyChaos = "0.1.0"
 SurrogatesRandomForest = "0.1.0"
 XGBoost = "1.5.2"
+julia = "1.6"
 
 [extras]
 Flux = "587475ba-b771-5e3f-ad9e-33799f191a9c"
-Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 SafeTestsets = "1bc83da4-3b8d-516f-aca4-4fe02f6d838f"
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [targets]
 test = ["Flux", "Test", "SafeTestsets"]
