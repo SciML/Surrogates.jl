@@ -8,14 +8,7 @@ The construction of a surrogate model can be seen as a three-step process:
 2. Construction of the surrogate model
 3. Surrogate optimization
 
-The sampling methods are super important for the behavior of the Surrogate.
-At the moment they are:
-
-- Grid sample
-- Uniform sample
-- Sobol sample
-- Latin Hypercube sample
-- Low discrepancy sample
+The sampling methods are super important for the behavior of the Surrogate. Sampling can be done through [QuasiMonteCarlo.jl](https://github.com/SciML/QuasiMonteCarlo.jl), all the functions available there can be used in Surrogates.jl.
 
 The available surrogates are:
 
