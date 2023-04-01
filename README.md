@@ -18,17 +18,7 @@ The construction of a surrogate model can be seen as a three-step process:
 2. Construction of the surrogate model
 3. Surrogate optimization
 
-## ALL the currently available sampling methods:
-
-- Grid
-- Uniform
-- Sobol
-- Latin Hypercube
-- Low Discrepancy
-- Kronecker
-- Golden
-- Random
-
+Sampling can be done through [QuasiMonteCarlo.jl](https://github.com/SciML/QuasiMonteCarlo.jl), all the functions available there can be used in Surrogates.jl.
 
 ## ALL the currently available surrogate models:
 
