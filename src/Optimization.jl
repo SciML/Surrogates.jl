@@ -569,6 +569,70 @@ function surrogate_optimize(obj::Function, ::EI, lb::Number, ub::Number, krig,
     println("Completed maximum number of iterations")
 end
 
+function Ask(::EI, lb::Number, ub::Number, krig,
+             sample_type::SamplingAlgorithm, n_parallel, strategy!;
+             num_new_samples = 100)
+
+    dtol = 1e-3 * norm(ub - lb)
+    eps = 0.01
+
+    tmp_krig = deepcopy(krig) # Temporary copy of the kriging model to store virtual points
+
+    new_x_max = zeros(eltype(tmp_krig.x[1]), n_parallel)                     # New x point
+    new_EI_max = zeros(eltype(tmp_krig.x[1]), n_parallel)                    # EI at new x point
+
+    for i in 1:n_parallel
+        # Sample lots of points from the design space -- we will evaluate the EI function at these points
+        new_sample = sample(num_new_samples, lb, ub, sample_type)
+
+        # Find the best point so far
+        f_min = minimum(tmp_krig.y)
+
+        # Allocate some arrays
+        evaluations = zeros(eltype(tmp_krig.x[1]), num_new_samples)  # Holds EI function evaluations
+        point_found = false                                     # Whether we have found a new point to test
+        while point_found == false
+            # For each point in the sample set, evaluate the Expected Improvement function
+            for j in 1:length(new_sample)
+                std = std_error_at_point(tmp_krig, new_sample[j])
+                u = tmp_krig(new_sample[j])
+                if abs(std) > 1e-6
+                    z = (f_min - u - eps) / std
+                else
+                    z = 0
+                end
+                # Evaluate EI at point new_sample[j]
+                evaluations[j] = (f_min - u - eps) * cdf(Normal(), z) +
+                                 std * pdf(Normal(), z)
+            end
+            # find the sample which maximizes the EI function
+            index_max = argmax(evaluations)
+            x_new = new_sample[index_max]   # x point which maximized EI
+            y_new = maximum(evaluations)    # EI at the new point
+            diff_x = abs.(tmp_krig.x .- x_new)
+            bit_x = diff_x .> dtol
+            #new_min_x has to have some distance from tmp_krig.x
+            if false in bit_x
+                #The new_point is not actually that new, discard it!
+                deleteat!(evaluations, index_max)
+                deleteat!(new_sample, index_max)
+                if length(new_sample) == 0
+                    println("Out of sampling points")
+                    index = argmin(tmp_krig.y)
+                    return (tmp_krig.x[index], tmp_krig.y[index])
+                end
+            else
+                point_found = true
+                new_x_max[i] = x_new
+                new_EI_max[i] = y_new
+                strategy!(tmp_krig, krig, x_new)
+            end
+        end
+    end
+
+    return (new_x_max, new_EI_max)
+end
+
 """
 This is an implementation of Expected Improvement (EI),
 arguably the most popular acquisition function in Bayesian optimization.
