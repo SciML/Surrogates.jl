@@ -88,6 +88,10 @@ export LobachevskyStructure, NeuralStructure, RandomForestStructure,
 export WendlandStructure
 export AbstractSurrogate, SamplingAlgorithm
 export Kriging, RadialBasis, add_point!, current_estimate, std_error_at_point
+# Parallelization Strategies
+export KB!, KBLB!, KBUB!, CLmax!, CLmean!, CLmin!
+export Ask
+
 # radial basis functions
 export linearRadial, cubicRadial, multiquadricRadial, thinplateRadial
 
