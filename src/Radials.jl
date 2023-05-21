@@ -32,7 +32,17 @@ thinplateRadial() = RadialFunction(2, z -> begin
 """
 RadialBasis(x,y,lb,ub,rad::RadialFunction, scale_factor::Float = 1.0)
 
-Constructor for RadialBasis surrogate
+Constructor for RadialBasis surrogate, of the form
+
+$$f(x) = \sum_{i=1}^{N} w_i \phi(|x - \bold{c}_i|) \bold{v}^{T} + \bold{v}^{\mathrm{T}} [ 0; \bold{x} ]$$
+
+where $w_i$ are the weights of polyharmonic splines $$\phi(x)$$ and $$\bold{v}$$ are coefficients
+of a polynomial term.
+
+References:
+https://en.wikipedia.org/wiki/Polyharmonic_spline
+
+
 """
 function RadialBasis(x, y, lb, ub; rad::RadialFunction = linearRadial(),
                      scale_factor::Real = 0.5, sparse = false)
