@@ -569,16 +569,18 @@ function surrogate_optimize(obj::Function, ::EI, lb::Number, ub::Number, krig,
     println("Completed maximum number of iterations")
 end
 
-function Ask(::EI, lb::Number, ub::Number, krig,
-             sample_type::SamplingAlgorithm, n_parallel, strategy!;
+function Ask(::EI, krig, sample_type::SamplingAlgorithm, n_parallel::Number, strategy!;
              num_new_samples = 100)
+
+    lb = krig.lb
+    ub = krig.ub
 
     dtol = 1e-3 * norm(ub - lb)
     eps = 0.01
 
     tmp_krig = deepcopy(krig) # Temporary copy of the kriging model to store virtual points
 
-    new_x_max = zeros(eltype(tmp_krig.x[1]), n_parallel)                     # New x point
+    new_x_max = Vector{typeof(tmp_krig.x[1])}(undef, n_parallel)             # New x point
     new_EI_max = zeros(eltype(tmp_krig.x[1]), n_parallel)                    # EI at new x point
 
     for i in 1:n_parallel
@@ -593,7 +595,7 @@ function Ask(::EI, lb::Number, ub::Number, krig,
         point_found = false                                     # Whether we have found a new point to test
         while point_found == false
             # For each point in the sample set, evaluate the Expected Improvement function
-            for j in 1:length(new_sample)
+            for j in eachindex(new_sample)
                 std = std_error_at_point(tmp_krig, new_sample[j])
                 u = tmp_krig(new_sample[j])
                 if abs(std) > 1e-6
@@ -609,8 +611,8 @@ function Ask(::EI, lb::Number, ub::Number, krig,
             index_max = argmax(evaluations)
             x_new = new_sample[index_max]   # x point which maximized EI
             y_new = maximum(evaluations)    # EI at the new point
-            diff_x = abs.(tmp_krig.x .- x_new)
-            bit_x = diff_x .> dtol
+            diff_x = [abs.(prev_point .- x_new) for prev_point in tmp_krig.x]
+            bit_x = [diff_x_point .> dtol for diff_x_point in diff_x]
             #new_min_x has to have some distance from tmp_krig.x
             if false in bit_x
                 #The new_point is not actually that new, discard it!
