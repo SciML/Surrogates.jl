@@ -1,19 +1,19 @@
 # Minimum Constant Liar 
-function CLmin!(tmp_k::Kriging, k::Kriging, new_x)
-    new_y = minimum(k.y)
-    add_point!(tmp_k, new_x, new_y)
+function CLmin!(tmp_surr::AbstractSurrogate, surr::AbstractSurrogate, new_x)
+    new_y = minimum(surr.y)
+    add_point!(tmp_surr, new_x, new_y)
 end
 
 # Maximum Constant Liar
-function CLmax!(tmp_k::Kriging, k::Kriging, new_x)
-    new_y = maximum(k.y)
-    add_point!(tmp_k, new_x, new_y)
+function CLmax!(tmp_surr::AbstractSurrogate, surr::AbstractSurrogate, new_x)
+    new_y = maximum(surr.y)
+    add_point!(tmp_surr, new_x, new_y)
 end
 
 # Mean Constant Liar
-function CLmean!(tmp_k::Kriging, k::Kriging, new_x)
-    new_y = mean(k.y)
-    add_point!(tmp_k, new_x, new_y)
+function CLmean!(tmp_surr::AbstractSurrogate, surr::AbstractSurrogate, new_x)
+    new_y = mean(surr.y)
+    add_point!(tmp_surr, new_x, new_y)
 end
 
 # Kriging Believer
