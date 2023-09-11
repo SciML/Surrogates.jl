@@ -2,6 +2,7 @@ using Surrogates
 using Test
 using SafeTestsets
 using Pkg
+Pkg.add(name="Statistics", version=VERSION)
 
 function dev_subpkg(subpkg)
     subpkg_path = joinpath(dirname(@__DIR__), "lib", subpkg)
