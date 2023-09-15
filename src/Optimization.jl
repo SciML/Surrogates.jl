@@ -375,6 +375,218 @@ function surrogate_optimize(obj::Function, ::SRBF, lb::Number, ub::Number,
     end
 end
 
+# SRBF ND
+function Ask(::SRBF, lb, ub, surr::AbstractSurrogate, sample_type::SamplingAlgorithm, n_parallel, strategy!;
+    num_new_samples = 500)
+
+    scale = 0.2
+    success = 0
+    failure = 0
+    w_range = [0.3, 0.5, 0.7, 0.95]
+    w_cycle = Iterators.cycle(w_range)
+
+    w, state = iterate(w_cycle)
+
+    #Vector containing size in each direction
+    box_size = lb - ub
+    success = 0
+    failures = 0
+    dtol = 1e-3 * norm(ub - lb)
+    d = length(surr.x)
+    incumbent_x = surr.x[argmin(surr.y)]
+
+    new_lb = incumbent_x .- 3 * scale * norm(incumbent_x .- lb)
+    new_ub = incumbent_x .+ 3 * scale * norm(incumbent_x .- ub)
+
+    @inbounds for i in 1:length(new_lb)
+        if new_lb[i] < lb[i]
+            new_lb = collect(new_lb)
+            new_lb[i] = lb[i]
+        end
+        if new_ub[i] > ub[i]
+            new_ub = collect(new_ub)
+            new_ub[i] = ub[i]
+        end
+    end
+
+    new_sample = sample(num_new_samples, new_lb, new_ub, sample_type)
+    s = zeros(eltype(surr.x[1]), num_new_samples)
+    for j in 1:num_new_samples
+        s[j] = surr(new_sample[j])
+    end
+    s_max = maximum(s)
+    s_min = minimum(s)
+
+    d_min = norm(box_size .+ 1)
+    d_max = 0.0
+    for r in 1:length(surr.x)
+        for c in 1:num_new_samples
+            distance_rc = norm(surr.x[r] .- new_sample[c])
+            if distance_rc > d_max
+                d_max = distance_rc
+            end
+            if distance_rc < d_min
+                d_min = distance_rc
+            end
+        end
+    end
+
+    tmp_surr = deepcopy(surr)
+
+    
+    new_addition = 0
+    diff_x = zeros(eltype(surr.x[1]), d)
+
+    evaluation_of_merit_function = zeros(float(eltype(surr.x[1])), num_new_samples)
+    proposed_points_x = Vector{typeof(surr.x[1])}(undef, n_parallel)
+    merit_of_proposed_points = zeros(Float64, n_parallel)
+
+    while new_addition < n_parallel
+        #find minimum
+
+        @inbounds for r in 1:num_new_samples
+            evaluation_of_merit_function[r] = merit_function(new_sample[r], w, tmp_surr,
+                s_max, s_min, d_max, d_min,
+                box_size)
+        end
+
+        min_index = argmin(evaluation_of_merit_function)
+        new_min_x = new_sample[min_index]
+        min_x_merit = evaluation_of_merit_function[min_index]
+
+        for l in 1:d
+            diff_x[l] = norm(surr.x[l] .- new_min_x)
+        end
+        bit_x = diff_x .> dtol
+        #new_min_x has to have some distance from krig.x
+        if false in bit_x
+            #The new_point is not actually that new, discard it!
+
+            deleteat!(evaluation_of_merit_function, min_index)
+            deleteat!(new_sample, min_index)
+
+            if length(new_sample) == 0
+                println("Out of sampling points")
+                index = argmin(surr.y)
+                return (surr.x[index], surr.y[index])
+            end
+        else
+            new_addition += 1
+            proposed_points_x[new_addition] = new_min_x
+            merit_of_proposed_points[new_addition] = min_x_merit
+
+            # Update temporary surrogate using provided strategy
+            strategy!(tmp_surr, surr, new_min_x)
+        end
+
+        #4) Update w
+        w, state = iterate(w_cycle, state)
+    end
+
+    return (proposed_points_x, merit_of_proposed_points)
+end
+
+# Ask SRBF 1D
+function Ask(::SRBF, lb::Number, ub::Number, surr::AbstractSurrogate,
+    sample_type::SamplingAlgorithm, n_parallel, strategy!;
+    num_new_samples = 500)
+    scale = 0.2
+    success = 0
+    w_range = [0.3, 0.5, 0.7, 0.95]
+    w_cycle = Iterators.cycle(w_range)
+
+    w, state = iterate(w_cycle)
+
+    box_size = lb - ub
+    success = 0
+    failures = 0
+    dtol = 1e-3 * norm(ub - lb)
+    num_of_iterations = 0
+
+    #1) Sample near incumbent (the 2 fraction is arbitrary here)
+    incumbent_x = surr.x[argmin(surr.y)]
+
+    new_lb = incumbent_x - scale * norm(incumbent_x - lb)
+    new_ub = incumbent_x + scale * norm(incumbent_x - ub)
+    if new_lb < lb
+        new_lb = lb
+    end
+    if new_ub > ub
+        new_ub = ub
+    end
+
+    new_sample = sample(num_new_samples, new_lb, new_ub, sample_type)
+
+    #2) Create  merit function
+    s = zeros(eltype(surr.x[1]), num_new_samples)
+    for j in 1:num_new_samples
+        s[j] = surr(new_sample[j])
+    end
+    s_max = maximum(s)
+    s_min = minimum(s)
+
+    d_min = box_size + 1
+    d_max = 0.0
+    for r in 1:length(surr.x)
+        for c in 1:num_new_samples
+            distance_rc = norm(surr.x[r] - new_sample[c])
+            if distance_rc > d_max
+                d_max = distance_rc
+            end
+            if distance_rc < d_min
+                d_min = distance_rc
+            end
+        end
+    end
+
+    new_addition = 0
+    proposed_points_x = zeros(eltype(new_sample[1]), n_parallel)
+    merit_of_proposed_points = zeros(eltype(new_sample[1]), n_parallel)
+
+    # Temporary surrogate for virtual points
+    tmp_surr = deepcopy(surr)
+
+    # Loop until we have n_parallel new points
+    while new_addition < n_parallel
+
+        #3) Evaluate merit function at the sampled points in parallel 
+        evaluation_of_merit_function = merit_function.(new_sample, w, tmp_surr, s_max,
+            s_min, d_max, d_min, box_size)
+
+        #find minimum
+        min_index = argmin(evaluation_of_merit_function)
+        new_min_x = new_sample[min_index]
+        min_x_merit = evaluation_of_merit_function[min_index]
+
+        diff_x = abs.(tmp_surr.x .- new_min_x)
+        bit_x = diff_x .> dtol
+        #new_min_x has to have some distance from krig.x
+        if false in bit_x
+            #The new_point is not actually that new, discard it!
+            deleteat!(evaluation_of_merit_function, min_index)
+            deleteat!(new_sample, min_index)
+            if length(new_sample) == 0
+                println("Out of sampling points")
+                return (proposed_points_x[1:new_addition],
+                    merit_of_proposed_points[1:new_addition])
+            end
+        else
+            new_addition += 1
+            proposed_points_x[new_addition] = new_min_x
+            merit_of_proposed_points[new_addition] = min_x_merit
+
+            # Update temporary surrogate using provided strategy
+            strategy!(tmp_surr, surr, new_min_x)
+        end
+
+        #4) Update w
+        w, state = iterate(w_cycle, state)
+    end
+
+    return (proposed_points_x, merit_of_proposed_points)
+end
+
+
 """
 This is an implementation of Lower Confidence Bound (LCB),
 a popular acquisition function in Bayesian optimization.
@@ -569,7 +781,7 @@ function surrogate_optimize(obj::Function, ::EI, lb::Number, ub::Number, krig,
     println("Completed maximum number of iterations")
 end
 
-function Ask(::EI, krig, sample_type::SamplingAlgorithm, n_parallel::Number, strategy!;
+function Ask(::EI, lb, ub, krig, sample_type::SamplingAlgorithm, n_parallel::Number, strategy!;
              num_new_samples = 100)
 
     lb = krig.lb

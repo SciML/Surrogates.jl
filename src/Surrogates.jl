@@ -18,6 +18,7 @@ include("VariableFidelity.jl")
 include("Earth.jl")
 include("GEK.jl")
 include("GEKPLS.jl")
+include("VirtualStrategy.jl")
 
 current_surrogates = ["Kriging", "LinearSurrogate", "LobachevskySurrogate",
     "NeuralSurrogate",
