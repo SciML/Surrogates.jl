@@ -375,7 +375,7 @@ function surrogate_optimize(obj::Function, ::SRBF, lb::Number, ub::Number,
     end
 end
 
-# SRBF ND
+# Ask SRBF ND
 function Ask(::SRBF, lb, ub, surr::AbstractSurrogate, sample_type::SamplingAlgorithm, n_parallel, strategy!;
     num_new_samples = 500)
 
@@ -781,6 +781,7 @@ function surrogate_optimize(obj::Function, ::EI, lb::Number, ub::Number, krig,
     println("Completed maximum number of iterations")
 end
 
+# Ask EI 1D & ND
 function Ask(::EI, lb, ub, krig, sample_type::SamplingAlgorithm, n_parallel::Number, strategy!;
              num_new_samples = 100)
 
