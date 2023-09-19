@@ -90,8 +90,9 @@ export WendlandStructure
 export AbstractSurrogate, SamplingAlgorithm
 export Kriging, RadialBasis, add_point!, current_estimate, std_error_at_point
 # Parallelization Strategies
-export KB!, KBLB!, KBUB!, CLmax!, CLmean!, CLmin!
-export Ask
+export potential_optimal_points
+export MinimumConstantLiar, MaximumConstantLiar, MeanConstantLiar, KrigingBeliever,
+       KrigingBelieverUpperBound, KrigingBelieverLowerBound
 
 # radial basis functions
 export linearRadial, cubicRadial, multiquadricRadial, thinplateRadial

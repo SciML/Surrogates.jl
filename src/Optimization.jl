@@ -3,6 +3,14 @@ using Distributions
 using Zygote
 
 abstract type SurrogateOptimizationAlgorithm end
+abstract type ParallelStrategy end
+
+struct KrigingBeliever <: ParallelStrategy end
+struct KrigingBelieverUpperBound <: ParallelStrategy end
+struct KrigingBelieverLowerBound <: ParallelStrategy end
+struct MinimumConstantLiar <: ParallelStrategy end
+struct MaximumConstantLiar <: ParallelStrategy end
+struct MeanConstantLiar <: ParallelStrategy end
 
 #single objective optimization
 struct SRBF <: SurrogateOptimizationAlgorithm end
@@ -376,7 +384,7 @@ function surrogate_optimize(obj::Function, ::SRBF, lb::Number, ub::Number,
 end
 
 # Ask SRBF ND
-function Ask(::SRBF, lb, ub, surr::AbstractSurrogate, sample_type::SamplingAlgorithm, n_parallel, strategy!;
+function potential_optimal_points(::SRBF, strategy, lb, ub, surr::AbstractSurrogate, sample_type::SamplingAlgorithm, n_parallel;
     num_new_samples = 500)
 
     scale = 0.2
@@ -476,7 +484,7 @@ function Ask(::SRBF, lb, ub, surr::AbstractSurrogate, sample_type::SamplingAlgor
             merit_of_proposed_points[new_addition] = min_x_merit
 
             # Update temporary surrogate using provided strategy
-            strategy!(tmp_surr, surr, new_min_x)
+            calculate_liars(strategy, tmp_surr, surr, new_min_x)
         end
 
         #4) Update w
@@ -487,8 +495,8 @@ function Ask(::SRBF, lb, ub, surr::AbstractSurrogate, sample_type::SamplingAlgor
 end
 
 # Ask SRBF 1D
-function Ask(::SRBF, lb::Number, ub::Number, surr::AbstractSurrogate,
-    sample_type::SamplingAlgorithm, n_parallel, strategy!;
+function potential_optimal_points(::SRBF, strategy, lb::Number, ub::Number, surr::AbstractSurrogate,
+    sample_type::SamplingAlgorithm, n_parallel;
     num_new_samples = 500)
     scale = 0.2
     success = 0
@@ -576,7 +584,7 @@ function Ask(::SRBF, lb::Number, ub::Number, surr::AbstractSurrogate,
             merit_of_proposed_points[new_addition] = min_x_merit
 
             # Update temporary surrogate using provided strategy
-            strategy!(tmp_surr, surr, new_min_x)
+            calculate_liars(strategy, tmp_surr, surr, new_min_x)
         end
 
         #4) Update w
@@ -782,7 +790,7 @@ function surrogate_optimize(obj::Function, ::EI, lb::Number, ub::Number, krig,
 end
 
 # Ask EI 1D & ND
-function Ask(::EI, lb, ub, krig, sample_type::SamplingAlgorithm, n_parallel::Number, strategy!;
+function potential_optimal_points(::EI, strategy, lb, ub, krig, sample_type::SamplingAlgorithm, n_parallel::Number;
              num_new_samples = 100)
 
     lb = krig.lb
@@ -840,7 +848,7 @@ function Ask(::EI, lb, ub, krig, sample_type::SamplingAlgorithm, n_parallel::Num
                 point_found = true
                 new_x_max[i] = x_new
                 new_EI_max[i] = y_new
-                strategy!(tmp_krig, krig, x_new)
+                calculate_liars(strategy, tmp_krig, krig, x_new)
             end
         end
     end
