@@ -1,4 +1,6 @@
 using SafeTestsets
+using Random
+Random.seed!(100)
 
 # #test 1D function that is discontinuous
 @safetestset "1D" begin
