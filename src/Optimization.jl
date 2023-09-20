@@ -828,7 +828,7 @@ function potential_optimal_points(::EI, strategy, lb, ub, krig, sample_type::Sam
             index_max = argmax(evaluations)
             x_new = new_sample[index_max]   # x point which maximized EI
             y_new = maximum(evaluations)    # EI at the new point
-            diff_x = [abs.(prev_point .- x_new) for prev_point in tmp_krig.x]
+            diff_x = [norm(prev_point .- x_new) for prev_point in tmp_krig.x]
             bit_x = [diff_x_point .> dtol for diff_x_point in diff_x]
             #new_min_x has to have some distance from tmp_krig.x
             if false in bit_x
