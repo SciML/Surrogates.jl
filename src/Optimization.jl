@@ -388,8 +388,6 @@ function potential_optimal_points(::SRBF, strategy, lb, ub, surr::AbstractSurrog
     num_new_samples = 500)
 
     scale = 0.2
-    success = 0
-    failure = 0
     w_range = [0.3, 0.5, 0.7, 0.95]
     w_cycle = Iterators.cycle(w_range)
 
@@ -397,8 +395,6 @@ function potential_optimal_points(::SRBF, strategy, lb, ub, surr::AbstractSurrog
 
     #Vector containing size in each direction
     box_size = lb - ub
-    success = 0
-    failures = 0
     dtol = 1e-3 * norm(ub - lb)
     d = length(surr.x)
     incumbent_x = surr.x[argmin(surr.y)]
@@ -452,7 +448,7 @@ function potential_optimal_points(::SRBF, strategy, lb, ub, surr::AbstractSurrog
     while new_addition < n_parallel
         #find minimum
 
-        @inbounds for r in 1:num_new_samples
+        @inbounds for r in eachindex(evaluation_of_merit_function)
             evaluation_of_merit_function[r] = merit_function(new_sample[r], w, tmp_surr,
                 s_max, s_min, d_max, d_min,
                 box_size)
