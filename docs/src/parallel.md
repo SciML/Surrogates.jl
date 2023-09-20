@@ -4,12 +4,12 @@ There are some situations where it can be beneficial to run multiple optimizatio
 
 ## Ask-Tell Interface
 
-To enable parallel optimization, we make use of an Ask-Tell interface. The user will construct the initial surrogate model the same way as for non-parallel surrogate models, but instead of using `surrogate_optimize`, the user will use `Ask`. This will return the coordinates of points that the optimizer has determined are most useful to evaluate next. How the user evaluates these points is up to them. The Ask-Tell interface requires more manual control than `surrogate_optimize`, but it allows for more flexibility. After the point has been evaluated, the user will *tell* the surrogate model the new points with the `add_point!` function.
+To enable parallel optimization, we make use of an Ask-Tell interface. The user will construct the initial surrogate model the same way as for non-parallel surrogate models, but instead of using `surrogate_optimize`, the user will use `potential_optimal_points`. This will return the coordinates of points that the optimizer has determined are most useful to evaluate next. How the user evaluates these points is up to them. The Ask-Tell interface requires more manual control than `surrogate_optimize`, but it allows for more flexibility. After the point has been evaluated, the user will *tell* the surrogate model the new points with the `add_point!` function.
 
 ## Virtual Points
 
-To ensure that points of interest returned by `Ask` are sufficiently far from each other, the function makes use of *virtual points*. They are used as follows:
-1. `Ask` is told to return `n` points.
+To ensure that points of interest returned by `potential_optimal_points` are sufficiently far from each other, the function makes use of *virtual points*. They are used as follows:
+1. `potential_optimal_points` is told to return `n` points.
 2. The point with the highest merit function value is selected.
 3. This point is now treated as a virtual point and is assigned a temporary value that changes the landscape of the merit function. How the the temporary value is chosen depends on the strategy used. (see below)
 4. The point with the new highest merit is selected.
@@ -50,7 +50,7 @@ y = f.(x)
 my_k = Kriging(x, y, lb, ub)
 
 for _ in 1:10
-    new_x, eis = Ask(EI(), lb, ub, my_k, SobolSample(), 3, CLmean!)
+    new_x, eis = potential_optimal_points(EI(), lb, ub, my_k, SobolSample(), 3, CLmean!)
     add_point!(my_k, new_x, f.(new_x))
 end
 ```
