@@ -1,4 +1,7 @@
 using SafeTestsets
+using StableRNGs, Random
+const SEED = 42
+Random.seed!(StableRNG(SEED), SEED)
 
 # #test 1D function that is discontinuous
 @safetestset "1D" begin
@@ -82,7 +85,7 @@ end
         RadialBasisStructure(radial_function = linearRadial(), scale_factor = 1.0,
                              sparse = false),
     ]
-    moe_nd_krig_rad = MOE(x, y, expert_types, ndim = 2)
+    moe_nd_krig_rad = MOE(x, y, expert_types, ndim = 2, quantile = 5)
     moe_pred_vals = moe_nd_krig_rad.(x_test)
     true_vals = discont_NDIM.(x_test)
     moe_rmse = rmse(true_vals, moe_pred_vals)
