@@ -33,8 +33,7 @@ end
     MOE(x, y, expert_types;  ndim=1, n_clusters=2)
 constructor for MOE; takes in x, y and expert types and returns an MOE struct
 """
-function MOE(x, y, expert_types; ndim = 1, n_clusters = 2)
-    quantile = 10
+function MOE(x, y, expert_types; ndim = 1, n_clusters = 2, quantile = 10)
     if (ndim > 1)
         #x = _vector_of_tuples_to_matrix(x)
         X = _vector_of_tuples_to_matrix(x)
@@ -141,7 +140,7 @@ end
 function _extract_part(values, quantile)
     num = size(values, 1)
     indices = collect(1:quantile:num)
-    mask = BitArray(undef, num)
+    mask = falses(num)
     mask[indices] .= true
     #mask
     return values[mask, :], values[.~mask, :]
