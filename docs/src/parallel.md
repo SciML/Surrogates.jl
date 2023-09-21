@@ -38,7 +38,7 @@ In general, CLmin and KBLB tend to favor exploitation while CLmax and KBUB tend 
 
 ## Examples
 
-```jl
+```@example
 using Surrogates
 
 lb = 0.0
