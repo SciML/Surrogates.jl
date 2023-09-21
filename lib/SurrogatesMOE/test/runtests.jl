@@ -1,6 +1,7 @@
 using SafeTestsets
-using Random
-Random.seed!(100)
+using StableRNGs, Random
+const SEED = 42
+Random.seed!(StableRNG(SEED), SEED)
 
 # #test 1D function that is discontinuous
 @safetestset "1D" begin
