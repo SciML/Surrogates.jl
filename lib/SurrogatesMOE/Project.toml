@@ -24,7 +24,7 @@ Surrogates = "6.0"
 SurrogatesFlux = "0.1.0"
 SurrogatesPolyChaos = "0.1.0"
 SurrogatesRandomForest = "0.1.0"
-XGBoost = "1.5.2"
+XGBoost = "2"
 
 [extras]
 Flux = "587475ba-b771-5e3f-ad9e-33799f191a9c"
