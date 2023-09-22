@@ -1,7 +1,7 @@
 name = "SurrogatesMOE"
 uuid = "778709c9-3595-4497-80d4-d1077d5b9fbf"
 authors = ["Vikram <vikramsnarayan@gmail.com>"]
-version = "0.1.0"
+version = "0.1.1"
 
 [deps]
 Clustering = "aaaa29a8-35af-508c-8bc3-b662a17a0fe5"
