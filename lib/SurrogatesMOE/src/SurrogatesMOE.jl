@@ -11,7 +11,6 @@ export MOE
 using GaussianMixtures
 using Random
 using Distributions
-using GaussianMixtures
 using LinearAlgebra
 using SurrogatesFlux
 using SurrogatesPolyChaos
