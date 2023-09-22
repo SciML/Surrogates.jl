@@ -16,6 +16,7 @@ pages = ["index.md"
              "Gradient Enhanced Kriging" => "gek.md",
              "GEKPLS" => "gekpls.md",
              "MOE" => "moe.md",
+             "Parallel Optimization" => "parallel.md"
          ]
          "User guide" => [
              "Samples" => "samples.md",

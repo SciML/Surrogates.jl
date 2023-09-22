@@ -18,6 +18,7 @@ include("VariableFidelity.jl")
 include("Earth.jl")
 include("GEK.jl")
 include("GEKPLS.jl")
+include("VirtualStrategy.jl")
 
 current_surrogates = ["Kriging", "LinearSurrogate", "LobachevskySurrogate",
     "NeuralSurrogate",
@@ -88,6 +89,11 @@ export LobachevskyStructure, NeuralStructure, RandomForestStructure,
 export WendlandStructure
 export AbstractSurrogate, SamplingAlgorithm
 export Kriging, RadialBasis, add_point!, current_estimate, std_error_at_point
+# Parallelization Strategies
+export potential_optimal_points
+export MinimumConstantLiar, MaximumConstantLiar, MeanConstantLiar, KrigingBeliever,
+       KrigingBelieverUpperBound, KrigingBelieverLowerBound
+
 # radial basis functions
 export linearRadial, cubicRadial, multiquadricRadial, thinplateRadial
 
