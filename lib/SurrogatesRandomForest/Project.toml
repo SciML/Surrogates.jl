@@ -1,7 +1,7 @@
 name = "SurrogatesRandomForest"
 uuid = "3fee2672-df33-422b-aa65-d915eeac013a"
 authors = ["Ranjan Anantharaman <ranjan.anantharaman@gmail.com>"]
-version = "0.1.0"
+version = "0.1.1"
 
 [deps]
 Surrogates = "6fc51010-71bc-11e9-0e15-a3fcc6593c49"
