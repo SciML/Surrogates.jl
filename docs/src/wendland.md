@@ -1,6 +1,6 @@
 # Wendland Surrogate
 
-The Wendland surrogate is a compact surrogate: it allocates much less memory then other surrogates.
+The Wendland surrogate is a compact surrogate: it allocates much less memory than other surrogates.
 The coefficients are found using an iterative solver.
 
 ``f = x -> exp(-x^2)``
