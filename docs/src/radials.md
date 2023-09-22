@@ -1,7 +1,9 @@
 ## Radial Surrogates
 The Radial Basis Surrogate model represents the interpolating function as a linear combination of basis functions, one for each training point. Let's start with something easy to get our hands dirty. I want to build a surrogate for:
 
-`f(x) = log(x)*x^2+x^3``
+```math
+f(x) = \log(x) \cdot x^2+x^3
+```
 
 Let's choose the Radial Basis Surrogate for 1D. First of all we have to import these two packages: `Surrogates` and `Plots`,
 

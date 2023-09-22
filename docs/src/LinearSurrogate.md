@@ -1,7 +1,7 @@
 ## Linear Surrogate
 Linear Surrogate is a linear approach to modeling the relationship between a scalar response or dependent variable and one or more explanatory variables. We will use Linear Surrogate to optimize following function:
 
-$f(x) = sin(x) + log(x)$.
+$f(x) = \sin(x) + \log(x)$
 
 First of all we have to import these two packages: `Surrogates` and `Plots`.
 
