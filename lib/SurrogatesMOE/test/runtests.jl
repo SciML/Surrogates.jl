@@ -116,7 +116,7 @@ end
     lb = [-1.0, -1.0]
     ub = [1.0, 1.0]
     n = 120
-    x = sample(n, lb, ub, UniformSample())
+    x = sample(n, lb, ub, RandomSample())
     y = discont_NDIM.(x)
     x_test = sample(10, lb, ub, GoldenSample())
 
@@ -184,7 +184,7 @@ end
     lb = [-1.0, -1.0]
     ub = [1.0, 1.0]
     n = 110
-    x = sample(n, lb, ub, UniformSample())
+    x = sample(n, lb, ub, RandomSample())
     y = discont_NDIM.(x)
     expert_types = [InverseDistanceStructure(p = 1.0),
         RadialBasisStructure(radial_function = linearRadial(), scale_factor = 1.0,

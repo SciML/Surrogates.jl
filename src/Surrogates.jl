@@ -98,7 +98,7 @@ export MinimumConstantLiar, MaximumConstantLiar, MeanConstantLiar, KrigingBeliev
 export linearRadial, cubicRadial, multiquadricRadial, thinplateRadial
 
 # samplers
-export sample, GridSample, UniformSample, SobolSample, LatinHypercubeSample,
+export sample, GridSample, RandomSample, SobolSample, LatinHypercubeSample,
        LowDiscrepancySample
 export RandomSample, KroneckerSample, GoldenSample, SectionSample
 

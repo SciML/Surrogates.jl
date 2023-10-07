@@ -54,7 +54,7 @@ using SafeTestsets
     lb = [0.0, 0.0]
     ub = [10.0, 10.0]
     obj_ND = x -> log(x[1]) * exp(x[2])
-    x = sample(40, lb, ub, UniformSample())
+    x = sample(40, lb, ub, RandomSample())
     y = obj_ND.(x)
     my_polyND = PolynomialChaosSurrogate(x, y, lb, ub)
     surrogate_optimize(obj_ND, SRBF(), lb, ub, my_polyND, SobolSample(), maxiters = 15)

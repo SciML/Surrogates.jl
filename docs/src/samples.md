@@ -17,7 +17,7 @@ sample(n,lb,ub,S::GridSample)
 
 * Uniform sample
 ```
-sample(n,lb,ub,::UniformSample)
+sample(n,lb,ub,::RandomSample)
 ```
 
 * Sobol sample

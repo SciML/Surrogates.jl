@@ -16,8 +16,8 @@ d = 1
 s = Surrogates.sample(n, lb, ub, GridSample(0.1))
 @test s isa Vector{Float64} && length(s) == n && all(x -> lb ≤ x ≤ ub, s)
 
-# UniformSample
-s = Surrogates.sample(n, lb, ub, UniformSample())
+# RandomSample
+s = Surrogates.sample(n, lb, ub, RandomSample())
 @test s isa Vector{Float64} && length(s) == n && all(x -> lb ≤ x ≤ ub, s)
 
 # SobolSample
@@ -56,10 +56,10 @@ s = Surrogates.sample(n, lb, ub, GoldenSample())
 
 # SectionSample
 constrained_val = 1.0
-s = Surrogates.sample(n, lb, ub, SectionSample([NaN64], UniformSample()))
+s = Surrogates.sample(n, lb, ub, SectionSample([NaN64], RandomSample()))
 @test s isa Vector{Float64} && length(s) == n && all(x -> lb ≤ x ≤ ub, s)
 
-s = Surrogates.sample(n, lb, ub, SectionSample([constrained_val], UniformSample()))
+s = Surrogates.sample(n, lb, ub, SectionSample([constrained_val], RandomSample()))
 @test s isa Vector{Float64} && length(s) == n && all(x -> lb ≤ x ≤ ub, s)
 @test all(==(constrained_val), s)
 
@@ -76,8 +76,8 @@ d = 2
 s = Surrogates.sample(n, lb, ub, GridSample([0.1, 0.5]))
 @test isa(s, Array{Tuple{typeof(s[1][1]), typeof(s[1][1])}, 1}) == true
 
-#UniformSample()
-s = Surrogates.sample(n, lb, ub, UniformSample())
+#RandomSample()
+s = Surrogates.sample(n, lb, ub, RandomSample())
 @test isa(s, Array{Tuple{typeof(s[1][1]), typeof(s[1][1])}, 1}) == true
 
 #SobolSample()
@@ -110,7 +110,7 @@ s = Surrogates.sample(n, lb, ub, GoldenSample())
 
 # SectionSample
 constrained_val = 1.0
-s = Surrogates.sample(n, lb, ub, SectionSample([NaN64, constrained_val], UniformSample()))
+s = Surrogates.sample(n, lb, ub, SectionSample([NaN64, constrained_val], RandomSample()))
 @test all(x -> x[end] == constrained_val, s)
 @test isa(s, Array{Tuple{typeof(s[1][1]), typeof(s[1][1])}, 1}) == true
 @test all(x -> lb[1] ≤ x[1] ≤ ub[1], s)

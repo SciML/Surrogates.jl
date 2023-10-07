@@ -58,7 +58,7 @@ The fit looks good. Let's now see if we are able to find the minimum value using
 optimization methods:
 
 ```@example ackley
-surrogate_optimize(ackley,DYCORS(),lb,ub,my_rad,UniformSample())
+surrogate_optimize(ackley,DYCORS(),lb,ub,my_rad,RandomSample())
 scatter(x, y, label="Sampled points", xlims=(lb, ub), ylims=(0, 30), legend=:top)
 plot!(xs, ackley.(xs), label="True function", legend=:top)
 plot!(xs, my_rad.(xs), label="Radial basis optimized", legend=:top)

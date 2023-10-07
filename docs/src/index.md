@@ -107,7 +107,7 @@ my_lobachevsky = LobachevskySurrogate(x,y,lb,ub,alpha=alpha,n=n)
 value = my_lobachevsky(5.0)
 
 #Adding more data points
-surrogate_optimize(f,SRBF(),lb,ub,my_lobachevsky,UniformSample())
+surrogate_optimize(f,SRBF(),lb,ub,my_lobachevsky,RandomSample())
 
 #New approximation
 value = my_lobachevsky(5.0)

@@ -5,7 +5,7 @@ using Surrogates
 n = 30
 lb = 0.0
 ub = 5.0
-x = Surrogates.sample(n,lb,ub,UniformSample())
+x = Surrogates.sample(n,lb,ub,RandomSample())
 f = x-> 2*x
 y = f.(x)
 #Standard definition
