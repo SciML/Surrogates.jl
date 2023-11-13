@@ -1,6 +1,6 @@
 using Surrogates
 using QuasiMonteCarlo
-using QuasiMonteCarlo: KroneckerSample, SectionSample, GoldenSample
+using QuasiMonteCarlo: KroneckerSample, GoldenSample
 using Distributions: Cauchy, Normal
 using Test
 
@@ -13,7 +13,7 @@ d = 1
 ## Sampling methods from QuasiMonteCarlo.jl ##
 
 # GridSample
-s = Surrogates.sample(n, lb, ub, GridSample(0.1))
+s = Surrogates.sample(n, lb, ub, GridSample())
 @test s isa Vector{Float64} && length(s) == n && all(x -> lb ≤ x ≤ ub, s)
 
 # RandomSample
@@ -29,7 +29,7 @@ s = Surrogates.sample(n, lb, ub, LatinHypercubeSample())
 @test s isa Vector{Float64} && length(s) == n && all(x -> lb ≤ x ≤ ub, s)
 
 # LowDiscrepancySample
-s = Surrogates.sample(20, lb, ub, LowDiscrepancySample(; base = 10))
+s = Surrogates.sample(20, lb, ub, HaltonSample())
 @test s isa Vector{Float64} && length(s) == 20 && all(x -> lb ≤ x ≤ ub, s)
 
 # LatticeRuleSample (not originally in Surrogates.jl, now available through QuasiMonteCarlo.jl)
@@ -47,7 +47,7 @@ s = Surrogates.sample(n, d, Normal(0, 4))
 ## Sampling methods specific to Surrogates.jl ##
 
 # KroneckerSample
-s = Surrogates.sample(n, lb, ub, KroneckerSample(sqrt(2), 0))
+s = Surrogates.sample(n, lb, ub, KroneckerSample([sqrt(2)], NoRand()))
 @test s isa Vector{Float64} && length(s) == n && all(x -> lb ≤ x ≤ ub, s)
 
 # GoldenSample
@@ -73,7 +73,7 @@ n = 5
 d = 2
 
 #GridSample{T}
-s = Surrogates.sample(n, lb, ub, GridSample([0.1, 0.5]))
+s = Surrogates.sample(n, lb, ub, GridSample())
 @test isa(s, Array{Tuple{typeof(s[1][1]), typeof(s[1][1])}, 1}) == true
 
 #RandomSample()
@@ -89,7 +89,7 @@ s = Surrogates.sample(n, lb, ub, LatinHypercubeSample())
 @test isa(s, Array{Tuple{typeof(s[1][1]), typeof(s[1][1])}, 1}) == true
 
 #LDS
-s = Surrogates.sample(n, lb, ub, LowDiscrepancySample(; base = [10, 3]))
+s = Surrogates.sample(n, lb, ub, HaltonSample())
 @test isa(s, Array{Tuple{typeof(s[1][1]), typeof(s[1][1])}, 1}) == true
 
 #Distribution 1
@@ -101,7 +101,7 @@ s = Surrogates.sample(n, d, Normal(3, 5))
 @test isa(s, Array{Tuple{typeof(s[1][1]), typeof(s[1][1])}, 1}) == true
 
 #Kronecker
-s = Surrogates.sample(n, lb, ub, KroneckerSample([sqrt(2), 3.1415], [0, 0]))
+s = Surrogates.sample(n, lb, ub, KroneckerSample([sqrt(2), 3.1415], NoRand()))
 @test isa(s, Array{Tuple{typeof(s[1][1]), typeof(s[1][1])}, 1}) == true
 
 #Golden
