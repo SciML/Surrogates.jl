@@ -1,6 +1,6 @@
 using Surrogates
 using LinearAlgebra
-
+using QuasiMonteCarlo
 #######SRBF############
 ##### 1D #####
 
@@ -43,7 +43,7 @@ x = [2.5, 4.0, 6.0]
 y = [6.0, 9.0, 13.0]
 my_earth1d = EarthSurrogate(x, y, lb, ub)
 xstar, fstar = surrogate_optimize(objective_function, SRBF(), a, b, my_earth1d,
-                                  LowDiscrepancySample(2))
+                                  HaltonSample())
 
 ##### ND #####
 objective_function_ND = z -> 3 * norm(z) + 1
