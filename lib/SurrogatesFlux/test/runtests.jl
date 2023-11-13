@@ -4,7 +4,6 @@ using SafeTestsets
     using Surrogates
     using Surrogates: SobolSample
     using Flux
-    using Flux: @epochs
     using SurrogatesFlux
     using LinearAlgebra
     using Zygote
