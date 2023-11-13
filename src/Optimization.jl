@@ -110,18 +110,8 @@ function surrogate_optimize(obj::Function, ::SRBF, lb, ub, surr::AbstractSurroga
 
             new_lb = incumbent_x .- 3 * scale * norm(incumbent_x .- lb)
             new_ub = incumbent_x .+ 3 * scale * norm(incumbent_x .- ub)
-
-            @inbounds for i in 1:length(new_lb)
-                if new_lb[i] < lb[i]
-                    new_lb = collect(new_lb)
-                    new_lb[i] = lb[i]
-                end
-                if new_ub[i] > ub[i]
-                    new_ub = collect(new_ub)
-                    new_ub[i] = ub[i]
-                end
-            end
-
+            new_lb = vec(max.(new_lb, lb))
+            new_ub = vec(min.(new_ub, ub))
             new_sample = sample(num_new_samples, new_lb, new_ub, sample_type)
             s = zeros(eltype(surr.x[1]), num_new_samples)
             for j in 1:num_new_samples
@@ -2126,7 +2116,7 @@ end
 
 function section_sampler_returner(sample_type::SectionSample, surrn_x, surrn_y,
                                   lb, ub, surrn)
-    d_fixed = QuasiMonteCarlo.fixed_dimensions(sample_type)
+    d_fixed = fixed_dimensions(sample_type)
     @assert length(surrn_y) == size(surrn_x)[1]
     surrn_xy = [(surrn_x[y], surrn_y[y]) for y in 1:length(surrn_y)]
     section_surr1_xy = filter(xyz -> xyz[1][d_fixed] == Tuple(sample_type.x0[d_fixed]),
