@@ -1,7 +1,7 @@
 # Ackley Function
 
 The Ackley function is defined as:
-``f(x) = -a*exp(-b\sqrt{\frac{1}{d}\sum_{i=1}^d x_i^2}) - exp(\frac{1}{d} \sum_{i=1}^d cos(cx_i)) + a + exp(1)``
+``f(x) = -a*\exp(-b\sqrt{\frac{1}{d}\sum_{i=1}^d x_i^2}) - \exp(\frac{1}{d} \sum_{i=1}^d \cos(cx_i)) + a + \exp(1)``
 Usually the recommended values are: ``a =  20``, ``b = 0.2`` and ``c =  2\pi``
 
 Let's see the 1D case.
@@ -16,7 +16,7 @@ Now, let's define the `Ackley` function:
 
 ```@example ackley
 function ackley(x)
-    a, b, c = 20.0, -0.2, 2.0*π
+    a, b, c = 20.0, 0.2, 2.0*π
     len_recip = inv(length(x))
     sum_sqrs = zero(eltype(x))
     sum_cos = sum_sqrs
@@ -24,7 +24,7 @@ function ackley(x)
         sum_cos += cos(c*i)
         sum_sqrs += i^2
     end
-    return (-a * exp(b * sqrt(len_recip*sum_sqrs)) -
+    return (-a * exp(-b * sqrt(len_recip*sum_sqrs)) -
             exp(len_recip*sum_cos) + a + 2.71)
 end
 ```

@@ -4,7 +4,7 @@ Gramacy & Lee Function is a continuous function. It is not convex. The function 
 ``x \in [-0.5, 2.5]``.
 
 The Gramacy & Lee is as follows:
-``f(x) = \frac{sin(10\pi x)}{2x} + (x-1)^4``.
+``f(x) = \frac{\sin(10\pi x)}{2x} + (x-1)^4``.
 
 Let's import these two packages `Surrogates` and `Plots`:
 

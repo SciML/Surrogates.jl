@@ -1,9 +1,9 @@
 # Water flow function
 
 The water flow function is defined as:
-``f(r_w,r,T_u,H_u,T_l,H_l,L,K_w) = \frac{2*\pi*T_u(H_u - H_l)}{log(\frac{r}{r_w})*[1 + \frac{2LT_u}{log(\frac{r}{r_w})*r_w^2*K_w}+ \frac{T_u}{T_l} ]}``
+``f(r_w,r,T_u,H_u,T_l,H_l,L,K_w) = \frac{2*\pi*T_u(H_u - H_l)}{\log(\frac{r}{r_w})*[1 + \frac{2LT_u}{\log(\frac{r}{r_w})*r_w^2*K_w}+ \frac{T_u}{T_l} ]}``
 
-It has 8 dimension.
+It has 8 dimensions.
 
 ```@example water
 using Surrogates
