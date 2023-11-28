@@ -3,6 +3,8 @@ using Test
 using LinearAlgebra
 using Surrogates
 
+include("test_utils.jl")
+
 #1D
 lb = 0.0
 ub = 4.0
@@ -174,3 +176,13 @@ y = mockvalues.(x)
 rbf = RadialBasis(x, y, lb, ub, rad = multiquadricRadial(1.788))
 test = (lb .+ ub) ./ 2
 @test isapprox(rbf(test), mockvalues(test), atol = 0.001)
+
+num_replicates = 100
+
+for radial_type in [linearRadial(), cubicRadial(), multiquadricRadial(), thinplateRadial()]
+    for i in 1:num_replicates
+        # Check that interpolation condition is satisfied
+        surr = _random_surrogate(RadialBasis, rad = radial_type)
+        @test _check_interpolation(surr)
+    end
+end

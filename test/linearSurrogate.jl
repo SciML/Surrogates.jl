@@ -1,5 +1,7 @@
 using Surrogates
 
+include("test_utils.jl")
+
 #1D
 x = [1.0, 2.0, 3.0]
 y = [1.5, 3.5, 5.3]
@@ -28,3 +30,14 @@ val = my_linear_ND((10.0, 11.0))
 @test_throws ArgumentError my_linear_ND(Float64[])
 @test_throws ArgumentError my_linear_ND(1.0)
 @test_throws ArgumentError my_linear_ND((2.0, 3.0, 4.0))
+
+num_replicates = 100
+for i in 1:num_replicates
+    # LinearSurrogate should not interpolate the data unless the data/func is linear
+    surr = _random_surrogate(LinearSurrogate)
+    @test !_check_interpolation(surr)
+
+    linear_func = x -> sum(x)
+    surr = _random_surrogate(LinearSurrogate, linear_func)
+    @test _check_interpolation(surr)
+end

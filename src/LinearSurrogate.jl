@@ -74,6 +74,7 @@ function LinearSurrogate(x, y, lb, ub)
     #T = transpose(reshape(reinterpret(eltype(x[1]), x), length(x[1]), length(x)))
     X = Array{eltype(x[1]), 2}(undef, length(x), length(x[1]))
     X = copy(T)
+
     ols = lm(X, y)
     return LinearSurrogate(x, y, coef(ols), lb, ub)
 end

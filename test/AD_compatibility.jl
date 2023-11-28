@@ -114,10 +114,15 @@ end
 
 # #Kriging
 @testset "Kriging 1D" begin
+    # Test gradient of surrogate evaluation
     my_p = 1.5
     my_krig = Kriging(x, y, lb, ub, p = my_p)
     g = x -> my_krig'(x)
     g(5.0)
+
+    # test gradient with respect to hyperparameters
+    obj = ((p, θ),) -> Surrogates.kriging_log_likelihood(x, y, p, θ)
+    obj'((1.99, 1.0))
 end
 
 # #Linear Surrogate
@@ -202,6 +207,10 @@ end
     my_krig = Kriging(x, y, lb, ub, p = my_p, theta = my_theta)
     g = x -> Zygote.gradient(my_krig, x)
     g((2.0, 5.0))
+
+    # test gradient with respect to hyperparameters
+    obj = params -> Surrogates.kriging_log_likelihood(x, y, params[1:2], params[3:4])
+    obj'([1.9, 1.9, 2.0, 2.0])
 end
 
 # Linear Surrogate
