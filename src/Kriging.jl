@@ -104,7 +104,7 @@ Constructor for type Kriging.
 function Kriging(x, y, lb::Number, ub::Number; p = 2.0,
                  theta = 0.5 / max(1e-6 * abs(ub - lb), std(x))^p)
     if length(x) != length(unique(x))
-        println("There exists a repetion in the samples, cannot build Kriging.")
+        println("There exists a repetition in the samples, cannot build Kriging.")
         return
     end
 
