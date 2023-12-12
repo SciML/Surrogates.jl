@@ -48,7 +48,7 @@ It's great that you want to add another surrogate to the library!
 You will need to:
 
 1. Define a new mutable struct and a constructor function
-2. Define add\_point!(your\_surrogate::AbstactSurrogate,x\_new,y\_new)
+2. Define add\_point!(your\_surrogate::AbstractSurrogate,x\_new,y\_new)
 3. Define your\_surrogate(value) for the approximation
 
 **Example**

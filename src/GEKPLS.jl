@@ -201,8 +201,8 @@ function _ge_compute_pls(X, y, n_comp, grads, delta_x, xlimits, extra_points)
         bb_vals = bb_vals .* grads[i, :]'
         _y = y[i, :] .+ sum(bb_vals, dims = 2)
 
-        #_pls.fit(_X, _y) # relic from sklearn versiom; retained for future reference.
-        #coeff_pls[:, :, i] = _pls.x_rotations_ #relic from sklearn versiom; retained for future reference.
+        #_pls.fit(_X, _y) # relic from sklearn version; retained for future reference.
+        #coeff_pls[:, :, i] = _pls.x_rotations_ #relic from sklearn version; retained for future reference.
 
         coeff_pls[:, :, i] = _modified_pls(_X, _y, n_comp) #_modified_pls returns the equivalent of SKLearn's _pls.x_rotations_
         if extra_points != 0
@@ -304,7 +304,7 @@ end
 ######end of bb design######
 
 """
-We substract the mean from each variable. Then, we divide the values of each
+We subtract the mean from each variable. Then, we divide the values of each
 variable by its standard deviation.
 
 Parameters
