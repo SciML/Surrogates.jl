@@ -214,12 +214,12 @@ end
     @test isapprox(minima, 0.0, atol = 0.0001)
 end
 
-@testset "Test 11: Check gradient (dimensions = 3; n_comp = 2; extra_points = 2)" begin
+@testset "Test 11: Check gradient (dimensions = 3; n_comp = 2; extra_points = 3)" begin
     lb = [-5.0, -5.0, -5.0]
     ub = [10.0, 10.0, 10.0]
     n_comp = 2
     delta_x = 0.0001
-    extra_points = 2
+    extra_points = 3
     initial_theta = [0.01 for i in 1:n_comp]
     n = 100
     x = sample(n, lb, ub, SobolSample())
