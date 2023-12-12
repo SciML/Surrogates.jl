@@ -1691,7 +1691,7 @@ function surrogate_optimize(obj::Function, sopd::SOP, lb, ub, surrSOPD::Abstract
             new_points_y[i] = y_best
         end
 
-        #new_points[i] is splitted in new_points_x and new_points_y now contains:
+        #new_points[i] is split in new_points_x and new_points_y now contains:
         #[x_1,y_1; x_2,y_2,...,x_{num_new_samples},y_{num_new_samples}]
 
         #2.4 Adaptive learning and tabu archive
