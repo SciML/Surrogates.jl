@@ -78,7 +78,7 @@ end
     n = 150
     x = sample(n, lb, ub, SobolSample())
     y = discont_NDIM.(x)
-    x_test = sample(10, lb, ub, GoldenSample())
+    x_test = sample(9, lb, ub, GoldenSample())
 
     expert_types = [
         KrigingStructure(p = [1.0, 1.0], theta = [1.0, 1.0]),
@@ -95,8 +95,8 @@ end
     krig = Kriging(x, y, lb, ub, p = [1.0, 1.0], theta = [1.0, 1.0])
     krig_pred_vals = krig.(x_test)
     krig_rmse = rmse(true_vals, krig_pred_vals)
-    @test_broken (rbf_rmse > moe_rmse)
-    @test_broken (krig_rmse > moe_rmse)
+    @test (rbf_rmse > moe_rmse)
+    @test (krig_rmse > moe_rmse)
 end
 
 @safetestset "Miscellaneous" begin
