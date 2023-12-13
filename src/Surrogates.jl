@@ -99,7 +99,7 @@ export linearRadial, cubicRadial, multiquadricRadial, thinplateRadial
 
 # samplers
 export sample, GridSample, RandomSample, SobolSample, LatinHypercubeSample,
-       LowDiscrepancySample
+       HaltonSample
 export RandomSample, KroneckerSample, GoldenSample, SectionSample
 
 # Optimization algorithms
