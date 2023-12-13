@@ -32,8 +32,7 @@ sample(n,lb,ub,::LatinHypercubeSample)
 
 * Low Discrepancy sample
 ```
-LowDiscrepancySample{T}
-sample(n,lb,ub,S::LowDiscrepancySample)
+sample(n,lb,ub,S::HaltonSample)
 ```
 
 * Sample on section

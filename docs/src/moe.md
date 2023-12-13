@@ -92,7 +92,7 @@ end
 lb = [-1.0, -1.0]
 ub = [1.0, 1.0]
 n = 150
-x = sample(n, lb, ub, SobolSample())
+x = sample(n, lb, ub, RandomSample())
 y = discont_NDIM.(x)
 x_test = sample(10, lb, ub, GoldenSample())
 
@@ -110,7 +110,6 @@ rbf = RadialBasis(x, y, lb, ub)
 rbf_pred_vals = rbf.(x_test)
 rbf_rmse = rmse(true_vals, rbf_pred_vals)
 println(rbf_rmse > moe_rmse)
-
 ```
 
 ### Usage Notes - Example With Other Surrogates

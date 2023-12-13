@@ -15,7 +15,7 @@ default()
 
 ### Sampling
 
-We choose to sample f in 25 points between 0 and 10 using the `sample` function. The sampling points are chosen using a Low Discrepancy, this can be done by passing `LowDiscrepancySample()` to the `sample` function.
+We choose to sample f in 25 points between 0 and 10 using the `sample` function. The sampling points are chosen using a Low Discrepancy, this can be done by passing `HaltonSample()` to the `sample` function.
 
 ```@example Inverse_Distance1D
 f(x) = sin(x) + sin(x)^2 + sin(x)^3
@@ -23,7 +23,7 @@ f(x) = sin(x) + sin(x)^2 + sin(x)^3
 n_samples = 25
 lower_bound = 0.0
 upper_bound = 10.0
-x = sample(n_samples, lower_bound, upper_bound, LowDiscrepancySample(;base=2))
+x = sample(n_samples, lower_bound, upper_bound, HaltonSample())
 y = f.(x)
 
 scatter(x, y, label="Sampled points", xlims=(lower_bound, upper_bound), legend=:top)
