@@ -32,6 +32,7 @@ pages = ["index.md"
              "Water Flow function" => "water_flow.md",
              "Welded beam function" => "welded_beam.md",
              "Branin function" => "BraninFunction.md",
+             "Improved Branin function" => "ImprovedBraninFunction.md",
              "Ackley function" => "ackley.md",
              "Gramacy & Lee Function" => "gramacylee.md",
              "Salustowicz Benchmark" => "Salustowicz.md",
