@@ -87,7 +87,7 @@ using Surrogates: sample, SobolSample
         a = 2
         b = 6
         my_k_EI1 = AbstractGPSurrogate(x, y)
-        surrogate_optimize(objective_function, EI(), a, b, my_k_EI1, UniformSample(),
+        surrogate_optimize(objective_function, EI(), a, b, my_k_EI1, RandomSample(),
                            maxiters = 200, num_new_samples = 155)
     end
 
@@ -99,7 +99,7 @@ using Surrogates: sample, SobolSample
         lb = [1.0, 1.0]
         ub = [6.0, 6.0]
         my_k_E1N = AbstractGPSurrogate(x, y)
-        surrogate_optimize(objective_function_ND, EI(), lb, ub, my_k_E1N, UniformSample())
+        surrogate_optimize(objective_function_ND, EI(), lb, ub, my_k_E1N, RandomSample())
     end
 
     @testset "check working of logpdf_surrogate 1D" begin

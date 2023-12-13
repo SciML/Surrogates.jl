@@ -9,7 +9,7 @@ we are trying to fit. Under the hood, PolyChaos.jl has been used.
 It is possible to specify a type of polynomial for each dimension of the problem.
 ### Sampling
 
-We choose to sample f in 25 points between 0 and 10 using the `sample` function. The sampling points are chosen using a Low Discrepancy, this can be done by passing `LowDiscrepancySample()` to the `sample` function.
+We choose to sample f in 25 points between 0 and 10 using the `sample` function. The sampling points are chosen using a Low Discrepancy, this can be done by passing `HaltonSample()` to the `sample` function.
 
 ```@example polychaos
 using Surrogates
@@ -20,7 +20,7 @@ default()
 n = 20
 lower_bound = 1.0
 upper_bound = 6.0
-x = sample(n,lower_bound,upper_bound,LowDiscrepancySample(2))
+x = sample(n,lower_bound,upper_bound,HaltonSample())
 f = x -> log(x)*x + sin(x)
 y = f.(x)
 scatter(x, y, label="Sampled points", xlims=(lower_bound, upper_bound), legend=:top)

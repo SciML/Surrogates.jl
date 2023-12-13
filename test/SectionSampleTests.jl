@@ -34,10 +34,10 @@ isapprox(xy_min[1], 0.0, atol = 1e-1)
 """ The minimum on the (0,10) section is around (0,10) """
 
 section_sampler_z_is_10 = SectionSample([NaN64, NaN64, 10.0],
-                                        Surrogates.UniformSample())
+                                        Surrogates.RandomSample())
 
-@test [3] == QuasiMonteCarlo.fixed_dimensions(section_sampler_z_is_10)
-@test [1, 2] == QuasiMonteCarlo.free_dimensions(section_sampler_z_is_10)
+@test [3] == Surrogates.fixed_dimensions(section_sampler_z_is_10)
+@test [1, 2] == Surrogates.free_dimensions(section_sampler_z_is_10)
 
 Surrogates.sample(5, lb, ub, section_sampler_z_is_10)
 

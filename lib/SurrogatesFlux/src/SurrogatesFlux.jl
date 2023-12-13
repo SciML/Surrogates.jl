@@ -4,7 +4,6 @@ import Surrogates: add_point!, AbstractSurrogate, _check_dimension
 export NeuralSurrogate
 
 using Flux
-using Flux: @epochs
 
 mutable struct NeuralSurrogate{X, Y, M, L, O, P, N, A, U} <: AbstractSurrogate
     x::X
@@ -32,7 +31,9 @@ function NeuralSurrogate(x, y, lb, ub; model = Chain(Dense(length(x[1]), 1), fir
     X = vec.(collect.(x))
     data = zip(X, y)
     ps = Flux.params(model)
-    @epochs n_echos Flux.train!(loss, ps, data, opt)
+    for epoch in 1:n_echos
+        Flux.train!(loss, ps, data, opt)
+    end
     return NeuralSurrogate(x, y, model, loss, opt, ps, n_echos, lb, ub)
 end
 
@@ -58,7 +59,9 @@ function add_point!(my_n::NeuralSurrogate, x_new, y_new)
     end
     X = vec.(collect.(my_n.x))
     data = zip(X, my_n.y)
-    @epochs my_n.n_echos Flux.train!(my_n.loss, my_n.ps, data, my_n.opt)
+    for epoch in 1:my_n.n_echos
+        Flux.train!(my_n.loss, my_n.ps, data, my_n.opt)
+    end
     nothing
 end
 

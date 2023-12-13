@@ -20,7 +20,7 @@ add_point!(my_second_order_poly, [6.0, 7.0], [722.84, 2133.94])
 lb = [0.0, 0.0]
 ub = [10.0, 10.0]
 obj_ND = x -> log(x[1]) * exp(x[2])
-x = sample(10, lb, ub, UniformSample())
+x = sample(10, lb, ub, RandomSample())
 y = obj_ND.(x)
 my_second_order_poly = SecondOrderPolynomialSurrogate(x, y, lb, ub)
 val = my_second_order_poly((5.0, 7.0))

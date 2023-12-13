@@ -1,11 +1,11 @@
 using Surrogates
 using Test
-
+using QuasiMonteCarlo
 #1D
 obj = x -> sin(x) + sin(x)^2 + sin(x)^3
 lb = 0.0
 ub = 10.0
-x = sample(5, lb, ub, LowDiscrepancySample(2))
+x = sample(5, lb, ub, HaltonSample())
 y = obj.(x)
 p = 3.5
 InverseDistance = InverseDistanceSurrogate(x, y, lb, ub, p = 2.4)

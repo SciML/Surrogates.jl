@@ -20,7 +20,7 @@ using SafeTestsets
     obj_N = x -> x[1]^2 * x[2]
     lb = [0.0, 0.0]
     ub = [10.0, 10.0]
-    x = sample(100, lb, ub, UniformSample())
+    x = sample(100, lb, ub, RandomSample())
     y = obj_N.(x)
     my_svm_ND = SVMSurrogate(x, y, lb, ub)
     val = my_svm_ND((5.0, 1.2))

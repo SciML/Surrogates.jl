@@ -98,8 +98,8 @@ export MinimumConstantLiar, MaximumConstantLiar, MeanConstantLiar, KrigingBeliev
 export linearRadial, cubicRadial, multiquadricRadial, thinplateRadial
 
 # samplers
-export sample, GridSample, UniformSample, SobolSample, LatinHypercubeSample,
-       LowDiscrepancySample
+export sample, GridSample, RandomSample, SobolSample, LatinHypercubeSample,
+       HaltonSample
 export RandomSample, KroneckerSample, GoldenSample, SectionSample
 
 # Optimization algorithms

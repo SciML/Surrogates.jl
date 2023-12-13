@@ -17,24 +17,24 @@ To ensure that points of interest returned by `potential_optimal_points` are suf
 
 The following strategies are available for virtual point selection for all optimization algorithms:
 
-- "Minimum Constant Liar (CLmin)":
+- "Minimum Constant Liar (MinimumConstantLiar)":
   - The virtual point is assigned using the lowest known value of the merit function across all evaluated points.
-- "Mean Constant Liar (CLmean)":
+- "Mean Constant Liar (MeanConstantLiar)":
   - The virtual point is assigned using the mean of the merit function across all evaluated points.
-- "Maximum Constant Liar (CLmax)":
+- "Maximum Constant Liar (MaximumConstantLiar)":
   - The virtual point is assigned using the great known value of the merit function across all evaluated points.
 
 For Kriging surrogates, specifically, the above and follow strategies are available:  
 
-- "Kriging Believer (KB)":
+- "Kriging Believer (KrigingBeliever):
   - The virtual point is assigned using the mean of the Kriging surrogate at the virtual point.
-- "Kriging Believer Upper Bound (KBUB)":
+- "Kriging Believer Upper Bound (KrigingBelieverUpperBound)":
   - The virtual point is assigned using 3$\sigma$ above the mean of the Kriging surrogate at the virtual point.
-- "Kriging Believer Lower Bound (KBLB)":
+- "Kriging Believer Lower Bound (KrigingBelieverLowerBound)":
   - The virtual point is assigned using 3$\sigma$ below the mean of the Kriging surrogate at the virtual point.
 
 
-In general, CLmin and KBLB tend to favor exploitation while CLmax and KBUB tend to favor exploration. CLmean and KB tend to be a compromise between the two.
+In general, MinimumConstantLiar and KrigingBelieverLowerBound tend to favor exploitation while MaximumConstantLiar and KrigingBelieverUpperBound tend to favor exploration. MeanConstantLiar and KrigingBeliever tend to be a compromise between the two.
 
 ## Examples
 
@@ -50,7 +50,7 @@ y = f.(x)
 my_k = Kriging(x, y, lb, ub)
 
 for _ in 1:10
-    new_x, eis = potential_optimal_points(EI(), lb, ub, my_k, SobolSample(), 3, CLmean!)
+    new_x, eis = potential_optimal_points(EI(), MeanConstantLiar(), lb, ub, my_k, SobolSample(), 3)
     add_point!(my_k, new_x, f.(new_x))
 end
 ```
