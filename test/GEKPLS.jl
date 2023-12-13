@@ -83,7 +83,7 @@ y_true = welded_beam.(x_test)
 @testset "Test 4: Welded Beam Function Test (dimensions = 3; n_comp = 3; extra_points = 2)" begin
     n_comp = 3
     delta_x = 0.0001
-     extra_points = 2
+    extra_points = 2
     initial_theta = [0.01 for i in 1:n_comp]
     g = GEKPLS(x, y, grads, n_comp, delta_x, lb, ub, extra_points, initial_theta)
     y_pred = g.(x_test)
@@ -175,8 +175,8 @@ end
     extra_points = 2
     initial_theta = [0.01 for i in 1:n_comp]
     g = GEKPLS(initial_x_vec, initial_y, initial_grads, n_comp, delta_x, lb, ub,
-               extra_points,
-               initial_theta)
+        extra_points,
+        initial_theta)
     n_test = 100
     x_test = sample(n_test, lb, ub, GoldenSample())
     y_true = sphere_function.(x_test)
@@ -209,8 +209,8 @@ end
     y = sphere_function.(x)
     g = GEKPLS(x, y, grads, n_comp, delta_x, lb, ub, extra_points, initial_theta)
     x_point, minima = surrogate_optimize(sphere_function, SRBF(), lb, ub, g,
-                                         RandomSample(); maxiters = 20,
-                                         num_new_samples = 20, needs_gradient = true)
+        RandomSample(); maxiters = 20,
+        num_new_samples = 20, needs_gradient = true)
     @test isapprox(minima, 0.0, atol = 0.0001)
 end
 

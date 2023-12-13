@@ -48,7 +48,7 @@ function add_point!(svmsurr::SVMSurrogate, x_new, y_new)
         svmsurr.x = vcat(svmsurr.x, x_new)
         svmsurr.y = vcat(svmsurr.y, y_new)
         svmsurr.model = LIBSVM.fit!(SVC(), reshape(svmsurr.x, length(svmsurr.x), 1),
-                                    svmsurr.y)
+            svmsurr.y)
     else
         n_previous = length(svmsurr.x)
         a = vcat(svmsurr.x, x_new)

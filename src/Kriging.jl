@@ -46,12 +46,12 @@ function std_error_at_point(k::Kriging, val)
     d = length(k.x[1])
     r = zeros(eltype(k.x[1]), n, 1)
     r = [let
-             sum = zero(eltype(k.x[1]))
-             for l in 1:d
-                 sum = sum + k.theta[l] * norm(val[l] - k.x[i][l])^(k.p[l])
-             end
-             exp(-sum)
-         end
+        sum = zero(eltype(k.x[1]))
+        for l in 1:d
+            sum = sum + k.theta[l] * norm(val[l] - k.x[i][l])^(k.p[l])
+        end
+        exp(-sum)
+    end
          for i in 1:n]
 
     one = ones(eltype(k.x[1]), n, 1)
@@ -102,7 +102,7 @@ Constructor for type Kriging.
 - theta: value > 0 modeling how much the function is changing in the i-th variable.
 """
 function Kriging(x, y, lb::Number, ub::Number; p = 2.0,
-                 theta = 0.5 / max(1e-6 * abs(ub - lb), std(x))^p)
+        theta = 0.5 / max(1e-6 * abs(ub - lb), std(x))^p)
     if length(x) != length(unique(x))
         println("There exists a repetition in the samples, cannot build Kriging.")
         return
@@ -168,8 +168,8 @@ Constructor for Kriging surrogate.
           changing in the i-th variable.
 """
 function Kriging(x, y, lb, ub; p = 2.0 .* collect(one.(x[1])),
-                 theta = [0.5 / max(1e-6 * norm(ub .- lb), std(x_i[i] for x_i in x))^p[i]
-                          for i in 1:length(x[1])])
+        theta = [0.5 / max(1e-6 * norm(ub .- lb), std(x_i[i] for x_i in x))^p[i]
+                 for i in 1:length(x[1])])
     if length(x) != length(unique(x))
         println("There exists a repetition in the samples, cannot build Kriging.")
         return
@@ -194,12 +194,12 @@ function _calc_kriging_coeffs(x, y, p, theta)
     d = length(x[1])
 
     R = [let
-             sum = zero(eltype(x[1]))
-             for l in 1:d
-                 sum = sum + theta[l] * norm(x[i][l] - x[j][l])^p[l]
-             end
-             exp(-sum)
-         end
+        sum = zero(eltype(x[1]))
+        for l in 1:d
+            sum = sum + theta[l] * norm(x[i][l] - x[j][l])^p[l]
+        end
+        exp(-sum)
+    end
          for j in 1:n, i in 1:n]
 
     # Estimate nugget based on maximum allowed condition number

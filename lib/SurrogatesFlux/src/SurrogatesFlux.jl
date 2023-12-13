@@ -26,8 +26,8 @@ NeuralSurrogate(x,y,lb,ub,model,loss,opt,n_echos)
 
 """
 function NeuralSurrogate(x, y, lb, ub; model = Chain(Dense(length(x[1]), 1), first),
-                         loss = (x, y) -> Flux.mse(model(x), y), opt = Descent(0.01),
-                         n_echos::Int = 1)
+        loss = (x, y) -> Flux.mse(model(x), y), opt = Descent(0.01),
+        n_echos::Int = 1)
     X = vec.(collect.(x))
     data = zip(X, y)
     ps = Flux.params(model)
@@ -59,7 +59,7 @@ function add_point!(my_n::NeuralSurrogate, x_new, y_new)
     end
     X = vec.(collect.(my_n.x))
     data = zip(X, my_n.y)
-    for epoch in 1:my_n.n_echos
+    for epoch in 1:(my_n.n_echos)
         Flux.train!(my_n.loss, my_n.ps, data, my_n.opt)
     end
     nothing

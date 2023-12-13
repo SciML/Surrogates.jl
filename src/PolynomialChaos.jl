@@ -20,7 +20,7 @@ function _calculatepce_coeff(x, y, num_of_multi_indexes, op::AbstractCanonicalOr
 end
 
 function PolynomialChaosSurrogate(x, y, lb::Number, ub::Number;
-                                  op::AbstractCanonicalOrthoPoly = GaussOrthoPoly(2))
+        op::AbstractCanonicalOrthoPoly = GaussOrthoPoly(2))
     n = length(x)
     poly_degree = op.deg
     num_of_multi_indexes = 1 + poly_degree
@@ -53,9 +53,9 @@ function _calculatepce_coeff(x, y, num_of_multi_indexes, op::MultiOrthoPoly)
 end
 
 function PolynomialChaosSurrogate(x, y, lb, ub;
-                                  op::MultiOrthoPoly = MultiOrthoPoly([GaussOrthoPoly(2)
-                                                                       for j in 1:length(lb)],
-                                                                      2))
+        op::MultiOrthoPoly = MultiOrthoPoly([GaussOrthoPoly(2)
+                                             for j in 1:length(lb)],
+            2))
     n = length(x)
     d = length(lb)
     poly_degree = op.deg
@@ -75,7 +75,7 @@ function (pcND::PolynomialChaosSurrogate)(val)
         sum = sum +
               pcND.coeff[i] *
               first(PolyChaos.evaluate(pcND.ortopolys.ind[i, :], collect(val),
-                                       pcND.ortopolys))
+            pcND.ortopolys))
     end
     return sum
 end
@@ -86,12 +86,12 @@ function add_point!(polych::PolynomialChaosSurrogate, x_new, y_new)
         polych.x = vcat(polych.x, x_new)
         polych.y = vcat(polych.y, y_new)
         polych.coeff = _calculatepce_coeff(polych.x, polych.y, polych.num_of_multi_indexes,
-                                           polych.ortopolys)
+            polych.ortopolys)
     else
         polych.x = vcat(polych.x, x_new)
         polych.y = vcat(polych.y, y_new)
         polych.coeff = _calculatepce_coeff(polych.x, polych.y, polych.num_of_multi_indexes,
-                                           polych.ortopolys)
+            polych.ortopolys)
     end
     nothing
 end
