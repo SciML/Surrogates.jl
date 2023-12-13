@@ -27,7 +27,7 @@ using Surrogates: sample, SobolSample
         x_points = sample(5, lb, ub, SobolSample())
         y_points = f.(x_points)
         agp1D = AbstractGPSurrogate([x_points[1]], [y_points[1]],
-                                    gp = GP(SqExponentialKernel()), Σy = 0.05)
+            gp = GP(SqExponentialKernel()), Σy = 0.05)
         x_new = 2.5
         y_actual = f.(x_new)
         for i in 2:length(x_points)
@@ -87,8 +87,8 @@ using Surrogates: sample, SobolSample
         a = 2
         b = 6
         my_k_EI1 = AbstractGPSurrogate(x, y)
-        surrogate_optimize(objective_function, EI(), a, b, my_k_EI1, UniformSample(),
-                           maxiters = 200, num_new_samples = 155)
+        surrogate_optimize(objective_function, EI(), a, b, my_k_EI1, RandomSample(),
+            maxiters = 200, num_new_samples = 155)
     end
 
     @testset "Optimization ND" begin
@@ -99,7 +99,7 @@ using Surrogates: sample, SobolSample
         lb = [1.0, 1.0]
         ub = [6.0, 6.0]
         my_k_E1N = AbstractGPSurrogate(x, y)
-        surrogate_optimize(objective_function_ND, EI(), lb, ub, my_k_E1N, UniformSample())
+        surrogate_optimize(objective_function_ND, EI(), lb, ub, my_k_E1N, RandomSample())
     end
 
     @testset "check working of logpdf_surrogate 1D" begin

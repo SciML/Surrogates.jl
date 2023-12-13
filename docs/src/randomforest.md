@@ -32,7 +32,7 @@ plot!(f, label="True function", xlims=(lower_bound, upper_bound), legend=:top)
 
 With our sampled points we can build the Random forests surrogate using the `RandomForestSurrogate` function.
 
-`randomforest_surrogate` behaves like an ordinary function which we can simply plot. Addtionally you can specify the number of trees created
+`randomforest_surrogate` behaves like an ordinary function which we can simply plot. Additionally you can specify the number of trees created
 using the parameter num_round
 
 ```@example RandomForestSurrogate_tutorial

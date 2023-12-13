@@ -28,5 +28,5 @@ surrogate_optimize(obj::Function,sop1::SOP,lb::Number,ub::Number,surrSOP::Abstra
 To add another optimization method, you just need to define a new
 SurrogateOptimizationAlgorithm and write its corresponding algorithm, overloading the following:
 ```
-surrogate_optimize(obj::Function,::NewOptimizatonType,lb,ub,surr::AbstractSurrogate,sample_type::SamplingAlgorithm;maxiters=100,num_new_samples=100)
+surrogate_optimize(obj::Function,::NewOptimizationType,lb,ub,surr::AbstractSurrogate,sample_type::SamplingAlgorithm;maxiters=100,num_new_samples=100)
 ```

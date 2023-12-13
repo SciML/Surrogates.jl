@@ -141,7 +141,7 @@ This is why its size changes.
 size(xys)
 ```
 ```@example RadialBasisSurrogateND
-surrogate_optimize(booth, SRBF(), lower_bound, upper_bound, radial_basis, UniformSample(), maxiters=50)
+surrogate_optimize(booth, SRBF(), lower_bound, upper_bound, radial_basis, RandomSample(), maxiters=50)
 ```
 ```@example RadialBasisSurrogateND
 size(xys)

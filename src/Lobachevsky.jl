@@ -45,7 +45,7 @@ end
 Lobachevsky interpolation, suggested parameters: 0 <= alpha <= 4, n must be even.
 """
 function LobachevskySurrogate(x, y, lb::Number, ub::Number; alpha::Number = 1.0, n::Int = 4,
-                              sparse = false)
+        sparse = false)
     if alpha > 4 || alpha < 0
         error("Alpha must be between 0 and 4")
     end
@@ -89,7 +89,7 @@ LobachevskySurrogate(x,y,alpha,n::Int,lb,ub,sparse = false)
 Build the Lobachevsky surrogate with parameters alpha and n.
 """
 function LobachevskySurrogate(x, y, lb, ub; alpha = collect(one.(x[1])), n::Int = 4,
-                              sparse = false)
+        sparse = false)
     if n % 2 != 0
         error("Parameter n must be even")
     end
@@ -199,5 +199,5 @@ function lobachevsky_integrate_dimension(loba::LobachevskySurrogate, lb, ub, dim
     new_ub = deleteat!(ub, dim)
     new_loba = deleteat!(loba.alpha, dim)
     return LobachevskySurrogate(new_x, loba.y, loba.alpha, loba.n, new_lb, new_ub,
-                                new_coeff, loba.sparse)
+        new_coeff, loba.sparse)
 end

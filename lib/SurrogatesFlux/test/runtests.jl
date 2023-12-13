@@ -4,7 +4,6 @@ using SafeTestsets
     using Surrogates
     using Surrogates: SobolSample
     using Flux
-    using Flux: @epochs
     using SurrogatesFlux
     using LinearAlgebra
     using Zygote
@@ -20,7 +19,7 @@ using SafeTestsets
     my_opt = Descent(0.01)
     n_echos = 1
     my_neural = NeuralSurrogate(x, y, a, b, model = my_model, loss = my_loss, opt = my_opt,
-                                n_echos = 1)
+        n_echos = 1)
     my_neural_kwargs = NeuralSurrogate(x, y, a, b)
     add_point!(my_neural, 8.5, 20.0)
     add_point!(my_neural, [3.2, 3.5], [7.4, 8.0])
@@ -38,7 +37,7 @@ using SafeTestsets
     my_opt = Descent(0.01)
     n_echos = 1
     my_neural = NeuralSurrogate(x, y, lb, ub, model = my_model, loss = my_loss,
-                                opt = my_opt, n_echos = 1)
+        opt = my_opt, n_echos = 1)
     my_neural_kwargs = NeuralSurrogate(x, y, lb, ub)
     my_neural((3.5, 1.49))
     my_neural([3.4, 1.4])
@@ -55,7 +54,7 @@ using SafeTestsets
     my_model = Chain(Dense(1, 2))
     my_loss(x, y) = Flux.mse(my_model(x), y)
     surrogate = NeuralSurrogate(x, y, lb, ub, model = my_model, loss = my_loss,
-                                opt = my_opt, n_echos = 1)
+        opt = my_opt, n_echos = 1)
     surr_kwargs = NeuralSurrogate(x, y, lb, ub)
 
     f = x -> [x[1], x[2]^2]
@@ -67,7 +66,7 @@ using SafeTestsets
     my_model = Chain(Dense(2, 2))
     my_loss(x, y) = Flux.mse(my_model(x), y)
     surrogate = NeuralSurrogate(x, y, lb, ub, model = my_model, loss = my_loss,
-                                opt = my_opt, n_echos = 1)
+        opt = my_opt, n_echos = 1)
     surrogate_kwargs = NeuralSurrogate(x, y, lb, ub)
     surrogate((1.0, 2.0))
     x_new = (2.0, 2.0)
@@ -86,7 +85,7 @@ using SafeTestsets
     n_echos = 1
     my_neural_ND_neural = NeuralSurrogate(x, y, lb, ub)
     surrogate_optimize(objective_function_ND, SRBF(), lb, ub, my_neural_ND_neural,
-                       SobolSample(), maxiters = 15)
+        SobolSample(), maxiters = 15)
 
     # AD Compatibility
     lb = 0.0
@@ -102,7 +101,7 @@ using SafeTestsets
         my_opt = Descent(0.01)
         n_echos = 1
         my_neural = NeuralSurrogate(x, y, lb, ub, model = my_model, loss = my_loss,
-                                    opt = my_opt, n_echos = 1)
+            opt = my_opt, n_echos = 1)
         g = x -> my_neural'(x)
         g(3.4)
     end
@@ -121,7 +120,7 @@ using SafeTestsets
         my_opt = Descent(0.01)
         n_echos = 1
         my_neural = NeuralSurrogate(x, y, lb, ub, model = my_model, loss = my_loss,
-                                    opt = my_opt, n_echos = 1)
+            opt = my_opt, n_echos = 1)
         g = x -> Zygote.gradient(my_neural, x)
         g((2.0, 5.0))
     end
@@ -142,7 +141,7 @@ using SafeTestsets
         my_opt = Descent(0.01)
         n_echos = 1
         my_neural = NeuralSurrogate(x, y, lb, ub, model = my_model, loss = my_loss,
-                                    opt = my_opt, n_echos = 1)
+            opt = my_opt, n_echos = 1)
         Zygote.gradient(x -> sum(my_neural(x)), (2.0, 5.0))
 
         my_rad = RadialBasis(x, y, lb, ub, rad = linearRadial())

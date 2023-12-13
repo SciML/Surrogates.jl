@@ -18,7 +18,7 @@ f = x -> 3*sin(x) + 10/x
 lb = 3.0
 ub = 6.0
 n = 10
-x = sample(n,lb,ub,LowDiscrepancySample(2))
+x = sample(n,lb,ub,HaltonSample())
 y = f.(x)
 scatter(x, y, label="Sampled points", xlims=(lb, ub))
 plot!(f, label="True function", xlims=(lb, ub))

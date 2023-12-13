@@ -50,7 +50,8 @@ function add_point!(rndfor::RandomForestSurrogate, x_new, y_new)
         #1D
         rndfor.x = vcat(rndfor.x, x_new)
         rndfor.y = vcat(rndfor.y, y_new)
-        rndfor.bst = xgboost((reshape(rndfor.x, length(rndfor.x), 1), rndfor.y); num_round = rndfor.num_round)
+        rndfor.bst = xgboost((reshape(rndfor.x, length(rndfor.x), 1), rndfor.y);
+            num_round = rndfor.num_round)
     else
         n_previous = length(rndfor.x)
         a = vcat(rndfor.x, x_new)
