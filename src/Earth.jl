@@ -149,15 +149,15 @@ function _backward_pass_1d(x, y, n_min_terms, basis, penalty, rel_GCV)
 end
 
 function EarthSurrogate(x, y, lb::Number, ub::Number; penalty::Number = 2.0,
-                        n_min_terms::Int = 2, n_max_terms::Int = 10,
-                        rel_res_error::Number = 1e-2, rel_GCV::Number = 1e-2,
-                        maxiters = 100)
+        n_min_terms::Int = 2, n_max_terms::Int = 10,
+        rel_res_error::Number = 1e-2, rel_GCV::Number = 1e-2,
+        maxiters = 100)
     intercept = sum([y[i] for i in 1:length(y)]) / length(y)
     basis_after_forward = _forward_pass_1d(x, y, n_max_terms, rel_res_error, maxiters)
     basis = _backward_pass_1d(x, y, n_min_terms, basis_after_forward, penalty, rel_GCV)
     coeff = _coeff_1d(x, y, basis)
     return EarthSurrogate(x, y, lb, ub, basis, coeff, penalty, n_min_terms, n_max_terms,
-                          rel_res_error, rel_GCV, intercept, maxiters)
+        rel_res_error, rel_GCV, intercept, maxiters)
 end
 
 function (earth::EarthSurrogate)(val::Number)
@@ -319,14 +319,14 @@ function _backward_pass_nd(x, y, n_min_terms, basis, penalty, rel_GCV)
 end
 
 function EarthSurrogate(x, y, lb, ub; penalty::Number = 2.0, n_min_terms::Int = 2,
-                        n_max_terms::Int = 10, rel_res_error::Number = 1e-2,
-                        rel_GCV::Number = 1e-2, maxiters = 100)
+        n_max_terms::Int = 10, rel_res_error::Number = 1e-2,
+        rel_GCV::Number = 1e-2, maxiters = 100)
     intercept = sum([y[i] for i in 1:length(y)]) / length(y)
     basis_after_forward = _forward_pass_nd(x, y, n_max_terms, rel_res_error, maxiters)
     basis = _backward_pass_nd(x, y, n_min_terms, basis_after_forward, penalty, rel_GCV)
     coeff = _coeff_nd(x, y, basis)
     return EarthSurrogate(x, y, lb, ub, basis, coeff, penalty, n_min_terms, n_max_terms,
-                          rel_res_error, rel_GCV, intercept, maxiters)
+        rel_res_error, rel_GCV, intercept, maxiters)
 end
 
 function (earth::EarthSurrogate)(val)
@@ -343,9 +343,9 @@ function add_point!(earth::EarthSurrogate, x_new, y_new)
         earth.y = vcat(earth.y, y_new)
         earth.intercept = sum([earth.y[i] for i in 1:length(earth.y)]) / length(earth.y)
         basis_after_forward = _forward_pass_1d(earth.x, earth.y, earth.n_max_terms,
-                                               earth.rel_res_error, earth.maxiters)
+            earth.rel_res_error, earth.maxiters)
         earth.basis = _backward_pass_1d(earth.x, earth.y, earth.n_min_terms,
-                                        basis_after_forward, earth.penalty, earth.rel_GCV)
+            basis_after_forward, earth.penalty, earth.rel_GCV)
         earth.coeff = _coeff_1d(earth.x, earth.y, earth.basis)
         nothing
     else
@@ -354,9 +354,9 @@ function add_point!(earth::EarthSurrogate, x_new, y_new)
         earth.y = vcat(earth.y, y_new)
         earth.intercept = sum([earth.y[i] for i in 1:length(earth.y)]) / length(earth.y)
         basis_after_forward = _forward_pass_nd(earth.x, earth.y, earth.n_max_terms,
-                                               earth.rel_res_error, earth.maxiters)
+            earth.rel_res_error, earth.maxiters)
         earth.basis = _backward_pass_nd(earth.x, earth.y, earth.n_min_terms,
-                                        basis_after_forward, earth.penalty, earth.rel_GCV)
+            basis_after_forward, earth.penalty, earth.rel_GCV)
         earth.coeff = _coeff_nd(earth.x, earth.y, earth.basis)
         nothing
     end

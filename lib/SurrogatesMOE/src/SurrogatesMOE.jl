@@ -1,10 +1,10 @@
 module SurrogatesMOE
 
 import Surrogates: AbstractSurrogate, linearRadial, cubicRadial, multiquadricRadial,
-                   thinplateRadial, RadialBasisStructure, RadialBasis,
-                   InverseDistanceSurrogate, Kriging, LobachevskyStructure,
-                   LobachevskySurrogate, NeuralStructure, PolyChaosStructure,
-                   LinearSurrogate, add_point!
+    thinplateRadial, RadialBasisStructure, RadialBasis,
+    InverseDistanceSurrogate, Kriging, LobachevskyStructure,
+    LobachevskySurrogate, NeuralStructure, PolyChaosStructure,
+    LinearSurrogate, add_point!
 
 export MOE
 
@@ -46,7 +46,7 @@ function MOE(x, y, expert_types; ndim = 1, n_clusters = 2, quantile = 10)
     # https://github.com/davidavdav/GaussianMixtures.jl/issues/21 
     jitter_vals = ((rand(eltype(x_and_y_train), size(x_and_y_train))) ./ 10000)
     gm_cluster = GMM(n_clusters, x_and_y_train + jitter_vals, kind = :full, nInit = 50,
-                     nIter = 20)
+        nIter = 20)
     mvn_distributions = _create_clusters_distributions(gm_cluster, ndim, n_clusters)
     cluster_classifier_train = _cluster_predict(gm_cluster, x_and_y_train)
     clusters_train = _cluster_values(x_and_y_train, cluster_classifier_train, n_clusters)
@@ -55,7 +55,7 @@ function MOE(x, y, expert_types; ndim = 1, n_clusters = 2, quantile = 10)
     best_models = []
     for i in 1:n_clusters
         best_model = _find_best_model(clusters_train[i], clusters_test[i], ndim,
-                                      expert_types)
+            expert_types)
         push!(best_models, best_model)
     end
     # X = values[:, 1:ndim]
@@ -63,7 +63,7 @@ function MOE(x, y, expert_types; ndim = 1, n_clusters = 2, quantile = 10)
 
     #return MOE(X, y, gm_cluster, mvn_distributions, best_models)
     return MOE(x, y, gm_cluster, mvn_distributions, best_models, expert_types, ndim,
-               n_clusters)
+        n_clusters)
 end
 
 """
@@ -224,7 +224,7 @@ finds best model for each set of clustered values by validating against the clus
 
 """
 function _find_best_model(clustered_train_values, clustered_test_values, dim,
-                          enabled_expert_types)
+        enabled_expert_types)
     # find upper and lower bounds for clustered_train and test values concatenated
 
     x_vec = [a[1:dim] for a in clustered_train_values]
@@ -247,7 +247,7 @@ function _find_best_model(clustered_train_values, clustered_test_values, dim,
     # call on _surrogate_builder with clustered_train_vals, enabled expert types, lb, ub 
 
     surr_vec = _surrogate_builder(enabled_expert_types, length(enabled_expert_types), x_vec,
-                                  y_vec, lb, ub)
+        y_vec, lb, ub)
 
     # use the models to find best model after validating against test data and return best model 
     best_rmse = Inf
@@ -274,9 +274,9 @@ function _surrogate_builder(local_kind, k, x, y, lb, ub)
         if local_kind[i][1] == "RadialBasis"
             #fit and append to local_surr
             my_local_i = RadialBasis(x, y, lb, ub,
-                                     rad = local_kind[i].radial_function,
-                                     scale_factor = local_kind[i].scale_factor,
-                                     sparse = local_kind[i].sparse)
+                rad = local_kind[i].radial_function,
+                scale_factor = local_kind[i].scale_factor,
+                sparse = local_kind[i].sparse)
             push!(local_surr, my_local_i)
 
         elseif local_kind[i][1] == "Kriging"
@@ -286,12 +286,12 @@ function _surrogate_builder(local_kind, k, x, y, lb, ub)
             end
 
             my_local_i = Kriging(x, y, lb, ub, p = local_kind[i].p,
-                                 theta = local_kind[i].theta)
+                theta = local_kind[i].theta)
             push!(local_surr, my_local_i)
 
         elseif local_kind[i][1] == "GEK"
             my_local_i = GEK(x, y, lb, ub, p = local_kind[i].p,
-                             theta = local_kind[i].theta)
+                theta = local_kind[i].theta)
             push!(local_surr, my_local_i)
 
         elseif local_kind[i] == "LinearSurrogate"
@@ -304,21 +304,21 @@ function _surrogate_builder(local_kind, k, x, y, lb, ub)
 
         elseif local_kind[i][1] == "LobachevskySurrogate"
             my_local_i = LobachevskyStructure(x, y, lb, ub,
-                                              alpha = local_kind[i].alpha,
-                                              n = local_kind[i].n,
-                                              sparse = local_kind[i].sparse)
+                alpha = local_kind[i].alpha,
+                n = local_kind[i].n,
+                sparse = local_kind[i].sparse)
             push!(local_surr, my_local_i)
 
         elseif local_kind[i][1] == "NeuralSurrogate"
             my_local_i = NeuralSurrogate(x, y, lb, ub,
-                                         model = local_kind[i].model,
-                                         loss = local_kind[i].loss, opt = local_kind[i].opt,
-                                         n_echos = local_kind[i].n_echos)
+                model = local_kind[i].model,
+                loss = local_kind[i].loss, opt = local_kind[i].opt,
+                n_echos = local_kind[i].n_echos)
             push!(local_surr, my_local_i)
 
         elseif local_kind[i][1] == "RandomForestSurrogate"
             my_local_i = RandomForestSurrogate(x, y, lb, ub,
-                                               num_round = local_kind[i].num_round)
+                num_round = local_kind[i].num_round)
             push!(local_surr, my_local_i)
 
         elseif local_kind[i] == "SecondOrderPolynomialSurrogate"
@@ -327,7 +327,7 @@ function _surrogate_builder(local_kind, k, x, y, lb, ub)
 
         elseif local_kind[i][1] == "Wendland"
             my_local_i = Wendand(x, y, lb, ub, eps = local_kind[i].eps,
-                                 maxiters = local_kind[i].maxiters, tol = local_kind[i].tol)
+                maxiters = local_kind[i].maxiters, tol = local_kind[i].tol)
             push!(local_surr, my_local_i)
 
         elseif local_kind[i][1] == "PolynomialChaosSurrogate"
@@ -363,7 +363,7 @@ function add_point!(m::MOE, x, y)
     # https://github.com/davidavdav/GaussianMixtures.jl/issues/21 
     jitter_vals = ((rand(eltype(x_and_y_train), size(x_and_y_train))) ./ 10000)
     gm_cluster = GMM(m.nc, x_and_y_train + jitter_vals, kind = :full, nInit = 50,
-                     nIter = 20)
+        nIter = 20)
     mvn_distributions = _create_clusters_distributions(gm_cluster, m.nd, m.nc)
     cluster_classifier_train = _cluster_predict(gm_cluster, x_and_y_train)
     clusters_train = _cluster_values(x_and_y_train, cluster_classifier_train, m.nc)
@@ -372,7 +372,7 @@ function add_point!(m::MOE, x, y)
     best_models = []
     for i in 1:(m.nc)
         best_model = _find_best_model(clusters_train[i], clusters_test[i], m.nd,
-                                      m.e)
+            m.e)
         push!(best_models, best_model)
     end
     m.c = gm_cluster

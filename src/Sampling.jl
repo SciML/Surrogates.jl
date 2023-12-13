@@ -15,21 +15,25 @@ function sample(args...; kwargs...)
     end
 end
 
-
 #### SectionSample #### 
 """
     SectionSample{T}(x0, sa)
 `SectionSample(x0, sampler)` where `sampler` is any sampler above and `x0` is a vector of either `NaN` for a free dimension or some scalar for a constrained dimension.
 """
-struct SectionSample{R<:Real,I<:Integer,VR<:AbstractVector{R},VI<:AbstractVector{I}} <: SamplingAlgorithm
+struct SectionSample{
+    R <: Real,
+    I <: Integer,
+    VR <: AbstractVector{R},
+    VI <: AbstractVector{I},
+} <: SamplingAlgorithm
     x0::VR
     sa::SamplingAlgorithm
     fixed_dims::VI
 end
 fixed_dimensions(section_sampler::SectionSample)::Vector{Int64} = findall(x -> x == false,
-                                                                          isnan.(section_sampler.x0))
+    isnan.(section_sampler.x0))
 free_dimensions(section_sampler::SectionSample)::Vector{Int64} = findall(x -> x == true,
-                                                                         isnan.(section_sampler.x0))
+    isnan.(section_sampler.x0))
 """
     sample(n,lb,ub,K::SectionSample)
 Returns Tuples constrained to a section.
@@ -39,8 +43,11 @@ The sampler is defined as in e.g.
 `section_sampler_y_is_10 = SectionSample([NaN64, NaN64, 10.0, 10.0], UniformSample())`
 where the first argument is a Vector{T} in which numbers are fixed coordinates and `NaN`s correspond to free dimensions, and the second argument is a SamplingAlgorithm which is used to sample in the free dimensions.
 """
-function sample(n::Integer, lb::T, ub::T, section_sampler::SectionSample) where
-                                                T <: Union{Base.AbstractVecOrTuple, Number}
+function sample(n::Integer,
+        lb::T,
+        ub::T,
+        section_sampler::SectionSample) where {
+        T <: Union{Base.AbstractVecOrTuple, Number}}
     @assert n>0 ZERO_SAMPLES_MESSAGE
     QuasiMonteCarlo._check_sequence(lb, ub, length(lb))
     if lb isa Number
@@ -60,12 +67,16 @@ function sample(n::Integer, lb::T, ub::T, section_sampler::SectionSample) where
                 out_as_vec[d, y] = new_samples[xi, y]
             end
         end
-        return isone(size(out_as_vec, 1)) ? vec(out_as_vec) : collect(reinterpret(reshape, NTuple{size(out_as_vec, 1), eltype(out_as_vec)}, out_as_vec))
+        return isone(size(out_as_vec, 1)) ? vec(out_as_vec) :
+               collect(reinterpret(reshape,
+            NTuple{size(out_as_vec, 1), eltype(out_as_vec)},
+            out_as_vec))
     end
 end
 
-SectionSample(x0::AbstractVector, sa::SamplingAlgorithm) =
+function SectionSample(x0::AbstractVector, sa::SamplingAlgorithm)
     SectionSample(x0, sa, findall(isnan, x0))
+end
 
 """
     SectionSample(n, d, K::SectionSample)
@@ -75,16 +86,19 @@ The sampler is defined
 `SectionSample([NaN64, NaN64, 10.0, 10.0], UniformSample())`
 where the first argument is a Vector{T} in which numbers are fixed coordinates and `NaN`s correspond to free dimensions, and the second argument is a SamplingAlgorithm which is used to sample in the free dimensions.
 """
-function sample(n::Integer, d::Integer, section_sampler::SectionSample, T=eltype(section_sampler.x0))
+function sample(n::Integer,
+        d::Integer,
+        section_sampler::SectionSample,
+        T = eltype(section_sampler.x0))
     QuasiMonteCarlo._check_sequence(n)
     @assert eltype(section_sampler.x0) == T
     @assert length(section_sampler.fixed_dims) == d
     return sample(n, section_sampler)
 end
 
-@views function sample(n::Integer, section_sampler::SectionSample{T}) where T
+@views function sample(n::Integer, section_sampler::SectionSample{T}) where {T}
     samples = Matrix{T}(undef, n, length(section_sampler.x0))
     fixed_dims = section_sampler.fixed_dims
-    samples[:,fixed_dims] .= sample(n, length(fixed_dims), section_sampler.sa, T)
+    samples[:, fixed_dims] .= sample(n, length(fixed_dims), section_sampler.sa, T)
     return vec(samples)
 end

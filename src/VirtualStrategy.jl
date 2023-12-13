@@ -1,17 +1,26 @@
 # Minimum Constant Liar 
-function calculate_liars(::MinimumConstantLiar, tmp_surr::AbstractSurrogate, surr::AbstractSurrogate, new_x)
+function calculate_liars(::MinimumConstantLiar,
+        tmp_surr::AbstractSurrogate,
+        surr::AbstractSurrogate,
+        new_x)
     new_y = minimum(surr.y)
     add_point!(tmp_surr, new_x, new_y)
 end
 
 # Maximum Constant Liar
-function calculate_liars(::MaximumConstantLiar, tmp_surr::AbstractSurrogate, surr::AbstractSurrogate, new_x)
+function calculate_liars(::MaximumConstantLiar,
+        tmp_surr::AbstractSurrogate,
+        surr::AbstractSurrogate,
+        new_x)
     new_y = maximum(surr.y)
     add_point!(tmp_surr, new_x, new_y)
 end
 
 # Mean Constant Liar
-function calculate_liars(::MeanConstantLiar, tmp_surr::AbstractSurrogate, surr::AbstractSurrogate, new_x)
+function calculate_liars(::MeanConstantLiar,
+        tmp_surr::AbstractSurrogate,
+        surr::AbstractSurrogate,
+        new_x)
     new_y = mean(surr.y)
     add_point!(tmp_surr, new_x, new_y)
 end

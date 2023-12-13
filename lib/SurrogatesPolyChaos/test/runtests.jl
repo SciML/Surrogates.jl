@@ -49,7 +49,7 @@ using SafeTestsets
     y = objective_function.(x)
     my_poly1d = PolynomialChaosSurrogate(x, y, lb, ub)
     @test_broken surrogate_optimize(objective_function, SRBF(), a, b, my_poly1d,
-                                    LowDiscrepancySample(; base = 2))
+        LowDiscrepancySample(; base = 2))
 
     lb = [0.0, 0.0]
     ub = [10.0, 10.0]

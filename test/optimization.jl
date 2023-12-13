@@ -23,7 +23,7 @@ x = [2.5, 4.0, 6.0]
 y = [6.0, 9.0, 13.0]
 my_k_SRBF1 = Kriging(x, y, lb, ub; p)
 xstar, fstar = surrogate_optimize(objective_function, SRBF(), a, b, my_k_SRBF1,
-                                  RandomSample())
+    RandomSample())
 
 #Using RadialBasis
 
@@ -31,19 +31,19 @@ x = [2.5, 4.0, 6.0]
 y = [6.0, 9.0, 13.0]
 my_rad_SRBF1 = RadialBasis(x, y, a, b, rad = linearRadial())
 (xstar, fstar) = surrogate_optimize(objective_function, SRBF(), a, b, my_rad_SRBF1,
-                                    RandomSample())
+    RandomSample())
 
 x = [2.5, 4.0, 6.0]
 y = [6.0, 9.0, 13.0]
 my_wend_1d = Wendland(x, y, lb, ub)
 xstar, fstar = surrogate_optimize(objective_function, SRBF(), a, b, my_wend_1d,
-                                  RandomSample())
+    RandomSample())
 
 x = [2.5, 4.0, 6.0]
 y = [6.0, 9.0, 13.0]
 my_earth1d = EarthSurrogate(x, y, lb, ub)
 xstar, fstar = surrogate_optimize(objective_function, SRBF(), a, b, my_earth1d,
-                                  HaltonSample())
+    HaltonSample())
 
 ##### ND #####
 objective_function_ND = z -> 3 * norm(z) + 1
@@ -57,7 +57,7 @@ y = objective_function_ND.(x)
 my_k_SRBFN = Kriging(x, y, lb, ub)
 #Every optimization method now returns the y_min and its position
 x_min, y_min = surrogate_optimize(objective_function_ND, SRBF(), lb, ub, my_k_SRBFN,
-                                  RandomSample())
+    RandomSample())
 
 #Radials
 lb = [1.0, 1.0]
@@ -84,7 +84,7 @@ objective_function_ND = z -> 3 * norm(z) + 1
 y = objective_function_ND.(x)
 my_linear_ND = LinearSurrogate(x, y, lb, ub)
 surrogate_optimize(objective_function_ND, SRBF(), lb, ub, my_linear_ND, SobolSample(),
-                   maxiters = 15)
+    maxiters = 15)
 
 #=
 #SVM
@@ -106,7 +106,7 @@ my_p = 2.5
 y = objective_function_ND.(x)
 my_inverse_ND = InverseDistanceSurrogate(x, y, lb, ub, p = my_p)
 surrogate_optimize(objective_function_ND, SRBF(), lb, ub, my_inverse_ND, SobolSample(),
-                   maxiters = 15)
+    maxiters = 15)
 
 #SecondOrderPolynomialSurrogate
 lb = [0.0, 0.0]
@@ -116,7 +116,7 @@ x = sample(15, lb, ub, RandomSample())
 y = obj_ND.(x)
 my_second_order_poly_ND = SecondOrderPolynomialSurrogate(x, y, lb, ub)
 surrogate_optimize(obj_ND, SRBF(), lb, ub, my_second_order_poly_ND, SobolSample(),
-                   maxiters = 15)
+    maxiters = 15)
 
 ####### LCBS #########
 ######1D######
@@ -156,7 +156,7 @@ x = sample(5, lb, ub, SobolSample())
 y = objective_function.(x)
 my_k_EI1 = Kriging(x, y, lb, ub; p = 2)
 surrogate_optimize(objective_function, EI(), lb, ub, my_k_EI1, SobolSample(),
-                   maxiters = 200, num_new_samples = 155)
+    maxiters = 200, num_new_samples = 155)
 
 # Check that EI is correctly minimizing the objective
 y_min, index_min = findmin(my_k_EI1.y)
@@ -241,15 +241,15 @@ ub = [6.0, 6.0]
 
 my_k_DYCORSN = Kriging(x, y, lb, ub)
 surrogate_optimize(objective_function_ND, DYCORS(), lb, ub, my_k_DYCORSN, RandomSample(),
-                   maxiters = 30)
+    maxiters = 30)
 
 my_rad_DYCORSN = RadialBasis(x, y, lb, ub, rad = linearRadial())
 surrogate_optimize(objective_function_ND, DYCORS(), lb, ub, my_rad_DYCORSN, RandomSample(),
-                   maxiters = 30)
+    maxiters = 30)
 
 my_wend_ND = Wendland(x, y, lb, ub)
 surrogate_optimize(objective_function_ND, DYCORS(), lb, ub, my_wend_ND, RandomSample(),
-                   maxiters = 30)
+    maxiters = 30)
 
 ### SOP ###
 # 1D
@@ -262,7 +262,7 @@ ub = 6.0
 num_centers = 2
 my_k_SOP1 = Kriging(x, y, lb, ub, p = 1.9)
 surrogate_optimize(objective_function, SOP(num_centers), lb, ub, my_k_SOP1, SobolSample(),
-                   maxiters = 60)
+    maxiters = 60)
 #ND
 objective_function_ND = z -> 2 * norm(z) + 1
 x = [(2.3, 2.2), (1.4, 1.5)]
@@ -274,7 +274,7 @@ ub = [6.0, 6.0]
 my_k_SOPND = Kriging(x, y, lb, ub)
 num_centers = 2
 surrogate_optimize(objective_function_ND, SOP(num_centers), lb, ub, my_k_SOPND,
-                   SobolSample(), maxiters = 20)
+    SobolSample(), maxiters = 20)
 
 #multi optimization
 #=

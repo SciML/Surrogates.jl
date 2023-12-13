@@ -25,9 +25,9 @@ cubicRadial() = RadialFunction(1, z -> norm(z)^3)
 multiquadricRadial(c = 1.0) = RadialFunction(1, z -> sqrt((c * norm(z))^2 + 1))
 
 thinplateRadial() = RadialFunction(2, z -> begin
-                                       result = norm(z)^2 * log(norm(z))
-                                       ifelse(iszero(z), zero(result), result)
-                                   end)
+    result = norm(z)^2 * log(norm(z))
+    ifelse(iszero(z), zero(result), result)
+end)
 
 """
 RadialBasis(x,y,lb,ub,rad::RadialFunction, scale_factor::Float = 1.0)
@@ -45,7 +45,7 @@ https://en.wikipedia.org/wiki/Polyharmonic_spline
 
 """
 function RadialBasis(x, y, lb, ub; rad::RadialFunction = linearRadial(),
-                     scale_factor::Real = 0.5, sparse = false)
+        scale_factor::Real = 0.5, sparse = false)
     q = rad.q
     phi = rad.phi
     coeff = _calc_coeffs(x, y, lb, ub, phi, q, scale_factor, sparse)
@@ -110,9 +110,9 @@ using Zygote: @nograd, Buffer
 function _make_combination(n, d, ix)
     exponents_combinations = [e
                               for e
-                                  in collect(Iterators.product(Iterators.repeated(0:n,
-                                                                                  d)...))[:]
-                              if sum(e) <= n]
+    in collect(Iterators.product(Iterators.repeated(0:n,
+        d)...))[:]
+                                  if sum(e) <= n]
 
     return exponents_combinations[ix + 1]
 end
@@ -144,7 +144,7 @@ function multivar_poly_basis(x, ix, d, n)
     else
         prod(a^d
              for (a, d)
-                 in zip(x, _make_combination(n, d, ix)))
+        in zip(x, _make_combination(n, d, ix)))
     end
 end
 
@@ -179,12 +179,12 @@ function _add_tmp_to_approx!(approx, i, tmp, rad::RadialBasis; f = identity)
 end
 # specialise when only single output dimension
 function _make_approx(val,
-                      ::RadialBasis{F, Q, X, <:AbstractArray{<:Number}}) where {F, Q, X}
+        ::RadialBasis{F, Q, X, <:AbstractArray{<:Number}}) where {F, Q, X}
     return Ref(zero(eltype(val)))
 end
 function _add_tmp_to_approx!(approx::Base.RefValue, i, tmp,
-                             rad::RadialBasis{F, Q, X, <:AbstractArray{<:Number}};
-                             f = identity) where {F, Q, X}
+        rad::RadialBasis{F, Q, X, <:AbstractArray{<:Number}};
+        f = identity) where {F, Q, X}
     @inbounds @simd ivdep for j in 1:size(rad.coeff, 1)
         approx[] += rad.coeff[j, i] * f(tmp)
     end
@@ -242,6 +242,6 @@ function add_point!(rad::RadialBasis, new_x, new_y)
         append!(rad.y, new_y)
     end
     rad.coeff = _calc_coeffs(rad.x, rad.y, rad.lb, rad.ub, rad.phi, rad.dim_poly,
-                             rad.scale_factor, rad.sparse)
+        rad.scale_factor, rad.sparse)
     nothing
 end

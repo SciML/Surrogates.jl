@@ -28,7 +28,7 @@ current_surrogates = ["Kriging", "LinearSurrogate", "LobachevskySurrogate",
 #Radial structure:
 function RadialBasisStructure(; radial_function, scale_factor, sparse)
     return (name = "RadialBasis", radial_function = radial_function,
-            scale_factor = scale_factor, sparse = sparse)
+        scale_factor = scale_factor, sparse = sparse)
 end
 
 #Kriging structure:
@@ -58,7 +58,7 @@ end
 #Neural structure
 function NeuralStructure(; model, loss, opt, n_echos)
     return (name = "NeuralSurrogate", model = model, loss = loss, opt = opt,
-            n_echos = n_echos)
+        n_echos = n_echos)
 end
 
 #Random forest structure
@@ -84,22 +84,23 @@ end
 export current_surrogates
 export GEKPLS
 export RadialBasisStructure, KrigingStructure, LinearStructure, InverseDistanceStructure
-export LobachevskyStructure, NeuralStructure, RandomForestStructure,
-       SecondOrderPolynomialStructure
+export LobachevskyStructure,
+    NeuralStructure, RandomForestStructure,
+    SecondOrderPolynomialStructure
 export WendlandStructure
 export AbstractSurrogate, SamplingAlgorithm
 export Kriging, RadialBasis, add_point!, current_estimate, std_error_at_point
 # Parallelization Strategies
 export potential_optimal_points
 export MinimumConstantLiar, MaximumConstantLiar, MeanConstantLiar, KrigingBeliever,
-       KrigingBelieverUpperBound, KrigingBelieverLowerBound
+    KrigingBelieverUpperBound, KrigingBelieverLowerBound
 
 # radial basis functions
 export linearRadial, cubicRadial, multiquadricRadial, thinplateRadial
 
 # samplers
 export sample, GridSample, RandomSample, SobolSample, LatinHypercubeSample,
-       HaltonSample
+    HaltonSample
 export RandomSample, KroneckerSample, GoldenSample, SectionSample
 
 # Optimization algorithms
@@ -111,8 +112,9 @@ export InverseDistanceSurrogate
 export SecondOrderPolynomialSurrogate
 export Wendland
 export RadialBasisStructure, KrigingStructure, LinearStructure, InverseDistanceStructure
-export LobachevskyStructure, NeuralStructure, RandomForestStructure,
-       SecondOrderPolynomialStructure
+export LobachevskyStructure,
+    NeuralStructure, RandomForestStructure,
+    SecondOrderPolynomialStructure
 export WendlandStructure
 #export MOE
 export VariableFidelitySurrogate

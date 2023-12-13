@@ -72,21 +72,21 @@ function GEKPLS(x_vec, y_vec, grads_vec, n_comp, delta_x, lb, ub, extra_points, 
     end
 
     pls_mean, X_after_PLS, y_after_PLS = _ge_compute_pls(X, y, n_comp, grads, delta_x,
-                                                         xlimits, extra_points)
+        xlimits, extra_points)
     X_after_std, y_after_std, X_offset, y_mean, X_scale, y_std = standardization(X_after_PLS,
-                                                                                 y_after_PLS)
+        y_after_PLS)
     D, ij = cross_distances(X_after_std)
     pls_mean_reshaped = reshape(pls_mean, (size(X, 2), n_comp))
     d = componentwise_distance_PLS(D, "squar_exp", n_comp, pls_mean_reshaped)
     nt, nd = size(X_after_PLS)
     beta, gamma, reduced_likelihood_function_value = _reduced_likelihood_function(theta,
-                                                                                  "squar_exp",
-                                                                                  d, nt, ij,
-                                                                                  y_after_std)
+        "squar_exp",
+        d, nt, ij,
+        y_after_std)
     return GEKPLS(x_vec, y_vec, X, y, grads, xlimits, delta_x, extra_points, n_comp, beta,
-                  gamma, theta,
-                  reduced_likelihood_function_value,
-                  X_offset, X_scale, X_after_std, pls_mean_reshaped, y_mean, y_std)
+        gamma, theta,
+        reduced_likelihood_function_value,
+        X_offset, X_scale, X_after_std, pls_mean_reshaped, y_mean, y_std)
 end
 
 """
@@ -134,21 +134,21 @@ function add_point!(g::GEKPLS, x_tup, y_val, grad_tup)
     g.y_matrix = vcat(g.y_matrix, y_val)
     g.grads = vcat(g.grads, new_grads)
     pls_mean, X_after_PLS, y_after_PLS = _ge_compute_pls(g.x_matrix, g.y_matrix,
-                                                         g.num_components,
-                                                         g.grads, g.delta, g.xl,
-                                                         g.extra_points)
+        g.num_components,
+        g.grads, g.delta, g.xl,
+        g.extra_points)
     g.X_after_std, y_after_std, g.X_offset, g.y_mean, g.X_scale, g.y_std = standardization(X_after_PLS,
-                                                                                           y_after_PLS)
+        y_after_PLS)
     D, ij = cross_distances(g.X_after_std)
     g.pls_mean = reshape(pls_mean, (size(g.x_matrix, 2), g.num_components))
     d = componentwise_distance_PLS(D, "squar_exp", g.num_components, g.pls_mean)
     nt, nd = size(X_after_PLS)
     g.beta, g.gamma, g.reduced_likelihood_function_value = _reduced_likelihood_function(g.theta,
-                                                                                        "squar_exp",
-                                                                                        d,
-                                                                                        nt,
-                                                                                        ij,
-                                                                                        y_after_std)
+        "squar_exp",
+        d,
+        nt,
+        ij,
+        y_after_std)
 end
 
 """
@@ -185,14 +185,14 @@ function _ge_compute_pls(X, y, n_comp, grads, delta_x, xlimits, extra_points)
             bb_vals = circshift(boxbehnken(dim, 1), 1)
         else
             bb_vals = [0.0 0.0; #center
-                       1.0 0.0; #right
-                       0.0 1.0; #up
-                       -1.0 0.0; #left
-                       0.0 -1.0; #down
-                       1.0 1.0; #right up
-                       -1.0 1.0; #left up
-                       -1.0 -1.0; #left down
-                       1.0 -1.0]
+                1.0 0.0; #right
+                0.0 1.0; #up
+                -1.0 0.0; #left
+                0.0 -1.0; #down
+                1.0 1.0; #right up
+                -1.0 1.0; #left up
+                -1.0 -1.0; #left down
+                1.0 -1.0]
         end
         _X = zeros((size(bb_vals)[1], dim))
         _y = zeros((size(bb_vals)[1], 1))
@@ -273,9 +273,9 @@ function boxbehnken(matrix_size::Int, center::Int)
         for j in (i + 1):matrix_size
             l = l + 1
             A[(max(0, (l - 1) * size(A_fact)[1]) + 1):(l * size(A_fact)[1]), i] = A_fact[:,
-                                                                                         1]
+                1]
             A[(max(0, (l - 1) * size(A_fact)[1]) + 1):(l * size(A_fact)[1]), j] = A_fact[:,
-                                                                                         2]
+                2]
         end
     end
 

@@ -27,7 +27,7 @@ using Surrogates: sample, SobolSample
         x_points = sample(5, lb, ub, SobolSample())
         y_points = f.(x_points)
         agp1D = AbstractGPSurrogate([x_points[1]], [y_points[1]],
-                                    gp = GP(SqExponentialKernel()), Σy = 0.05)
+            gp = GP(SqExponentialKernel()), Σy = 0.05)
         x_new = 2.5
         y_actual = f.(x_new)
         for i in 2:length(x_points)
@@ -88,7 +88,7 @@ using Surrogates: sample, SobolSample
         b = 6
         my_k_EI1 = AbstractGPSurrogate(x, y)
         surrogate_optimize(objective_function, EI(), a, b, my_k_EI1, RandomSample(),
-                           maxiters = 200, num_new_samples = 155)
+            maxiters = 200, num_new_samples = 155)
     end
 
     @testset "Optimization ND" begin
