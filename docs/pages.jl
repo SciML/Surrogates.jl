@@ -1,5 +1,5 @@
 pages = ["index.md"
-  "Tutorials" => [
+    "Tutorials" => [
     "Basics" => "tutorials.md",
     "Radials" => "radials.md",
     "Kriging" => "kriging.md",
