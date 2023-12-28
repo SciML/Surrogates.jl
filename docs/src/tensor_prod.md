@@ -1,6 +1,9 @@
 # Tensor product function
-The tensor product function is defined as:
-``f(x) = \prod_{i=1}^d \cos(a\pi x_i)``
+A tensor product function combines multiple functions or vectors using the tensor product operation. The tensor product is a mathematical operation that takes two vectors and produces another vector space, capturing their joint behavior across multiple dimensions.
+
+For instance, consider a tensor product function defined as follows:
+
+```\[ f(x) = ∏ᵢ=₁ᵈ cos(aπxᵢ) \]```
 
 Let's import Surrogates and Plots:
 ```@example tensor
@@ -38,3 +41,16 @@ plot!(xs,f.(xs), label="True function", legend=:top)
 plot!(xs, loba_1.(xs), label="Lobachevsky", legend=:top)
 plot!(xs, krig.(xs), label="Kriging", legend=:top)
 ```
+
+## Kriging Plot
+
+![kriging](https://github.com/Spinachboul/Surrogates.jl/assets/105979087/906e6688-db47-48be-90d1-ea471aacac16)
+
+## Lobachevsky Plot
+
+![lobachevsky](https://github.com/Spinachboul/Surrogates.jl/assets/105979087/678cfc13-0aec-4488-8e4d-39649853ecdd)
+
+## Combined Plot
+
+![combined_plot](https://github.com/Spinachboul/Surrogates.jl/assets/105979087/46762f0d-50c5-4d6c-961a-236fd9fb3ad5)
+
