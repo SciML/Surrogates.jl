@@ -2,7 +2,6 @@ using Surrogates
 using Test
 using SafeTestsets
 using Pkg
-VERSION <= v"1.7" && Pkg.add(name = "Statistics", version = VERSION)
 
 function dev_subpkg(subpkg)
     subpkg_path = joinpath(dirname(@__DIR__), "lib", subpkg)
@@ -10,6 +9,9 @@ function dev_subpkg(subpkg)
 end
 
 @testset "Surrogates" begin
+    @safetestset "Quality Assurance" begin
+        include("qa.jl")
+    end
     @testset "Libs" begin
         @testset "$pkg" for pkg in [
             "SurrogatesAbstractGPs", "SurrogatesFlux",

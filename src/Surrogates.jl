@@ -89,7 +89,7 @@ export LobachevskyStructure,
     SecondOrderPolynomialStructure
 export WendlandStructure
 export AbstractSurrogate, SamplingAlgorithm
-export Kriging, RadialBasis, add_point!, current_estimate, std_error_at_point
+export Kriging, RadialBasis, add_point!, std_error_at_point
 # Parallelization Strategies
 export potential_optimal_points
 export MinimumConstantLiar, MaximumConstantLiar, MeanConstantLiar, KrigingBeliever,
@@ -104,10 +104,9 @@ export sample, GridSample, RandomSample, SobolSample, LatinHypercubeSample,
 export RandomSample, KroneckerSample, GoldenSample, SectionSample
 
 # Optimization algorithms
-export SRBF, LCBS, EI, DYCORS, SOP, EGO, RTEA, SMB, surrogate_optimize
+export SRBF, LCBS, EI, DYCORS, SOP, RTEA, SMB, surrogate_optimize
 export LobachevskySurrogate, lobachevsky_integral, lobachevsky_integrate_dimension
 export LinearSurrogate
-export SVMSurrogate
 export InverseDistanceSurrogate
 export SecondOrderPolynomialSurrogate
 export Wendland
