@@ -10,6 +10,9 @@ function dev_subpkg(subpkg)
 end
 
 @testset "Surrogates" begin
+    @safetestset "Quality Assurance" begin
+        include("qa.jl")
+    end
     @testset "Libs" begin
         @testset "$pkg" for pkg in [
             "SurrogatesAbstractGPs", "SurrogatesFlux",
