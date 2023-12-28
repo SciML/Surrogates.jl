@@ -2,7 +2,6 @@ using Surrogates
 using Test
 using SafeTestsets
 using Pkg
-VERSION <= v"1.7" && Pkg.add(name = "Statistics", version = VERSION)
 
 function dev_subpkg(subpkg)
     subpkg_path = joinpath(dirname(@__DIR__), "lib", subpkg)
