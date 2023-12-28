@@ -1,7 +1,8 @@
 using LinearAlgebra
 using ExtendableSparse
 
-Base.copy(t::Tuple) = t
+_copy(t::Tuple) = t
+_copy(t) = copy(t)
 
 mutable struct RadialBasis{F, Q, X, Y, L, U, C, S, D} <: AbstractSurrogate
     phi::F
@@ -58,9 +59,9 @@ function _calc_coeffs(x, y, lb, ub, phi, q, scale_factor, sparse)
     D = _construct_rbf_interp_matrix(x, first(x), lb, ub, phi, q, scale_factor, sparse)
     Y = _construct_rbf_y_matrix(y, first(y), length(y) + num_poly_terms)
     if (typeof(y) == Vector{Float64}) #single output case
-        coeff = copy(transpose(D \ y))
+        coeff = _copy(transpose(D \ y))
     else
-        coeff = copy(transpose(D \ Y[1:size(D)[1], :])) #if y is multi output;
+        coeff = _copy(transpose(D \ Y[1:size(D)[1], :])) #if y is multi output;
     end
     return coeff
 end
