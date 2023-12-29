@@ -45,7 +45,7 @@ radial_surrogate = RadialBasis(x, y, lower_bound, upper_bound, rad = cubicRadial
 val = radial_surrogate(5.4)
 ```
 
-Currently available radial basis functions are `linearRadial` (the default), `cubicRadial`, `multiquadricRadial`, and `thinplateRadial`.
+Currently, available radial basis functions are `linearRadial` (the default), `cubicRadial`, `multiquadricRadial`, and `thinplateRadial`.
 
 Now, we will simply plot `radial_surrogate`:
 
@@ -60,7 +60,7 @@ plot!(radial_surrogate, label="Surrogate function",  xlims=(lower_bound, upper_b
 
 Having built a surrogate, we can now use it to search for minima in our original function `f`.
 
-To optimize using our surrogate we call `surrogate_optimize` method. We choose to use Stochastic RBF as optimization technique and again Sobol sampling as sampling technique.
+To optimize using our surrogate, we call `surrogate_optimize` method. We choose to use Stochastic RBF as the optimization technique and again Sobol sampling as the sampling technique.
 
 ```@example RadialBasisSurrogate
 @show surrogate_optimize(f, SRBF(), lower_bound, upper_bound, radial_surrogate, SobolSample())
@@ -72,7 +72,7 @@ plot!(radial_surrogate, label="Surrogate function",  xlims=(lower_bound, upper_b
 
 ## Radial Basis Surrogate tutorial (ND)
 
-First of all we will define the `Booth` function we are going to build the surrogate for:
+First of all, we will define the `Booth` function we are going to build the surrogate for:
 
 $f(x) = (x_1 + 2*x_2 - 7)^2 + (2*x_1 + x_2 - 5)^2$
 
@@ -132,7 +132,7 @@ plot(p1, p2, title="Surrogate") # hide
 ```
 
 ### Optimizing
-With our surrogate we can now search for the minima of the function.
+With our surrogate, we can now search for the minima of the function.
 
 Notice how the new sampled points, which were created during the optimization process, are appended to the `xys` array.
 This is why its size changes.

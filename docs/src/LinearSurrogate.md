@@ -28,7 +28,7 @@ plot!(f, label="True function", xlims=(lower_bound, upper_bound))
 
 ## Building a Surrogate
 
-With our sampled points we can build the **Linear Surrogate** using the `LinearSurrogate` function.
+With our sampled points, we can build the **Linear Surrogate** using the `LinearSurrogate` function.
 
 We can simply calculate `linear_surrogate` for any value.
 
@@ -51,7 +51,7 @@ plot!(my_linear_surr_1D, label="Surrogate function",  xlims=(lower_bound, upper_
 
 Having built a surrogate, we can now use it to search for minima in our original function `f`.
 
-To optimize using our surrogate we call `surrogate_optimize` method. We choose to use Stochastic RBF as optimization technique and again Sobol sampling as sampling technique.
+To optimize using our surrogate we call `surrogate_optimize` method. We choose to use Stochastic RBF as the optimization technique and again Sobol sampling as the sampling technique.
 
 ```@example linear_surrogate1D
 @show surrogate_optimize(f, SRBF(), lower_bound, upper_bound, my_linear_surr_1D, SobolSample())
@@ -63,7 +63,7 @@ plot!(my_linear_surr_1D, label="Surrogate function",  xlims=(lower_bound, upper_
 
 ## Linear Surrogate tutorial (ND)
 
-First of all we will define the `Egg Holder` function we are going to build surrogate for. Notice, one how its argument is a vector of numbers, one for each coordinate, and its output is a scalar.
+First of all we will define the `Egg Holder` function we are going to build a surrogate for. Notice, one how its argument is a vector of numbers, one for each coordinate, and its output is a scalar.
 
 ```@example linear_surrogateND
 using Plots # hide
@@ -104,7 +104,7 @@ plot(p1, p2, title="True function") # hide
 ```
 
 ### Building a surrogate
-Using the sampled points we build the surrogate, the steps are analogous to the 1-dimensional case.
+Using the sampled points, we build the surrogate, the steps are analogous to the 1-dimensional case.
 
 ```@example linear_surrogateND
 my_linear_ND = LinearSurrogate(xys, zs,  lower_bound, upper_bound)
@@ -119,7 +119,7 @@ plot(p1, p2, title="Surrogate") # hide
 ```
 
 ### Optimizing
-With our surrogate we can now search for the minima of the function.
+With our surrogate, we can now search for the minima of the function.
 
 Notice how the new sampled points, which were created during the optimization process, are appended to the `xys` array.
 This is why its size changes.

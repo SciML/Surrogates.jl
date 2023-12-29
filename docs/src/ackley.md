@@ -64,4 +64,4 @@ plot!(xs, ackley.(xs), label="True function", legend=:top)
 plot!(xs, my_rad.(xs), label="Radial basis optimized", legend=:top)
 ```
 
-The DYCORS methods successfully finds the minimum.
+The DYCORS method successfully finds the minimum.

@@ -35,7 +35,7 @@ approx = my_radial_basis((1.0,1.4))
 ## Kriging standard error
 Let's now use the Kriging surrogate, which is a single-output Gaussian process.
 This surrogate has a nice feature: not only does it approximate the solution at a
-point, it also calculates the standard error at such point.
+point, it also calculates the standard error at such a point.
 Let's see an example:
 
 ```@example kriging
@@ -55,7 +55,7 @@ approx = my_krig(5.4)
 std_err = std_error_at_point(my_krig,5.4)
 ```
 
-Let's now optimize the Kriging surrogate using Lower confidence bound method, this is just a one-liner:
+Let's now optimize the Kriging surrogate using the lower confidence bound method. This is just a one-liner:
 
 ```@example kriging
 surrogate_optimize(f,LCBS(),lb,ub,my_krig,RandomSample(); maxiters = 10, num_new_samples = 10)

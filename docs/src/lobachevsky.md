@@ -26,9 +26,9 @@ plot!(f, label="True function", xlims=(lower_bound, upper_bound))
 ```
 ## Building a surrogate
 
-With our sampled points we can build the Lobachevsky surrogate using the `LobachevskySurrogate` function.
+With our sampled points, we can build the Lobachevsky surrogate using the `LobachevskySurrogate` function.
 
-`lobachevsky_surrogate` behaves like an ordinary function which we can simply plot. Alpha is the shape parameters and n specify how close you want lobachevsky function to radial basis function.
+`lobachevsky_surrogate` behaves like an ordinary function, which we can simply plot. Alpha is the shape parameter, and n specifies how close you want Lobachevsky function to be to the radial basis function.
 
 ```@example LobachevskySurrogate_tutorial
 alpha = 2.0
@@ -41,7 +41,7 @@ plot!(lobachevsky_surrogate, label="Surrogate function",  xlims=(lower_bound, up
 ## Optimizing
 Having built a surrogate, we can now use it to search for minima in our original function `f`.
 
-To optimize using our surrogate we call `surrogate_optimize` method. We choose to use Stochastic RBF as optimization technique and again Sobol sampling as sampling technique.
+To optimize using our surrogate we call `surrogate_optimize` method. We choose to use Stochastic RBF as the optimization technique and again Sobol sampling as the sampling technique.
 
 ```@example LobachevskySurrogate_tutorial
 @show surrogate_optimize(f, SRBF(), lower_bound, upper_bound, lobachevsky_surrogate, SobolSample())
@@ -55,7 +55,7 @@ In the example below, it shows how to use `lobachevsky_surrogate` for higher dim
 
 # Lobachevsky Surrogate Tutorial (ND):
 
-First of all we will define the `Schaffer` function we are going to build surrogate for. Notice, one how its argument is a vector of numbers, one for each coordinate, and its output is a scalar.
+First of all, we will define the `Schaffer` function we are going to build surrogate for. Notice, one how its argument is a vector of numbers, one for each coordinate, and its output is a scalar.
 
 ```@example LobachevskySurrogate_ND
 using Plots # hide
@@ -74,7 +74,7 @@ end
 
 ## Sampling
 
-Let's define our bounds, this time we are working in two dimensions. In particular we want our first dimension `x` to have bounds `0, 8`, and `0, 8` for the second dimension. We are taking 60 samples of the space using Sobol Sequences. We then evaluate our function on all of the sampling points.
+Let's define our bounds, this time we are working in two dimensions. In particular, we want our first dimension `x` to have bounds `0, 8`, and `0, 8` for the second dimension. We are taking 60 samples of the space using Sobol Sequences. We then evaluate our function on all of the sampling points.
 
 ```@example LobachevskySurrogate_ND
 n_samples = 60
@@ -98,7 +98,7 @@ plot(p1, p2, title="True function") # hide
 
 
 ## Building a surrogate
-Using the sampled points we build the surrogate, the steps are analogous to the 1-dimensional case.
+Using the sampled points, we build the surrogate, the steps are analogous to the 1-dimensional case.
 
 ```@example LobachevskySurrogate_ND
 Lobachevsky = LobachevskySurrogate(xys, zs,  lower_bound, upper_bound, alpha = [2.4,2.4], n=8)
@@ -114,7 +114,7 @@ plot(p1, p2, title="Surrogate") # hide
 
 
 ## Optimizing
-With our surrogate we can now search for the minima of the function.
+With our surrogate, we can now search for the minima of the function.
 
 Notice how the new sampled points, which were created during the optimization process, are appended to the `xys` array.
 This is why its size changes.

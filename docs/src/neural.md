@@ -1,11 +1,11 @@
 # Neural network tutorial
 !!! note
-    This surrogate requires the 'SurrogatesFlux' module which can be added by inputting "]add SurrogatesFlux" from the Julia command line. 
+    This surrogate requires the 'SurrogatesFlux' module, which can be added by inputting "]add SurrogatesFlux" from the Julia command line. 
 
 It's possible to define a neural network as a surrogate, using Flux.
 This is useful because we can call optimization methods on it.
 
-First of all we will define the `Schaffer` function we are going to build surrogate for.
+First of all we will define the `Schaffer` function we are going to build a surrogate for.
 
 ```@example Neural_surrogate
 using Plots
@@ -26,7 +26,7 @@ end
 
 ## Sampling
 
-Let's define our bounds, this time we are working in two dimensions. In particular we want our first dimension `x` to have bounds `0, 8`, and `0, 8` for the second dimension. We are taking 60 samples of the space using Sobol Sequences. We then evaluate our function on all of the sampling points.
+Let's define our bounds, this time we are working in two dimensions. In particular we want our first dimension `x` to have bounds `0, 8`, and `0, 8` for the second dimension. We are taking 60 samples of the space using Sobol Sequences. We then evaluate our function on all the sampling points.
 
 ```@example Neural_surrogate
 n_samples = 60
@@ -50,8 +50,8 @@ plot(p1, p2, title="True function") # hide
 
 
 ## Building a surrogate
-You can specify your own model, optimization function, loss functions and epochs.
-As always, getting the model right is hardest thing.
+You can specify your own model, optimization function, loss functions, and epochs.
+As always, getting the model right is the hardest thing.
 
 ```@example Neural_surrogate
 model1 = Chain(

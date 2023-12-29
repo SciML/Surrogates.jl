@@ -3,7 +3,7 @@
 The square polynomial model can be expressed by:
 ``y = Xβ + ϵ``
 Where X is the matrix of the linear model augmented by adding 2d columns,
-containing pair by pair product of variables and variables squared.
+containing pair by pair products of variables and variables squared.
 
 ```@example second_order_tut
 using Surrogates
@@ -40,4 +40,4 @@ scatter(x, y, label="Sampled points")
 plot!(f, label="True function",  xlims=(lb, ub))
 plot!(sec, label="Surrogate function",  xlims=(lb, ub))
 ```
-The optimization method successfully found the minima.
+The optimization method successfully found the minimum.

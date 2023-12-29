@@ -42,7 +42,7 @@ plot!(xs, rad_1d_cubic.(xs), label="Radial surrogate with cubic", legend=:top)
 plot!(xs, rad_1d_multiquadric.(xs), label="Radial surrogate with multiquadric", legend=:top)
 ```
 
-Fitting Lobachevsky Surrogate with different values of hyperparameters alpha:
+Fitting Lobachevsky Surrogate with different values of hyperparameter alpha:
 ```@example sphere_function
 loba_1 = LobachevskySurrogate(x,y,lb,ub)
 loba_2 = LobachevskySurrogate(x,y,lb,ub,alpha = 1.5, n = 6)
