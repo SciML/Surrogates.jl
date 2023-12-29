@@ -1,7 +1,7 @@
 ## Mixture of Experts (MOE)
 
 !!! note
-    This surrogate requires the 'SurrogatesMOE' module which can be added by inputting "]add SurrogatesMOE" from the Julia command line. 
+    This surrogate requires the 'SurrogatesMOE' module, which can be added by inputting "]add SurrogatesMOE" from the Julia command line. 
 
 The Mixture of Experts (MOE) Surrogate model represents the interpolating function as a combination of other surrogate models. SurrogatesMOE is a Julia implementation of the [Python version from SMT](https://smt.readthedocs.io/en/latest/_src_docs/applications/moe.html).
 
@@ -43,7 +43,7 @@ RAD_1D = RadialBasis(x, y, lb, ub, rad = linearRadial(), scale_factor = 1.0, spa
 RAD_at0 = RAD_1D(0.0) #true value should be 5.0
 ```
 
-As we can see, the prediction is far away from the ground truth. Now, how does the MOE perform?
+As we can see, the prediction is far from the ground truth. Now, how does the MOE perform?
 
 ```@example MOE_1D
 expert_types = [
@@ -57,7 +57,7 @@ MOE_1D_RAD_RAD = MOE(x, y, expert_types)
 MOE_at0 = MOE_1D_RAD_RAD(0.0)
 ```
 
-As we can see the accuracy is significantly better. 
+As we can see, the accuracy is significantly better. 
 
 ### Under the Hood - How SurrogatesMOE Works
 

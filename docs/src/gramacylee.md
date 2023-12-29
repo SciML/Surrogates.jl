@@ -1,6 +1,6 @@
 ## Gramacy & Lee Function
 
-Gramacy & Lee Function is a continuous function. It is not convex. The function is defined on 1-dimensional space. It is an unimodal. The function can be defined on any input domain but it is usually evaluated on
+the Gramacy & Lee function is a continuous function. It is not convex. The function is defined on a 1-dimensional space. It is unimodal. The function can be defined on any input domain, but it is usually evaluated on
 ``x \in [-0.5, 2.5]``.
 
 The Gramacy & Lee is as follows:
@@ -25,7 +25,7 @@ function gramacylee(x)
 end
 ```
 
-Let's sample f in 25 points between -0.5 and 2.5 using the `sample` function. The sampling points are chosen using a Sobol Sample, this can be done by passing `SobolSample()` to the `sample` function.
+Let's sample f in 25 points between -0.5 and 2.5 using the `sample` function. The sampling points are chosen using a Sobol sample, this can be done by passing `SobolSample()` to the `sample` function.
 
 ```@example gramacylee1D
 n = 25
@@ -38,7 +38,7 @@ scatter(x, y, label="Sampled points", xlims=(lower_bound, upper_bound), ylims=(-
 plot!(xs, gramacylee.(xs), label="True function", legend=:top)
 ```
 
-Now, let's fit Gramacy & Lee Function with different Surrogates:
+Now, let's fit Gramacy & Lee function with different surrogates:
 
 ```@example gramacylee1D
 my_pol = PolynomialChaosSurrogate(x, y, lower_bound, upper_bound)

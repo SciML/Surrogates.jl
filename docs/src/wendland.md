@@ -19,7 +19,7 @@ x = sample(n,lower_bound,upper_bound,SobolSample())
 y = f.(x)
 ```
 
-We choose to sample f in 30 points between 5 to 25 using `sample` function. The sampling points are chosen using a Sobol sequence, this can be done by passing `SobolSample()` to the `sample` function.
+We choose to sample f in 30 points between 5 and 25 using `sample` function. The sampling points are chosen using a Sobol sequence, this can be done by passing `SobolSample()` to the `sample` function.
 
 ## Building Surrogate
 

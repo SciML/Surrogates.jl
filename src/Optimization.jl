@@ -57,13 +57,13 @@ function merit_function(point, w, surr::AbstractSurrogate, s_max, s_min, d_max, 
 end
 
 """
-The main idea is to pick the new evaluations from a set of candidate points where each candidate point is generated as an N(0, sigma^2)
+The main idea is to pick the new evaluations from a set of candidate points, where each candidate point is generated as an N(0, sigma^2)
 distributed perturbation from the current best solution.
 The value of sigma is modified based on progress and follows the same logic as
 in many trust region methods: we increase sigma if we make a lot of progress
 (the surrogate is accurate) and decrease sigma when we aren’t able to make progress
 (the surrogate model is inaccurate).
-More details about how sigma is updated is given in the original papers.
+More details about how sigma is updated are given in the original papers.
 
 After generating the candidate points, we predict their objective function value
 and compute the minimum distance to the previously evaluated point.
@@ -543,7 +543,7 @@ function potential_optimal_points(::SRBF, strategy, lb::Number, ub::Number,
     # Loop until we have n_parallel new points
     while new_addition < n_parallel
 
-        #3) Evaluate merit function at the sampled points in parallel 
+        #3) Evaluate merit function at the sampled points in parallel
         evaluation_of_merit_function = merit_function.(new_sample, w, tmp_surr, s_max,
             s_min, d_max, d_min, box_size)
 
@@ -1117,10 +1117,10 @@ Combining radial basis function surrogates and dynamic coordinate search in high
 Engineering Optimization, 45(5): 529–555, 2013.
 This is an extension of the SRBF strategy that changes how the
 candidate points are generated. The main idea is that many objective
-functions depend only on a few directions so it may be advantageous to
+functions depend only on a few directions, so it may be advantageous to
 perturb only a few directions. In particular, we use a perturbation probability
 to perturb a given coordinate and decrease this probability after each function
-evaluation so fewer coordinates are perturbed later in the optimization.
+evaluation, so fewer coordinates are perturbed later in the optimization.
 """
 function surrogate_optimize(obj::Function, ::DYCORS, lb, ub, surrn::AbstractSurrogate,
         sample_type::SamplingAlgorithm; maxiters = 100,

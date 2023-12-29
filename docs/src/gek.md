@@ -1,6 +1,6 @@
 ## Gradient Enhanced Kriging
 
-Gradient-enhanced Kriging is an extension of kriging which supports gradient information. GEK is usually more accurate than kriging, however, it is not computationally efficient when the number of inputs, the number of sampling points, or both, are high. This is mainly due to the size of the corresponding correlation matrix that increases proportionally with both the number of inputs and the number of sampling points.
+Gradient-enhanced Kriging is an extension of kriging which supports gradient information. GEK is usually more accurate than kriging. However, it is not computationally efficient when the number of inputs, the number of sampling points, or both, are high. This is mainly due to the size of the corresponding correlation matrix, which increases proportionally with both the number of inputs and the number of sampling points.
 
 Let's have a look at the following function to use Gradient Enhanced Surrogate:
 ``f(x) = sin(x) + 2*x^2``
@@ -15,7 +15,7 @@ default()
 
 ### Sampling
 
-We choose to sample f in 8 points between 0 to 1 using the `sample` function. The sampling points are chosen using a Sobol sequence, this can be done by passing `SobolSample()` to the `sample` function.
+We choose to sample f in 8 points between 0 and 1 using the `sample` function. The sampling points are chosen using a Sobol sequence, this can be done by passing `SobolSample()` to the `sample` function.
 
 ```@example GEK1D
 n_samples = 10
@@ -34,7 +34,7 @@ plot!(f, label="True function", xlims=(lower_bound, upper_bound), legend=:top)
 
 ### Building a surrogate
 
-With our sampled points we can build the Gradient Enhanced Kriging surrogate using the `GEK` function.
+With our sampled points, we can build the Gradient Enhanced Kriging surrogate using the `GEK` function.
 
 ```@example GEK1D
 
@@ -47,7 +47,7 @@ plot!(my_gek, label="Surrogate function", ribbon=p->std_error_at_point(my_gek, p
 
 ## Gradient Enhanced Kriging Surrogate Tutorial (ND)
 
-First of all let's define the function we are going to build a surrogate for.
+First of all, let's define the function we are going to build a surrogate for.
 
 ```@example GEK_ND
 using Plots # hide
@@ -69,7 +69,7 @@ end
 
 ### Sampling
 
-Let's define our bounds, this time we are working in two dimensions. In particular we want our first dimension `x` to have bounds `0, 10`, and `0, 10` for the second dimension. We are taking 80 samples of the space using Sobol Sequences. We then evaluate our function on all of the sampling points.
+Let's define our bounds, this time we are working in two dimensions. In particular, we want our first dimension `x` to have bounds `0, 10`, and `0, 10` for the second dimension. We are taking 80 samples of the space using Sobol Sequences. We then evaluate our function on all the sampling points.
 
 ```@example GEK_ND
 n_samples = 45
@@ -91,7 +91,7 @@ plot(p1, p2, title="True function") # hide
 ```
 
 ### Building a surrogate
-Using the sampled points we build the surrogate, the steps are analogous to the 1-dimensional case.
+Using the sampled points, we build the surrogate, the steps are analogous to the 1-dimensional case.
 
 ```@example GEK_ND
 grad1 = x1 -> 2*(300*(x[1])^5 - 300*(x[1])^2*x[2] + x[1] -1)

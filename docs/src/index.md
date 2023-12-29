@@ -8,7 +8,7 @@ The construction of a surrogate model can be seen as a three-step process:
 2. Construction of the surrogate model
 3. Surrogate optimization
 
-The sampling methods are super important for the behavior of the Surrogate. Sampling can be done through [QuasiMonteCarlo.jl](https://github.com/SciML/QuasiMonteCarlo.jl), all the functions available there can be used in Surrogates.jl.
+The sampling methods are super important for the behavior of the surrogate. Sampling can be done through [QuasiMonteCarlo.jl](https://github.com/SciML/QuasiMonteCarlo.jl), all the functions available there can be used in Surrogates.jl.
 
 The available surrogates are:
 
@@ -27,7 +27,7 @@ That is, simultaneously looking for a minimum **and** sampling the most unknown 
 The available optimization methods are:
 
 - Stochastic RBF (SRBF)
-- Lower confidence bound strategy (LCBS)
+- Lower confidence-bound strategy (LCBS)
 - Expected improvement (EI)
 - Dynamic coordinate search (DYCORS)
 

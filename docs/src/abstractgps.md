@@ -1,12 +1,12 @@
 # Gaussian Process Surrogate Tutorial
 
 !!! note
-    This surrogate requires the 'SurrogatesAbstractGPs' module which can be added by inputting "]add SurrogatesAbstractGPs" from the Julia command line. 
+    This surrogate requires the 'SurrogatesAbstractGPs' module, which can be added by inputting "]add SurrogatesAbstractGPs" from the Julia command line. 
 
 Gaussian Process regression in Surrogates.jl is implemented as a simple wrapper around the [AbstractGPs.jl](https://github.com/JuliaGaussianProcesses/AbstractGPs.jl) package. AbstractGPs comes with a variety of covariance functions (kernels). See [KernelFunctions.jl](https://github.com/JuliaGaussianProcesses/KernelFunctions.jl/) for examples.
 
 !!! tip
-    The examples below demonstrate the use of AbstractGPs with out-of-the-box settings without hyperparameter optimization (i.e. without changing parameters like lengthscale, signal variance and noise variance.) Beyond hyperparameter optimization, careful initialization of hyperparameters and priors on the parameters is required for this surrogate to work properly. For more details on how to fit GPs in practice, check out [A Practical Guide to Gaussian Processes](https://infallible-thompson-49de36.netlify.app/).
+    The examples below demonstrate the use of AbstractGPs with out-of-the-box settings without hyperparameter optimization (i.e. without changing parameters like lengthscale, signal variance, and noise variance). Beyond hyperparameter optimization, careful initialization of hyperparameters and priors on the parameters is required for this surrogate to work properly. For more details on how to fit GPs in practice, check out [A Practical Guide to Gaussian Processes](https://infallible-thompson-49de36.netlify.app/).
     
     Also see this [example](https://juliagaussianprocesses.github.io/AbstractGPs.jl/stable/examples/1-mauna-loa/#Hyperparameter-Optimization) to understand hyperparameter optimization with AbstractGPs.
 ## 1D Example 

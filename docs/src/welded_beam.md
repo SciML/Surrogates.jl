@@ -1,4 +1,4 @@
-#Welded beam function
+# Welded beam function
 
 The welded beam function is defined as:
 ``f(h,l,t) = \sqrt{\frac{a^2 + b^2 + abl}{\sqrt{0.25(l^2+(h+t)^2)}}}``

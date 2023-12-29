@@ -42,7 +42,7 @@ plot(p1, p2, title="True function")
 ```
 
 
-Fitting different Surrogates:
+Fitting different surrogates:
 ```@example beam
 mypoly = PolynomialChaosSurrogate(xys, zs,  lb, ub)
 loba = LobachevskySurrogate(xys, zs,  lb, ub)

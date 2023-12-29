@@ -1,6 +1,6 @@
-# Multi objective optimization 
+# Multi-objective optimization 
 
-## Case 1: Non colliding objective functions
+## Case 1: Non-colliding objective functions
 
 ```@example multi_obj
 using Surrogates

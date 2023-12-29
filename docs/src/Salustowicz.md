@@ -39,7 +39,7 @@ scatter(x, y, label="Sampled points", xlims=(lower_bound, upper_bound), legend=:
 plot!(xs, salustowicz.(xs), label="True function", legend=:top)
 ```
 
-Now, let's fit Salustowicz Function with different Surrogates:
+Now, let's fit the Salustowicz function with different surrogates:
 
 ```@example salustowicz1D
 InverseDistance = InverseDistanceSurrogate(x, y, lower_bound, upper_bound)

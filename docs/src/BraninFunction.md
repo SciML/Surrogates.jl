@@ -1,13 +1,13 @@
 # Branin Function
 
-The Branin Function is commonly used as a test function for metamodelling in computer experiments, especially in the context of optimization.
+The Branin function is commonly used as a test function for metamodelling in computer experiments, especially in the context of optimization.
 
 The expression of the Branin Function is given as:
 ``f(x) = (x_2 - \frac{5.1}{4\pi^2}x_1^{2} + \frac{5}{\pi}x_1 - 6)^2 + 10(1-\frac{1}{8\pi})\cos(x_1) + 10``
 
 where ``x = (x_1, x_2)`` with ``-5\leq x_1 \leq 10, 0 \leq x_2 \leq 15``
 
-First of all we will import these two packages `Surrogates` and `Plots`.
+First of all, we will import these two packages: `Surrogates` and `Plots`.
 
 ```@example BraninFunction
 using Surrogates
@@ -50,7 +50,7 @@ scatter!(xs, ys)
 plot(p1, p2, title="True function")
 ```
 
-Now it's time to try fitting different surrogates and then we will plot them.
+Now it's time to try fitting different surrogates, and then we will plot them.
 We will have a look at the radial basis surrogate `Radial Basis Surrogate`. :
 
 ```@example BraninFunction
@@ -65,7 +65,7 @@ scatter!(xs, ys, marker_z=zs)
 plot(p1, p2, title="Radial Surrogate")
 ```
 
-Now, we will have a look on `Inverse Distance Surrogate`:
+Now, we will have a look at `Inverse Distance Surrogate`:
 ```@example BraninFunction
 InverseDistance = InverseDistanceSurrogate(xys, zs,  lower_bound, upper_bound)
 ```

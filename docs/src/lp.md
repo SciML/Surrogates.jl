@@ -32,7 +32,7 @@ plot(x, y, seriestype=:scatter, label="Sampled points", xlims=(lb, ub), ylims=(0
 plot!(xs,f.(xs,p), label="True function", legend=:top)
 ```
 
-Fitting different Surrogates:
+Fitting different surrogates:
 ```@example lp
 my_pol = PolynomialChaosSurrogate(x,y,lb,ub)
 loba_1 = LobachevskySurrogate(x,y,lb,ub)

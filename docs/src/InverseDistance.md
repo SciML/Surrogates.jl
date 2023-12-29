@@ -1,4 +1,4 @@
-The **Inverse Distance Surrogate** is an interpolating method and in this method the unknown points are calculated with a weighted average of the sampling points. This model uses the inverse distance between the unknown and training points to predict the unknown point. We do not need to fit this model because the response of an unknown point x is computed with respect to the distance between x and the training points.
+The **Inverse Distance Surrogate** is an interpolating method, and in this method, the unknown points are calculated with a weighted average of the sampling points. This model uses the inverse distance between the unknown and training points to predict the unknown point. We do not need to fit this model because the response of an unknown point x is computed with respect to the distance between x and the training points.
 
 Let's optimize the following function to use Inverse Distance Surrogate:
 
@@ -53,7 +53,7 @@ plot!(InverseDistance, label="Surrogate function",  xlims=(lower_bound, upper_bo
 
 Having built a surrogate, we can now use it to search for minima in our original function `f`.
 
-To optimize using our surrogate we call `surrogate_optimize` method. We choose to use Stochastic RBF as optimization technique and again Sobol sampling as sampling technique.
+To optimize using our surrogate we call `surrogate_optimize` method. We choose to use Stochastic RBF as the optimization technique and again Sobol sampling as the sampling technique.
 
 ```@example Inverse_Distance1D
 @show surrogate_optimize(f, SRBF(), lower_bound, upper_bound, InverseDistance, SobolSample())
@@ -65,7 +65,7 @@ plot!(InverseDistance, label="Surrogate function",  xlims=(lower_bound, upper_bo
 
 ## Inverse Distance Surrogate Tutorial (ND):
 
-First of all we will define the `Schaffer` function we are going to build surrogate for. Notice, one how its argument is a vector of numbers, one for each coordinate, and its output is a scalar.
+First of all we will define the `Schaffer` function we are going to build a surrogate for. Notice, how its argument is a vector of numbers, one for each coordinate, and its output is a scalar.
 
 ```@example Inverse_DistanceND
 using Plots # hide
@@ -84,7 +84,7 @@ end
 
 ### Sampling
 
-Let's define our bounds, this time we are working in two dimensions. In particular we want our first dimension `x` to have bounds `-5, 10`, and `0, 15` for the second dimension. We are taking 60 samples of the space using Sobol Sequences. We then evaluate our function on all of the sampling points.
+Let's define our bounds, this time we are working in two dimensions. In particular we want our first dimension `x` to have bounds `-5, 10`, and `0, 15` for the second dimension. We are taking 60 samples of the space using Sobol Sequences. We then evaluate our function on all the sampling points.
 
 ```@example Inverse_DistanceND
 n_samples = 60
@@ -124,7 +124,7 @@ plot(p1, p2, title="Surrogate") # hide
 
 
 ### Optimizing
-With our surrogate we can now search for the minima of the function.
+With our surrogate, we can now search for the minima of the function.
 
 Notice how the new sampled points, which were created during the optimization process, are appended to the `xys` array.
 This is why its size changes.

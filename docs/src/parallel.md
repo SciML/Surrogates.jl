@@ -11,7 +11,7 @@ To enable parallel optimization, we make use of an Ask-Tell interface. The user 
 To ensure that points of interest returned by `potential_optimal_points` are sufficiently far from each other, the function makes use of *virtual points*. They are used as follows:
 1. `potential_optimal_points` is told to return `n` points.
 2. The point with the highest merit function value is selected.
-3. This point is now treated as a virtual point and is assigned a temporary value that changes the landscape of the merit function. How the the temporary value is chosen depends on the strategy used. (see below)
+3. This point is now treated as a virtual point and is assigned a temporary value that changes the landscape of the merit function. How the temporary value is chosen depends on the strategy used. (see below)
 4. The point with the new highest merit is selected.
 5. The process is repeated until `n` points have been selected.
 
@@ -22,9 +22,9 @@ The following strategies are available for virtual point selection for all optim
 - "Mean Constant Liar (MeanConstantLiar)":
   - The virtual point is assigned using the mean of the merit function across all evaluated points.
 - "Maximum Constant Liar (MaximumConstantLiar)":
-  - The virtual point is assigned using the great known value of the merit function across all evaluated points.
+  - The virtual point is assigned using the greatest known value of the merit function across all evaluated points.
 
-For Kriging surrogates, specifically, the above and follow strategies are available:  
+For Kriging surrogates, specifically, the above and following strategies are available:  
 
 - "Kriging Believer (KrigingBeliever):
   - The virtual point is assigned using the mean of the Kriging surrogate at the virtual point.
@@ -34,7 +34,7 @@ For Kriging surrogates, specifically, the above and follow strategies are availa
   - The virtual point is assigned using 3$\sigma$ below the mean of the Kriging surrogate at the virtual point.
 
 
-In general, MinimumConstantLiar and KrigingBelieverLowerBound tend to favor exploitation while MaximumConstantLiar and KrigingBelieverUpperBound tend to favor exploration. MeanConstantLiar and KrigingBeliever tend to be a compromise between the two.
+In general, MinimumConstantLiar and KrigingBelieverLowerBound tend to favor exploitation, while MaximumConstantLiar and KrigingBelieverUpperBound tend to favor exploration. MeanConstantLiar and KrigingBeliever tend to be compromises between the two.
 
 ## Examples
 
