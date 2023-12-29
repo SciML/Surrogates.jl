@@ -9,8 +9,8 @@ Surrogates = "6fc51010-71bc-11e9-0e15-a3fcc6593c49"
 
 [compat]
 PolyChaos = "0.2"
-Surrogates = "6.0"
-julia = "1.6"
+Surrogates = "6"
+julia = "1.10"
 
 [extras]
 SafeTestsets = "1bc83da4-3b8d-516f-aca4-4fe02f6d838f"
