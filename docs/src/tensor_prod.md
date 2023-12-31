@@ -1,5 +1,5 @@
 # Tensor product function
-A tensor product function combines multiple functions or vectors using the tensor product operation. The tensor product is a mathematical operation that takes two vectors and produces another vector space, capturing their joint behavior across multiple dimensions.
+A tensor product combines multiple functions or vectors. It is a mathematical operation that takes two vector spaces and produces another vector space, capturing their joint behavior across multiple dimensions.
 
 For instance, consider a tensor product function defined as follows:
 
