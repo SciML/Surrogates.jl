@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>MOE · Surrogates.jl</title><meta name="title" content="MOE · Surrogates.jl"/><meta property="og:title" content="MOE · Surrogates.jl"/><meta property="twitter:title" content="MOE · Surrogates.jl"/><meta name="description" content="Documentation for Surrogates.jl."/><meta property="og:description" content="Documentation for Surrogates.jl."/><meta property="twitter:description" content="Documentation for Surrogates.jl."/><meta property="og:url" content="https://docs.sciml.ai/Surrogates/stable/moe/"/><meta property="twitter:url" content="https://docs.sciml.ai/Surrogates/stable/moe/"/><link rel="canonical" href="https://docs.sciml.ai/Surrogates/stable/moe/"/><script async src="https://www.googletagmanager.com/gtag/js?id=UA-90474609-3"></script><script>  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'UA-90474609-3', {'page_path': location.pathname + location.search + location.hash});
+</script><script data-outdated-warner src="../assets/warner.js"></script><link href="https://cdnjs.cloudflare.com/ajax/libs/lato-font/3.0.0/css/lato-font.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/juliamono/0.050/juliamono.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.8/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL=".."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../assets/documenter.js"></script><script src="../search_index.js"></script><script src="../siteinfo.js"></script><script src="../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../assets/themeswap.js"></script><link href="../assets/favicon.ico" rel="icon" type="image/x-icon"/></head><body><div id="documenter"><nav class="docs-sidebar"><a class="docs-logo" href="../"><img src="../assets/logo.png" alt="Surrogates.jl logo"/></a><div class="docs-package-name"><span class="docs-autofit"><a href="../">Surrogates.jl</a></span></div><button class="docs-search-query input is-rounded is-small is-clickable my-2 mx-auto py-1 px-2" id="documenter-search-query">Search docs (Ctrl + /)</button><ul class="docs-menu"><li><a class="tocitem" href="../">Surrogates.jl: Surrogate models and optimization for scientific machine learning</a></li><li><span class="tocitem">Tutorials</span><ul><li><a class="tocitem" href="../tutorials/">Basics</a></li><li><a class="tocitem" href="../radials/">Radials</a></li><li><a class="tocitem" href="../kriging/">Kriging</a></li><li><a class="tocitem" href="../abstractgps/">Gaussian Process</a></li><li><a class="tocitem" href="../lobachevsky/">Lobachevsky</a></li><li><a class="tocitem" href="../LinearSurrogate/">Linear</a></li><li><a class="tocitem" href="../InverseDistance/">InverseDistance</a></li><li><a class="tocitem" href="../randomforest/">RandomForest</a></li><li><a class="tocitem" href="../secondorderpoly/">SecondOrderPolynomial</a></li><li><a class="tocitem" href="../neural/">NeuralSurrogate</a></li><li><a class="tocitem" href="../wendland/">Wendland</a></li><li><a class="tocitem" href="../polychaos/">Polynomial Chaos</a></li><li><a class="tocitem" href="../variablefidelity/">Variable Fidelity</a></li><li><a class="tocitem" href="../gek/">Gradient Enhanced Kriging</a></li><li><a class="tocitem" href="../gekpls/">GEKPLS</a></li><li class="is-active"><a class="tocitem" href>MOE</a><ul class="internal"><li><a class="tocitem" href="#Mixture-of-Experts-(MOE)"><span>Mixture of Experts (MOE)</span></a></li></ul></li><li><a class="tocitem" href="../parallel/">Parallel Optimization</a></li></ul></li><li><span class="tocitem">User guide</span><ul><li><a class="tocitem" href="../samples/">Samples</a></li><li><a class="tocitem" href="../surrogate/">Surrogates</a></li><li><a class="tocitem" href="../optimizations/">Optimization</a></li></ul></li><li><span class="tocitem">Benchmarks</span><ul><li><a class="tocitem" href="../sphere_function/">Sphere function</a></li><li><a class="tocitem" href="../lp/">Lp norm</a></li><li><a class="tocitem" href="../rosenbrock/">Rosenbrock</a></li><li><a class="tocitem" href="../tensor_prod/">Tensor product</a></li><li><a class="tocitem" href="../cantilever/">Cantilever beam</a></li><li><a class="tocitem" href="../water_flow/">Water Flow function</a></li><li><a class="tocitem" href="../welded_beam/">Welded beam function</a></li><li><a class="tocitem" href="../BraninFunction/">Branin function</a></li><li><a class="tocitem" href="../ImprovedBraninFunction/">Improved Branin function</a></li><li><a class="tocitem" href="../ackley/">Ackley function</a></li><li><a class="tocitem" href="../gramacylee/">Gramacy &amp; Lee Function</a></li><li><a class="tocitem" href="../Salustowicz/">Salustowicz Benchmark</a></li><li><a class="tocitem" href="../multi_objective_opt/">Multi objective optimization</a></li></ul></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><a class="docs-sidebar-button docs-navbar-link fa-solid fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a><nav class="breadcrumb"><ul class="is-hidden-mobile"><li><a class="is-disabled">Tutorials</a></li><li class="is-active"><a href>MOE</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>MOE</a></li></ul></nav><div class="docs-right"><a class="docs-navbar-link" href="https://github.com/SciML/Surrogates.jl" title="View the repository on GitHub"><span class="docs-icon fa-brands"></span><span class="docs-label is-hidden-touch">GitHub</span></a><a class="docs-navbar-link" href="https://github.com/SciML/Surrogates.jl/blob/master/docs/src/moe.md" title="Edit source on GitHub"><span class="docs-icon fa-solid"></span></a><a class="docs-settings-button docs-navbar-link fa-solid fa-gear" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-article-toggle-button fa-solid fa-chevron-up" id="documenter-article-toggle-button" href="javascript:;" title="Collapse all docstrings"></a></div></header><article class="content" id="documenter-page"><h2 id="Mixture-of-Experts-(MOE)"><a class="docs-heading-anchor" href="#Mixture-of-Experts-(MOE)">Mixture of Experts (MOE)</a><a id="Mixture-of-Experts-(MOE)-1"></a><a class="docs-heading-anchor-permalink" href="#Mixture-of-Experts-(MOE)" title="Permalink"></a></h2><div class="admonition is-info"><header class="admonition-header">Note</header><div class="admonition-body"><p>This surrogate requires the &#39;SurrogatesMOE&#39; module, which can be added by inputting &quot;]add SurrogatesMOE&quot; from the Julia command line. </p></div></div><p>The Mixture of Experts (MOE) Surrogate model represents the interpolating function as a combination of other surrogate models. SurrogatesMOE is a Julia implementation of the <a href="https://smt.readthedocs.io/en/latest/_src_docs/applications/moe.html">Python version from SMT</a>.</p><p>MOE is most useful when we have a discontinuous function. For example, let&#39;s say we want to build a surrogate for the following function:</p><h3 id="1D-Example"><a class="docs-heading-anchor" href="#1D-Example">1D Example</a><a id="1D-Example-1"></a><a class="docs-heading-anchor-permalink" href="#1D-Example" title="Permalink"></a></h3><pre><code class="language-julia hljs">function discont_1D(x)
+    if x &lt; 0.0
+        return -5.0
+    elseif x &gt;= 0.0
+        return 5.0
+    end
+end</code></pre><p>Let&#39;s choose the MOE Surrogate for 1D. Note that we have to import the <code>SurrogatesMOE</code> package in addition to <code>Surrogates</code> and <code>Plots</code>.</p><pre><code class="language-julia hljs">using Surrogates
+using SurrogatesMOE
+using Plots
+default()
+
+lb = -1.0
+ub = 1.0
+x = sample(50, lb, ub, SobolSample())
+y = discont_1D.(x)
+scatter(x, y, label=&quot;Sampled Points&quot;, xlims=(lb, ub), ylims=(-6.0, 7.0), legend=:top)</code></pre><img src="cd6f7868.svg" alt="Example block output"/><p>How does a regular surrogate perform on such a dataset?</p><pre><code class="language-julia hljs">RAD_1D = RadialBasis(x, y, lb, ub, rad = linearRadial(), scale_factor = 1.0, sparse = false)
+RAD_at0 = RAD_1D(0.0) #true value should be 5.0</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">-7.0503948590956756e-15</code></pre><p>As we can see, the prediction is far from the ground truth. Now, how does the MOE perform?</p><pre><code class="language-julia hljs">expert_types = [
+        RadialBasisStructure(radial_function = linearRadial(), scale_factor = 1.0,
+                             sparse = false),
+        RadialBasisStructure(radial_function = linearRadial(), scale_factor = 1.0,
+                        sparse = false)
+    ]
+
+MOE_1D_RAD_RAD = MOE(x, y, expert_types)
+MOE_at0 = MOE_1D_RAD_RAD(0.0)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">5.535714285714286</code></pre><p>As we can see, the accuracy is significantly better. </p><h3 id="Under-the-Hood-How-SurrogatesMOE-Works"><a class="docs-heading-anchor" href="#Under-the-Hood-How-SurrogatesMOE-Works">Under the Hood - How SurrogatesMOE Works</a><a id="Under-the-Hood-How-SurrogatesMOE-Works-1"></a><a class="docs-heading-anchor-permalink" href="#Under-the-Hood-How-SurrogatesMOE-Works" title="Permalink"></a></h3><p>First, we create Gaussian Mixture Models for the number of expert types provided using the x and y values. For example, in the above example, we create two clusters. Then, using a small test dataset kept aside from the input data, we choose the best surrogate model for each of the clusters. At prediction time, we use the appropriate surrogate model based on the cluster to which the new point belongs.</p><h3 id="N-Dimensional-Example"><a class="docs-heading-anchor" href="#N-Dimensional-Example">N-Dimensional Example</a><a id="N-Dimensional-Example-1"></a><a class="docs-heading-anchor-permalink" href="#N-Dimensional-Example" title="Permalink"></a></h3><pre><code class="language-julia hljs">using Surrogates
+using SurrogatesMOE
+
+# helper to test accuracy of predictors
+function rmse(a, b)
+    a = vec(a)
+    b = vec(b)
+    if (size(a) != size(b))
+        println(&quot;error in inputs&quot;)
+        return
+    end
+    n = size(a, 1)
+    return sqrt(sum((a - b) .^ 2) / n)
+end
+
+# multidimensional input function
+function discont_NDIM(x)
+    if (x[1] &gt;= 0.0 &amp;&amp; x[2] &gt;= 0.0)
+        return sum(x .^ 2) + 5
+    else
+        return sum(x .^ 2) - 5
+    end
+end
+lb = [-1.0, -1.0]
+ub = [1.0, 1.0]
+n = 150
+x = sample(n, lb, ub, RandomSample())
+y = discont_NDIM.(x)
+x_test = sample(10, lb, ub, GoldenSample())
+
+expert_types = [
+    RadialBasisStructure(radial_function = linearRadial(), scale_factor = 1.0,
+                            sparse = false),
+    RadialBasisStructure(radial_function = linearRadial(), scale_factor = 1.0,
+                            sparse = false),
+]
+moe_nd_rad_rad = MOE(x, y, expert_types, ndim = 2)
+moe_pred_vals = moe_nd_rad_rad.(x_test)
+true_vals = discont_NDIM.(x_test)
+moe_rmse = rmse(true_vals, moe_pred_vals)
+rbf = RadialBasis(x, y, lb, ub)
+rbf_pred_vals = rbf.(x_test)
+rbf_rmse = rmse(true_vals, rbf_pred_vals)
+println(rbf_rmse &gt; moe_rmse)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">[ Info: Initializing GMM, 2 Gaussians diag covariance 3 dimensions using 135 data points
+K-means converged with 2 iterations (objv = 86.2449124289212)
+┌ Info: K-means with 135 data points using 2 iterations
+└ 16.9 data points per parameter
+false</code></pre><h3 id="Usage-Notes-Example-With-Other-Surrogates"><a class="docs-heading-anchor" href="#Usage-Notes-Example-With-Other-Surrogates">Usage Notes - Example With Other Surrogates</a><a id="Usage-Notes-Example-With-Other-Surrogates-1"></a><a class="docs-heading-anchor-permalink" href="#Usage-Notes-Example-With-Other-Surrogates" title="Permalink"></a></h3><p>From the above example, simply change or add to the expert types:</p><pre><code class="language-julia hljs">using Surrogates
+#To use Inverse Distance and Radial Basis Surrogates
+expert_types = [
+    KrigingStructure(p = [1.0, 1.0], theta = [1.0, 1.0]),
+    InverseDistanceStructure(p = 1.0)
+]
+
+#With 3 Surrogates
+expert_types = [
+    RadialBasisStructure(radial_function = linearRadial(), scale_factor = 1.0,
+                            sparse = false),
+    LinearStructure(),
+    InverseDistanceStructure(p = 1.0),
+]</code></pre></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../gekpls/">« GEKPLS</a><a class="docs-footer-nextpage" href="../parallel/">Parallel Optimization »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="auto">Automatic (OS)</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.2.1 on <span class="colophon-date" title="Tuesday 2 January 2024 11:55">Tuesday 2 January 2024</span>. Using Julia version 1.10.0.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
