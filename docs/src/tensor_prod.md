@@ -1,5 +1,4 @@
 # Tensor product function
-
 The tensor product function is defined as: ```\[ f(x) = ∏ᵢ=₁ᵈ cos(aπxᵢ) \]```
 
 Let's import Surrogates and Plots:
