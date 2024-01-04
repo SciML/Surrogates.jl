@@ -1,12 +1,5 @@
 # GEKPLS Function
 
-Gradient Enhanced Kriging with Partial Least Squares Method (GEKPLS) is a surrogate modelling technique that brings down computation time and returns improved accuracy for high-dimensional problems. The Julia implementation of GEKPLS is adapted from the Python version by [SMT](https://github.com/SMTorg) which is based on this [paper](https://arxiv.org/pdf/1708.02663.pdf).  
-
-# Modifications for Improved GEKPLS Function:
-
-To enhance the GEKPLS function, sampling method was changed from ```SobolSample()``` to ```HaltonSample()```.
-
-
 ```@example gekpls_water_flow
 
 using Surrogates
@@ -28,7 +21,7 @@ end
 n = 1000
 lb = [0.05,100,63070,990,63.1,700,1120,9855]
 ub = [0.15,50000,115600,1110,116,820,1680,12045]
-x = sample(n,lb,ub,HaltonSample())
+x = sample(n,lb,ub,SobolSample())
 grads = gradient.(water_flow, x)
 y = water_flow.(x)
 n_test = 100 
@@ -43,13 +36,3 @@ y_pred = g.(x_test)
 rmse = sqrt(sum(((y_pred - y_true).^2)/n_test)) #root mean squared error
 println(rmse) #0.0347
 ```
-
-<br>
-<br>
-
-
-
-| **Sampling Method** | **RMSE**                | **Differences**                                                                                                                                                                                                                                                                                     |
-|----------------------|--------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| **Sobol Sampling**               | 0.021472963465423097 | Utilizes digital nets to generate quasi-random numbers, offering low discrepancy points for improved coverage. - Requires careful handling, especially in higher dimensions.                                                                                                                      |
-| **Halton Sampling**               | 0.02144270998045834  | Uses a deterministic sequence based on prime numbers to generate points, allowing for quasi-random, low-discrepancy sampling. - Simpler to implement but may exhibit correlations in some dimensions affecting coverage.
