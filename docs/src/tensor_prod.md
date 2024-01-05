@@ -1,6 +1,6 @@
 # Tensor product function
-The tensor product function is defined as:
-``f(x) = \prod_{i=1}^d \cos(a\pi x_i)``
+The tensor product function is defined as: 
+```\[ f(x) = ∏ᵢ=₁ᵈ cos(aπxᵢ) \]```
 
 Let's import Surrogates and Plots:
 ```@example tensor
