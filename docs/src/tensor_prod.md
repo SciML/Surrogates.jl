@@ -1,5 +1,6 @@
 # Tensor product function
-The tensor product function is defined as: ```\[ f(x) = ∏ᵢ=₁ᵈ cos(aπxᵢ) \]```
+The tensor product function is defined as: 
+```\[ f(x) = ∏ᵢ=₁ᵈ cos(aπxᵢ) \]```
 
 Let's import Surrogates and Plots:
 ```@example tensor
@@ -37,4 +38,3 @@ plot!(xs,f.(xs), label="True function", legend=:top)
 plot!(xs, loba_1.(xs), label="Lobachevsky", legend=:top)
 plot!(xs, krig.(xs), label="Kriging", legend=:top)
 ```
-
