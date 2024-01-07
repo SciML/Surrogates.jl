@@ -1047,8 +1047,8 @@ function surrogate_optimize(obj::Function, ::DYCORS, lb::Number, ub::Number,
         if f_new < y_best
             x_best = x_new
             y_best = f_new
-            add_point!(surr1, x_best, y_best)
         end
+        add_point!(surr1, x_new, f_new)
     end
     index = argmin(surr1.y)
     return (surr1.x[index], surr1.y[index])
@@ -1189,8 +1189,8 @@ function surrogate_optimize(obj::Function, ::DYCORS, lb, ub, surrn::AbstractSurr
         if f_new < y_best
             x_best = x_new
             y_best = f_new
-            add_point!(surrn, Tuple(x_best), y_best)
         end
+        add_point!(surrn, Tuple(x_new), f_new)
     end
     index = argmin(surrn.y)
     return (surrn.x[index], surrn.y[index])
