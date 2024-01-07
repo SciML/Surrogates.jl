@@ -4,6 +4,7 @@ authors = ["SciML"]
 version = "6.9.0"
 
 [deps]
+ChainRulesCore = "d360d2e6-b24c-11e9-a2a3-2a2ae2dbcce4"
 Distributions = "31c24e10-a181-5473-b8eb-7969acd0382f"
 ExtendableSparse = "95c220a8-a1cf-11e9-0c77-dbfce5f500b3"
 GLM = "38e38edf-8417-5370-95a0-9cbb8c7f171a"
@@ -16,6 +17,7 @@ Zygote = "e88e6eb3-aa80-5325-afca-941959d7151f"
 
 [compat]
 Aqua = "0.8"
+ChainRulesCore = "1.15"
 Cubature = "1.5"
 Distributions = "0.25.71"
 ExtendableSparse = "1"
@@ -24,8 +26,8 @@ ForwardDiff = "0.10.19"
 GLM = "1.5"
 IterativeSolvers = "0.9"
 LinearAlgebra = "1.10"
-PolyChaos = "0.2.5"
 Pkg = "1"
+PolyChaos = "0.2.5"
 QuadGK = "2.4"
 QuasiMonteCarlo = "0.3.1"
 SafeTestsets = "0.1"

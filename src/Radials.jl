@@ -106,7 +106,8 @@ function _construct_rbf_y_matrix(y, y_el, m)
     [i <= length(y) ? y[i][j] : zero(first(y_el)) for i in 1:m, j in 1:length(y_el)]
 end
 
-using Zygote: @nograd, Buffer
+using Zygote: Buffer
+using ChainRulesCore: @non_differentiable
 
 function _make_combination(n, d, ix)
     exponents_combinations = [e
@@ -118,8 +119,8 @@ function _make_combination(n, d, ix)
     return exponents_combinations[ix + 1]
 end
 # TODO: Is this correct? Do we ever want to differentiate w.r.t n, d, or ix?
-# By using @nograd we force the gradient to be 1 for n, d, ix
-@nograd _make_combination
+# By using @non_differentiable we force the gradient to be 1 for n, d, ix
+@non_differentiable _make_combination(n, d, ix)
 
 """
     multivar_poly_basis(x, ix, d, n)
