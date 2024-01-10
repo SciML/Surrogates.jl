@@ -3,7 +3,7 @@ The tensor product function is defined as:
 ``\[ f(x) = ∏ᵢ=₁ᵈ cos(aπxᵢ) \]``
 
 Where\
-d: Respresents the dimensionality of the input vector x\
+d: Represents the dimensionality of the input vector x\
 xi: Represents the ith components of the input vector\
 a: A constant parameter
 
