@@ -17,7 +17,7 @@ Zygote = "e88e6eb3-aa80-5325-afca-941959d7151f"
 
 [compat]
 Aqua = "0.8"
-ChainRulesCore = "1.15"
+ChainRulesCore = "1.19.1"
 Cubature = "1.5"
 Distributions = "0.25.71"
 ExtendableSparse = "1"
