@@ -241,7 +241,9 @@ function _find_best_model(clustered_train_values, clustered_test_values, dim,
         xtest_mat = _vector_of_tuples_to_matrix(x_test_vec)
     end
 
-    X = vcat(xtrain_mat, xtest_mat)
+    X = !isnothing(xtest_mat) ? vcat(xtrain_mat, xtest_mat) : xtrain_mat
+    x_test_vec = !isnothing(xtest_mat) ? x_test_vec : x_vec
+    y_test_vec = !isnothing(xtest_mat) ? y_test_vec : y_vec
     lb, ub = _find_upper_lower_bounds(X)
 
     # call on _surrogate_builder with clustered_train_vals, enabled expert types, lb, ub 
@@ -385,15 +387,18 @@ end
 takes in a vector of tuples or vector of vectors and converts it into a matrix
 """
 function _vector_of_tuples_to_matrix(v)
-    num_rows = length(v)
-    num_cols = length(first(v))
-    K = zeros(num_rows, num_cols)
-    for row in 1:num_rows
-        for col in 1:num_cols
-            K[row, col] = v[row][col]
+    if !isempty(v)
+        num_rows = length(v)
+        num_cols = length(first(v))
+        K = zeros(num_rows, num_cols)
+        for row in 1:num_rows
+            for col in 1:num_cols
+                K[row, col] = v[row][col]
+            end
         end
+        return K
     end
-    return K
+    return nothing
 end
 
 end #module
