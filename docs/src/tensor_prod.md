@@ -9,7 +9,7 @@ a: A constant parameter
 
 # Generating Data and Plotting
 
-```@example
+```@example tensor
 function tensor_product_function(x, a)
     return prod(cos.(a * π * xi) for xi in x)
 end
@@ -46,7 +46,7 @@ plot_data_and_true_function(x_train, y_train, x_test, y_test, a, lb, ub)
 # Training various Surrogates
 Now let's train various surrogate models and evaluate their performance on the test data
 
-```@example
+```@example tensor
 # Train different surrogate models
 function train_surrogates(x_train, y_train, lb, ub, alpha=2.0, n=6)
     loba = LobachevskySurrogate(x_train, y_train, lb, ub, alpha=alpha, n=n)
@@ -82,7 +82,7 @@ plot_surrogate_predictions(loba_pred, krig_pred, x_test, y_test, 2.0, lb, ub)
 # Reporting the best Surrogate Model
 To determine the best surrogate, you can compare their accuracy and performance metrics on the test data. For instance, you can calculate and compare the mean squared error (MSE) or any other relevant metric
 
-```@example
+```@example tensor
 using Statistics
 
 # Evaluate performance metrics
