@@ -8,7 +8,7 @@ xi: Represents the ith components of the input vector\
 a: A constant parameter
 
 Let's import Surrogates and Plots
-```
+```@example tensor
 using Surrogates
 using Plots
 default()
