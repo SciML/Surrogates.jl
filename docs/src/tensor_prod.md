@@ -25,10 +25,9 @@ end
 
 Sampling parameters for training and test data
 ```@example tensor
-n = 30  # Number of training points
 lb = -5.0  # Lower bound of sampling range
 ub = 5.0  # Upper bound of sampling range
-
+n = 30  # Number of training points
 ```
 
 Visualize training data and the true function
@@ -44,9 +43,9 @@ end
 Generate training and test data
 ```@example tensor
 x_train = sample(n, lb, ub, SobolSample())  # Sample training data points
-y_train = f.(x_train)  # Calculate corresponding function values
+y_train = tensor_product_function.(x_train)  # Calculate corresponding function values
 x_test = sample(1000, lb, ub, RandomSample())  # Sample larger test data set
-y_test = f.(x_test)  # Calculate corresponding true function values
+y_test = tensor_product_function.(x_test)  # Calculate corresponding true function values
 ```
 
 Train two surrogates: Lobachevsky and Kriging
