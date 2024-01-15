@@ -36,7 +36,7 @@ end
 ```
 
 Visualize training data and the true function
-```example tensor
+```@example tensor
 function plot_data_and_true_function(x_train, y_train, x_test, y_test, a, lb, ub)
     xs = range(lb, ub, length=1000)
     plot(xs, tensor_product_function.(xs, a), label="True Function", legend=:top)
