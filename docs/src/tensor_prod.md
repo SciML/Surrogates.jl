@@ -11,28 +11,24 @@ Let's import Surrogates and Plots
 ```@example tensor
 using Surrogates
 using Plots
+using Statistics
 default()
 ```
 
 Generating Data and Plotting
 
 ```@example tensor
-function tensor_product_function(x, a)
-    return prod(cos.(a * π * xi) for xi in x)
+function tensor_product_function(x)
+    return prod(cos.(a*pi*x))
 end
 ```
 
-Generate training and test data
+Sampling parameters for training and test data
 ```@example tensor
-function generate_data(n, lb, ub, a)
-    x_train = sample(n, lb, ub, SobolSample())
-    y_train = tensor_product_function(x_train, a)
-    
-    x_test = sample(1000, lb, ub, RandomSample())  # Generating test data
-    y_test = tensor_product_function(x_test, a)  # Generating test labels
-    
-    return x_train, y_train, x_test, y_test
-end
+n = 30  # Number of training points
+lb = -5.0  # Lower bound of sampling range
+ub = 5.0  # Upper bound of sampling range
+
 ```
 
 Visualize training data and the true function
@@ -45,76 +41,41 @@ function plot_data_and_true_function(x_train, y_train, x_test, y_test, a, lb, ub
 end
 ```
 
-Generate data and plot
+Generate training and test data
 ```@example tensor
-n = 30
-lb = -5.0
-ub = 5.0
-a = 0.5
-
-x_train, y_train, x_test, y_test = generate_data(n, lb, ub, a)
-plot_data_and_true_function(x_train, y_train, x_test, y_test, a, lb, ub)
+x_train = sample(n, lb, ub, SobolSample())  # Sample training data points
+y_train = f.(x_train)  # Calculate corresponding function values
+x_test = sample(1000, lb, ub, RandomSample())  # Sample larger test data set
+y_test = f.(x_test)  # Calculate corresponding true function values
 ```
 
-Training various Surrogates
-
+Train two surrogates: Lobachevsky and Kriging
 ```@example tensor
-function train_surrogates(x_train, y_train, lb, ub, alpha=2.0, n=6)
-    loba = LobachevskySurrogate(x_train, y_train, lb, ub, alpha=alpha, n=n)
-    krig = Kriging(x_train, y_train, lb, ub)
-    return loba, krig
+loba_surrogate = LobachevskySurrogate(x_train, y_train, lb, ub)  # Train Lobachevsky surrogate
+krig_surrogate = Kriging(x_train, y_train, lb, ub)  # Train Kriging surrogate
+```
+
+Obtain predictions from both surrogates for the test data
+```@example tensor
+loba_pred = loba_surrogate.(x_test)  # Predict using Lobachevsky surrogate
+krig_pred = krig_surrogate.(x_test)  # Predict using Kriging surrogate
+```
+
+Define a function to calculate Mean Squared Error (MSE)
+```@example tensor
+function calculate_mse(predictions, true_values)
+    return mean((predictions .- true_values).^2)  # Calculate mean of squared errors
 end
 ```
 
-Evaluate and compare surrogate model performances
+Calculate MSE for both surrogates
 ```@example tensor
-function evaluate_surrogates(loba, krig, x_test)
-    loba_pred = loba.(x_test)
-    krig_pred = krig.(x_test)
-    return loba_pred, krig_pred
-end
+mse_loba = calculate_mse(loba_pred, y_test)  # Calculate Lobachevsky's MSE
+mse_krig = calculate_mse(krig_pred, y_test)  # Calculate Kriging's MSE
 ```
 
-Plot surrogate predictions against the true function
+Compare performance and print best-performing surrogate based on MSE
 ```@example tensor
-function plot_surrogate_predictions(loba_pred, krig_pred, x_test, y_test, a, lb, ub)
-    xs = collect(x_test)  # Convert x_test to an array
-    plot(xs, tensor_product_function.(xs, a), label="True Function", legend=:top)
-    plot!(collect(x_test), loba_pred, seriestype=:scatter, label="Lobachevsky")
-    plot!(collect(x_test), krig_pred, seriestype=:scatter, label="Kriging")
-    plot!(collect(x_test), fill(y_test, length(x_test)), seriestype=:scatter, label="Sampled points")  # Use fill to create an array of the same length as x_test
-end
-```
-
-Train surrogates and evaluate their performance
-```@example tensor
-lb, ub = minimum(x_train), maximum(x_train)
-loba, krig = train_surrogates(x_train, y_train, lb, ub)
-loba_pred, krig_pred = evaluate_surrogates(loba, krig, x_test)
-```
-
-Plotting Results
-```@example tensor
-plot_surrogate_predictions(loba_pred, krig_pred, x_test, y_test, 2.0, lb, ub)
-```
-
-Reporting the best Surrogate Model
-To determine the best surrogate, you can compare their accuracy and performance metrics on the test data. For instance, you can calculate and compare the mean squared error (MSE) or any other relevant metric
-
-```@example tensor
-using Statistics
-
-# Evaluate performance metrics
-function calculate_performance_metrics(pred, true_vals)
-    return mean((pred .- true_vals).^2)
-end
-```
-
-Compare surrogate model performances
-```@example tensor
-mse_loba = calculate_performance_metrics(loba_pred, y_test)
-mse_krig = calculate_performance_metrics(krig_pred, y_test)
-
 if mse_loba < mse_krig
     println("Lobachevsky Surrogate is the best with MSE: ", mse_loba)
 else
@@ -122,6 +83,11 @@ else
 end
 ```
 
-This structure provides a framework for generating data, training various 
-surrogate models, evaluating their performance on test data, and reporting 
-the best surrogate based on performance metrics like MSE. Adjustments can made to suit the specific evaluation criteria or additional surrogate models.
+Plot true function vs. model predictions
+```@example tensor
+xs = lb:0.01:ub
+plot(xs, f.(xs), label="True function", legend=:top, color=:black)
+plot!(xs, loba_surrogate.(xs), label="Lobachevsky", legend=:top, color=:red)
+plot!(xs, krig_surrogate.(xs), label="Kriging", legend=:top, color=:blue)
+```
+This structure provides a framework for generating data, training various surrogate models, evaluating their performance on test data, and reporting the best surrogate based on performance metrics like MSE. Adjustments can made to suit the specific evaluation criteria or additional surrogate models.
