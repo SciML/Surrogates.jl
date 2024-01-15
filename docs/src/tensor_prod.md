@@ -19,6 +19,7 @@ Generating Data and Plotting
 
 ```@example tensor
 function tensor_product_function(x)
+    a = 0.5
     return prod(cos.(a*pi*x))
 end
 ```
@@ -28,16 +29,6 @@ Sampling parameters for training and test data
 lb = -5.0  # Lower bound of sampling range
 ub = 5.0  # Upper bound of sampling range
 n = 30  # Number of training points
-```
-
-Visualize training data and the true function
-```@example tensor
-function plot_data_and_true_function(x_train, y_train, x_test, y_test, a, lb, ub)
-    xs = range(lb, ub, length=1000)
-    plot(xs, tensor_product_function.(xs, a), label="True Function", legend=:top)
-    scatter!(x_train, repeat([y_train], length(x_train)), label="Training Points", xlims=(lb,ub), ylims=(-1,1))
-    scatter!(x_test, repeat([y_test], length(x_test)), label="Test Points")
-end
 ```
 
 Generate training and test data
@@ -85,7 +76,7 @@ end
 Plot true function vs. model predictions
 ```@example tensor
 xs = lb:0.01:ub
-plot(xs, f.(xs), label="True function", legend=:top, color=:black)
+plot(xs, tensor_product_function.(xs), label="True function", legend=:top, color=:black)
 plot!(xs, loba_surrogate.(xs), label="Lobachevsky", legend=:top, color=:red)
 plot!(xs, krig_surrogate.(xs), label="Kriging", legend=:top, color=:blue)
 ```
