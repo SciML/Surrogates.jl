@@ -1658,7 +1658,7 @@ version = "0.1.0"
 deps = ["Distributions", "GaussianMixtures", "LinearAlgebra", "Random", "Surrogates", "SurrogatesFlux", "SurrogatesPolyChaos", "SurrogatesRandomForest", "XGBoost"]
 path = "/home/runner/work/Surrogates.jl/Surrogates.jl/lib/SurrogatesMOE"
 uuid = "778709c9-3595-4497-80d4-d1077d5b9fbf"
-version = "0.1.3"
+version = "0.1.4"
 
 [[deps.SurrogatesPolyChaos]]
 deps = ["PolyChaos", "Surrogates"]
