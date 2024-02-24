@@ -28,7 +28,6 @@ end
 RandomForestSurrogate(x,y,lb,ub,num_round)
 
 Build Random forest surrogate. num_round is the number of trees.
-
 """
 function RandomForestSurrogate(x, y, lb, ub; num_round::Int = 1)
     X = Array{Float64, 2}(undef, length(x), length(x[1]))

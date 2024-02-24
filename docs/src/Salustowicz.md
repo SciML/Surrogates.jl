@@ -19,9 +19,9 @@ Now, let's define our objective function:
 
 ```@example salustowicz1D
 function salustowicz(x)
-    term1 = 2.72^(-x) * x^3 * cos(x) * sin(x);
-    term2 = (cos(x) * sin(x)*sin(x) - 1);
-    y = term1 * term2;
+    term1 = 2.72^(-x) * x^3 * cos(x) * sin(x)
+    term2 = (cos(x) * sin(x) * sin(x) - 1)
+    y = term1 * term2
 end
 ```
 
@@ -35,30 +35,36 @@ num_round = 2
 x = sample(n_samples, lower_bound, upper_bound, SobolSample())
 y = salustowicz.(x)
 xs = lower_bound:0.001:upper_bound
-scatter(x, y, label="Sampled points", xlims=(lower_bound, upper_bound), legend=:top)
-plot!(xs, salustowicz.(xs), label="True function", legend=:top)
+scatter(x, y, label = "Sampled points", xlims = (lower_bound, upper_bound), legend = :top)
+plot!(xs, salustowicz.(xs), label = "True function", legend = :top)
 ```
 
 Now, let's fit the Salustowicz function with different surrogates:
 
 ```@example salustowicz1D
 InverseDistance = InverseDistanceSurrogate(x, y, lower_bound, upper_bound)
-lobachevsky_surrogate = LobachevskySurrogate(x, y, lower_bound, upper_bound, alpha = 2.0, n = 6)
-scatter(x, y, label="Sampled points", xlims=(lower_bound, upper_bound), legend=:topright)
-plot!(xs, salustowicz.(xs), label="True function", legend=:topright)
-plot!(xs, InverseDistance.(xs), label="InverseDistanceSurrogate", legend=:topright)
-plot!(xs, lobachevsky_surrogate.(xs), label="Lobachevsky", legend=:topright)
+lobachevsky_surrogate = LobachevskySurrogate(
+    x, y, lower_bound, upper_bound, alpha = 2.0, n = 6)
+scatter(
+    x, y, label = "Sampled points", xlims = (lower_bound, upper_bound), legend = :topright)
+plot!(xs, salustowicz.(xs), label = "True function", legend = :topright)
+plot!(xs, InverseDistance.(xs), label = "InverseDistanceSurrogate", legend = :topright)
+plot!(xs, lobachevsky_surrogate.(xs), label = "Lobachevsky", legend = :topright)
 ```
 
 Not's let's see Kriging Surrogate with different hyper parameter:
 
 ```@example salustowicz1D
-kriging_surrogate1 = Kriging(x, y, lower_bound, upper_bound, p=0.9);
-kriging_surrogate2 = Kriging(x, y, lower_bound, upper_bound, p=1.5);
-kriging_surrogate3 = Kriging(x, y, lower_bound, upper_bound, p=1.9);
-scatter(x, y, label="Sampled points", xlims=(lower_bound, upper_bound), legend=:topright)
-plot!(xs, salustowicz.(xs), label="True function", legend=:topright)
-plot!(xs, kriging_surrogate1.(xs), label="kriging_surrogate1", ribbon=p->std_error_at_point(kriging_surrogate1, p), legend=:topright)
-plot!(xs, kriging_surrogate2.(xs), label="kriging_surrogate2", ribbon=p->std_error_at_point(kriging_surrogate2, p), legend=:topright)
-plot!(xs, kriging_surrogate3.(xs), label="kriging_surrogate3", ribbon=p->std_error_at_point(kriging_surrogate3, p), legend=:topright)
+kriging_surrogate1 = Kriging(x, y, lower_bound, upper_bound, p = 0.9);
+kriging_surrogate2 = Kriging(x, y, lower_bound, upper_bound, p = 1.5);
+kriging_surrogate3 = Kriging(x, y, lower_bound, upper_bound, p = 1.9);
+scatter(
+    x, y, label = "Sampled points", xlims = (lower_bound, upper_bound), legend = :topright)
+plot!(xs, salustowicz.(xs), label = "True function", legend = :topright)
+plot!(xs, kriging_surrogate1.(xs), label = "kriging_surrogate1",
+    ribbon = p -> std_error_at_point(kriging_surrogate1, p), legend = :topright)
+plot!(xs, kriging_surrogate2.(xs), label = "kriging_surrogate2",
+    ribbon = p -> std_error_at_point(kriging_surrogate2, p), legend = :topright)
+plot!(xs, kriging_surrogate3.(xs), label = "kriging_surrogate3",
+    ribbon = p -> std_error_at_point(kriging_surrogate3, p), legend = :topright)
 ```

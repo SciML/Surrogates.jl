@@ -10,17 +10,17 @@ To enhance the Branin function, changes were made to introduce irregularities, v
 function improved_branin(x, time_step)
     x1 = x[1]
     x2 = x[2]
-    b = 5.1 / (4*pi^2)
-    c = 5/pi
+    b = 5.1 / (4 * pi^2)
+    c = 5 / pi
     r = 6
     a = 1
     s = 10
-    t = 1 / (8*pi)
-    
+    t = 1 / (8 * pi)
+
     # Adding noise to the function's output
     noise = randn() * time_step  # Simulating time-varying noise
-    term1 = a * (x2 - b*x1^2 + c*x1 - r)^2
-    term2 = s*(1-t)*cos(x1 + noise)  # Introducing dynamic component
+    term1 = a * (x2 - b * x1^2 + c * x1 - r)^2
+    term2 = s * (1 - t) * cos(x1 + noise)  # Introducing dynamic component
     y = term1 + term2 + s
 end
 ```
@@ -44,8 +44,8 @@ x, y = -5.00:10.00, 0.00:15.00
 xs = [xy[1] for xy in xys]
 ys = [xy[2] for xy in xys]
 p1 = surface(x, y, (x, y) -> radial_surrogate([x, y]))
-scatter!(xs, ys, marker_z=zs)
+scatter!(xs, ys, marker_z = zs)
 p2 = contour(x, y, (x, y) -> radial_surrogate([x, y]))
-scatter!(xs, ys, marker_z=zs)
-plot(p1, p2, title="Radial Surrogate")
+scatter!(xs, ys, marker_z = zs)
+plot(p1, p2, title = "Radial Surrogate")
 ```

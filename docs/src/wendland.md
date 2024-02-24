@@ -15,7 +15,7 @@ n = 40
 lower_bound = 0.0
 upper_bound = 1.0
 f = x -> exp(-x^2)
-x = sample(n,lower_bound,upper_bound,SobolSample())
+x = sample(n, lower_bound, upper_bound, SobolSample())
 y = f.(x)
 ```
 
@@ -29,11 +29,12 @@ Try it yourself with this function!
 
 ```@example wendland
 my_eps = 0.5
-wend = Wendland(x,y,lower_bound,upper_bound,eps=my_eps)
+wend = Wendland(x, y, lower_bound, upper_bound, eps = my_eps)
 ```
 
 ```@example wendland
-plot(x, y, seriestype=:scatter, label="Sampled points", xlims=(lower_bound, upper_bound), legend=:top)
-plot!(f, label="True function",  xlims=(lower_bound, upper_bound), legend=:top)
-plot!(wend, label="Surrogate function",  xlims=(lower_bound, upper_bound), legend=:top)
+plot(x, y, seriestype = :scatter, label = "Sampled points",
+    xlims = (lower_bound, upper_bound), legend = :top)
+plot!(f, label = "True function", xlims = (lower_bound, upper_bound), legend = :top)
+plot!(wend, label = "Surrogate function", xlims = (lower_bound, upper_bound), legend = :top)
 ```

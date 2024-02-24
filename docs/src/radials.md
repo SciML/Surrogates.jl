@@ -1,4 +1,5 @@
 ## Radial Surrogates
+
 The Radial Basis Surrogate model represents the interpolating function as a linear combination of basis functions, one for each training point. Let's start with something easy to get our hands dirty. I want to build a surrogate for:
 
 ```math
@@ -16,16 +17,15 @@ default()
 We choose to sample f in 30 points between 5 to 25 using `sample` function. The sampling points are chosen using a Sobol sequence, this can be done by passing `SobolSample()` to the `sample` function.
 
 ```@example RadialBasisSurrogate
-f(x) = log(x)*x^2 + x^3
+f(x) = log(x) * x^2 + x^3
 n_samples = 30
 lower_bound = 5.0
 upper_bound = 25.0
 x = sort(sample(n_samples, lower_bound, upper_bound, SobolSample()))
 y = f.(x)
-scatter(x, y, label="Sampled Points", xlims=(lower_bound, upper_bound), legend=:top)
-plot!(x, y, label="True function", legend=:top)
+scatter(x, y, label = "Sampled Points", xlims = (lower_bound, upper_bound), legend = :top)
+plot!(x, y, label = "True function", legend = :top)
 ```
-
 
 ## Building Surrogate
 
@@ -50,11 +50,12 @@ Currently, available radial basis functions are `linearRadial` (the default), `c
 Now, we will simply plot `radial_surrogate`:
 
 ```@example RadialBasisSurrogate
-plot(x, y, seriestype=:scatter, label="Sampled points", xlims=(lower_bound, upper_bound), legend=:top)
-plot!(f, label="True function",  xlims=(lower_bound, upper_bound), legend=:top)
-plot!(radial_surrogate, label="Surrogate function",  xlims=(lower_bound, upper_bound), legend=:top)
+plot(x, y, seriestype = :scatter, label = "Sampled points",
+    xlims = (lower_bound, upper_bound), legend = :top)
+plot!(f, label = "True function", xlims = (lower_bound, upper_bound), legend = :top)
+plot!(radial_surrogate, label = "Surrogate function",
+    xlims = (lower_bound, upper_bound), legend = :top)
 ```
-
 
 ## Optimizing
 
@@ -63,12 +64,13 @@ Having built a surrogate, we can now use it to search for minima in our original
 To optimize using our surrogate, we call `surrogate_optimize` method. We choose to use Stochastic RBF as the optimization technique and again Sobol sampling as the sampling technique.
 
 ```@example RadialBasisSurrogate
-@show surrogate_optimize(f, SRBF(), lower_bound, upper_bound, radial_surrogate, SobolSample())
-scatter(x, y, label="Sampled points", legend=:top)
-plot!(f, label="True function",  xlims=(lower_bound, upper_bound), legend=:top)
-plot!(radial_surrogate, label="Surrogate function",  xlims=(lower_bound, upper_bound), legend=:top)
+@show surrogate_optimize(
+    f, SRBF(), lower_bound, upper_bound, radial_surrogate, SobolSample())
+scatter(x, y, label = "Sampled points", legend = :top)
+plot!(f, label = "True function", xlims = (lower_bound, upper_bound), legend = :top)
+plot!(radial_surrogate, label = "Surrogate function",
+    xlims = (lower_bound, upper_bound), legend = :top)
 ```
-
 
 ## Radial Basis Surrogate tutorial (ND)
 
@@ -76,19 +78,19 @@ First of all, we will define the `Booth` function we are going to build the surr
 
 $f(x) = (x_1 + 2*x_2 - 7)^2 + (2*x_1 + x_2 - 5)^2$
 
- Notice, how its argument is a vector of numbers, one for each coordinate, and its output is a scalar.
+Notice, how its argument is a vector of numbers, one for each coordinate, and its output is a scalar.
 
 ```@example RadialBasisSurrogateND
 using Plots # hide
-default(c=:matter, legend=false, xlabel="x", ylabel="y") # hide
+default(c = :matter, legend = false, xlabel = "x", ylabel = "y") # hide
 using Surrogates # hide
 
 function booth(x)
-    x1=x[1]
-    x2=x[2]
-    term1 = (x1 + 2*x2 - 7)^2;
-    term2 = (2*x1 + x2 - 5)^2;
-    y = term1 + term2;
+    x1 = x[1]
+    x2 = x[2]
+    term1 = (x1 + 2 * x2 - 7)^2
+    term2 = (2 * x1 + x2 - 5)^2
+    y = term1 + term2
 end
 ```
 
@@ -107,31 +109,33 @@ zs = booth.(xys);
 
 ```@example RadialBasisSurrogateND
 x, y = -5.0:10.0, 0.0:15.0 # hide
-p1 = surface(x, y, (x1,x2) -> booth((x1,x2))) # hide
+p1 = surface(x, y, (x1, x2) -> booth((x1, x2))) # hide
 xs = [xy[1] for xy in xys] # hide
 ys = [xy[2] for xy in xys] # hide
 scatter!(xs, ys, zs) # hide
-p2 = contour(x, y, (x1,x2) -> booth((x1,x2))) # hide
+p2 = contour(x, y, (x1, x2) -> booth((x1, x2))) # hide
 scatter!(xs, ys) # hide
-plot(p1, p2, title="True function") # hide
+plot(p1, p2, title = "True function") # hide
 ```
 
 ### Building a surrogate
+
 Using the sampled points we build the surrogate, the steps are analogous to the 1-dimensional case.
 
 ```@example RadialBasisSurrogateND
-radial_basis = RadialBasis(xys, zs,  lower_bound, upper_bound)
+radial_basis = RadialBasis(xys, zs, lower_bound, upper_bound)
 ```
 
 ```@example RadialBasisSurrogateND
 p1 = surface(x, y, (x, y) -> radial_basis([x y])) # hide
-scatter!(xs, ys, zs, marker_z=zs) # hide
+scatter!(xs, ys, zs, marker_z = zs) # hide
 p2 = contour(x, y, (x, y) -> radial_basis([x y])) # hide
-scatter!(xs, ys, marker_z=zs) # hide
-plot(p1, p2, title="Surrogate") # hide
+scatter!(xs, ys, marker_z = zs) # hide
+plot(p1, p2, title = "Surrogate") # hide
 ```
 
 ### Optimizing
+
 With our surrogate, we can now search for the minima of the function.
 
 Notice how the new sampled points, which were created during the optimization process, are appended to the `xys` array.
@@ -140,9 +144,12 @@ This is why its size changes.
 ```@example RadialBasisSurrogateND
 size(xys)
 ```
+
 ```@example RadialBasisSurrogateND
-surrogate_optimize(booth, SRBF(), lower_bound, upper_bound, radial_basis, RandomSample(), maxiters=50)
+surrogate_optimize(
+    booth, SRBF(), lower_bound, upper_bound, radial_basis, RandomSample(), maxiters = 50)
 ```
+
 ```@example RadialBasisSurrogateND
 size(xys)
 ```
@@ -152,8 +159,8 @@ p1 = surface(x, y, (x, y) -> radial_basis([x y])) # hide
 xs = [xy[1] for xy in xys] # hide
 ys = [xy[2] for xy in xys] # hide
 zs = booth.(xys) # hide
-scatter!(xs, ys, zs, marker_z=zs) # hide
+scatter!(xs, ys, zs, marker_z = zs) # hide
 p2 = contour(x, y, (x, y) -> radial_basis([x y])) # hide
-scatter!(xs, ys, marker_z=zs) # hide
+scatter!(xs, ys, marker_z = zs) # hide
 plot(p1, p2) # hide
 ```

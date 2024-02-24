@@ -76,7 +76,7 @@ the weighted-distance merit function:
 
 ``merit(x) = ws(x) + (1-w)(1-d(x))``
 
-where `` 0 \\leq w \\leq 1 ``.
+where ``0 \\leq w \\leq 1``.
 That is, we want a small function value prediction and a large minimum distance
 from the previously evaluated points.
 The weight w is commonly cycled between
@@ -848,8 +848,6 @@ Under a Gaussian process (GP) prior, the goal is to
 maximize expected improvement:
 
 ``EI(x) := E[max(f_{best}-f(x),0)``
-
-
 """
 function surrogate_optimize(obj::Function, ::EI, lb, ub, krig,
         sample_type::SamplingAlgorithm; maxiters = 100,
@@ -992,7 +990,6 @@ surrogate_optimize(obj::Function,::DYCORS,lb::Number,ub::Number,surr1::AbstractS
 
 DYCORS optimization method in 1D, following closely: Combining radial basis function
 surrogates and dynamic coordinate search in high-dimensional expensive black-box optimization".
-
 """
 function surrogate_optimize(obj::Function, ::DYCORS, lb::Number, ub::Number,
         surr1::AbstractSurrogate, sample_type::SamplingAlgorithm;
@@ -1109,7 +1106,6 @@ end
 
 """
       surrogate_optimize(obj::Function,::DYCORS,lb::Number,ub::Number,surr1::AbstractSurrogate,sample_type::SamplingAlgorithm;maxiters=100,num_new_samples=100)
-
 
 This is an implementation of the DYCORS strategy by Regis and Shoemaker:
 Rommel G Regis and Christine A Shoemaker.
@@ -1307,6 +1303,7 @@ SOP Surrogate optimization method, following closely the following papers:
 
     - SOP: parallel surrogate global optimization with Pareto center selection for computationally expensive single objective problems by Tipaluck Krityakierne
     - Multiobjective Optimization Using Evolutionary Algorithms by Kalyan Deb
+
 #Suggested number of new_samples = min(500*d,5000)
 """
 function surrogate_optimize(obj::Function, sop1::SOP, lb::Number, ub::Number,
@@ -1739,8 +1736,10 @@ function _nonDominatedSorting(arr::Array{Float64, 2})
     ind::Array{Int64, 1} = collect(1:size(arr, 1))
     while !isempty(arr)
         s = size(arr, 1)
-        red = dropdims(sum([_dominates(arr[i, :], arr[j, :]) for i in 1:s, j in 1:s],
-                dims = 1) .== 0, dims = 1)
+        red = dropdims(
+            sum([_dominates(arr[i, :], arr[j, :]) for i in 1:s, j in 1:s],
+                dims = 1) .== 0,
+            dims = 1)
         a = 1:s
         sel::Array{Int64, 1} = a[red]
         push!(fronts, ind[sel])
@@ -2045,7 +2044,8 @@ function surrogate_optimize(obj, rtea::RTEA, lb, ub, surrRTEAND::AbstractSurroga
     return pareto_set, pareto_front
 end
 
-function surrogate_optimize(obj::Function, ::EI, lb::AbstractArray, ub::AbstractArray, krig,
+function surrogate_optimize(
+        obj::Function, ::EI, lb::AbstractArray, ub::AbstractArray, krig,
         sample_type::SectionSample;
         maxiters = 100, num_new_samples = 100)
     dtol = 1e-3 * norm(ub - lb)

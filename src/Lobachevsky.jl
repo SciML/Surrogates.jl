@@ -44,7 +44,8 @@ end
 """
 Lobachevsky interpolation, suggested parameters: 0 <= alpha <= 4, n must be even.
 """
-function LobachevskySurrogate(x, y, lb::Number, ub::Number; alpha::Number = 1.0, n::Int = 4,
+function LobachevskySurrogate(
+        x, y, lb::Number, ub::Number; alpha::Number = 1.0, n::Int = 4,
         sparse = false)
     if alpha > 4 || alpha < 0
         error("Alpha must be between 0 and 4")
@@ -61,7 +62,7 @@ function (loba::LobachevskySurrogate)(val::Number)
     _check_dimension(loba, val)
 
     return sum(loba.coeff[j] * phi_nj1D(val, loba.x[j], loba.alpha, loba.n)
-               for j in 1:length(loba.x))
+    for j in 1:length(loba.x))
 end
 
 function phi_njND(point, x, alpha, n)
@@ -101,7 +102,7 @@ function (loba::LobachevskySurrogate)(val)
     # Check to make sure dimensions of input matches expected dimension of surrogate
     _check_dimension(loba, val)
     return sum(loba.coeff[j] * phi_njND(val, loba.x[j], loba.alpha, loba.n)
-               for j in 1:length(loba.x))
+    for j in 1:length(loba.x))
 end
 
 function add_point!(loba::LobachevskySurrogate, x_new, y_new)
@@ -147,7 +148,6 @@ end
 lobachevsky_integral(loba::LobachevskySurrogate,lb,ub)
 
 Calculates the integral of the Lobachevsky surrogate, which has a closed form.
-
 """
 function lobachevsky_integral(loba::LobachevskySurrogate, lb, ub)
     d = length(lb)
@@ -168,7 +168,6 @@ end
 lobachevsky_integrate_dimension(loba::LobachevskySurrogate,lb,ub,dimension)
 
 Integrating the surrogate on selected dimension dim
-
 """
 function lobachevsky_integrate_dimension(loba::LobachevskySurrogate, lb, ub, dim::Int)
     gamma_d = zero(loba.coeff[1])

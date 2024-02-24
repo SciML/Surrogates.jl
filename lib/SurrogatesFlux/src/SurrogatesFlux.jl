@@ -20,10 +20,9 @@ end
 """
 NeuralSurrogate(x,y,lb,ub,model,loss,opt,n_echos)
 
-- model: Flux layers
-- loss: loss function
-- opt: optimization function
-
+  - model: Flux layers
+  - loss: loss function
+  - opt: optimization function
 """
 function NeuralSurrogate(x, y, lb, ub; model = Chain(Dense(length(x[1]), 1), first),
         loss = (x, y) -> Flux.mse(model(x), y), opt = Descent(0.01),

@@ -1,4 +1,5 @@
 ## Linear Surrogate
+
 Linear Surrogate is a linear approach to modeling the relationship between a scalar response or dependent variable and one or more explanatory variables. We will use Linear Surrogate to optimize following function:
 
 $f(x) = \sin(x) + \log(x)$
@@ -22,8 +23,8 @@ lower_bound = 5.2
 upper_bound = 12.5
 x = sample(n_samples, lower_bound, upper_bound, SobolSample())
 y = f.(x)
-scatter(x, y, label="Sampled points", xlims=(lower_bound, upper_bound))
-plot!(f, label="True function", xlims=(lower_bound, upper_bound))
+scatter(x, y, label = "Sampled points", xlims = (lower_bound, upper_bound))
+plot!(f, label = "True function", xlims = (lower_bound, upper_bound))
 ```
 
 ## Building a Surrogate
@@ -34,17 +35,18 @@ We can simply calculate `linear_surrogate` for any value.
 
 ```@example linear_surrogate1D
 my_linear_surr_1D = LinearSurrogate(x, y, lower_bound, upper_bound)
-add_point!(my_linear_surr_1D,4.0,7.2)
-add_point!(my_linear_surr_1D,[5.0,6.0],[8.3,9.7])
+add_point!(my_linear_surr_1D, 4.0, 7.2)
+add_point!(my_linear_surr_1D, [5.0, 6.0], [8.3, 9.7])
 val = my_linear_surr_1D(5.0)
 ```
 
 Now, we will simply plot `linear_surrogate`:
 
 ```@example linear_surrogate1D
-plot(x, y, seriestype=:scatter, label="Sampled points", xlims=(lower_bound, upper_bound))
-plot!(f, label="True function",  xlims=(lower_bound, upper_bound))
-plot!(my_linear_surr_1D, label="Surrogate function",  xlims=(lower_bound, upper_bound))
+plot(x, y, seriestype = :scatter, label = "Sampled points",
+    xlims = (lower_bound, upper_bound))
+plot!(f, label = "True function", xlims = (lower_bound, upper_bound))
+plot!(my_linear_surr_1D, label = "Surrogate function", xlims = (lower_bound, upper_bound))
 ```
 
 ## Optimizing
@@ -54,12 +56,12 @@ Having built a surrogate, we can now use it to search for minima in our original
 To optimize using our surrogate we call `surrogate_optimize` method. We choose to use Stochastic RBF as the optimization technique and again Sobol sampling as the sampling technique.
 
 ```@example linear_surrogate1D
-@show surrogate_optimize(f, SRBF(), lower_bound, upper_bound, my_linear_surr_1D, SobolSample())
-scatter(x, y, label="Sampled points")
-plot!(f, label="True function",  xlims=(lower_bound, upper_bound))
-plot!(my_linear_surr_1D, label="Surrogate function",  xlims=(lower_bound, upper_bound))
+@show surrogate_optimize(
+    f, SRBF(), lower_bound, upper_bound, my_linear_surr_1D, SobolSample())
+scatter(x, y, label = "Sampled points")
+plot!(f, label = "True function", xlims = (lower_bound, upper_bound))
+plot!(my_linear_surr_1D, label = "Surrogate function", xlims = (lower_bound, upper_bound))
 ```
-
 
 ## Linear Surrogate tutorial (ND)
 
@@ -67,15 +69,15 @@ First of all we will define the `Egg Holder` function we are going to build a su
 
 ```@example linear_surrogateND
 using Plots # hide
-default(c=:matter, legend=false, xlabel="x", ylabel="y") # hide
+default(c = :matter, legend = false, xlabel = "x", ylabel = "y") # hide
 using Surrogates # hide
 
 function egg(x)
-    x1=x[1]
-    x2=x[2]
-    term1 = -(x2+47) * sin(sqrt(abs(x2+x1/2+47)));
-    term2 = -x1 * sin(sqrt(abs(x1-(x2+47))));
-    y = term1 + term2;
+    x1 = x[1]
+    x2 = x[2]
+    term1 = -(x2 + 47) * sin(sqrt(abs(x2 + x1 / 2 + 47)))
+    term2 = -x1 * sin(sqrt(abs(x1 - (x2 + 47))))
+    y = term1 + term2
 end
 ```
 
@@ -94,31 +96,33 @@ zs = egg.(xys);
 
 ```@example linear_surrogateND
 x, y = -10:5, 0:15 # hide
-p1 = surface(x, y, (x1,x2) -> egg((x1,x2))) # hide
+p1 = surface(x, y, (x1, x2) -> egg((x1, x2))) # hide
 xs = [xy[1] for xy in xys] # hide
 ys = [xy[2] for xy in xys] # hide
 scatter!(xs, ys, zs) # hide
-p2 = contour(x, y, (x1,x2) -> egg((x1,x2))) # hide
+p2 = contour(x, y, (x1, x2) -> egg((x1, x2))) # hide
 scatter!(xs, ys) # hide
-plot(p1, p2, title="True function") # hide
+plot(p1, p2, title = "True function") # hide
 ```
 
 ### Building a surrogate
+
 Using the sampled points, we build the surrogate, the steps are analogous to the 1-dimensional case.
 
 ```@example linear_surrogateND
-my_linear_ND = LinearSurrogate(xys, zs,  lower_bound, upper_bound)
+my_linear_ND = LinearSurrogate(xys, zs, lower_bound, upper_bound)
 ```
 
 ```@example linear_surrogateND
 p1 = surface(x, y, (x, y) -> my_linear_ND([x y])) # hide
-scatter!(xs, ys, zs, marker_z=zs) # hide
+scatter!(xs, ys, zs, marker_z = zs) # hide
 p2 = contour(x, y, (x, y) -> my_linear_ND([x y])) # hide
-scatter!(xs, ys, marker_z=zs) # hide
-plot(p1, p2, title="Surrogate") # hide
+scatter!(xs, ys, marker_z = zs) # hide
+plot(p1, p2, title = "Surrogate") # hide
 ```
 
 ### Optimizing
+
 With our surrogate, we can now search for the minima of the function.
 
 Notice how the new sampled points, which were created during the optimization process, are appended to the `xys` array.
@@ -127,9 +131,12 @@ This is why its size changes.
 ```@example linear_surrogateND
 size(xys)
 ```
+
 ```@example linear_surrogateND
-surrogate_optimize(egg, SRBF(), lower_bound, upper_bound, my_linear_ND, SobolSample(), maxiters=10)
+surrogate_optimize(
+    egg, SRBF(), lower_bound, upper_bound, my_linear_ND, SobolSample(), maxiters = 10)
 ```
+
 ```@example linear_surrogateND
 size(xys)
 ```
@@ -139,8 +146,8 @@ p1 = surface(x, y, (x, y) -> my_linear_ND([x y])) # hide
 xs = [xy[1] for xy in xys] # hide
 ys = [xy[2] for xy in xys] # hide
 zs = egg.(xys) # hide
-scatter!(xs, ys, zs, marker_z=zs) # hide
+scatter!(xs, ys, zs, marker_z = zs) # hide
 p2 = contour(x, y, (x, y) -> my_linear_ND([x y])) # hide
-scatter!(xs, ys, marker_z=zs) # hide
+scatter!(xs, ys, marker_z = zs) # hide
 plot(p1, p2) # hide
 ```

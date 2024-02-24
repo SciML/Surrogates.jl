@@ -13,19 +13,22 @@ default()
 n = 20
 lower_bound = 1.0
 upper_bound = 6.0
-x = sample(n,lower_bound,upper_bound,SobolSample())
-f = x -> 1/3*x
+x = sample(n, lower_bound, upper_bound, SobolSample())
+f = x -> 1 / 3 * x
 y = f.(x)
-plot(x, y, seriestype=:scatter, label="Sampled points", xlims=(lower_bound, upper_bound), legend=:top)
-plot!(f, label="True function",  xlims=(lower_bound, upper_bound), legend=:top)
+plot(x, y, seriestype = :scatter, label = "Sampled points",
+    xlims = (lower_bound, upper_bound), legend = :top)
+plot!(f, label = "True function", xlims = (lower_bound, upper_bound), legend = :top)
 ```
 
 ```@example variablefid
-varfid = VariableFidelitySurrogate(x,y,lower_bound,upper_bound)
+varfid = VariableFidelitySurrogate(x, y, lower_bound, upper_bound)
 ```
 
 ```@example variablefid
-plot(x, y, seriestype=:scatter, label="Sampled points", xlims=(lower_bound, upper_bound), legend=:top)
-plot!(f, label="True function",  xlims=(lower_bound, upper_bound), legend=:top)
-plot!(varfid, label="Surrogate function",  xlims=(lower_bound, upper_bound), legend=:top)
+plot(x, y, seriestype = :scatter, label = "Sampled points",
+    xlims = (lower_bound, upper_bound), legend = :top)
+plot!(f, label = "True function", xlims = (lower_bound, upper_bound), legend = :top)
+plot!(
+    varfid, label = "Surrogate function", xlims = (lower_bound, upper_bound), legend = :top)
 ```

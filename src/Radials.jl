@@ -42,8 +42,6 @@ of a polynomial term.
 
 References:
 https://en.wikipedia.org/wiki/Polyharmonic_spline
-
-
 """
 function RadialBasis(x, y, lb, ub; rad::RadialFunction = linearRadial(),
         scale_factor::Real = 0.5, sparse = false)
@@ -112,9 +110,9 @@ using ChainRulesCore: @non_differentiable
 function _make_combination(n, d, ix)
     exponents_combinations = [e
                               for e
-    in collect(Iterators.product(Iterators.repeated(0:n,
-        d)...))[:]
-                                  if sum(e) <= n]
+                                  in collect(Iterators.product(Iterators.repeated(0:n,
+                                      d)...))[:]
+                              if sum(e) <= n]
 
     return exponents_combinations[ix + 1]
 end
@@ -131,12 +129,15 @@ degree `n` and `d` dimensions.
 Time complexity: `(n+1)^d.`
 
 # Example
+
 For n=2, d=2 the multivariate polynomial basis is
+
 ````
 1,
 x,y
 x^2,y^2,xy
 ````
+
 Therefore the 3rd (ix=3) element is `y` .
 Therefore when x=(13,43) and ix=3 this function will return 43.
 """
@@ -145,7 +146,7 @@ function multivar_poly_basis(x, ix, d, n)
         return one(eltype(x))
     else
         prod(a^d
-             for (a, d)
+        for (a, d)
         in zip(x, _make_combination(n, d, ix)))
     end
 end

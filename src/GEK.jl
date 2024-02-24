@@ -202,7 +202,7 @@ function (k::GEK)(val)
     return k.mu +
            sum(k.b[i] *
                exp(-sum(k.theta[j] * norm(val[j] - k.x[i][j])^k.p[j] for j in 1:d))
-               for i in 1:n)
+    for i in 1:n)
 end
 
 function GEK(x, y, lb, ub; p = collect(one.(x[1])), theta = collect(one.(x[1])))

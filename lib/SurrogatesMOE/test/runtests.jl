@@ -28,7 +28,7 @@ Random.seed!(StableRNG(SEED), SEED)
         RadialBasisStructure(radial_function = linearRadial(), scale_factor = 1.0,
             sparse = false),
         RadialBasisStructure(radial_function = cubicRadial(), scale_factor = 1.0,
-            sparse = false),
+            sparse = false)
     ]
 
     MOE_1D_RAD_RAD = MOE(x, y, expert_types)
@@ -40,7 +40,7 @@ Random.seed!(StableRNG(SEED), SEED)
     # Krig vs MOE
     KRIG_1D = Kriging(x, y, lb, ub, p = 1.0, theta = 1.0)
     expert_types = [InverseDistanceStructure(p = 1.0),
-        KrigingStructure(p = 1.0, theta = 1.0),
+        KrigingStructure(p = 1.0, theta = 1.0)
     ]
     MOE_1D_INV_KRIG = MOE(x, y, expert_types)
     MOE_at0 = MOE_1D_INV_KRIG(0.0)
@@ -83,7 +83,7 @@ end
     expert_types = [
         KrigingStructure(p = [1.0, 1.0], theta = [1.0, 1.0]),
         RadialBasisStructure(radial_function = linearRadial(), scale_factor = 1.0,
-            sparse = false),
+            sparse = false)
     ]
     moe_nd_krig_rad = MOE(x, y, expert_types, ndim = 2, quantile = 5)
     moe_pred_vals = moe_nd_krig_rad.(x_test)
@@ -125,7 +125,7 @@ end
         RadialBasisStructure(radial_function = linearRadial(), scale_factor = 1.0,
             sparse = false),
         LinearStructure(),
-        InverseDistanceStructure(p = 1.0),
+        InverseDistanceStructure(p = 1.0)
     ]
     moe_nd_3_experts = MOE(x, y, expert_types, ndim = 2, n_clusters = 3)
     moe_pred_vals = moe_nd_3_experts.(x_test)
@@ -137,7 +137,7 @@ end
     n_echos = 1
     expert_types = [
         NeuralStructure(model = model, loss = loss, opt = opt, n_echos = n_echos),
-        LinearStructure(),
+        LinearStructure()
     ]
     moe_nn_ln = MOE(x, y, expert_types, ndim = 2)
     moe_pred_vals = moe_nn_ln.(x_test)
@@ -163,7 +163,7 @@ end
         RadialBasisStructure(radial_function = linearRadial(), scale_factor = 1.0,
             sparse = false),
         RadialBasisStructure(radial_function = cubicRadial(), scale_factor = 1.0,
-            sparse = false),
+            sparse = false)
     ]
     moe = MOE(x, y, expert_types)
     add_point!(moe, 0.5, 5.0)
@@ -188,7 +188,7 @@ end
     y = discont_NDIM.(x)
     expert_types = [InverseDistanceStructure(p = 1.0),
         RadialBasisStructure(radial_function = linearRadial(), scale_factor = 1.0,
-            sparse = false),
+            sparse = false)
     ]
     moe_nd_inv_rad = MOE(x, y, expert_types, ndim = 2)
     add_point!(moe_nd_inv_rad, (0.5, 0.5), sum((0.5, 0.5) .^ 2) + 5)

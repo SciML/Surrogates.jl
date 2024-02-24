@@ -1,7 +1,8 @@
 ## Mixture of Experts (MOE)
 
 !!! note
-    This surrogate requires the 'SurrogatesMOE' module, which can be added by inputting "]add SurrogatesMOE" from the Julia command line. 
+    
+    This surrogate requires the 'SurrogatesMOE' module, which can be added by inputting "]add SurrogatesMOE" from the Julia command line.
 
 The Mixture of Experts (MOE) Surrogate model represents the interpolating function as a combination of other surrogate models. SurrogatesMOE is a Julia implementation of the [Python version from SMT](https://smt.readthedocs.io/en/latest/_src_docs/applications/moe.html).
 
@@ -33,7 +34,8 @@ lb = -1.0
 ub = 1.0
 x = sample(50, lb, ub, SobolSample())
 y = discont_1D.(x)
-scatter(x, y, label="Sampled Points", xlims=(lb, ub), ylims=(-6.0, 7.0), legend=:top)
+scatter(
+    x, y, label = "Sampled Points", xlims = (lb, ub), ylims = (-6.0, 7.0), legend = :top)
 ```
 
 How does a regular surrogate perform on such a dataset?
@@ -47,17 +49,17 @@ As we can see, the prediction is far from the ground truth. Now, how does the MO
 
 ```@example MOE_1D
 expert_types = [
-        RadialBasisStructure(radial_function = linearRadial(), scale_factor = 1.0,
-                             sparse = false),
-        RadialBasisStructure(radial_function = linearRadial(), scale_factor = 1.0,
-                        sparse = false)
-    ]
+    RadialBasisStructure(radial_function = linearRadial(), scale_factor = 1.0,
+        sparse = false),
+    RadialBasisStructure(radial_function = linearRadial(), scale_factor = 1.0,
+        sparse = false)
+]
 
 MOE_1D_RAD_RAD = MOE(x, y, expert_types)
 MOE_at0 = MOE_1D_RAD_RAD(0.0)
 ```
 
-As we can see, the accuracy is significantly better. 
+As we can see, the accuracy is significantly better.
 
 ### Under the Hood - How SurrogatesMOE Works
 
@@ -98,9 +100,9 @@ x_test = sample(10, lb, ub, GoldenSample())
 
 expert_types = [
     RadialBasisStructure(radial_function = linearRadial(), scale_factor = 1.0,
-                            sparse = false),
+        sparse = false),
     RadialBasisStructure(radial_function = linearRadial(), scale_factor = 1.0,
-                            sparse = false),
+        sparse = false)
 ]
 moe_nd_rad_rad = MOE(x, y, expert_types, ndim = 2)
 moe_pred_vals = moe_nd_rad_rad.(x_test)
@@ -127,9 +129,9 @@ expert_types = [
 #With 3 Surrogates
 expert_types = [
     RadialBasisStructure(radial_function = linearRadial(), scale_factor = 1.0,
-                            sparse = false),
+        sparse = false),
     LinearStructure(),
-    InverseDistanceStructure(p = 1.0),
+    InverseDistanceStructure(p = 1.0)
 ]
 nothing # hide
 ```
