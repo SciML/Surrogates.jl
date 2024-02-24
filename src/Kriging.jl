@@ -31,7 +31,7 @@ function (k::Kriging)(val)
     return k.mu +
            sum(k.b[i] *
                exp(-sum(k.theta[j] * norm(val[j] - k.x[i][j])^k.p[j] for j in 1:d))
-               for i in 1:n)
+    for i in 1:n)
 end
 
 """
@@ -46,12 +46,12 @@ function std_error_at_point(k::Kriging, val)
     d = length(k.x[1])
     r = zeros(eltype(k.x[1]), n, 1)
     r = [let
-        sum = zero(eltype(k.x[1]))
-        for l in 1:d
-            sum = sum + k.theta[l] * norm(val[l] - k.x[i][l])^(k.p[l])
-        end
-        exp(-sum)
-    end
+             sum = zero(eltype(k.x[1]))
+             for l in 1:d
+                 sum = sum + k.theta[l] * norm(val[l] - k.x[i][l])^(k.p[l])
+             end
+             exp(-sum)
+         end
          for i in 1:n]
 
     one = ones(eltype(k.x[1]), n, 1)
@@ -98,8 +98,9 @@ Constructor for type Kriging.
 #Arguments:
 -(x,y): sampled points
 -p: value between 0 and 2 modelling the
-   smoothness of the function being approximated, 0-> rough  2-> C^infinity
-- theta: value > 0 modeling how much the function is changing in the i-th variable.
+smoothness of the function being approximated, 0-> rough  2-> C^infinity
+
+  - theta: value > 0 modeling how much the function is changing in the i-th variable.
 """
 function Kriging(x, y, lb::Number, ub::Number; p = 2.0,
         theta = 0.5 / max(1e-6 * abs(ub - lb), std(x))^p)
@@ -160,12 +161,12 @@ end
 
 Constructor for Kriging surrogate.
 
-- (x,y): sampled points
-- p: array of values 0<=p<2 modeling the
-     smoothness of the function being approximated in the i-th variable.
-     low p -> rough, high p -> smooth
-- theta: array of values > 0 modeling how much the function is
-          changing in the i-th variable.
+  - (x,y): sampled points
+  - p: array of values 0<=p<2 modeling the
+    smoothness of the function being approximated in the i-th variable.
+    low p -> rough, high p -> smooth
+  - theta: array of values > 0 modeling how much the function is
+    changing in the i-th variable.
 """
 function Kriging(x, y, lb, ub; p = 2.0 .* collect(one.(x[1])),
         theta = [0.5 / max(1e-6 * norm(ub .- lb), std(x_i[i] for x_i in x))^p[i]
@@ -194,12 +195,12 @@ function _calc_kriging_coeffs(x, y, p, theta)
     d = length(x[1])
 
     R = [let
-        sum = zero(eltype(x[1]))
-        for l in 1:d
-            sum = sum + theta[l] * norm(x[i][l] - x[j][l])^p[l]
-        end
-        exp(-sum)
-    end
+             sum = zero(eltype(x[1]))
+             for l in 1:d
+                 sum = sum + theta[l] * norm(x[i][l] - x[j][l])^p[l]
+             end
+             exp(-sum)
+         end
          for j in 1:n, i in 1:n]
 
     # Estimate nugget based on maximum allowed condition number
@@ -243,7 +244,6 @@ end
 Adds the new point and its respective value to the sample points.
 Warning: If you are just adding a single point, you have to wrap it with [].
 Returns the updated Kriging model.
-
 """
 function add_point!(k::Kriging, new_x, new_y)
     if new_x in k.x

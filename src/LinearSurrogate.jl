@@ -60,7 +60,6 @@ end
 LinearSurrogate(x,y,lb,ub)
 
 Builds a linear surrogate using GLM.jl
-
 """
 function LinearSurrogate(x, y, lb, ub)
     #X = Array{eltype(x[1]),2}(undef,length(x),length(x[1]))

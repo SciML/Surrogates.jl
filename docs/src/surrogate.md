@@ -1,57 +1,67 @@
 # Surrogate
+
 Every surrogate has a different definition depending on the parameters needed.
 However, they have in common:
 
-1. ```add_point!(::AbstractSurrogate,x_new,y_new)```
-2. ```AbstractSurrogate(value)```
-The first function adds a sample point to the surrogate, thus changing the internal
-coefficients. The second one calculates the approximation at value.
+ 1. `add_point!(::AbstractSurrogate,x_new,y_new)`
+ 2. `AbstractSurrogate(value)`
+    The first function adds a sample point to the surrogate, thus changing the internal
+    coefficients. The second one calculates the approximation at value.
 
-* Linear surrogate
+  - Linear surrogate
+
 ```@docs
 LinearSurrogate(x,y,lb,ub)
 ```
 
-* Radial basis function surrogate
+  - Radial basis function surrogate
+
 ```@docs
 RadialBasis(x, y, lb, ub; rad::RadialFunction = linearRadial, scale_factor::Real=1.0, sparse = false)
 ```
 
-* Kriging surrogate
+  - Kriging surrogate
+
 ```@docs
 Kriging(x,y,p,theta)
 ```
 
-* Lobachevsky surrogate
+  - Lobachevsky surrogate
+
 ```@docs
 LobachevskySurrogate(x,y,lb,ub; alpha = collect(one.(x[1])),n::Int = 4, sparse = false)
 lobachevsky_integral(loba::LobachevskySurrogate,lb,ub)
 ```
 
-* Support vector machine surrogate, requires `using LIBSVM` and `using SurrogatesSVM`
+  - Support vector machine surrogate, requires `using LIBSVM` and `using SurrogatesSVM`
+
 ```
 SVMSurrogate(x,y,lb::Number,ub::Number)
 ```
 
-* Random forest surrogate, requires `using XGBoost` and `using SurrogatesRandomForest`
+  - Random forest surrogate, requires `using XGBoost` and `using SurrogatesRandomForest`
+
 ```
 RandomForestSurrogate(x,y,lb,ub;num_round::Int = 1)
 ```
 
-* Neural network surrogate, requires `using Flux` and `using SurrogatesFlux`
+  - Neural network surrogate, requires `using Flux` and `using SurrogatesFlux`
+
 ```
 NeuralSurrogate(x,y,lb,ub; model = Chain(Dense(length(x[1]),1), first), loss = (x,y) -> Flux.mse(model(x), y),opt = Descent(0.01),n_echos::Int = 1)
 ```
 
 # Creating another surrogate
+
 It's great that you want to add another surrogate to the library!
 You will need to:
 
-1. Define a new mutable struct and a constructor function
-2. Define add\_point!(your\_surrogate::AbstractSurrogate,x\_new,y\_new)
-3. Define your\_surrogate(value) for the approximation
+ 1. Define a new mutable struct and a constructor function
+ 2. Define add\_point!(your\_surrogate::AbstractSurrogate,x\_new,y\_new)
+ 3. Define your\_surrogate(value) for the approximation
 
 **Example**
+
 ```
 mutable struct NewSurrogate{X,Y,L,U,C,A,B} <: AbstractSurrogate
   x::X

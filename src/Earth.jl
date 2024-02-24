@@ -229,7 +229,7 @@ function _forward_pass_nd(x, y, n_max_terms, rel_res_error, maxiters)
                             for a in 1:n
                                 val_a = sum(coeff[b] *
                                             prod([new_basis[b][c](x[a][c]) for c in 1:d])
-                                            for b in 1:bas_len) + intercept
+                                for b in 1:bas_len) + intercept
                                 new_sse = new_sse + (y[a] - val_a)^2
                             end
                         end
@@ -271,7 +271,7 @@ function _backward_pass_nd(x, y, n_min_terms, basis, penalty, rel_GCV)
     sse = zero(y[1])
     for a in 1:n
         val_a = sum(coeff[b] * prod([basis[b][c](x[a][c]) for c in 1:d])
-                    for b in 1:base_len) +
+        for b in 1:base_len) +
                 intercept
         sse = sse + (y[a] - val_a)^2
     end
@@ -295,7 +295,7 @@ function _backward_pass_nd(x, y, n_min_terms, basis, penalty, rel_GCV)
             current_base_len = num_terms - 1
             for a in 1:n
                 val_a = sum(coeff[b] * prod([current_basis[b][c](x[a][c]) for c in 1:d])
-                            for b in 1:current_base_len) + intercept
+                for b in 1:current_base_len) + intercept
                 new_sse = new_sse + (y[a] - val_a)^2
             end
             curr_effect_num_params = current_base_len + penalty * (current_base_len - 1) / 2

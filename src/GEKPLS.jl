@@ -3,8 +3,8 @@ using Statistics
 
 """
 GEKPLS(x, y, x_matrix, y_matrix, grads, xlimits, delta_x, extra_points, n_comp, beta, gamma, theta,
-                  reduced_likelihood_function_value,
-                  X_offset, X_scale, X_after_std, pls_mean_reshaped, y_mean, y_std)
+reduced_likelihood_function_value,
+X_offset, X_scale, X_after_std, pls_mean_reshaped, y_mean, y_std)
 """
 mutable struct GEKPLS{T, X, Y} <: AbstractSurrogate
     x::X
@@ -30,6 +30,7 @@ end
 
 """
     bounds_error(x, xl)
+
 Checks if input x values are within range of upper and lower bounds
 """
 function bounds_error(x, xl)
@@ -49,15 +50,16 @@ end
     GEKPLS(X, y, grads, n_comp, delta_x, lb, ub, extra_points, theta)
 
 Constructor for GEKPLS Struct
-- x_vec: vector of tuples with x values
-- y_vec: vector of floats with outputs
-- grads_vec: gradients associated with each of the X points
-- n_comp: number of components 
-- lb: lower bounds
-- ub: upper bounds
-- delta_x: step size while doing Taylor approximation
-- extra_points: number of points to consider
-- theta: initial expected variance of PLS regression components
+
+  - x_vec: vector of tuples with x values
+  - y_vec: vector of floats with outputs
+  - grads_vec: gradients associated with each of the X points
+  - n_comp: number of components
+  - lb: lower bounds
+  - ub: upper bounds
+  - delta_x: step size while doing Taylor approximation
+  - extra_points: number of points to consider
+  - theta: initial expected variance of PLS regression components
 """
 function GEKPLS(x_vec, y_vec, grads_vec, n_comp, delta_x, lb, ub, extra_points, theta)
     xlimits = hcat(lb, ub)
@@ -73,7 +75,8 @@ function GEKPLS(x_vec, y_vec, grads_vec, n_comp, delta_x, lb, ub, extra_points, 
 
     pls_mean, X_after_PLS, y_after_PLS = _ge_compute_pls(X, y, n_comp, grads, delta_x,
         xlimits, extra_points)
-    X_after_std, y_after_std, X_offset, y_mean, X_scale, y_std = standardization(X_after_PLS,
+    X_after_std, y_after_std, X_offset, y_mean, X_scale, y_std = standardization(
+        X_after_PLS,
         y_after_PLS)
     D, ij = cross_distances(X_after_std)
     pls_mean_reshaped = reshape(pls_mean, (size(X, 2), n_comp))
@@ -91,7 +94,7 @@ end
 
 """
     (g::GEKPLS)(X_test)
-    
+
     Take in a set of one or more points and provide predicted approximate outputs (predictor).
 """
 function (g::GEKPLS)(x_vec)
@@ -137,13 +140,15 @@ function add_point!(g::GEKPLS, x_tup, y_val, grad_tup)
         g.num_components,
         g.grads, g.delta, g.xl,
         g.extra_points)
-    g.X_after_std, y_after_std, g.X_offset, g.y_mean, g.X_scale, g.y_std = standardization(X_after_PLS,
+    g.X_after_std, y_after_std, g.X_offset, g.y_mean, g.X_scale, g.y_std = standardization(
+        X_after_PLS,
         y_after_PLS)
     D, ij = cross_distances(g.X_after_std)
     g.pls_mean = reshape(pls_mean, (size(g.x_matrix, 2), g.num_components))
     d = componentwise_distance_PLS(D, "squar_exp", g.num_components, g.pls_mean)
     nt, nd = size(X_after_PLS)
-    g.beta, g.gamma, g.reduced_likelihood_function_value = _reduced_likelihood_function(g.theta,
+    g.beta, g.gamma, g.reduced_likelihood_function_value = _reduced_likelihood_function(
+        g.theta,
         "squar_exp",
         d,
         nt,
@@ -153,21 +158,25 @@ end
 
 """
     _ge_compute_pls(X, y, n_comp, grads, delta_x, xlimits, extra_points)
-Gradient-enhanced PLS-coefficients.
+
+## Gradient-enhanced PLS-coefficients.
+
 Parameters
-----------
-- X: [n_obs,dim] - The input variables.
-- y: [n_obs,ny] - The output variable
-- n_comp: int - Number of principal components used.
-- gradients: - The gradient values. Matrix size (n_obs,dim)
-- delta_x: real - The step used in the First Order Taylor Approximation
-- xlimits: [dim, 2]- The upper and lower var bounds.
-- extra_points: int - The number of extra points per each training point.
-Returns
--------
-- Coeff_pls: [dim, n_comp] - The PLS-coefficients.
-- X: Concatenation of XX: [extra_points*nt, dim] - Extra points added (when extra_points > 0) and X
-- y: Concatenation of yy[extra_points*nt, 1]- Extra points added (when extra_points > 0) and y
+
+  - X: [n_obs,dim] - The input variables.
+  - y: [n_obs,ny] - The output variable
+  - n_comp: int - Number of principal components used.
+  - gradients: - The gradient values. Matrix size (n_obs,dim)
+  - delta_x: real - The step used in the First Order Taylor Approximation
+  - xlimits: [dim, 2]- The upper and lower var bounds.
+  - extra_points: int - The number of extra points per each training point.
+    Returns
+
+* * *
+
+  - Coeff_pls: [dim, n_comp] - The PLS-coefficients.
+  - X: Concatenation of XX: [extra_points*nt, dim] - Extra points added (when extra_points > 0) and X
+  - y: Concatenation of yy[extra_points*nt, 1]- Extra points added (when extra_points > 0) and y
 """
 function _ge_compute_pls(X, y, n_comp, grads, delta_x, xlimits, extra_points)
 
@@ -185,14 +194,14 @@ function _ge_compute_pls(X, y, n_comp, grads, delta_x, xlimits, extra_points)
             bb_vals = circshift(boxbehnken(dim, 1), 1)
         else
             bb_vals = [0.0 0.0; #center
-                1.0 0.0; #right
-                0.0 1.0; #up
-                -1.0 0.0; #left
-                0.0 -1.0; #down
-                1.0 1.0; #right up
-                -1.0 1.0; #left up
-                -1.0 -1.0; #left down
-                1.0 -1.0]
+                       1.0 0.0; #right
+                       0.0 1.0; #up
+                       -1.0 0.0; #left
+                       0.0 -1.0; #down
+                       1.0 1.0; #right up
+                       -1.0 1.0; #left up
+                       -1.0 -1.0; #left down
+                       1.0 -1.0]
         end
         _X = zeros((size(bb_vals)[1], dim))
         _y = zeros((size(bb_vals)[1], 1))
@@ -307,20 +316,18 @@ end
 We subtract the mean from each variable. Then, we divide the values of each
 variable by its standard deviation.
 
-Parameters
-----------
+## Parameters
 
 X - The input variables.
 y - The output variable.
 
-Returns
--------
+## Returns
 
 X: [n_obs, dim]
-   The standardized input matrix.
+The standardized input matrix.
 
 y: [n_obs, 1]
-   The standardized output vector.
+The standardized output vector.
 
 X_offset: The mean (or the min if scale_X_to_unit=True) of each input variable.
 
@@ -329,7 +336,6 @@ y_mean: The mean of the output variable.
 X_scale:  The standard deviation of each input variable.
 
 y_std: The standard deviation of the output variable.
-
 """
 function standardization(X, y)
     #Equivalent of https://github.com/SMTorg/smt/blob/4a4df255b9259965439120091007f9852f41523e/smt/utils/kriging_utils.py#L21
@@ -348,19 +354,20 @@ end
 Computes the nonzero componentwise cross-distances between the vectors
 in X
 
-Parameters
-----------
+## Parameters
 
 X: [n_obs, dim]
 
-Returns
--------
+## Returns
+
 D:  [n_obs * (n_obs - 1) / 2, dim]
-    - The cross-distances between the vectors in X.
+
+  - The cross-distances between the vectors in X.
 
 ij: [n_obs * (n_obs - 1) / 2, 2]
-        - The indices i and j of the vectors in X associated to the cross-
-          distances in D.
+
+  - The indices i and j of the vectors in X associated to the cross-
+    distances in D.
 """
 function cross_distances(X)
     # equivalent of https://github.com/SMTorg/smt/blob/4a4df255b9259965439120091007f9852f41523e/smt/utils/kriging_utils.py#L86
@@ -409,7 +416,6 @@ end
         D_corr: [n_obs * (n_obs - 1) / 2, n_comp]
                 - The componentwise cross-spatial-correlation-distance between the
                 vectors in X.
-
 """
 function componentwise_distance_PLS(D, corr, n_comp, coeff_pls)
 
@@ -430,17 +436,17 @@ function componentwise_distance_PLS(D, corr, n_comp, coeff_pls)
 end
 
 """
-Squared exponential correlation model.
+## Squared exponential correlation model.
+
 Equivalent of https://github.com/SMTorg/smt/blob/4a4df255b9259965439120091007f9852f41523e/smt/utils/kriging_utils.py#L604
 Parameters:
------------
+
 theta : Hyperparameters of the correlation model
 d: componentwise distances from componentwise_distance_PLS
 
-Returns:
---------
-r:  array containing the values of the autocorrelation model
+## Returns:
 
+r:  array containing the values of the autocorrelation model
 """
 function squar_exp(theta, d)
     n_components = size(d)[2]
@@ -450,6 +456,7 @@ end
 
 """
     differences(X, Y)
+
 return differences between two arrays
 
 given an input like this:
@@ -461,12 +468,12 @@ diff = differences(X,Y)
 We get an output (diff) that looks like this:
 
 [ 0. -1. -2.
- -3. -4. -5.
- -6. -7. -8.
-  1.  0. -1.
- -2. -3. -4.
- -5. -6. -7.]
+-3. -4. -5.
+-6. -7. -8.
 
+ 1.  0. -1.
+        -2. -3. -4.
+        -5. -6. -7.]
 """
 function differences(X, Y)
     #equivalent of https://github.com/SMTorg/smt/blob/4a4df255b9259965439120091007f9852f41523e/smt/utils/kriging_utils.py#L392
@@ -478,14 +485,14 @@ end
 
 """
     _reduced_likelihood_function(theta, kernel_type, d, nt, ij, y_norma, noise = 0.0)
-    
+
 Compute the reduced likelihood function value and other coefficients necessary for prediction
 This function is a loose translation of SMT code from
 https://github.com/SMTorg/smt/blob/4a4df255b9259965439120091007f9852f41523e/smt/surrogate_models/krg_based.py#L247
 It  determines the BLUP parameters and evaluates the reduced likelihood function for the given theta.
 
-Parameters
-----------
+## Parameters
+
 theta: array containing the parameters at which the Gaussian Process model parameters should be determined.
 kernel_type: name of the correlation function.
 d: The componentwise cross-spatial-correlation-distance between the vectors in X.
@@ -494,14 +501,13 @@ ij: The indices i and j of the vectors in X associated to the cross-distances in
 y_norma: Standardized y values
 noise: noise hyperparameter - increasing noise reduces reduced_likelihood_function_value
 
+## Returns
 
-Returns
--------
 reduced_likelihood_function_value: real
-    - The value of the reduced likelihood function associated with the given autocorrelation parameters theta.
-beta:  Generalized least-squares regression weights
-gamma: Gaussian Process weights.
 
+  - The value of the reduced likelihood function associated with the given autocorrelation parameters theta.
+    beta:  Generalized least-squares regression weights
+    gamma: Gaussian Process weights.
 """
 function _reduced_likelihood_function(theta, kernel_type, d, nt, ij, y_norma, noise = 0.0)
     #equivalent of https://github.com/SMTorg/smt/blob/4a4df255b9259965439120091007f9852f41523e/smt/surrogate_models/krg_based.py#L247

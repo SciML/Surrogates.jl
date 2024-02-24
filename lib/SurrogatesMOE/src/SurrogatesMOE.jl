@@ -1,10 +1,10 @@
 module SurrogatesMOE
 
 import Surrogates: AbstractSurrogate, linearRadial, cubicRadial, multiquadricRadial,
-    thinplateRadial, RadialBasisStructure, RadialBasis,
-    InverseDistanceSurrogate, Kriging, LobachevskyStructure,
-    LobachevskySurrogate, NeuralStructure, PolyChaosStructure,
-    LinearSurrogate, add_point!
+                   thinplateRadial, RadialBasisStructure, RadialBasis,
+                   InverseDistanceSurrogate, Kriging, LobachevskyStructure,
+                   LobachevskySurrogate, NeuralStructure, PolyChaosStructure,
+                   LinearSurrogate, add_point!
 
 export MOE
 
@@ -30,6 +30,7 @@ end
 
 """
     MOE(x, y, expert_types;  ndim=1, n_clusters=2)
+
 constructor for MOE; takes in x, y and expert types and returns an MOE struct
 """
 function MOE(x, y, expert_types; ndim = 1, n_clusters = 2, quantile = 10)
@@ -68,6 +69,7 @@ end
 
 """
     (moe::MOE)(val::Number)
+
 predictor for 1D inputs
 """
 function (moe::MOE)(val::Number)
@@ -88,7 +90,6 @@ end
     (moe::MOE)(val)
 
 predictor for ndimensional inputs
-
 """
 function (moe::MOE)(val)
     val = collect(val) #to handle inputs that may sometimes be tuples
@@ -108,9 +109,10 @@ end
 
 """
     _cluster_predict(gmm:GMM, X::Matrix)
+
 gmm - a trained Gaussian Mixture Model
-X - a matrix of points with dimensions equal to the inputs used for the 
-    training of the model
+X - a matrix of points with dimensions equal to the inputs used for the
+training of the model
 
 Return - Clusters to which each of the points belong to (starts at int 1)
 
@@ -147,6 +149,7 @@ end
 
 """
     _cluster_values(values, cluster_classifier, num_clusters)
+
 values - a concatenation of input and output values
 cluster_classifier - a vector of integers representing which cluster each data point belongs to
 num_clusters - number of clusters
@@ -154,16 +157,16 @@ num_clusters - number of clusters
 output
 clusters - values grouped by clusters
 
-Ex: 
+## Ex:
+
 vals = [1.0 2.0; 3.0 4.0; 5.0 6.0; 7.0 8.0; 9.0 10.0]
 cluster_classifier = [1, 2, 2, 2, 1]
 num_clusters = 2
 clusters = _cluster_values(vals, cluster_classifier, num_clusters)
 @show clusters #prints values below
----
+
     [[1.0, 2.0], [9.0, 10.0]]
     [[3.0, 4.0], [5.0, 6.0], [7.0, 8.0]]
-
 """
 function _cluster_values(values, cluster_classifier, num_clusters)
     num = length(cluster_classifier)
@@ -202,7 +205,7 @@ end
 
 """
 _find_upper_lower_bounds(m::Matrix)
-    returns upper and lower bounds in vector form
+returns upper and lower bounds in vector form
 """
 function _find_upper_lower_bounds(X::Matrix)
     ub = []
@@ -221,7 +224,6 @@ end
 """
 _find_best_model(clustered_values, clustered_test_values)
 finds best model for each set of clustered values by validating against the clustered_test_values
-
 """
 function _find_best_model(clustered_train_values, clustered_test_values, dim,
         enabled_expert_types)
@@ -248,7 +250,8 @@ function _find_best_model(clustered_train_values, clustered_test_values, dim,
 
     # call on _surrogate_builder with clustered_train_vals, enabled expert types, lb, ub 
 
-    surr_vec = _surrogate_builder(enabled_expert_types, length(enabled_expert_types), x_vec,
+    surr_vec = _surrogate_builder(
+        enabled_expert_types, length(enabled_expert_types), x_vec,
         y_vec, lb, ub)
 
     # use the models to find best model after validating against test data and return best model 
@@ -267,6 +270,7 @@ end
 
 """
     _surrogate_builder(local_kind, k, x, y, lb, ub)
+
 takes in an array of surrogate types, and number of cluster, builds the surrogates and returns
 an array of surrogate objects
 """
@@ -384,6 +388,7 @@ end
 
 """
     _vector_of_tuples_to_matrix(v)
+
 takes in a vector of tuples or vector of vectors and converts it into a matrix
 """
 function _vector_of_tuples_to_matrix(v)

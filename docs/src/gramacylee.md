@@ -19,9 +19,9 @@ Now, let's define our objective function:
 
 ```@example gramacylee1D
 function gramacylee(x)
-    term1 = sin(10*pi*x) / 2*x;
-    term2 = (x - 1)^4;
-    y = term1 + term2;
+    term1 = sin(10 * pi * x) / 2 * x
+    term2 = (x - 1)^4
+    y = term1 + term2
 end
 ```
 
@@ -34,8 +34,9 @@ upper_bound = 2.5
 x = sample(n, lower_bound, upper_bound, SobolSample())
 y = gramacylee.(x)
 xs = lower_bound:0.001:upper_bound
-scatter(x, y, label="Sampled points", xlims=(lower_bound, upper_bound), ylims=(-5, 20), legend=:top)
-plot!(xs, gramacylee.(xs), label="True function", legend=:top)
+scatter(x, y, label = "Sampled points", xlims = (lower_bound, upper_bound),
+    ylims = (-5, 20), legend = :top)
+plot!(xs, gramacylee.(xs), label = "True function", legend = :top)
 ```
 
 Now, let's fit Gramacy & Lee function with different surrogates:
@@ -44,9 +45,10 @@ Now, let's fit Gramacy & Lee function with different surrogates:
 my_pol = PolynomialChaosSurrogate(x, y, lower_bound, upper_bound)
 loba_1 = LobachevskySurrogate(x, y, lower_bound, upper_bound)
 krig = Kriging(x, y, lower_bound, upper_bound)
-scatter(x, y, label="Sampled points", xlims=(lower_bound, upper_bound), ylims=(-5, 20), legend=:top)
-plot!(xs, gramacylee.(xs), label="True function", legend=:top)
-plot!(xs, my_pol.(xs), label="Polynomial expansion", legend=:top)
-plot!(xs, loba_1.(xs), label="Lobachevsky", legend=:top)
-plot!(xs, krig.(xs), label="Kriging", legend=:top)
+scatter(x, y, label = "Sampled points", xlims = (lower_bound, upper_bound),
+    ylims = (-5, 20), legend = :top)
+plot!(xs, gramacylee.(xs), label = "True function", legend = :top)
+plot!(xs, my_pol.(xs), label = "Polynomial expansion", legend = :top)
+plot!(xs, loba_1.(xs), label = "Lobachevsky", legend = :top)
+plot!(xs, krig.(xs), label = "Kriging", legend = :top)
 ```

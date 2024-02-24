@@ -85,22 +85,22 @@ export current_surrogates
 export GEKPLS
 export RadialBasisStructure, KrigingStructure, LinearStructure, InverseDistanceStructure
 export LobachevskyStructure,
-    NeuralStructure, RandomForestStructure,
-    SecondOrderPolynomialStructure
+       NeuralStructure, RandomForestStructure,
+       SecondOrderPolynomialStructure
 export WendlandStructure
 export AbstractSurrogate, SamplingAlgorithm
 export Kriging, RadialBasis, add_point!, std_error_at_point
 # Parallelization Strategies
 export potential_optimal_points
 export MinimumConstantLiar, MaximumConstantLiar, MeanConstantLiar, KrigingBeliever,
-    KrigingBelieverUpperBound, KrigingBelieverLowerBound
+       KrigingBelieverUpperBound, KrigingBelieverLowerBound
 
 # radial basis functions
 export linearRadial, cubicRadial, multiquadricRadial, thinplateRadial
 
 # samplers
 export sample, GridSample, RandomSample, SobolSample, LatinHypercubeSample,
-    HaltonSample
+       HaltonSample
 export RandomSample, KroneckerSample, GoldenSample, SectionSample
 
 # Optimization algorithms
@@ -112,8 +112,8 @@ export SecondOrderPolynomialSurrogate
 export Wendland
 export RadialBasisStructure, KrigingStructure, LinearStructure, InverseDistanceStructure
 export LobachevskyStructure,
-    NeuralStructure, RandomForestStructure,
-    SecondOrderPolynomialStructure
+       NeuralStructure, RandomForestStructure,
+       SecondOrderPolynomialStructure
 export WendlandStructure
 #export MOE
 export VariableFidelitySurrogate

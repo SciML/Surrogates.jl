@@ -1,6 +1,8 @@
 # Neural network tutorial
+
 !!! note
-    This surrogate requires the 'SurrogatesFlux' module, which can be added by inputting "]add SurrogatesFlux" from the Julia command line. 
+    
+    This surrogate requires the 'SurrogatesFlux' module, which can be added by inputting "]add SurrogatesFlux" from the Julia command line.
 
 It's possible to define a neural network as a surrogate, using Flux.
 This is useful because we can call optimization methods on it.
@@ -9,20 +11,19 @@ First of all we will define the `Schaffer` function we are going to build a surr
 
 ```@example Neural_surrogate
 using Plots
-default(c=:matter, legend=false, xlabel="x", ylabel="y") # hide
+default(c = :matter, legend = false, xlabel = "x", ylabel = "y") # hide
 using Surrogates
 using Flux
 using SurrogatesFlux
 
 function schaffer(x)
-    x1=x[1]
-    x2=x[2]
-    fact1 = x1 ^2;
-    fact2 = x2 ^2;
-    y = fact1 + fact2;
+    x1 = x[1]
+    x2 = x[2]
+    fact1 = x1^2
+    fact2 = x2^2
+    y = fact1 + fact2
 end
 ```
-
 
 ## Sampling
 
@@ -39,31 +40,34 @@ zs = schaffer.(xys);
 
 ```@example Neural_surrogate
 x, y = 0:8, 0:8 # hide
-p1 = surface(x, y, (x1,x2) -> schaffer((x1,x2))) # hide
+p1 = surface(x, y, (x1, x2) -> schaffer((x1, x2))) # hide
 xs = [xy[1] for xy in xys] # hide
 ys = [xy[2] for xy in xys] # hide
 scatter!(xs, ys, zs) # hide
-p2 = contour(x, y, (x1,x2) -> schaffer((x1,x2))) # hide
+p2 = contour(x, y, (x1, x2) -> schaffer((x1, x2))) # hide
 scatter!(xs, ys) # hide
-plot(p1, p2, title="True function") # hide
+plot(p1, p2, title = "True function") # hide
 ```
 
-
 ## Building a surrogate
+
 You can specify your own model, optimization function, loss functions, and epochs.
 As always, getting the model right is the hardest thing.
 
 ```@example Neural_surrogate
 model1 = Chain(
-  Dense(2, 5, σ),
-  Dense(5,2,σ),
-  Dense(2, 1)
+    Dense(2, 5, σ),
+    Dense(5, 2, σ),
+    Dense(2, 1)
 )
 neural = NeuralSurrogate(xys, zs, lower_bound, upper_bound, model = model1, n_echos = 10)
 ```
 
 ## Optimization
+
 We can now call an optimization function on the neural network:
+
 ```@example Neural_surrogate
-surrogate_optimize(schaffer, SRBF(), lower_bound, upper_bound, neural, SobolSample(), maxiters=20, num_new_samples=10)
+surrogate_optimize(schaffer, SRBF(), lower_bound, upper_bound, neural,
+    SobolSample(), maxiters = 20, num_new_samples = 10)
 ```

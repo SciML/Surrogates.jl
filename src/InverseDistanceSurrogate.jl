@@ -5,7 +5,6 @@ The inverse distance weighting model is an interpolating method and the
 unknown points are calculated with a weighted average of the sampling points.
 p is a positive real number called the power parameter.
 p > 1 is needed for the derivative to be continuous.
-
 """
 mutable struct InverseDistanceSurrogate{X, Y, L, U, P} <: AbstractSurrogate
     x::X
@@ -28,9 +27,9 @@ function (inverSurr::InverseDistanceSurrogate)(val)
     else
         if length(inverSurr.lb) == 1
             num = sum(inverSurr.y[i] * (norm(val .- inverSurr.x[i]))^(-inverSurr.p)
-                      for i in 1:length(inverSurr.x))
+            for i in 1:length(inverSurr.x))
             den = sum(norm(val .- inverSurr.x[i])^(-inverSurr.p)
-                      for i in 1:length(inverSurr.x))
+            for i in 1:length(inverSurr.x))
             return num / den
         else
             βᵢ = [norm(val .- inverSurr.x[i])^(-inverSurr.p) for i in 1:length(inverSurr.x)]

@@ -14,6 +14,7 @@ default()
 ```
 
 Define the objective function:
+
 ```@example water
 function f(x)
     r_w = x[1]
@@ -24,32 +25,31 @@ function f(x)
     H_l = x[6]
     L = x[7]
     K_w = x[8]
-    log_val = log(r/r_w)
-    return (2*pi*T_u*(H_u - H_l))/ ( log_val*(1 + (2*L*T_u/(log_val*r_w^2*K_w)) + T_u/T_l))
+    log_val = log(r / r_w)
+    return (2 * pi * T_u * (H_u - H_l)) /
+           (log_val * (1 + (2 * L * T_u / (log_val * r_w^2 * K_w)) + T_u / T_l))
 end
 ```
-
 
 ```@example water
 n = 180
 d = 8
-lb = [0.05,100,63070,990,63.1,700,1120,9855]
-ub = [0.15,50000,115600,1110,116,820,1680,12045]
-x = sample(n,lb,ub,SobolSample())
+lb = [0.05, 100, 63070, 990, 63.1, 700, 1120, 9855]
+ub = [0.15, 50000, 115600, 1110, 116, 820, 1680, 12045]
+x = sample(n, lb, ub, SobolSample())
 y = f.(x)
 n_test = 1000
-x_test = sample(n_test,lb,ub,GoldenSample());
+x_test = sample(n_test, lb, ub, GoldenSample());
 y_true = f.(x_test);
 ```
 
-
 ```@example water
-my_rad = RadialBasis(x,y,lb,ub)
+my_rad = RadialBasis(x, y, lb, ub)
 y_rad = my_rad.(x_test)
-my_poly = PolynomialChaosSurrogate(x,y,lb,ub)
+my_poly = PolynomialChaosSurrogate(x, y, lb, ub)
 y_poly = my_poly.(x_test)
-mse_rad = norm(y_true - y_rad,2)/n_test
-mse_poly = norm(y_true - y_poly, 2)/n_test
+mse_rad = norm(y_true - y_rad, 2) / n_test
+mse_poly = norm(y_true - y_poly, 2) / n_test
 println("MSE Radial: $mse_rad")
 println("MSE Radial: $mse_poly")
 ```

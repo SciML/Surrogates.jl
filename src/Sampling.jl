@@ -18,13 +18,14 @@ end
 #### SectionSample #### 
 """
     SectionSample{T}(x0, sa)
+
 `SectionSample(x0, sampler)` where `sampler` is any sampler above and `x0` is a vector of either `NaN` for a free dimension or some scalar for a constrained dimension.
 """
 struct SectionSample{
     R <: Real,
     I <: Integer,
     VR <: AbstractVector{R},
-    VI <: AbstractVector{I},
+    VI <: AbstractVector{I}
 } <: SamplingAlgorithm
     x0::VR
     sa::SamplingAlgorithm
@@ -36,6 +37,7 @@ free_dimensions(section_sampler::SectionSample)::Vector{Int64} = findall(x -> x 
     isnan.(section_sampler.x0))
 """
     sample(n,lb,ub,K::SectionSample)
+
 Returns Tuples constrained to a section.
 In surrogate-based identification and control, optimization can alternate between unconstrained sampling in the full-dimensional parameter space, and sampling constrained on specific sections (e.g. a planes in a 3D volume),
 A SectionSample allows sampling and optimizing on a subset of 'free' dimensions while keeping 'fixed' ones constrained.
@@ -80,6 +82,7 @@ end
 
 """
     SectionSample(n, d, K::SectionSample)
+
 In surrogate-based identification and control, optimization can alternate between unconstrained sampling in the full-dimensional parameter space, and sampling constrained on specific sections (e.g. planes in a 3D volume).
 `SectionSample` allows sampling and optimizing on a subset of 'free' dimensions while keeping 'fixed' ones constrained.
 The sampler is defined

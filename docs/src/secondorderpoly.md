@@ -14,30 +14,32 @@ default()
 ## Sampling
 
 ```@example second_order_tut
-f = x -> 3*sin(x) + 10/x
+f = x -> 3 * sin(x) + 10 / x
 lb = 3.0
 ub = 6.0
 n = 10
-x = sample(n,lb,ub,HaltonSample())
+x = sample(n, lb, ub, HaltonSample())
 y = f.(x)
-scatter(x, y, label="Sampled points", xlims=(lb, ub))
-plot!(f, label="True function", xlims=(lb, ub))
+scatter(x, y, label = "Sampled points", xlims = (lb, ub))
+plot!(f, label = "True function", xlims = (lb, ub))
 ```
 
 ## Building the surrogate
+
 ```@example second_order_tut
 sec = SecondOrderPolynomialSurrogate(x, y, lb, ub)
-plot(x, y, seriestype=:scatter, label="Sampled points", xlims=(lb, ub))
-plot!(f, label="True function",  xlims=(lb, ub))
-plot!(sec, label="Surrogate function",  xlims=(lb, ub))
+plot(x, y, seriestype = :scatter, label = "Sampled points", xlims = (lb, ub))
+plot!(f, label = "True function", xlims = (lb, ub))
+plot!(sec, label = "Surrogate function", xlims = (lb, ub))
 ```
 
 ## Optimizing
 
 ```@example second_order_tut
 @show surrogate_optimize(f, SRBF(), lb, ub, sec, SobolSample())
-scatter(x, y, label="Sampled points")
-plot!(f, label="True function",  xlims=(lb, ub))
-plot!(sec, label="Surrogate function",  xlims=(lb, ub))
+scatter(x, y, label = "Sampled points")
+plot!(f, label = "True function", xlims = (lb, ub))
+plot!(sec, label = "Surrogate function", xlims = (lb, ub))
 ```
+
 The optimization method successfully found the minimum.
