@@ -10,17 +10,18 @@ default()</code></pre><p>Define the objective function:</p><pre><code class="lan
     h = x[1]
     l = x[2]
     t = x[3]
-    a = 6000/(sqrt(2)*h*l)
-    b = (6000*(14+0.5*l)*sqrt(0.25*(l^2+(h+t)^2)))/(2*(0.707*h*l*(l^2/12 + 0.25*(h+t)^2)))
-    return (sqrt(a^2+b^2 + l*a*b))/(sqrt(0.25*(l^2+(h+t)^2)))
+    a = 6000 / (sqrt(2) * h * l)
+    b = (6000 * (14 + 0.5 * l) * sqrt(0.25 * (l^2 + (h + t)^2))) /
+        (2 * (0.707 * h * l * (l^2 / 12 + 0.25 * (h + t)^2)))
+    return (sqrt(a^2 + b^2 + l * a * b)) / (sqrt(0.25 * (l^2 + (h + t)^2)))
 end</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">f (generic function with 1 method)</code></pre><pre><code class="language-julia hljs">n = 300
 d = 3
-lb = [0.125,5.0,5.0]
-ub = [1.,10.,10.]
-x = sample(n,lb,ub,SobolSample())
+lb = [0.125, 5.0, 5.0]
+ub = [1.0, 10.0, 10.0]
+x = sample(n, lb, ub, SobolSample())
 y = f.(x)
 n_test = 1000
-x_test = sample(n_test,lb,ub,GoldenSample());
+x_test = sample(n_test, lb, ub, GoldenSample());
 y_true = f.(x_test);</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">1000-element Vector{Float64}:
   771.0823205963742
  1772.0181002240734
@@ -41,13 +42,13 @@ y_true = f.(x_test);</code></pre><pre class="documenter-example-output"><code cl
  2238.202723259607
  1074.691329648047
  2714.186286418774
- 3513.30129940843</code></pre><pre><code class="language-julia hljs">my_rad = RadialBasis(x,y,lb,ub)
+ 3513.30129940843</code></pre><pre><code class="language-julia hljs">my_rad = RadialBasis(x, y, lb, ub)
 y_rad = my_rad.(x_test)
-mse_rad = norm(y_true - y_rad,2)/n_test
+mse_rad = norm(y_true - y_rad, 2) / n_test
 println(&quot;MSE Radial: $mse_rad&quot;)
 
-my_loba = LobachevskySurrogate(x,y,lb,ub)
+my_loba = LobachevskySurrogate(x, y, lb, ub)
 y_loba = my_loba.(x_test)
-mse_rad = norm(y_true - y_loba,2)/n_test
-println(&quot;MSE Lobachevsky: $mse_rad&quot;)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">MSE Radial: 18.188564983024442
-MSE Lobachevsky: 7.9143429834636665</code></pre></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../water_flow/">« Water Flow function</a><a class="docs-footer-nextpage" href="../BraninFunction/">Branin function »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="auto">Automatic (OS)</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.2.1 on <span class="colophon-date" title="Friday 9 February 2024 21:41">Friday 9 February 2024</span>. Using Julia version 1.10.0.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+mse_rad = norm(y_true - y_loba, 2) / n_test
+println(&quot;MSE Lobachevsky: $mse_rad&quot;)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">MSE Radial: 18.18856498302439
+MSE Lobachevsky: 7.9143429834635</code></pre></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../water_flow/">« Water Flow function</a><a class="docs-footer-nextpage" href="../BraninFunction/">Branin function »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="auto">Automatic (OS)</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.2.1 on <span class="colophon-date" title="Saturday 24 February 2024 07:51">Saturday 24 February 2024</span>. Using Julia version 1.10.1.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
