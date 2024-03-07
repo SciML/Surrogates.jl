@@ -1,10 +1,12 @@
 module SurrogatesRandomForest
 
-import Surrogates: add_point!, AbstractSurrogate, _check_dimension
-export RandomForestSurrogate
+using SurrogatesBase
+using XGBoost: xgboost, predict
 
-using XGBoost
-mutable struct RandomForestSurrogate{X, Y, B, L, U, N} <: AbstractSurrogate
+export RandomForestSurrogate, update!
+
+mutable struct RandomForestSurrogate{X, Y, B, L, U, N} <:
+               SurrogatesBase.AbstractDeterministicSurrogate
     x::X
     y::Y
     bst::B
@@ -13,69 +15,56 @@ mutable struct RandomForestSurrogate{X, Y, B, L, U, N} <: AbstractSurrogate
     num_round::N
 end
 
-function RandomForestSurrogate(x, y, lb::Number, ub::Number; num_round::Int = 1)
-    bst = xgboost((reshape(x, length(x), 1), y); num_round)
-    RandomForestSurrogate(x, y, bst, lb, ub, num_round)
-end
-
-function (rndfor::RandomForestSurrogate)(val::Number)
-    # Check to make sure dimensions of input matches expected dimension of surrogate
-    _check_dimension(rndfor, val)
-    return XGBoost.predict(rndfor.bst, reshape([val], 1, 1))[1]
-end
-
 """
-RandomForestSurrogate(x,y,lb,ub,num_round)
+    RandomForestSurrogate(x, y, lb, ub, num_round)
 
 Build Random forest surrogate. num_round is the number of trees.
+
+## Arguments
+
+  - `x`: Input data points.
+  - `y`: Output data points.
+  - `lb`: Lower bound of input data points.
+  - `ub`: Upper bound of output data points.
+
+## Keyword Arguments
+
+  - `num_round`: number of rounds of training.
 """
 function RandomForestSurrogate(x, y, lb, ub; num_round::Int = 1)
     X = Array{Float64, 2}(undef, length(x), length(x[1]))
-    for j in 1:length(x)
-        X[j, :] = vec(collect(x[j]))
+    if length(lb) == 1
+        for j in eachindex(x)
+            X[j, 1] = x[j]
+        end
+    else
+        for j in eachindex(x)
+            X[j, :] = x[j]
+        end
     end
     bst = xgboost((X, y); num_round)
     RandomForestSurrogate(x, y, bst, lb, ub, num_round)
 end
 
-function (rndfor::RandomForestSurrogate)(val)
-    # Check to make sure dimensions of input matches expected dimension of surrogate
-    _check_dimension(rndfor, val)
-    return XGBoost.predict(rndfor.bst, reshape(collect(val), 1, length(val)))[1]
+function (rndfor::RandomForestSurrogate)(val::Number)
+    return rndfor([val])
 end
 
-function add_point!(rndfor::RandomForestSurrogate, x_new, y_new)
+function (rndfor::RandomForestSurrogate)(val)
+    return predict(rndfor.bst, reshape(val, length(val), 1))[1]
+end
+
+function SurrogatesBase.update!(rndfor::RandomForestSurrogate, x_new, y_new)
+    rndfor.x = vcat(rndfor.x, x_new)
+    rndfor.y = vcat(rndfor.y, y_new)
     if length(rndfor.lb) == 1
-        #1D
-        rndfor.x = vcat(rndfor.x, x_new)
-        rndfor.y = vcat(rndfor.y, y_new)
         rndfor.bst = xgboost((reshape(rndfor.x, length(rndfor.x), 1), rndfor.y);
             num_round = rndfor.num_round)
     else
-        n_previous = length(rndfor.x)
-        a = vcat(rndfor.x, x_new)
-        n_after = length(a)
-        dim_new = n_after - n_previous
-        n = length(rndfor.x)
-        d = length(rndfor.x[1])
-        tot_dim = n + dim_new
-        X = Array{Float64, 2}(undef, tot_dim, d)
-        for j in 1:n
-            X[j, :] = vec(collect(rndfor.x[j]))
-        end
-        if dim_new == 1
-            X[n + 1, :] = vec(collect(x_new))
-        else
-            i = 1
-            for j in (n + 1):tot_dim
-                X[j, :] = vec(collect(x_new[i]))
-                i = i + 1
-            end
-        end
-        rndfor.x = vcat(rndfor.x, x_new)
-        rndfor.y = vcat(rndfor.y, y_new)
-        rndfor.bst = xgboost((X, rndfor.y); num_round = rndfor.num_round)
+        rndfor.bst = xgboost(
+            (transpose(reduce(hcat, rndfor.x)), rndfor.y); num_round = rndfor.num_round)
     end
     nothing
 end
+
 end # module
