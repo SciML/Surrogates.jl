@@ -40,6 +40,10 @@ function SVMSurrogate(x, y, lb, ub)
     SVMSurrogate(x, y, model, lb, ub)
 end
 
+function (svmsurr::SVMSurrogate)(val::Number)
+    return svmsurr([val])
+end
+
 function (svmsurr::SVMSurrogate)(val)
     n = length(val)
     return LIBSVM.predict(svmsurr.model, reshape(val, 1, n))[1]
@@ -54,7 +58,7 @@ end
   - `x_new`: Vector of new data points to be added to the training set of SVMSurrogate.
   - `y_new`: Vector of new output points to be added to the training set of SVMSurrogate.
 """
-function update!(svmsurr::SVMSurrogate, x_new, y_new)
+function SurrogatesBase.update!(svmsurr::SVMSurrogate, x_new, y_new)
     svmsurr.x = vcat(svmsurr.x, x_new)
     svmsurr.y = vcat(svmsurr.y, y_new)
     if length(svmsurr.lb) == 1

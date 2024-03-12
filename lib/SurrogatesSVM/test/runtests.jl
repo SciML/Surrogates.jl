@@ -18,7 +18,7 @@ using SafeTestsets
         update!(my_svm_1D, [3.1], [7.2])
         update!(my_svm_1D, [3.2, 3.5], [7.4, 8.0])
         svm = LIBSVM.fit!(SVC(), reshape(my_svm_1D.x, length(my_svm_1D.x), 1), my_svm_1D.y)
-        val = my_svm_1D([3.1])
+        val = my_svm_1D(3.1)
         @test LIBSVM.predict(svm, [3.1;;])[1] == val
     end
     @testset "ND" begin
