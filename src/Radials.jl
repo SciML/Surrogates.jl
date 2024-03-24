@@ -1,5 +1,7 @@
 using LinearAlgebra
 using ExtendableSparse
+using Surrogates
+using Base.Threads
 
 _copy(t::Tuple) = t
 _copy(t) = copy(t)
@@ -196,33 +198,19 @@ end
 _ret_copy(v::Base.RefValue) = v[]
 _ret_copy(v) = copy(v)
 
-function _approx_rbf(val, rad::RadialBasis)
+function _approx_rbf_threaded(val, rad::RadialBasis)
     n = length(rad.x)
-
-    # make sure @inbounds is safe
-    if n > size(rad.coeff, 2)
-        throw("Length of model's x vector exceeds number of calculated coefficients ($n != $(size(rad.coeff, 2))).")
-    end
-
     approx = _make_approx(val, rad)
-
-    if rad.phi === linearRadial().phi
-        for i in 1:n
-            tmp = zero(eltype(val))
-            @inbounds @simd ivdep for j in 1:length(val)
-                tmp += ((val[j] - rad.x[i][j]) / rad.scale_factor)^2
-            end
-            tmp = sqrt(tmp)
-            _add_tmp_to_approx!(approx, i, tmp, rad)
+    
+    Threads.@threads for i in 1:n
+        tmp = zero(eltype(val))
+        @inbounds @simd ivdep for j in 1:length(val)
+            tmp += ((val[j] - rad.x[i][j]) / rad.scale_factor)^2
         end
-    else
-        tmp = collect(val)
-        @inbounds for i in 1:n
-            tmp = (val .- rad.x[i]) ./ rad.scale_factor
-            _add_tmp_to_approx!(approx, i, tmp, rad; f = rad.phi)
-        end
+        tmp = sqrt(tmp)
+        _add_tmp_to_approx!(approx, i, tmp, rad)
     end
-
+    
     return _ret_copy(approx)
 end
 
