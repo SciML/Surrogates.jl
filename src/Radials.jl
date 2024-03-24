@@ -1,6 +1,5 @@
 using LinearAlgebra
 using ExtendableSparse
-using Surrogates
 using Base.Threads
 
 _copy(t::Tuple) = t
