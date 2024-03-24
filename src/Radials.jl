@@ -197,7 +197,7 @@ end
 _ret_copy(v::Base.RefValue) = v[]
 _ret_copy(v) = copy(v)
 
-function _approx_rbf_threaded(val, rad::RadialBasis)
+function _approx_rbf(val, rad::RadialBasis)
     n = length(rad.x)
     approx = _make_approx(val, rad)
     
