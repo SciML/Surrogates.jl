@@ -2,6 +2,8 @@ using LinearAlgebra
 using ExtendableSparse
 using Base.Threads
 
+abstract type AbstractSurrogate end
+
 _copy(t::Tuple) = t
 _copy(t) = copy(t)
 
@@ -44,8 +46,15 @@ of a polynomial term.
 References:
 https://en.wikipedia.org/wiki/Polyharmonic_spline
 """
-function RadialBasis(x, y, lb, ub; rad::RadialFunction = linearRadial(),
-        scale_factor::Real = 0.5, sparse = false)
+function RadialBasis(
+        x,
+        y,
+        lb,
+        ub;
+        rad::RadialFunction = linearRadial(),
+        scale_factor::Real = 0.5,
+        sparse = false
+)
     q = rad.q
     phi = rad.phi
     coeff = _calc_coeffs(x, y, lb, ub, phi, q, scale_factor, sparse)
@@ -110,10 +119,9 @@ using ChainRulesCore: @non_differentiable
 
 function _make_combination(n, d, ix)
     exponents_combinations = [e
-                              for e
-                                  in collect(Iterators.product(Iterators.repeated(0:n,
-                                      d)...))[:]
-                              if sum(e) <= n]
+                              for
+                              e in collect(Iterators.product(Iterators.repeated(
+                                  0:n, d)...))[:] if sum(e) <= n]
 
     return exponents_combinations[ix + 1]
 end
@@ -146,9 +154,7 @@ function multivar_poly_basis(x, ix, d, n)
     if n == 0
         return one(eltype(x))
     else
-        prod(a^d
-        for (a, d)
-        in zip(x, _make_combination(n, d, ix)))
+        prod(a^d for (a, d) in zip(x, _make_combination(n, d, ix)))
     end
 end
 
@@ -182,13 +188,17 @@ function _add_tmp_to_approx!(approx, i, tmp, rad::RadialBasis; f = identity)
     end
 end
 # specialise when only single output dimension
-function _make_approx(val,
-        ::RadialBasis{F, Q, X, <:AbstractArray{<:Number}}) where {F, Q, X}
+function _make_approx(
+        val, ::RadialBasis{F, Q, X, <:AbstractArray{<:Number}}) where {F, Q, X}
     return Ref(zero(eltype(val)))
 end
-function _add_tmp_to_approx!(approx::Base.RefValue, i, tmp,
+function _add_tmp_to_approx!(
+        approx::Base.RefValue,
+        i,
+        tmp,
         rad::RadialBasis{F, Q, X, <:AbstractArray{<:Number}};
-        f = identity) where {F, Q, X}
+        f = identity
+) where {F, Q, X}
     @inbounds @simd ivdep for j in 1:size(rad.coeff, 1)
         approx[] += rad.coeff[j, i] * f(tmp)
     end
@@ -200,16 +210,16 @@ _ret_copy(v) = copy(v)
 function _approx_rbf(val, rad::RadialBasis)
     n = length(rad.x)
     approx = _make_approx(val, rad)
-    
+
     Threads.@threads for i in 1:n
         tmp = zero(eltype(val))
-        @inbounds @simd ivdep for j in 1:length(val)
+        @inbounds @simd ivdep for j in eachindex(val)
             tmp += ((val[j] - rad.x[i][j]) / rad.scale_factor)^2
         end
         tmp = sqrt(tmp)
         _add_tmp_to_approx!(approx, i, tmp, rad)
     end
-    
+
     return _ret_copy(approx)
 end
 
@@ -231,7 +241,15 @@ function add_point!(rad::RadialBasis, new_x, new_y)
         append!(rad.x, new_x)
         append!(rad.y, new_y)
     end
-    rad.coeff = _calc_coeffs(rad.x, rad.y, rad.lb, rad.ub, rad.phi, rad.dim_poly,
-        rad.scale_factor, rad.sparse)
+    rad.coeff = _calc_coeffs(
+        rad.x,
+        rad.y,
+        rad.lb,
+        rad.ub,
+        rad.phi,
+        rad.dim_poly,
+        rad.scale_factor,
+        rad.sparse
+    )
     nothing
 end
