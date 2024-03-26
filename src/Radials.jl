@@ -2,8 +2,6 @@ using LinearAlgebra
 using ExtendableSparse
 using Base.Threads
 
-abstract type AbstractSurrogate end
-
 _copy(t::Tuple) = t
 _copy(t) = copy(t)
 
