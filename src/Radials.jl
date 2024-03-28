@@ -209,12 +209,20 @@ function _approx_rbf(val, rad::RadialBasis)
     n = length(rad.x)
     approx = _make_approx(val, rad)
 
-    Threads.@threads for i in 1:n
+    # Define a function to compute tmp for a single index i
+    function compute_tmp(i)
         tmp = zero(eltype(val))
         @inbounds @simd ivdep for j in eachindex(val)
             tmp += ((val[j] - rad.x[i][j]) / rad.scale_factor)^2
         end
-        tmp = sqrt(tmp)
+        return sqrt(tmp)
+    end
+
+    # Use pmap to parallelize the computation of tmp
+    tmp_values = pmap(compute_tmp, 1:n)
+
+    # Update the approx using the computed tmp values
+    for (i, tmp) in enumerate(tmp_values)
         _add_tmp_to_approx!(approx, i, tmp, rad)
     end
 
