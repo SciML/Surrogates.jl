@@ -1,6 +1,7 @@
 using LinearAlgebra
 using ExtendableSparse
 using Base.Threads
+using Distributed
 
 _copy(t::Tuple) = t
 _copy(t) = copy(t)
