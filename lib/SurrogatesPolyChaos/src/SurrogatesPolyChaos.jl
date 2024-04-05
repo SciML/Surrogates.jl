@@ -5,7 +5,8 @@ using PolyChaos
 
 export PolynomialChaosSurrogate, update!
 
-mutable struct PolynomialChaosSurrogate{X, Y, L, U, C, O, N} <: AbstractDeterministicSurrogate
+mutable struct PolynomialChaosSurrogate{X, Y, L, U, C, O, N} <:
+               AbstractDeterministicSurrogate
     x::X
     y::Y
     lb::L
@@ -28,7 +29,7 @@ function PolynomialChaosSurrogate(x, y, lb::Number, ub::Number;
 end
 
 function PolynomialChaosSurrogate(x, y, lb, ub;
-        orthopolys = MultiOrthoPoly([GaussOrthoPoly(2) for j in 1:length(lb)], 2))
+        op = MultiOrthoPoly([GaussOrthoPoly(2) for j in 1:length(lb)], 2))
     n = length(x)
     d = length(lb)
     poly_degree = orthopolys.deg
@@ -83,7 +84,7 @@ function SurrogatesBase.update!(polych::PolynomialChaosSurrogate, x_new, y_new)
     polych.x = vcat(polych.x, x_new)
     polych.y = vcat(polych.y, y_new)
     polych.coeff = _calculatepce_coeff(polych.x, polych.y, polych.num_of_multi_indexes,
-        polych.orthopolys)
+        polych.ortopolys)
     nothing
 end
 
