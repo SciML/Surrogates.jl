@@ -9,6 +9,8 @@
 [![ColPrac: Contributor's Guide on Collaborative Practices for Community Packages](https://img.shields.io/badge/ColPrac-Contributor%27s%20Guide-blueviolet)](https://github.com/SciML/ColPrac)
 [![SciML Code Style](https://img.shields.io/static/v1?label=code%20style&message=SciML&color=9558b2&labelColor=389826)](https://github.com/SciML/SciMLStyle)
 
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.12571718.svg)](https://doi.org/10.5281/zenodo.12571718)
+
 A surrogate model is an approximation method that mimics the behavior of a computationally
 expensive simulation. In more mathematical terms: suppose we are attempting to optimize a function
 `f(p)`, but each calculation of `f` is very expensive. It may be the case we need to solve a PDE for each point or use advanced numerical linear algebra machinery, which is usually costly. The idea is then to develop a surrogate model `g` which approximates `f` by training on previous data collected from evaluations of `f`.
