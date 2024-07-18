@@ -29,7 +29,7 @@ function PolynomialChaosSurrogate(x, y, lb::Number, ub::Number;
 end
 
 function PolynomialChaosSurrogate(x, y, lb, ub;
-        op = MultiOrthoPoly([GaussOrthoPoly(2) for j in 1:length(lb)], 2))
+        orthopolys = MultiOrthoPoly([GaussOrthoPoly(2) for j in 1:length(lb)], 2))
     n = length(x)
     d = length(lb)
     poly_degree = orthopolys.deg
@@ -57,16 +57,17 @@ function (pcND::PolynomialChaosSurrogate)(val)
     return sum
 end
 
-function _calculatepce_coeff(x, y, num_of_multi_indexes, op::AbstractCanonicalOrthoPoly)
+function _calculatepce_coeff(
+        x, y, num_of_multi_indexes, orthopolys::AbstractCanonicalOrthoPoly)
     n = length(x)
     A = zeros(eltype(x), n, num_of_multi_indexes)
     for i in 1:n
-        A[i, :] = PolyChaos.evaluate(x[i], op)
+        A[i, :] = PolyChaos.evaluate(x[i], orthopolys)
     end
     return (A' * A) \ (A' * y)
 end
 
-function _calculatepce_coeff(x, y, num_of_multi_indexes, op::MultiOrthoPoly)
+function _calculatepce_coeff(x, y, num_of_multi_indexes, orthopolys::MultiOrthoPoly)
     n = length(x)
     d = length(x[1])
     A = zeros(eltype(x[1]), n, num_of_multi_indexes)
@@ -75,7 +76,7 @@ function _calculatepce_coeff(x, y, num_of_multi_indexes, op::MultiOrthoPoly)
         for j in 1:d
             xi[j] = x[i][j]
         end
-        A[i, :] = PolyChaos.evaluate(xi, op)
+        A[i, :] = PolyChaos.evaluate(xi, orthopolys)
     end
     return (A' * A) \ (A' * y)
 end
@@ -84,7 +85,7 @@ function SurrogatesBase.update!(polych::PolynomialChaosSurrogate, x_new, y_new)
     polych.x = vcat(polych.x, x_new)
     polych.y = vcat(polych.y, y_new)
     polych.coeff = _calculatepce_coeff(polych.x, polych.y, polych.num_of_multi_indexes,
-        polych.ortopolys)
+        polych.orthopolys)
     nothing
 end
 
