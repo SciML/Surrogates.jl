@@ -5,17 +5,21 @@ version = "0.1.0"
 
 [deps]
 AbstractGPs = "99985d1d-32ba-4be9-9821-2ec096f28918"
-Surrogates = "6fc51010-71bc-11e9-0e15-a3fcc6593c49"
+SurrogatesBase = "89f642e6-4179-4274-8202-c11f4bd9a72c"
 
 [compat]
 AbstractGPs = "0.5"
-Surrogates = "6"
+SafeTestsets = "0.1"
+Surrogates = "6.9"
+SurrogatesBase = "1.1"
+Zygote = "0.6"
 julia = "1.10"
 
 [extras]
 SafeTestsets = "1bc83da4-3b8d-516f-aca4-4fe02f6d838f"
+Surrogates = "6fc51010-71bc-11e9-0e15-a3fcc6593c49"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 Zygote = "e88e6eb3-aa80-5325-afca-941959d7151f"
 
 [targets]
-test = ["SafeTestsets", "Test", "Zygote"]
+test = ["SafeTestsets", "Surrogates", "Test", "Zygote"]
