@@ -23,10 +23,15 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
+        version:
+          - "1"
+          - "lts"
+          - "pre"
         group:
           - Core
     uses: "SciML/.github/.github/workflows/tests.yml@v1"
     with:
+      julia-version: "${{ matrix.version }}"
       group: "${{ matrix.group }}"
       coverage-directories: "src,lib/SurrogatesAbstractGPs/src,lib/SurrogatesFlux/src,lib/SurrogatesMOE/src,lib/SurrogatesPolyChaos/src,lib/SurrogatesRandomForest/src,lib/SurrogatesSVM/src"
     secrets: "inherit"
