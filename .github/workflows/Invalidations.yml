@@ -13,3 +13,5 @@ jobs:
   evaluate-invalidations:
     name: "Evaluate Invalidations"
     uses: "SciML/.github/.github/workflows/invalidations.yml@v1"
+    with:
+      julia-version: "1.10"
