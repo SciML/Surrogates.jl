@@ -16,7 +16,7 @@ Zygote = "e88e6eb3-aa80-5325-afca-941959d7151f"
 [compat]
 AbstractGPs = "0.5.13"
 Documenter = "1"
-Flux = "0.13.7, 0.14, 0.15"
+Flux = "0.13.7, 0.14, 0.15, 0.16"
 Plots = "1.36.2"
 QuadGK = "2.6.0"
 SurrogatesAbstractGPs = "0.1.0"
