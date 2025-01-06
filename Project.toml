@@ -35,7 +35,7 @@ SparseArrays = "1.10"
 Statistics = "1.10"
 Test = "1"
 Tracker = "0.2.18"
-Zygote = "0.6.62"
+Zygote = "0.6.62, 0.7"
 julia = "1.10"
 
 [extras]
