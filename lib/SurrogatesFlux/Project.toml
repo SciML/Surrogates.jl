@@ -1,7 +1,7 @@
 name = "SurrogatesFlux"
 uuid = "4f55584b-dac4-4b1c-802a-b7c47b72cb4c"
 authors = ["Ranjan Anantharaman <ranjan.anantharaman@gmail.com>"]
-version = "0.1.0"
+version = "0.1.1"
 
 [deps]
 Flux = "587475ba-b771-5e3f-ad9e-33799f191a9c"
