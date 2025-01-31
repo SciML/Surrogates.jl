@@ -19,7 +19,7 @@ Now, let's define our objective function:
 
 ```@example gramacylee1D
 function gramacylee(x)
-    term1 = sin(10 * pi * x) / 2 * x
+    term1 = sin(10 * pi * x) / (2 * x)
     term2 = (x - 1)^4
     y = term1 + term2
 end
