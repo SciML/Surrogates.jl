@@ -1,12 +1,9 @@
-using LinearAlgebra
-using Statistics
-
 """
 GEKPLS(x, y, x_matrix, y_matrix, grads, xlimits, delta_x, extra_points, n_comp, beta, gamma, theta,
 reduced_likelihood_function_value,
 X_offset, X_scale, X_after_std, pls_mean_reshaped, y_mean, y_std)
 """
-mutable struct GEKPLS{T, X, Y} <: AbstractSurrogate
+mutable struct GEKPLS{T, X, Y} <: AbstractDeterministicSurrogate
     x::X
     y::Y
     x_matrix::Matrix{T} #1
@@ -113,11 +110,11 @@ function (g::GEKPLS)(x_vec)
 end
 
 """
-    add_point!(g::GEKPLS, new_x, new_y, new_grads)
+    update!(g::GEKPLS, new_x, new_y, new_grads)
 
 add a new point to the dataset.
 """
-function add_point!(g::GEKPLS, x_tup, y_val, grad_tup)
+function SurrogatesBase.update!(g::GEKPLS, x_tup, y_val, grad_tup)
     new_x = prep_data_for_pred(x_tup)
     new_grads = prep_data_for_pred(grad_tup)
     if vec(new_x) in eachrow(g.x_matrix)

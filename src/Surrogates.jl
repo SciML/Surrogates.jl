@@ -1,6 +1,10 @@
 module Surrogates
+
 using LinearAlgebra
 using Distributions
+using GLM
+using ExtendableSparse
+using SurrogatesBase: SurrogatesBase, update!, AbstractDeterministicSurrogate
 
 abstract type AbstractSurrogate <: Function end
 include("utils.jl")
@@ -13,7 +17,6 @@ include("LinearSurrogate.jl")
 include("InverseDistanceSurrogate.jl")
 include("SecondOrderPolynomialSurrogate.jl")
 include("Wendland.jl")
-include("MOE.jl") #rewrite gaussian mixture with own algorithm to fix deps issue
 include("VariableFidelity.jl")
 include("Earth.jl")
 include("GEK.jl")
@@ -56,9 +59,9 @@ function LobachevskyStructure(; alpha, n, sparse)
 end
 
 #Neural structure
-function NeuralStructure(; model, loss, opt, n_echos)
+function NeuralStructure(; model, loss, opt, n_epochs)
     return (name = "NeuralSurrogate", model = model, loss = loss, opt = opt,
-        n_echos = n_echos)
+        n_epochs = n_epochs)
 end
 
 #Random forest structure
@@ -89,11 +92,12 @@ export LobachevskyStructure,
        SecondOrderPolynomialStructure
 export WendlandStructure
 export AbstractSurrogate, SamplingAlgorithm
-export Kriging, RadialBasis, add_point!, std_error_at_point
+export Kriging, RadialBasis, std_error_at_point
 # Parallelization Strategies
 export potential_optimal_points
 export MinimumConstantLiar, MaximumConstantLiar, MeanConstantLiar, KrigingBeliever,
        KrigingBelieverUpperBound, KrigingBelieverLowerBound
+export update!
 
 # radial basis functions
 export linearRadial, cubicRadial, multiquadricRadial, thinplateRadial

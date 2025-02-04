@@ -4,7 +4,7 @@ One-dimensional Kriging method, following these papers:
 "A Taxonomy of Global Optimization Methods Based on Response Surfaces"
 both by DONALD R. JONES
 =#
-mutable struct Kriging{X, Y, L, U, P, T, M, B, S, R} <: AbstractSurrogate
+mutable struct Kriging{X, Y, L, U, P, T, M, B, S, R} <: AbstractDeterministicSurrogate
     x::X
     y::Y
     lb::L
@@ -239,13 +239,13 @@ function _calc_kriging_coeffs(x, y, p, theta)
 end
 
 """
-    add_point!(k::Kriging,new_x,new_y)
+    update!(k::Kriging,new_x,new_y)
 
 Adds the new point and its respective value to the sample points.
 Warning: If you are just adding a single point, you have to wrap it with [].
 Returns the updated Kriging model.
 """
-function add_point!(k::Kriging, new_x, new_y)
+function SurrogatesBase.update!(k::Kriging, new_x, new_y)
     if new_x in k.x
         println("Adding a sample that already exists, cannot build Kriging.")
         return

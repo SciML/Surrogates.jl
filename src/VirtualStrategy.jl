@@ -4,7 +4,7 @@ function calculate_liars(::MinimumConstantLiar,
         surr::AbstractSurrogate,
         new_x)
     new_y = minimum(surr.y)
-    add_point!(tmp_surr, new_x, new_y)
+    update!(tmp_surr, new_x, new_y)
 end
 
 # Maximum Constant Liar
@@ -13,7 +13,7 @@ function calculate_liars(::MaximumConstantLiar,
         surr::AbstractSurrogate,
         new_x)
     new_y = maximum(surr.y)
-    add_point!(tmp_surr, new_x, new_y)
+    update!(tmp_surr, new_x, new_y)
 end
 
 # Mean Constant Liar
@@ -22,23 +22,23 @@ function calculate_liars(::MeanConstantLiar,
         surr::AbstractSurrogate,
         new_x)
     new_y = mean(surr.y)
-    add_point!(tmp_surr, new_x, new_y)
+    update!(tmp_surr, new_x, new_y)
 end
 
 # Kriging Believer
 function calculate_liars(::KrigingBeliever, tmp_k::Kriging, k::Kriging, new_x)
     new_y = k(new_x)
-    add_point!(tmp_k, new_x, new_y)
+    update!(tmp_k, new_x, new_y)
 end
 
 # Kriging Believer Upper Bound
 function calculate_liars(::KrigingBelieverUpperBound, tmp_k::Kriging, k::Kriging, new_x)
     new_y = k(new_x) + 3 * std_error_at_point(k, new_x)
-    add_point!(tmp_k, new_x, new_y)
+    update!(tmp_k, new_x, new_y)
 end
 
 # Kriging Believer Lower Bound
 function calculate_liars(::KrigingBelieverLowerBound, tmp_k::Kriging, k::Kriging, new_x)
     new_y = k(new_x) - 3 * std_error_at_point(k, new_x)
-    add_point!(tmp_k, new_x, new_y)
+    update!(tmp_k, new_x, new_y)
 end

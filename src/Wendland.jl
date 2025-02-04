@@ -2,7 +2,7 @@ using IterativeSolvers
 using ExtendableSparse
 using LinearAlgebra
 
-mutable struct Wendland{X, Y, L, U, C, I, T, E} <: AbstractSurrogate
+mutable struct Wendland{X, Y, L, U, C, I, T, E} <: AbstractDeterministicSurrogate
     x::X
     y::Y
     lb::L
@@ -56,7 +56,7 @@ function (wend::Wendland)(val)
     return sum(wend.coeff[j] * _wendland(val, wend.eps) for j in 1:length(wend.coeff))
 end
 
-function add_point!(wend::Wendland, new_x, new_y)
+function SurrogatesBase.update!(wend::Wendland, new_x, new_y)
     if (length(new_x) == 1 && length(new_x[1]) == 1) ||
        (length(new_x) > 1 && length(new_x[1]) == 1 && length(wend.lb) > 1)
         push!(wend.x, new_x)

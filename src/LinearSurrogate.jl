@@ -1,6 +1,4 @@
-using GLM
-
-mutable struct LinearSurrogate{X, Y, C, L, U} <: AbstractSurrogate
+mutable struct LinearSurrogate{X, Y, C, L, U} <: AbstractDeterministicSurrogate
     x::X
     y::Y
     coeff::C
@@ -13,7 +11,7 @@ function LinearSurrogate(x, y, lb::Number, ub::Number)
     LinearSurrogate(x, y, coef(ols), lb, ub)
 end
 
-function add_point!(my_linear::LinearSurrogate, new_x, new_y)
+function SurrogatesBase.update!(my_linear::LinearSurrogate, new_x, new_y)
     if length(my_linear.lb) == 1
         #1D
         my_linear.x = vcat(my_linear.x, new_x)
