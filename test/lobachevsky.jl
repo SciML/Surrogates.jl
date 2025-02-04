@@ -24,8 +24,8 @@ int_1D = lobachevsky_integral(my_loba, a, b)
 int = quadgk(obj, a, b)
 int_val_true = int[1] - int[2]
 @test abs(int_1D - int_val_true) < 2 * 10^-5
-add_point!(my_loba, 3.7, 12.1)
-add_point!(my_loba, [1.23, 3.45], [5.20, 109.67])
+update!(my_loba, 3.7, 12.1)
+update!(my_loba, [1.23, 3.45], [5.20, 109.67])
 
 #ND
 
@@ -51,8 +51,8 @@ int_ND = lobachevsky_integral(my_loba_ND, lb, ub)
 int = hcubature(obj, lb, ub)
 int_val_true = int[1] - int[2]
 @test abs(int_ND - int_val_true) < 10^-1
-add_point!(my_loba_ND, (10.0, 11.0), 4.0)
-add_point!(my_loba_ND, [(12.0, 15.0), (13.0, 14.0)], [4.0, 5.0])
+update!(my_loba_ND, (10.0, 11.0), 4.0)
+update!(my_loba_ND, [(12.0, 15.0), (13.0, 14.0)], [4.0, 5.0])
 lobachevsky_integrate_dimension(my_loba_ND, lb, ub, 2)
 
 obj = x -> x[1] + log(x[2]) + exp(x[3])

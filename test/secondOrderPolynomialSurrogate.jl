@@ -9,8 +9,8 @@ x = sample(5, lb, ub, SobolSample())
 y = obj_1D.(x)
 my_second_order_poly = SecondOrderPolynomialSurrogate(x, y, lb, ub)
 val = my_second_order_poly(5.0)
-add_point!(my_second_order_poly, 5.0, 238.86)
-add_point!(my_second_order_poly, [6.0, 7.0], [722.84, 2133.94])
+update!(my_second_order_poly, 5.0, 238.86)
+update!(my_second_order_poly, [6.0, 7.0], [722.84, 2133.94])
 
 # Test that input dimension is properly checked for 1D SecondOrderPolynomial surrogates
 @test_throws ArgumentError my_second_order_poly(Float64[])
@@ -24,8 +24,8 @@ x = sample(10, lb, ub, RandomSample())
 y = obj_ND.(x)
 my_second_order_poly = SecondOrderPolynomialSurrogate(x, y, lb, ub)
 val = my_second_order_poly((5.0, 7.0))
-add_point!(my_second_order_poly, (5.0, 7.0), 1764.96)
-add_point!(my_second_order_poly, [(1.5, 1.5), (3.4, 5.4)], [1.817, 270.95])
+update!(my_second_order_poly, (5.0, 7.0), 1764.96)
+update!(my_second_order_poly, [(1.5, 1.5), (3.4, 5.4)], [1.817, 270.95])
 
 # Test that input dimension is properly checked for ND SecondOrderPolynomial surrogates
 @test_throws ArgumentError my_second_order_poly(Float64[])
@@ -58,7 +58,7 @@ surrogate = SecondOrderPolynomialSurrogate(x, y, lb, ub)
 x_new = (2.0, 2.0)
 y_new = f(x_new)
 @test surrogate(x_new) ≈ y_new
-add_point!(surrogate, x_new, y_new)
+update!(surrogate, x_new, y_new)
 @test surrogate(x_new) ≈ y_new
 
 # surrogate should recover 2nd order polynomial

@@ -189,7 +189,7 @@ end
     grads = gradient.(sphere_function, x)
     y = sphere_function.(x)
     for i in 1:size(x, 1)
-        add_point!(g, x[i], y[i], grads[i][1])
+        update!(g, x[i], y[i], grads[i][1])
     end
     y_pred2 = g.(x_test)
     rmse2 = sqrt(sum(((y_pred2 - y_true) .^ 2) / n_test)) #rmse2 = 0.0015
