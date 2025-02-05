@@ -44,6 +44,7 @@ using SafeTestsets
         x = sample(5, lb, ub, SobolSample())
         y = f.(x)
         my_model = Chain(Dense(1, 2))
+        my_opt = Descent(0.01)
         surrogate = NeuralSurrogate(x, y, lb, ub, model = my_model, loss = Flux.mse,
             opt = my_opt, n_epochs = 1)
 
@@ -53,6 +54,7 @@ using SafeTestsets
         x = sample(20, lb, ub, SobolSample())
         y = f.(x)
         my_model = Chain(Dense(2, 2))
+        my_opt = Descent(0.01)
         surrogate = NeuralSurrogate(x, y, lb, ub, model = my_model, loss = Flux.mse,
             opt = my_opt, n_epochs = 1)
         surrogate([1.0, 2.0])
