@@ -1,12 +1,13 @@
 module SurrogatesMOE
 
-import Surrogates: AbstractSurrogate, linearRadial, cubicRadial, multiquadricRadial,
+import Surrogates: linearRadial, cubicRadial, multiquadricRadial,
                    thinplateRadial, RadialBasisStructure, RadialBasis,
                    InverseDistanceSurrogate, Kriging, LobachevskyStructure,
                    LobachevskySurrogate, NeuralStructure, PolyChaosStructure,
-                   LinearSurrogate, add_point!
+                   LinearSurrogate
+using SurrogatesBase
 
-export MOE
+export MOE, update!
 
 using GaussianMixtures
 using Random
@@ -17,7 +18,7 @@ using SurrogatesPolyChaos
 using SurrogatesRandomForest
 using XGBoost
 
-mutable struct MOE{X, Y, C, D, M, E, ND, NC} <: AbstractSurrogate
+mutable struct MOE{X, Y, C, D, M, E, ND, NC} <: AbstractDeterministicSurrogate
     x::X
     y::Y
     c::C #clusters (C) - vector of gaussian mixture clusters
@@ -319,7 +320,7 @@ function _surrogate_builder(local_kind, k, x, y, lb, ub)
             my_local_i = NeuralSurrogate(x, y, lb, ub,
                 model = local_kind[i].model,
                 loss = local_kind[i].loss, opt = local_kind[i].opt,
-                n_echos = local_kind[i].n_echos)
+                n_epochs = local_kind[i].n_epochs)
             push!(local_surr, my_local_i)
 
         elseif local_kind[i][1] == "RandomForestSurrogate"
@@ -347,12 +348,12 @@ function _surrogate_builder(local_kind, k, x, y, lb, ub)
 end
 
 """
-    add_point!(m::MOE, new_x, new_y)
+    update!(m::MOE, new_x, new_y)
 
 add a new point to the dataset.
 """
-function add_point!(m::MOE, x, y)
-    #function add_point!(m) #this works
+function SurrogatesBase.update!(m::MOE, x, y)
+    #function update!(m) #this works
     push!(m.x, x)
     push!(m.y, y)
 
