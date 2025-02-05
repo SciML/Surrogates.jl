@@ -37,7 +37,7 @@ Statistics = "1.10"
 SurrogatesBase = "1.1.0"
 Test = "1.10"
 Tracker = "0.2.18"
-Zygote = "0.6.62, 0.7"
+Zygote = "0.7"
 julia = "1.10"
 
 [extras]
