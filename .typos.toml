@@ -1,2 +1,5 @@
 [default.extend-words]
 ND = "ND"
+abl = "abl"
+eis = "eis"
+EIN = "EIN"
