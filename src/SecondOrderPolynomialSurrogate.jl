@@ -3,7 +3,8 @@ mutable struct InverseDistanceSurrogate{X,Y,P,L,U} <: AbstractSurrogate
 
 The square polynomial model can be expressed by 𝐲 = 𝐗β + ϵ, with β = 𝐗ᵗ𝐗⁻¹𝐗ᵗ𝐲
 """
-mutable struct SecondOrderPolynomialSurrogate{X, Y, B, L, U} <: AbstractDeterministicSurrogate
+mutable struct SecondOrderPolynomialSurrogate{X, Y, B, L, U} <:
+               AbstractDeterministicSurrogate
     x::X
     y::Y
     β::B

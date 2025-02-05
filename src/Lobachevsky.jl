@@ -1,4 +1,5 @@
-mutable struct LobachevskySurrogate{X, Y, A, N, L, U, C, S} <: AbstractDeterministicSurrogate
+mutable struct LobachevskySurrogate{X, Y, A, N, L, U, C, S} <:
+               AbstractDeterministicSurrogate
     x::X
     y::Y
     alpha::A

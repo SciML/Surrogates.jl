@@ -1,4 +1,5 @@
-mutable struct EarthSurrogate{X, Y, L, U, B, C, P, M, N, R, G, I, T} <: AbstractDeterministicSurrogate
+mutable struct EarthSurrogate{X, Y, L, U, B, C, P, M, N, R, G, I, T} <:
+               AbstractDeterministicSurrogate
     x::X
     y::Y
     lb::L

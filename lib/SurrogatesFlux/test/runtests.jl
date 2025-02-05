@@ -63,7 +63,7 @@ using SafeTestsets
         update!(surrogate, x_new, y_new)
     end
 
-    @testset "Optimization" begin 
+    @testset "Optimization" begin
         lb = [1.0, 1.0]
         ub = [6.0, 6.0]
         x = sample(5, lb, ub, SobolSample())

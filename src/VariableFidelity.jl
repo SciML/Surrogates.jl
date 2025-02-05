@@ -1,4 +1,5 @@
-mutable struct VariableFidelitySurrogate{X, Y, L, U, N, F, E} <: AbstractDeterministicSurrogate
+mutable struct VariableFidelitySurrogate{X, Y, L, U, N, F, E} <:
+               AbstractDeterministicSurrogate
     x::X
     y::Y
     lb::L

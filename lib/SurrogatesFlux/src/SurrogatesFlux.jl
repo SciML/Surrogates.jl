@@ -46,7 +46,7 @@ function NeuralSurrogate(x, y, lb, ub; model = Chain(Dense(length(x[1]), 1)),
     elseif x isa Vector{<:Tuple}
         x = reduce(hcat, collect.(x))
     elseif x isa Vector
-        if size(x) == (1, ) && size(x[1]) == ()
+        if size(x) == (1,) && size(x[1]) == ()
             x = hcat(x)
         else
             x = reduce(hcat, x)
@@ -86,7 +86,7 @@ function SurrogatesBase.update!(my_n::NeuralSurrogate, x_new, y_new)
     elseif x_new isa Vector{<:Tuple}
         x_new = reduce(hcat, collect.(x_new))
     elseif x_new isa Vector
-        if size(x_new) == (1, ) && size(x_new[1]) == ()
+        if size(x_new) == (1,) && size(x_new[1]) == ()
             x_new = hcat(x_new)
         else
             x_new = reduce(hcat, x_new)
@@ -94,7 +94,7 @@ function SurrogatesBase.update!(my_n::NeuralSurrogate, x_new, y_new)
     end
     y_new = reduce(hcat, y_new)
     opt_state = Flux.setup(my_n.opt, my_n.model)
-    for _ in 1:my_n.n_epochs
+    for _ in 1:(my_n.n_epochs)
         grads = Flux.gradient(my_n.model) do m
             result = m(x_new)
             my_n.loss(result, y_new)

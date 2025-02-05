@@ -31,7 +31,8 @@ struct RTEA{K, Z, P, N, S} <: SurrogateOptimizationAlgorithm
     sigma::S
 end
 
-function merit_function(point, w, surr::AbstractDeterministicSurrogate, s_max, s_min, d_max, d_min,
+function merit_function(
+        point, w, surr::AbstractDeterministicSurrogate, s_max, s_min, d_max, d_min,
         box_size)
     if length(point) == 1
         D_x = box_size + 1
@@ -83,7 +84,8 @@ The weight w is commonly cycled between
 a few values to achieve both exploitation and exploration.
 When w is close to zero, we do pure exploration, while w close to 1 corresponds to exploitation.
 """
-function surrogate_optimize(obj::Function, ::SRBF, lb, ub, surr::AbstractDeterministicSurrogate,
+function surrogate_optimize(
+        obj::Function, ::SRBF, lb, ub, surr::AbstractDeterministicSurrogate,
         sample_type::SamplingAlgorithm; maxiters = 100,
         num_new_samples = 100, needs_gradient = false)
     scale = 0.2
@@ -374,7 +376,8 @@ function surrogate_optimize(obj::Function, ::SRBF, lb::Number, ub::Number,
 end
 
 # Ask SRBF ND
-function potential_optimal_points(::SRBF, strategy, lb, ub, surr::AbstractDeterministicSurrogate,
+function potential_optimal_points(
+        ::SRBF, strategy, lb, ub, surr::AbstractDeterministicSurrogate,
         sample_type::SamplingAlgorithm, n_parallel;
         num_new_samples = 500)
     scale = 0.2
@@ -931,7 +934,8 @@ function adjust_step_size(sigma_n, sigma_min, C_success, t_success, C_fail, t_fa
     return sigma_n, C_success, C_fail
 end
 
-function select_evaluation_point_1D(new_points1, surr1::AbstractDeterministicSurrogate, numb_iters,
+function select_evaluation_point_1D(
+        new_points1, surr1::AbstractDeterministicSurrogate, numb_iters,
         maxiters)
     v = [0.3, 0.5, 0.8, 0.95]
     k = 4
@@ -1051,7 +1055,8 @@ function surrogate_optimize(obj::Function, ::DYCORS, lb::Number, ub::Number,
     return (surr1.x[index], surr1.y[index])
 end
 
-function select_evaluation_point_ND(new_points, surrn::AbstractDeterministicSurrogate, numb_iters,
+function select_evaluation_point_ND(
+        new_points, surrn::AbstractDeterministicSurrogate, numb_iters,
         maxiters)
     v = [0.3, 0.5, 0.8, 0.95]
     k = 4
@@ -1118,7 +1123,8 @@ perturb only a few directions. In particular, we use a perturbation probability
 to perturb a given coordinate and decrease this probability after each function
 evaluation, so fewer coordinates are perturbed later in the optimization.
 """
-function surrogate_optimize(obj::Function, ::DYCORS, lb, ub, surrn::AbstractDeterministicSurrogate,
+function surrogate_optimize(
+        obj::Function, ::DYCORS, lb, ub, surrn::AbstractDeterministicSurrogate,
         sample_type::SamplingAlgorithm; maxiters = 100,
         num_new_samples = 100)
     x_best = collect(surrn.x[argmin(surrn.y)])
@@ -1553,7 +1559,8 @@ function II_tier_ranking_ND(D::Dict, srgD::AbstractDeterministicSurrogate)
     return D
 end
 
-function surrogate_optimize(obj::Function, sopd::SOP, lb, ub, surrSOPD::AbstractDeterministicSurrogate,
+function surrogate_optimize(
+        obj::Function, sopd::SOP, lb, ub, surrSOPD::AbstractDeterministicSurrogate,
         sample_type::SamplingAlgorithm; maxiters = 100,
         num_new_samples = min(500 * length(lb), 5000))
     d = length(lb)
@@ -1790,7 +1797,8 @@ function surrogate_optimize(obj::Function, sbm::SMB, lb::Number, ub::Number,
     return pareto_set, pareto_front
 end
 
-function surrogate_optimize(obj::Function, smb::SMB, lb, ub, surrSMBND::AbstractDeterministicSurrogate,
+function surrogate_optimize(
+        obj::Function, smb::SMB, lb, ub, surrSMBND::AbstractDeterministicSurrogate,
         sample_type::SamplingAlgorithm; maxiters = 100,
         n_new_look = 1000)
     #obj contains a function for each output dimension
@@ -1937,7 +1945,8 @@ function surrogate_optimize(obj, rtea::RTEA, lb::Number, ub::Number,
     return pareto_set, pareto_front
 end
 
-function surrogate_optimize(obj, rtea::RTEA, lb, ub, surrRTEAND::AbstractDeterministicSurrogate,
+function surrogate_optimize(
+        obj, rtea::RTEA, lb, ub, surrRTEAND::AbstractDeterministicSurrogate,
         sample_type::SamplingAlgorithm; maxiters = 100,
         n_new_look = 1000)
     Z = rtea.z
