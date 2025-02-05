@@ -1,66 +1,109 @@
 module SurrogatesFlux
 
-import Surrogates: add_point!, AbstractSurrogate, _check_dimension
-export NeuralSurrogate
-
+using SurrogatesBase
+using Optimisers
 using Flux
 
-mutable struct NeuralSurrogate{X, Y, M, L, O, P, N, A, U} <: AbstractSurrogate
+export NeuralSurrogate, update!
+
+mutable struct NeuralSurrogate{X, Y, M, L, O, P, N, A, U} <: AbstractDeterministicSurrogate
     x::X
     y::Y
     model::M
     loss::L
     opt::O
     ps::P
-    n_echos::N
+    n_epochs::N
     lb::A
     ub::U
 end
 
 """
-NeuralSurrogate(x,y,lb,ub,model,loss,opt,n_echos)
+    NeuralSurrogate(x, y, lb, ub; model = Chain(Dense(length(x[1]), 1), first), 
+                                 loss = (x, y) -> Flux.mse(model(x), y), 
+                                 opt = Optimisers.Adam(1e-3), 
+                                 n_epochs = 10)
 
-  - model: Flux layers
-  - loss: loss function
-  - opt: optimization function
+## Arguments
+
+  - `x`: Input data points.
+  - `y`: Output data points.
+  - `lb`: Lower bound of input data points.
+  - `ub`: Upper bound of output data points.
+
+# Keyword Arguments
+
+  - `model`: Flux Chain
+  - `loss`: loss function from minimization
+  - `opt`: Optimiser defined using Optimisers.jl
+  - `n_epochs`: number of epochs for training
 """
-function NeuralSurrogate(x, y, lb, ub; model = Chain(Dense(length(x[1]), 1), first),
-        loss = (x, y) -> Flux.mse(model(x), y), opt = Descent(0.01),
-        n_echos::Int = 1)
-    X = vec.(collect.(x))
-    data = zip(X, y)
-    ps = Flux.params(model)
-    for epoch in 1:n_echos
-        Flux.train!(loss, ps, data, opt)
+function NeuralSurrogate(x, y, lb, ub; model = Chain(Dense(length(x[1]), 1)),
+        loss = Flux.mse, opt = Optimisers.Adam(1e-3),
+        n_epochs::Int = 10)
+    if x isa Tuple
+        x = reduce(hcat, x)'
+    elseif x isa Vector{<:Tuple}
+        x = reduce(hcat, collect.(x))
+    elseif x isa Vector
+        if size(x) == (1, ) && size(x[1]) == ()
+            x = hcat(x)
+        else
+            x = reduce(hcat, x)
+        end
     end
-    return NeuralSurrogate(x, y, model, loss, opt, ps, n_echos, lb, ub)
+    y = reduce(hcat, y)
+    opt_state = Flux.setup(opt, model)
+    for _ in 1:n_epochs
+        grads = Flux.gradient(model) do m
+            result = m(x)
+            loss(result, y)
+        end
+        Flux.update!(opt_state, model, grads[1])
+    end
+    ps = Flux.trainable(model)
+    return NeuralSurrogate(x, y, model, loss, opt, ps, n_epochs, lb, ub)
 end
 
 function (my_neural::NeuralSurrogate)(val)
-    # Check to make sure dimensions of input matches expected dimension of surrogate
-    _check_dimension(my_neural, val)
-    v = [val...]
-    out = my_neural.model(v)
-    if length(out) == 1
-        return out[1]
-    else
-        return out
-    end
+    out = my_neural.model(val)
+    return out
 end
 
-function add_point!(my_n::NeuralSurrogate, x_new, y_new)
-    if eltype(x_new) == eltype(my_n.x)
-        append!(my_n.x, x_new)
-        append!(my_n.y, y_new)
-    else
-        push!(my_n.x, x_new)
-        push!(my_n.y, y_new)
+function (my_neural::NeuralSurrogate)(val::Tuple)
+    out = my_neural.model(collect(val))
+    return out
+end
+
+function (my_neural::NeuralSurrogate)(val::Number)
+    out = my_neural(reduce(hcat, [[val]]))
+    return out
+end
+
+function SurrogatesBase.update!(my_n::NeuralSurrogate, x_new, y_new)
+    if x_new isa Tuple
+        x_new = reduce(hcat, x_new)'
+    elseif x_new isa Vector{<:Tuple}
+        x_new = reduce(hcat, collect.(x_new))
+    elseif x_new isa Vector
+        if size(x_new) == (1, ) && size(x_new[1]) == ()
+            x_new = hcat(x_new)
+        else
+            x_new = reduce(hcat, x_new)
+        end
     end
-    X = vec.(collect.(my_n.x))
-    data = zip(X, my_n.y)
-    for epoch in 1:(my_n.n_echos)
-        Flux.train!(my_n.loss, my_n.ps, data, my_n.opt)
+    y_new = reduce(hcat, y_new)
+    opt_state = Flux.setup(my_n.opt, my_n.model)
+    for _ in 1:my_n.n_epochs
+        grads = Flux.gradient(my_n.model) do m
+            result = m(x_new)
+            my_n.loss(result, y_new)
+        end
+        Flux.update!(opt_state, my_n.model, grads[1])
     end
+    my_n.ps = Flux.trainable(my_n.model)
+    my_n.x = hcat(my_n.x, x_new)
+    my_n.y = hcat(my_n.y, y_new)
     nothing
 end
 
