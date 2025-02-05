@@ -132,11 +132,11 @@ end
 
     # test if MOE handles SurrogatesFlux
     model = Chain(Dense(2, 1), first)
-    loss(x, y) = Flux.mse(model(x), y)
+    loss = Flux.mse
     opt = Descent(0.01)
-    n_echos = 1
+    n_epochs = 1
     expert_types = [
-        NeuralStructure(model = model, loss = loss, opt = opt, n_echos = n_echos),
+        NeuralStructure(model = model, loss = loss, opt = opt, n_epochs = n_epochs),
         LinearStructure()
     ]
     moe_nn_ln = MOE(x, y, expert_types, ndim = 2)
@@ -166,7 +166,7 @@ end
             sparse = false)
     ]
     moe = MOE(x, y, expert_types)
-    add_point!(moe, 0.5, 5.0)
+    update!(moe, 0.5, 5.0)
 end
 
 @safetestset "Add Point ND" begin
@@ -191,5 +191,5 @@ end
             sparse = false)
     ]
     moe_nd_inv_rad = MOE(x, y, expert_types, ndim = 2)
-    add_point!(moe_nd_inv_rad, (0.5, 0.5), sum((0.5, 0.5) .^ 2) + 5)
+    update!(moe_nd_inv_rad, (0.5, 0.5), sum((0.5, 0.5) .^ 2) + 5)
 end

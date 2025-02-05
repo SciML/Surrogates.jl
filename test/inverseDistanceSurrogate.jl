@@ -11,8 +11,8 @@ p = 3.5
 InverseDistance = InverseDistanceSurrogate(x, y, lb, ub, p = 2.4)
 InverseDistance_kwargs = InverseDistanceSurrogate(x, y, lb, ub)
 prediction = InverseDistance(5.0)
-add_point!(InverseDistance, 5.0, -0.91)
-add_point!(InverseDistance, [5.1, 5.2], [1.0, 2.0])
+update!(InverseDistance, 5.0, -0.91)
+update!(InverseDistance, [5.1, 5.2], [1.0, 2.0])
 
 # Test that input dimension is properly checked for 1D inverse distance surrogates
 @test_throws ArgumentError InverseDistance(Float64[])
@@ -29,8 +29,8 @@ y = f.(x)
 p = 3.0
 InverseDistance = InverseDistanceSurrogate(x, y, lb, ub, p = p)
 prediction = InverseDistance((1.0, 2.0))
-add_point!(InverseDistance, (5.0, 3.4), -0.91)
-add_point!(InverseDistance, [(5.1, 5.2), (5.3, 6.7)], [1.0, 2.0])
+update!(InverseDistance, (5.0, 3.4), -0.91)
+update!(InverseDistance, [(5.1, 5.2), (5.3, 6.7)], [1.0, 2.0])
 
 # Test that input dimension is properly checked for 1D inverse distance surrogates
 @test_throws ArgumentError InverseDistance(Float64[])
@@ -59,6 +59,6 @@ surrogate_kwargs = InverseDistanceSurrogate(x, y, lb, ub)
 @test surrogate((1.0, 2.0)) ≈ [1, 4]
 x_new = (2.0, 2.0)
 y_new = f(x_new)
-add_point!(surrogate, x_new, y_new)
+update!(surrogate, x_new, y_new)
 @test surrogate(x_new) ≈ y_new
 surrogate((0.0, 0.0))

@@ -4,7 +4,7 @@ using ExtendableSparse
 _copy(t::Tuple) = t
 _copy(t) = copy(t)
 
-mutable struct RadialBasis{F, Q, X, Y, L, U, C, S, D} <: AbstractSurrogate
+mutable struct RadialBasis{F, Q, X, Y, L, U, C, S, D} <: AbstractDeterministicSurrogate
     phi::F
     dim_poly::Q
     x::X
@@ -231,11 +231,11 @@ _center_bounds(x::Tuple, lb, ub) = ntuple(i -> (ub[i] - lb[i]) / 2, length(x))
 _center_bounds(x, lb, ub) = (ub .- lb) ./ 2
 
 """
-    add_point!(rad::RadialBasis,new_x,new_y)
+    update!(rad::RadialBasis,new_x,new_y)
 
 Add new samples x and y and update the coefficients. Return the new object radial.
 """
-function add_point!(rad::RadialBasis, new_x, new_y)
+function SurrogatesBase.update!(rad::RadialBasis, new_x, new_y)
     if (length(new_x) == 1 && length(new_x[1]) == 1) ||
        (length(new_x) > 1 && length(new_x[1]) == 1 && length(rad.lb) > 1)
         push!(rad.x, new_x)

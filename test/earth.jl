@@ -9,7 +9,7 @@ f = x -> 2 * x + x^2
 y = f.(x)
 my_ear1d = EarthSurrogate(x, y, lb, ub)
 val = my_ear1d(3.0)
-add_point!(my_ear1d, 6.0, 48.0)
+update!(my_ear1d, 6.0, 48.0)
 
 # Test that input dimension is properly checked for 1D Earth surrogates
 @test_throws ArgumentError my_ear1d(Float64[])
@@ -24,7 +24,7 @@ f = x -> x[1] * x[2] + x[1]
 y = f.(x)
 my_earnd = EarthSurrogate(x, y, lb, ub)
 val = my_earnd((2.0, 2.0))
-add_point!(my_earnd, (2.0, 2.0), 6.0)
+update!(my_earnd, (2.0, 2.0), 6.0)
 
 # Test that input dimension is properly checked for ND Earth surrogates
 @test_throws ArgumentError my_earnd(Float64[])

@@ -6,7 +6,7 @@ unknown points are calculated with a weighted average of the sampling points.
 p is a positive real number called the power parameter.
 p > 1 is needed for the derivative to be continuous.
 """
-mutable struct InverseDistanceSurrogate{X, Y, L, U, P} <: AbstractSurrogate
+mutable struct InverseDistanceSurrogate{X, Y, L, U, P} <: AbstractDeterministicSurrogate
     x::X
     y::Y
     lb::L
@@ -40,7 +40,7 @@ function (inverSurr::InverseDistanceSurrogate)(val)
     end
 end
 
-function add_point!(inverSurr::InverseDistanceSurrogate, x_new, y_new)
+function SurrogatesBase.update!(inverSurr::InverseDistanceSurrogate, x_new, y_new)
     if eltype(x_new) == eltype(inverSurr.x)
         #1D
         append!(inverSurr.x, x_new)

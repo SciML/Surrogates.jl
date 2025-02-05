@@ -1,4 +1,5 @@
-mutable struct VariableFidelitySurrogate{X, Y, L, U, N, F, E} <: AbstractSurrogate
+mutable struct VariableFidelitySurrogate{X, Y, L, U, N, F, E} <:
+               AbstractDeterministicSurrogate
     x::X
     y::Y
     lb::L
@@ -55,7 +56,7 @@ function VariableFidelitySurrogate(x, y, lb, ub;
             model = low_fid_structure.model,
             loss = low_fid_structure.loss,
             opt = low_fid_structure.opt,
-            n_echos = low_fid_structure.n_echos)
+            n_epochs = low_fid_structure.n_epochs)
 
     elseif low_fid_structure[1] == "RandomForestSurrogate"
         low_fid_surr = RandomForestSurrogate(x_low, y_low, lb, ub,
@@ -101,7 +102,7 @@ function VariableFidelitySurrogate(x, y, lb, ub;
     elseif high_fid_structure[1] == "NeuralSurrogate"
         eps = NeuralSurrogate(x_high, y_eps, lb, ub, model = high_fid_structure.model,
             loss = high_fid_structure.loss, opt = high_fid_structure.opt,
-            n_echos = high_fid_structure.n_echos)
+            n_epochs = high_fid_structure.n_epochs)
 
     elseif high_fid_structure[1] == "RandomForestSurrogate"
         eps = RandomForestSurrogate(x_high, y_eps, lb, ub,
@@ -148,20 +149,20 @@ add_point!(varfid::VariableFidelitySurrogate,x_new,y_new)
 
 I expect to add low fidelity data to the surrogate.
 """
-function add_point!(varfid::VariableFidelitySurrogate, x_new, y_new)
+function SurrogatesBase.update!(varfid::VariableFidelitySurrogate, x_new, y_new)
     if length(varfid.x[1]) == 1
         #1D
         varfid.x = vcat(varfid.x, x_new)
         varfid.y = vcat(varfid.y, y_new)
 
         #I added a new lowfidelity datapoint, I need to update the low_fid_surr:
-        add_point!(varfid.low_fid_surr, x_new, y_new)
+        update!(varfid.low_fid_surr, x_new, y_new)
     else
         #ND
         varfid.x = vcat(varfid.x, x_new)
         varfid.y = vcat(varfid.y, y_new)
 
         #I added a new lowfidelity datapoint, I need to update the low_fid_surr:
-        add_point!(varfid.low_fid_surr, x_new, y_new)
+        update!(varfid.low_fid_surr, x_new, y_new)
     end
 end

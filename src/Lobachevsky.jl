@@ -1,5 +1,5 @@
-using ExtendableSparse
-mutable struct LobachevskySurrogate{X, Y, A, N, L, U, C, S} <: AbstractSurrogate
+mutable struct LobachevskySurrogate{X, Y, A, N, L, U, C, S} <:
+               AbstractDeterministicSurrogate
     x::X
     y::Y
     alpha::A
@@ -105,7 +105,7 @@ function (loba::LobachevskySurrogate)(val)
     for j in 1:length(loba.x))
 end
 
-function add_point!(loba::LobachevskySurrogate, x_new, y_new)
+function SurrogatesBase.update!(loba::LobachevskySurrogate, x_new, y_new)
     if length(loba.x[1]) == 1
         #1D
         append!(loba.x, x_new)

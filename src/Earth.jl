@@ -1,6 +1,5 @@
-using LinearAlgebra
-
-mutable struct EarthSurrogate{X, Y, L, U, B, C, P, M, N, R, G, I, T} <: AbstractSurrogate
+mutable struct EarthSurrogate{X, Y, L, U, B, C, P, M, N, R, G, I, T} <:
+               AbstractDeterministicSurrogate
     x::X
     y::Y
     lb::L
@@ -336,7 +335,7 @@ function (earth::EarthSurrogate)(val)
                 for i in 1:length(earth.coeff)]) + earth.intercept
 end
 
-function add_point!(earth::EarthSurrogate, x_new, y_new)
+function SurrogatesBase.update!(earth::EarthSurrogate, x_new, y_new)
     if length(earth.x[1]) == 1
         #1D
         earth.x = vcat(earth.x, x_new)

@@ -1,4 +1,4 @@
-mutable struct GEK{X, Y, L, U, P, T, M, B, S, R} <: AbstractSurrogate
+mutable struct GEK{X, Y, L, U, P, T, M, B, S, R} <: AbstractDeterministicSurrogate
     x::X
     y::Y
     lb::L
@@ -214,7 +214,7 @@ function GEK(x, y, lb, ub; p = collect(one.(x[1])), theta = collect(one.(x[1])))
     GEK(x, y, lb, ub, p, theta, mu, b, sigma, inverse_of_R)
 end
 
-function add_point!(k::GEK, new_x, new_y)
+function SurrogatesBase.update!(k::GEK, new_x, new_y)
     if new_x in k.x
         println("Adding a sample that already exists, cannot build Kriging.")
         return
