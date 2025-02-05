@@ -11,7 +11,7 @@ SurrogatesBase = "89f642e6-4179-4274-8202-c11f4bd9a72c"
 Zygote = "e88e6eb3-aa80-5325-afca-941959d7151f"
 
 [compat]
-Flux = "0.13, 0.14, 0.15, 0.16"
+Flux = "0.15, 0.16"
 Optimisers = "0.4.4"
 Surrogates = "6"
 SurrogatesBase = "1.1.0"
