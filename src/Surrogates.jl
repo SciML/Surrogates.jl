@@ -4,9 +4,10 @@ using LinearAlgebra
 using Distributions
 using GLM
 using ExtendableSparse
-using SurrogatesBase: SurrogatesBase, update!, AbstractDeterministicSurrogate
+using SurrogatesBase: SurrogatesBase, update!, AbstractDeterministicSurrogate,
+                      AbstractStochasticSurrogate
 
-abstract type AbstractSurrogate <: Function end
+const AbstractSurrogate = Union{AbstractDeterministicSurrogate, AbstractStochasticSurrogate}
 include("utils.jl")
 include("Radials.jl")
 include("Kriging.jl")
