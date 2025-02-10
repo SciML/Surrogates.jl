@@ -145,7 +145,7 @@ function (varfid::VariableFidelitySurrogate)(val)
 end
 
 """
-add_point!(varfid::VariableFidelitySurrogate,x_new,y_new)
+update!(varfid::VariableFidelitySurrogate,x_new,y_new)
 
 I expect to add low fidelity data to the surrogate.
 """

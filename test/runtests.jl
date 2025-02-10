@@ -15,8 +15,8 @@ end
     @testset "Libs" begin
         @testset "$pkg" for pkg in [
             "SurrogatesAbstractGPs", "SurrogatesFlux",
-            "SurrogatesPolyChaos", "SurrogatesMOE",
-            "SurrogatesRandomForest", "SurrogatesSVM"]
+            "SurrogatesPolyChaos", "SurrogatesRandomForest",
+            "SurrogatesMOE", "SurrogatesSVM"]
             @time begin
                 dev_subpkg(pkg)
                 Pkg.test(pkg)
