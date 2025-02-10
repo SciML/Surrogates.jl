@@ -86,16 +86,15 @@ my_linear_ND = LinearSurrogate(x, y, lb, ub)
 surrogate_optimize(objective_function_ND, SRBF(), lb, ub, my_linear_ND, SobolSample(),
     maxiters = 15)
 
-#=
 #SVM
-lb = [1.0,1.0]
-ub = [6.0,6.0]
-x = sample(5,lb,ub,SobolSample())
-objective_function_ND = z -> 3*norm(z)+1
+lb = [1.0, 1.0]
+ub = [6.0, 6.0]
+x = sample(5, lb, ub, SobolSample())
+objective_function_ND = z -> 3 * norm(z) + 1
 y = objective_function_ND.(x)
-my_SVM_ND = SVMSurrogate(x,y,lb,ub)
-surrogate_optimize(objective_function_ND,SRBF(),lb,ub,my_SVM_ND,SobolSample(),maxiters=15)
-=#
+my_SVM_ND = SVMSurrogate(x, y, lb, ub)
+surrogate_optimize(
+    objective_function_ND, SRBF(), lb, ub, my_SVM_ND, SobolSample(), maxiters = 15)
 
 #Inverse distance surrogate
 lb = [1.0, 1.0]
@@ -276,26 +275,24 @@ num_centers = 2
 surrogate_optimize(objective_function_ND, SOP(num_centers), lb, ub, my_k_SOPND,
     SobolSample(), maxiters = 20)
 
-#multi optimization
-#=
-f  = x -> [x^2, x]
+f = x -> [x^2, x]
 lb = 1.0
 ub = 10.0
-x  = sample(100, lb, ub, SobolSample())
-y  = f.(x)
+x = sample(100, lb, ub, SobolSample())
+y = f.(x)
 my_radial_basis_smb = RadialBasis(x, y, lb, ub, rad = linearRadial())
-surrogate_optimize(f,SMB(),lb,ub,my_radial_basis_ego,SobolSample())
+surrogate_optimize(f, SMB(), lb, ub, my_radial_basis_smb, SobolSample())
 
-f  = x -> [x^2, x]
+f = x -> [x, sin(x)]
 lb = 1.0
 ub = 10.0
-x  = sample(100, lb, ub, SobolSample())
-y  = f.(x)
+x = sample(500, lb, ub, RandomSample())
+y = f.(x)
 my_radial_basis_rtea = RadialBasis(x, y, lb, ub, rad = linearRadial())
 Z = 0.8 #percentage
 K = 2 #number of revaluations
 p_cross = 0.5 #crossing vs copy
 n_c = 1.0 # hyperparameter for children creation
 sigma = 1.5 # mutation
-surrogate_optimize(f,RTEA(Z,K,p_cross,n_c,sigma),lb,ub,my_radial_basis_rtea,SobolSample())
-=#
+surrogate_optimize(f, RTEA(K, Z, p_cross, n_c, sigma), lb, ub,
+    my_radial_basis_rtea, SobolSample(); maxiters = 10)
