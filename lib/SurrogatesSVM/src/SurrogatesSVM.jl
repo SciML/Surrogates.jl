@@ -33,7 +33,7 @@ function SVMSurrogate(x, y, lb, ub)
         end
     else
         for j in eachindex(x)
-            X[j, :] = x[j]
+            X[j, :] .= x[j]
         end
     end
     model = LIBSVM.fit!(SVC(), X, y)
@@ -46,7 +46,7 @@ end
 
 function (svmsurr::SVMSurrogate)(val)
     n = length(val)
-    return LIBSVM.predict(svmsurr.model, reshape(val, 1, n))[1]
+    return LIBSVM.predict(svmsurr.model, reshape(collect(val), 1, n))[1]
 end
 
 """
@@ -65,7 +65,8 @@ function SurrogatesBase.update!(svmsurr::SVMSurrogate, x_new, y_new)
         svmsurr.model = LIBSVM.fit!(
             SVC(), reshape(svmsurr.x, length(svmsurr.x), 1), svmsurr.y)
     else
-        svmsurr.model = LIBSVM.fit!(SVC(), transpose(reduce(hcat, svmsurr.x)), svmsurr.y)
+        svmsurr.model = LIBSVM.fit!(
+            SVC(), transpose(reduce(hcat, collect.(svmsurr.x))), svmsurr.y)
     end
 end
 
