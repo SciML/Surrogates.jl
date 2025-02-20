@@ -19,21 +19,19 @@ In the example below, the 'gp_surrogate' assignment code can be commented / unco
 ```@example gp_tutorial1d
 using Surrogates
 using Plots
-default()
 using AbstractGPs #required to access different types of kernels
 using SurrogatesAbstractGPs
 
 f(x) = (6 * x - 2)^2 * sin(12 * x - 4)
-n_samples = 4
+n_samples = 100
 lower_bound = 0.0
 upper_bound = 1.0
 xs = lower_bound:0.001:upper_bound
 x = sample(n_samples, lower_bound, upper_bound, SobolSample())
 y = f.(x)
-#gp_surrogate = AbstractGPSurrogate(x,y, gp=GP(SqExponentialKernel()), Σy=0.05) #example of Squared Exponential Kernel
-#gp_surrogate = AbstractGPSurrogate(x,y, gp=GP(MaternKernel()), Σy=0.05) #example of MaternKernel
+
 gp_surrogate = AbstractGPSurrogate(
-    x, y, gp = GP(PolynomialKernel(; c = 2.0, degree = 5)), Σy = 0.25)
+    x, y, gp = GP(PolynomialKernel(; c = 2.0, degree = 15)), Σy = 0.25)
 plot(x, y, seriestype = :scatter, label = "Sampled points",
     xlims = (lower_bound, upper_bound), ylims = (-7, 17), legend = :top)
 plot!(xs, f.(xs), label = "True function", legend = :top)
@@ -51,14 +49,14 @@ using AbstractGPs
 using SurrogatesAbstractGPs
 
 f(x) = (x - 2)^2
-n_samples = 4
+n_samples = 100
 lower_bound = 0.0
 upper_bound = 4.0
 xs = lower_bound:0.1:upper_bound
 x = sample(n_samples, lower_bound, upper_bound, SobolSample())
 y = f.(x)
 gp_surrogate = AbstractGPSurrogate(x, y)
-@show surrogate_optimize(f, SRBF(), lower_bound, upper_bound, gp_surrogate, SobolSample())
+surrogate_optimize(f, SRBF(), lower_bound, upper_bound, gp_surrogate, SobolSample())
 ```
 
 Plotting the function and the sampled points:
@@ -67,7 +65,7 @@ Plotting the function and the sampled points:
 scatter(gp_surrogate.x, gp_surrogate.y, label = "Sampled points",
     ylims = (-1.0, 5.0), legend = :top)
 plot!(xs, gp_surrogate.(xs), label = "Surrogate function",
-    ribbon = p -> std_error_at_point(gp_surrogate, p), legend = :top)
+    ribbon = p -> SurrogatesAbstractGPs.std_error_at_point(gp_surrogate, p), legend = :top)
 plot!(xs, f.(xs), label = "True function", legend = :top)
 ```
 
@@ -81,12 +79,12 @@ using AbstractGPs
 using SurrogatesAbstractGPs
 
 hypot_func = z -> 3 * hypot(z...) + 1
-n_samples = 50
+n_samples = 100
 lower_bound = [-1.0, -1.0]
 upper_bound = [1.0, 1.0]
 
 xys = sample(n_samples, lower_bound, upper_bound, SobolSample())
-zs = hypot_func.(xys);
+zs = hypot_func.(xys)
 
 x, y = -2:2, -2:2
 p1 = surface(x, y, (x1, x2) -> hypot_func((x1, x2)))
@@ -110,15 +108,15 @@ plot(p1, p2, title = "Surrogate")
 ```
 
 ```@example abstractgps_tutorialnd
-@show gp_surrogate((0.2, 0.2))
+gp_surrogate((0.2, 0.2))
 ```
 
 ```@example abstractgps_tutorialnd
-@show hypot_func((0.2, 0.2))
+hypot_func((0.2, 0.2))
 ```
 
 And this is our log marginal posterior predictive probability:
 
 ```@example abstractgps_tutorialnd
-@show logpdf_surrogate(gp_surrogate)
+logpdf_surrogate(gp_surrogate)
 ```

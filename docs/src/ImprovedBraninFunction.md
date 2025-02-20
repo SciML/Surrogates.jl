@@ -2,7 +2,7 @@
 
 The Branin Function is commonly used as a test function for metamodelling in computer experiments, especially in the context of optimization.
 
-# Modifications for Improved Branin Function:
+## Modifications for Improved Branin Function:
 
 To enhance the Branin function, changes were made to introduce irregularities, variability, and a dynamic aspect to its landscape. Here's an example:
 
@@ -27,7 +27,7 @@ end
 
 This improved function now incorporates irregularities, variability, and a dynamic aspect. These changes aim to make the optimization landscape more challenging and realistic.
 
-# Using the Improved Branin Function:
+## Using the Improved Branin Function:
 
 After defining the improved Branin function, you can proceed to test different surrogates and visualize their performance using the updated function. Here's an example of using the improved function with the Radial Basis surrogate:
 

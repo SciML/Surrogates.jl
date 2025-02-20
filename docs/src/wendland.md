@@ -1,4 +1,4 @@
-# Wendland Surrogate
+# Wendland Surrogate Tutorial
 
 The Wendland surrogate is a compact surrogate: it allocates much less memory than other surrogates.
 The coefficients are found using an iterative solver.
@@ -11,7 +11,7 @@ using Plots
 ```
 
 ```@example wendland
-n = 40
+n = 100
 lower_bound = 0.0
 upper_bound = 1.0
 f = x -> exp(-x^2)
@@ -19,7 +19,7 @@ x = sample(n, lower_bound, upper_bound, SobolSample())
 y = f.(x)
 ```
 
-We choose to sample f in 30 points between 5 and 25 using `sample` function. The sampling points are chosen using a Sobol sequence, this can be done by passing `SobolSample()` to the `sample` function.
+We choose to sample f in 100 points between 5 and 25 using `sample` function. The sampling points are chosen using a Sobol sequence, this can be done by passing `SobolSample()` to the `sample` function.
 
 ## Building Surrogate
 
@@ -28,8 +28,7 @@ a slight change in ϵ would produce a totally different fit.
 Try it yourself with this function!
 
 ```@example wendland
-my_eps = 0.5
-wend = Wendland(x, y, lower_bound, upper_bound, eps = my_eps)
+wend = Wendland(x, y, lower_bound, upper_bound, eps = 0.45)
 ```
 
 ```@example wendland

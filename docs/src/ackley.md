@@ -9,7 +9,6 @@ Let's see the 1D case.
 ```@example ackley
 using Surrogates
 using Plots
-default()
 ```
 
 Now, let's define the `Ackley` function:

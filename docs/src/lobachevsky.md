@@ -1,4 +1,4 @@
-# Lobachevsky surrogate tutorial
+# Lobachevsky Surrogate Tutorial
 
 Lobachevsky splines function is a function that is used for univariate and multivariate scattered interpolation. Introduced by Lobachevsky in 1842 to investigate errors in astronomical measurements.
 
@@ -9,16 +9,15 @@ First of all import `Surrogates` and `Plots`.
 ```@example LobachevskySurrogate_tutorial
 using Surrogates
 using Plots
-default()
 ```
 
 ## Sampling
 
-We choose to sample f in 4 points between 0 and 4 using the `sample` function. The sampling points are chosen using a Sobol sequence, this can be done by passing `SobolSample()` to the `sample` function.
+We choose to sample f in 100 points between 0 and 4 using the `sample` function. The sampling points are chosen using a Sobol sequence, this can be done by passing `SobolSample()` to the `sample` function.
 
 ```@example LobachevskySurrogate_tutorial
 f(x) = sin(x) + sin(10 / 3 * x)
-n_samples = 5
+n_samples = 100
 lower_bound = 1.0
 upper_bound = 4.0
 x = sample(n_samples, lower_bound, upper_bound, SobolSample())
@@ -39,7 +38,7 @@ n = 6
 lobachevsky_surrogate = LobachevskySurrogate(
     x, y, lower_bound, upper_bound, alpha = 2.0, n = 6)
 plot(x, y, seriestype = :scatter, label = "Sampled points",
-    xlims = (lower_bound, upper_bound))
+    xlims = (lower_bound, upper_bound), legend = true)
 plot!(f, label = "True function", xlims = (lower_bound, upper_bound))
 plot!(
     lobachevsky_surrogate, label = "Surrogate function", xlims = (lower_bound, upper_bound))
@@ -52,7 +51,7 @@ Having built a surrogate, we can now use it to search for minima in our original
 To optimize using our surrogate we call `surrogate_optimize` method. We choose to use Stochastic RBF as the optimization technique and again Sobol sampling as the sampling technique.
 
 ```@example LobachevskySurrogate_tutorial
-@show surrogate_optimize(
+surrogate_optimize(
     f, SRBF(), lower_bound, upper_bound, lobachevsky_surrogate, SobolSample())
 scatter(x, y, label = "Sampled points")
 plot!(f, label = "True function", xlims = (lower_bound, upper_bound))
@@ -67,9 +66,9 @@ In the example below, it shows how to use `lobachevsky_surrogate` for higher dim
 First of all, we will define the `Schaffer` function we are going to build surrogate for. Notice, one how its argument is a vector of numbers, one for each coordinate, and its output is a scalar.
 
 ```@example LobachevskySurrogate_ND
-using Plots # hide
-default(c = :matter, legend = false, xlabel = "x", ylabel = "y") # hide
-using Surrogates # hide
+using Plots
+default(c = :matter, legend = false, xlabel = "x", ylabel = "y")
+using Surrogates
 
 function schaffer(x)
     x1 = x[1]
@@ -94,14 +93,14 @@ zs = schaffer.(xys);
 ```
 
 ```@example LobachevskySurrogate_ND
-x, y = 0:8, 0:8 # hide
-p1 = surface(x, y, (x1, x2) -> schaffer((x1, x2))) # hide
-xs = [xy[1] for xy in xys] # hide
-ys = [xy[2] for xy in xys] # hide
-scatter!(xs, ys, zs) # hide
-p2 = contour(x, y, (x1, x2) -> schaffer((x1, x2))) # hide
-scatter!(xs, ys) # hide
-plot(p1, p2, title = "True function") # hide
+x, y = 0:8, 0:8
+p1 = surface(x, y, (x1, x2) -> schaffer((x1, x2)))
+xs = [xy[1] for xy in xys]
+ys = [xy[2] for xy in xys]
+scatter!(xs, ys, zs)
+p2 = contour(x, y, (x1, x2) -> schaffer((x1, x2)))
+scatter!(xs, ys)
+plot(p1, p2, title = "True function")
 ```
 
 ## Building a surrogate
@@ -114,11 +113,11 @@ Lobachevsky = LobachevskySurrogate(
 ```
 
 ```@example LobachevskySurrogate_ND
-p1 = surface(x, y, (x, y) -> Lobachevsky([x y])) # hide
-scatter!(xs, ys, zs, marker_z = zs) # hide
-p2 = contour(x, y, (x, y) -> Lobachevsky([x y])) # hide
-scatter!(xs, ys, marker_z = zs) # hide
-plot(p1, p2, title = "Surrogate") # hide
+p1 = surface(x, y, (x, y) -> Lobachevsky([x y]))
+scatter!(xs, ys, zs, marker_z = zs)
+p2 = contour(x, y, (x, y) -> Lobachevsky([x y]))
+scatter!(xs, ys, marker_z = zs)
+plot(p1, p2, title = "Surrogate")
 ```
 
 ## Optimizing
@@ -142,13 +141,13 @@ size(Lobachevsky.x)
 ```
 
 ```@example LobachevskySurrogate_ND
-p1 = surface(x, y, (x, y) -> Lobachevsky([x y])) # hide
-xys = Lobachevsky.x # hide
-xs = [i[1] for i in xys] # hide
-ys = [i[2] for i in xys] # hide
-zs = schaffer.(xys) # hide
-scatter!(xs, ys, zs, marker_z = zs) # hide
-p2 = contour(x, y, (x, y) -> Lobachevsky([x y])) # hide
-scatter!(xs, ys, marker_z = zs) # hide
-plot(p1, p2) # hide
+p1 = surface(x, y, (x, y) -> Lobachevsky([x y]))
+xys = Lobachevsky.x
+xs = [i[1] for i in xys]
+ys = [i[2] for i in xys]
+zs = schaffer.(xys)
+scatter!(xs, ys, zs, marker_z = zs)
+p2 = contour(x, y, (x, y) -> Lobachevsky([x y]))
+scatter!(xs, ys, marker_z = zs)
+plot(p1, p2)
 ```

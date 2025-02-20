@@ -1,4 +1,4 @@
-## Mixture of Experts (MOE)
+# Mixture of Experts (MOE) Surrogate Tutorial
 
 !!! note
     
@@ -8,7 +8,7 @@ The Mixture of Experts (MOE) Surrogate model represents the interpolating functi
 
 MOE is most useful when we have a discontinuous function. For example, let's say we want to build a surrogate for the following function:
 
-### 1D Example
+## 1D Example
 
 ```@example MOE_1D
 function discont_1D(x)
@@ -18,8 +18,6 @@ function discont_1D(x)
         return 5.0
     end
 end
-
-nothing # hide
 ```
 
 Let's choose the MOE Surrogate for 1D. Note that we have to import the `SurrogatesMOE` package in addition to `Surrogates` and `Plots`.
@@ -28,7 +26,6 @@ Let's choose the MOE Surrogate for 1D. Note that we have to import the `Surrogat
 using Surrogates
 using SurrogatesMOE
 using Plots
-default()
 
 lb = -1.0
 ub = 1.0
@@ -61,11 +58,11 @@ MOE_at0 = MOE_1D_RAD_RAD(0.0)
 
 As we can see, the accuracy is significantly better.
 
-### Under the Hood - How SurrogatesMOE Works
+## Under the Hood - How SurrogatesMOE Works
 
 First, we create Gaussian Mixture Models for the number of expert types provided using the x and y values. For example, in the above example, we create two clusters. Then, using a small test dataset kept aside from the input data, we choose the best surrogate model for each of the clusters. At prediction time, we use the appropriate surrogate model based on the cluster to which the new point belongs.
 
-### N-Dimensional Example
+## N-Dimensional Example
 
 ```@example MOE_ND
 using Surrogates
@@ -111,10 +108,10 @@ moe_rmse = rmse(true_vals, moe_pred_vals)
 rbf = RadialBasis(x, y, lb, ub)
 rbf_pred_vals = rbf.(x_test)
 rbf_rmse = rmse(true_vals, rbf_pred_vals)
-println(rbf_rmse > moe_rmse)
+@show rbf_rmse, moe_rmse
 ```
 
-### Usage Notes - Example With Other Surrogates
+## Usage Notes - Example With Other Surrogates
 
 From the above example, simply change or add to the expert types:
 
@@ -133,5 +130,4 @@ expert_types = [
     LinearStructure(),
     InverseDistanceStructure(p = 1.0)
 ]
-nothing # hide
 ```

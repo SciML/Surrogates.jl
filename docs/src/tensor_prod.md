@@ -8,7 +8,6 @@ Let's import Surrogates and Plots:
 ```@example tensor
 using Surrogates
 using Plots
-default()
 ```
 
 Define the 1D objective function:
@@ -21,7 +20,7 @@ end
 ```
 
 ```@example tensor
-n = 30
+n = 100
 lb = -5.0
 ub = 5.0
 a = 0.5

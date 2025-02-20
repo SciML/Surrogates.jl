@@ -1,4 +1,4 @@
-## GEKPLS Surrogate Tutorial
+# GEKPLS Surrogate Tutorial
 
 Gradient Enhanced Kriging with Partial Least Squares Method (GEKPLS) is a surrogate modeling technique that brings down computation time and returns improved accuracy for high-dimensional problems. The Julia implementation of GEKPLS is adapted from the Python version by [SMT](https://github.com/SMTorg) which is based on this [paper](https://arxiv.org/pdf/1708.02663.pdf).
 
@@ -14,12 +14,11 @@ The following are the inputs when building a GEKPLS surrogate:
  8. extra_points - The number of additional points to use for the PLS
  9. theta - The hyperparameter to use for the correlation model
 
-### Basic GEKPLS Usage
+## Basic GEKPLS Usage
 
 The following example illustrates how to use GEKPLS:
 
 ```@example gekpls_water_flow
-
 using Surrogates
 using Zygote
 
@@ -52,17 +51,15 @@ extra_points = 2
 initial_theta = [0.01 for i in 1:n_comp]
 g = GEKPLS(x, y, grads, n_comp, delta_x, lb, ub, extra_points, initial_theta)
 y_pred = g.(x_test)
-rmse = sqrt(sum(((y_pred - y_true) .^ 2) / n_test)) #root mean squared error
-println(rmse) #0.0347
+rmse = sqrt(sum(((y_pred - y_true) .^ 2) / n_test))
 ```
 
-### Using GEKPLS With Surrogate Optimization
+## Using GEKPLS With Surrogate Optimization
 
-GEKPLS can also be used to find the minimum of a function with the surrogates.jl optimization function.
+GEKPLS can also be used to find the minimum of a function with the optimization function.
 This next example demonstrates how this can be accomplished.
 
 ```@example gekpls_optimization
-
 using Surrogates
 using Zygote
 
@@ -84,5 +81,5 @@ g = GEKPLS(x, y, grads, n_comp, delta_x, lb, ub, extra_points, initial_theta)
 x_point, minima = surrogate_optimize(sphere_function, SRBF(), lb, ub, g,
     RandomSample(); maxiters = 20,
     num_new_samples = 20, needs_gradient = true)
-println(minima)
+minima
 ```

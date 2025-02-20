@@ -1,12 +1,11 @@
 # Surrogate
 
-Every surrogate has a different definition depending on the parameters needed.
-However, they have in common:
+Every surrogate has a different definition depending on the parameters needed. It uses the interface defined in [SurrogatesBase.jl](https://github.com/SciML/SurrogatesBase.jl). In a nutshell, they use:
 
- 1. `add_point!(::AbstractSurrogate,x_new,y_new)`
- 2. `AbstractSurrogate(value)`
-    The first function adds a sample point to the surrogate, thus changing the internal
-    coefficients. The second one calculates the approximation at value.
+ 1. `update!(::AbstractDeterministicSurrogate, x_new, y_new)`
+ 2. `AbstractDeterministicSurrogate(value)`
+    
+The first function adds a sample point to the surrogate, thus changing the internal coefficients. The second one calculates the approximation at value.
 
   - Linear surrogate
 
@@ -57,13 +56,13 @@ It's great that you want to add another surrogate to the library!
 You will need to:
 
  1. Define a new mutable struct and a constructor function
- 2. Define add\_point!(your\_surrogate::AbstractSurrogate,x\_new,y\_new)
+ 2. Define update!(your\_surrogate, x\_new, y\_new)
  3. Define your\_surrogate(value) for the approximation
 
-**Example**
+## Example
 
-```
-mutable struct NewSurrogate{X,Y,L,U,C,A,B} <: AbstractSurrogate
+```julia
+mutable struct NewSurrogate{X,Y,L,U,C,A,B} <: AbstractDeterministicSurrogate
   x::X
   y::Y
   lb::L
@@ -73,14 +72,13 @@ mutable struct NewSurrogate{X,Y,L,U,C,A,B} <: AbstractSurrogate
   beta::B
 end
 
-function NewSurrogate(x,y,lb,ub,parameters)
+function NewSurrogate(x, y, lb, ub, parameters)
     ...
-    return NewSurrogate(x,y,lb,ub,calculated\_coeff,alpha,beta)
+    return NewSurrogate(x, y, lb, ub, calculated\_coeff, alpha, beta)
 end
 
-function add_point!(NewSurrogate,x\_new,y\_new)
-
-  nothing
+function update!(NewSurrogate, x_new, y_new)
+  ...
 end
 
 function (s::NewSurrogate)(value)

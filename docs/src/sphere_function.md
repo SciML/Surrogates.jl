@@ -9,7 +9,6 @@ Let's import Surrogates and Plots:
 ```@example sphere_function
 using Surrogates
 using Plots
-default()
 ```
 
 Define the objective function:

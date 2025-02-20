@@ -1,14 +1,15 @@
-# Second order polynomial tutorial
+# Second Order Polynomial Surrogate Tutorial
 
 The square polynomial model can be expressed by:
+
 ``y = Xβ + ϵ``
+
 Where X is the matrix of the linear model augmented by adding 2d columns,
 containing pair by pair products of variables and variables squared.
 
 ```@example second_order_tut
 using Surrogates
 using Plots
-default()
 ```
 
 ## Sampling
@@ -17,7 +18,7 @@ default()
 f = x -> 3 * sin(x) + 10 / x
 lb = 3.0
 ub = 6.0
-n = 10
+n = 100
 x = sample(n, lb, ub, HaltonSample())
 y = f.(x)
 scatter(x, y, label = "Sampled points", xlims = (lb, ub))
@@ -36,7 +37,7 @@ plot!(sec, label = "Surrogate function", xlims = (lb, ub))
 ## Optimizing
 
 ```@example second_order_tut
-@show surrogate_optimize(f, SRBF(), lb, ub, sec, SobolSample())
+surrogate_optimize(f, SRBF(), lb, ub, sec, SobolSample())
 scatter(x, y, label = "Sampled points")
 plot!(f, label = "True function", xlims = (lb, ub))
 plot!(sec, label = "Surrogate function", xlims = (lb, ub))

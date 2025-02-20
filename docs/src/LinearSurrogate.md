@@ -9,16 +9,15 @@ First of all we have to import these two packages: `Surrogates` and `Plots`.
 ```@example linear_surrogate1D
 using Surrogates
 using Plots
-default()
 ```
 
 ### Sampling
 
-We choose to sample f in 20 points between 0 and 10 using the `sample` function. The sampling points are chosen using a Sobol sequence, this can be done by passing `SobolSample()` to the `sample` function.
+We choose to sample f in 100 points between 0 and 10 using the `sample` function. The sampling points are chosen using a Sobol sequence, this can be done by passing `SobolSample()` to the `sample` function.
 
 ```@example linear_surrogate1D
-f(x) = sin(x) + log(x)
-n_samples = 20
+f(x) = 2*x+10.0
+n_samples = 100
 lower_bound = 5.2
 upper_bound = 12.5
 x = sample(n_samples, lower_bound, upper_bound, SobolSample())
@@ -35,8 +34,6 @@ We can simply calculate `linear_surrogate` for any value.
 
 ```@example linear_surrogate1D
 my_linear_surr_1D = LinearSurrogate(x, y, lower_bound, upper_bound)
-add_point!(my_linear_surr_1D, 4.0, 7.2)
-add_point!(my_linear_surr_1D, [5.0, 6.0], [8.3, 9.7])
 val = my_linear_surr_1D(5.0)
 ```
 
@@ -56,7 +53,7 @@ Having built a surrogate, we can now use it to search for minima in our original
 To optimize using our surrogate we call `surrogate_optimize` method. We choose to use Stochastic RBF as the optimization technique and again Sobol sampling as the sampling technique.
 
 ```@example linear_surrogate1D
-@show surrogate_optimize(
+surrogate_optimize(
     f, SRBF(), lower_bound, upper_bound, my_linear_surr_1D, SobolSample())
 scatter(x, y, label = "Sampled points")
 plot!(f, label = "True function", xlims = (lower_bound, upper_bound))
@@ -68,9 +65,9 @@ plot!(my_linear_surr_1D, label = "Surrogate function", xlims = (lower_bound, upp
 First of all we will define the `Egg Holder` function we are going to build a surrogate for. Notice, one how its argument is a vector of numbers, one for each coordinate, and its output is a scalar.
 
 ```@example linear_surrogateND
-using Plots # hide
-default(c = :matter, legend = false, xlabel = "x", ylabel = "y") # hide
-using Surrogates # hide
+using Plots
+default(c = :matter, legend = false, xlabel = "x", ylabel = "y")
+using Surrogates
 
 function egg(x)
     x1 = x[1]
@@ -83,26 +80,26 @@ end
 
 ### Sampling
 
-Let's define our bounds, this time we are working in two dimensions. In particular we want our first dimension `x` to have bounds `-10, 5`, and `0, 15` for the second dimension. We are taking 50 samples of the space using Sobol Sequences. We then evaluate our function on all of the sampling points.
+Let's define our bounds, this time we are working in two dimensions. In particular we want our first dimension `x` to have bounds `-10, 5`, and `0, 15` for the second dimension. We are taking 100 samples of the space using Sobol Sequences. We then evaluate our function on all of the sampling points.
 
 ```@example linear_surrogateND
-n_samples = 50
+n_samples = 100
 lower_bound = [-10.0, 0.0]
 upper_bound = [5.0, 15.0]
 
 xys = sample(n_samples, lower_bound, upper_bound, SobolSample())
-zs = egg.(xys);
+zs = egg.(xys)
 ```
 
 ```@example linear_surrogateND
-x, y = -10:5, 0:15 # hide
-p1 = surface(x, y, (x1, x2) -> egg((x1, x2))) # hide
-xs = [xy[1] for xy in xys] # hide
-ys = [xy[2] for xy in xys] # hide
-scatter!(xs, ys, zs) # hide
-p2 = contour(x, y, (x1, x2) -> egg((x1, x2))) # hide
-scatter!(xs, ys) # hide
-plot(p1, p2, title = "True function") # hide
+x, y = -10:5, 0:15
+p1 = surface(x, y, (x1, x2) -> egg((x1, x2)))
+xs = [xy[1] for xy in xys]
+ys = [xy[2] for xy in xys]
+scatter!(xs, ys, zs)
+p2 = contour(x, y, (x1, x2) -> egg((x1, x2)))
+scatter!(xs, ys)
+plot(p1, p2, title = "True function")
 ```
 
 ### Building a surrogate
@@ -114,11 +111,11 @@ my_linear_ND = LinearSurrogate(xys, zs, lower_bound, upper_bound)
 ```
 
 ```@example linear_surrogateND
-p1 = surface(x, y, (x, y) -> my_linear_ND([x y])) # hide
-scatter!(xs, ys, zs, marker_z = zs) # hide
-p2 = contour(x, y, (x, y) -> my_linear_ND([x y])) # hide
-scatter!(xs, ys, marker_z = zs) # hide
-plot(p1, p2, title = "Surrogate") # hide
+p1 = surface(x, y, (x, y) -> my_linear_ND([x y]))
+scatter!(xs, ys, zs, marker_z = zs)
+p2 = contour(x, y, (x, y) -> my_linear_ND([x y]))
+scatter!(xs, ys, marker_z = zs)
+plot(p1, p2, title = "Surrogate")
 ```
 
 ### Optimizing
@@ -142,12 +139,12 @@ size(xys)
 ```
 
 ```@example linear_surrogateND
-p1 = surface(x, y, (x, y) -> my_linear_ND([x y])) # hide
-xs = [xy[1] for xy in xys] # hide
-ys = [xy[2] for xy in xys] # hide
-zs = egg.(xys) # hide
-scatter!(xs, ys, zs, marker_z = zs) # hide
-p2 = contour(x, y, (x, y) -> my_linear_ND([x y])) # hide
-scatter!(xs, ys, marker_z = zs) # hide
-plot(p1, p2) # hide
+p1 = surface(x, y, (x, y) -> my_linear_ND([x y]))
+xs = [xy[1] for xy in xys]
+ys = [xy[2] for xy in xys]
+zs = egg.(xys)
+scatter!(xs, ys, zs, marker_z = zs)
+p2 = contour(x, y, (x, y) -> my_linear_ND([x y]))
+scatter!(xs, ys, marker_z = zs)
+plot(p1, p2)
 ```
