@@ -4,9 +4,8 @@ using LinearAlgebra
 using Distributions
 using GLM
 using ExtendableSparse
-using SurrogatesBase: SurrogatesBase, update!, AbstractDeterministicSurrogate
+using SurrogatesBase: SurrogatesBase, update!, AbstractDeterministicSurrogate, AbstractStochasticSurrogate
 
-abstract type AbstractSurrogate <: Function end
 include("utils.jl")
 include("Radials.jl")
 include("Kriging.jl")
@@ -91,7 +90,7 @@ export LobachevskyStructure,
        NeuralStructure, RandomForestStructure,
        SecondOrderPolynomialStructure
 export WendlandStructure
-export AbstractSurrogate, SamplingAlgorithm
+export SamplingAlgorithm
 export Kriging, RadialBasis, std_error_at_point
 # Parallelization Strategies
 export potential_optimal_points

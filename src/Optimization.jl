@@ -5,6 +5,8 @@ using Zygote
 abstract type SurrogateOptimizationAlgorithm end
 abstract type ParallelStrategy end
 
+const AbstractSurrogate = Union{AbstractDeterministicSurrogate, AbstractStochasticSurrogate}
+
 struct KrigingBeliever <: ParallelStrategy end
 struct KrigingBelieverUpperBound <: ParallelStrategy end
 struct KrigingBelieverLowerBound <: ParallelStrategy end
@@ -32,7 +34,7 @@ struct RTEA{K, Z, P, N, S} <: SurrogateOptimizationAlgorithm
 end
 
 function merit_function(
-        point, w, surr::AbstractDeterministicSurrogate, s_max, s_min, d_max, d_min,
+        point, w, surr::AbstractSurrogate, s_max, s_min, d_max, d_min,
         box_size)
     if length(point) == 1
         D_x = box_size + 1
@@ -85,7 +87,7 @@ a few values to achieve both exploitation and exploration.
 When w is close to zero, we do pure exploration, while w close to 1 corresponds to exploitation.
 """
 function surrogate_optimize(
-        obj::Function, ::SRBF, lb, ub, surr::AbstractDeterministicSurrogate,
+        obj::Function, ::SRBF, lb, ub, surr::AbstractSurrogate,
         sample_type::SamplingAlgorithm; maxiters = 100,
         num_new_samples = 100, needs_gradient = false)
     scale = 0.2
@@ -234,10 +236,10 @@ end
 
 """
 SRBF 1D:
-surrogate_optimize(obj::Function,::SRBF,lb::Number,ub::Number,surr::AbstractDeterministicSurrogate,sample_type::SamplingAlgorithm;maxiters=100,num_new_samples=100)
+surrogate_optimize(obj::Function,::SRBF,lb::Number,ub::Number,surr::AbstractSurrogate,sample_type::SamplingAlgorithm;maxiters=100,num_new_samples=100)
 """
 function surrogate_optimize(obj::Function, ::SRBF, lb::Number, ub::Number,
-        surr::AbstractDeterministicSurrogate, sample_type::SamplingAlgorithm;
+        surr::AbstractSurrogate, sample_type::SamplingAlgorithm;
         maxiters = 100, num_new_samples = 100)
     #Suggested by:
     #https://www.mathworks.com/help/gads/surrogate-optimization-algorithm.html
@@ -293,8 +295,8 @@ function surrogate_optimize(obj::Function, ::SRBF, lb::Number, ub::Number,
                 end
             end
             #3) Evaluate merit function at the sampled points
-            evaluation_of_merit_function = merit_function.(new_sample, w, surr, s_max,
-                s_min, d_max, d_min, box_size)
+            evaluation_of_merit_function = map(x -> merit_function(x, w, surr, s_max,
+                s_min, d_max, d_min, box_size), new_sample)
 
             new_addition = false
             adaptive_point_x = zero(eltype(new_sample[1]))
@@ -377,7 +379,7 @@ end
 
 # Ask SRBF ND
 function potential_optimal_points(
-        ::SRBF, strategy, lb, ub, surr::AbstractDeterministicSurrogate,
+        ::SRBF, strategy, lb, ub, surr::AbstractSurrogate,
         sample_type::SamplingAlgorithm, n_parallel;
         num_new_samples = 500)
     scale = 0.2
@@ -484,7 +486,7 @@ end
 
 # Ask SRBF 1D
 function potential_optimal_points(::SRBF, strategy, lb::Number, ub::Number,
-        surr::AbstractDeterministicSurrogate,
+        surr::AbstractSurrogate,
         sample_type::SamplingAlgorithm, n_parallel;
         num_new_samples = 500)
     scale = 0.2
@@ -935,7 +937,7 @@ function adjust_step_size(sigma_n, sigma_min, C_success, t_success, C_fail, t_fa
 end
 
 function select_evaluation_point_1D(
-        new_points1, surr1::AbstractDeterministicSurrogate, numb_iters,
+        new_points1, surr1::AbstractSurrogate, numb_iters,
         maxiters)
     v = [0.3, 0.5, 0.8, 0.95]
     k = 4
@@ -990,13 +992,13 @@ function select_evaluation_point_1D(
 end
 
 """
-surrogate_optimize(obj::Function,::DYCORS,lb::Number,ub::Number,surr1::AbstractDeterministicSurrogate,sample_type::SamplingAlgorithm;maxiters=100,num_new_samples=100)
+surrogate_optimize(obj::Function,::DYCORS,lb::Number,ub::Number,surr1::AbstractSurrogate,sample_type::SamplingAlgorithm;maxiters=100,num_new_samples=100)
 
 DYCORS optimization method in 1D, following closely: Combining radial basis function
 surrogates and dynamic coordinate search in high-dimensional expensive black-box optimization".
 """
 function surrogate_optimize(obj::Function, ::DYCORS, lb::Number, ub::Number,
-        surr1::AbstractDeterministicSurrogate, sample_type::SamplingAlgorithm;
+        surr1::AbstractSurrogate, sample_type::SamplingAlgorithm;
         maxiters = 100, num_new_samples = 100)
     x_best = argmin(surr1.y)
     y_best = minimum(surr1.y)
@@ -1056,7 +1058,7 @@ function surrogate_optimize(obj::Function, ::DYCORS, lb::Number, ub::Number,
 end
 
 function select_evaluation_point_ND(
-        new_points, surrn::AbstractDeterministicSurrogate, numb_iters,
+        new_points, surrn::AbstractSurrogate, numb_iters,
         maxiters)
     v = [0.3, 0.5, 0.8, 0.95]
     k = 4
@@ -1110,7 +1112,7 @@ function select_evaluation_point_ND(
 end
 
 """
-      surrogate_optimize(obj::Function,::DYCORS,lb::Number,ub::Number,surr1::AbstractDeterministicSurrogate,sample_type::SamplingAlgorithm;maxiters=100,num_new_samples=100)
+      surrogate_optimize(obj::Function,::DYCORS,lb::Number,ub::Number,surr1::AbstractSurrogate,sample_type::SamplingAlgorithm;maxiters=100,num_new_samples=100)
 
 This is an implementation of the DYCORS strategy by Regis and Shoemaker:
 Rommel G Regis and Christine A Shoemaker.
@@ -1124,7 +1126,7 @@ to perturb a given coordinate and decrease this probability after each function
 evaluation, so fewer coordinates are perturbed later in the optimization.
 """
 function surrogate_optimize(
-        obj::Function, ::DYCORS, lb, ub, surrn::AbstractDeterministicSurrogate,
+        obj::Function, ::DYCORS, lb, ub, surrn::AbstractSurrogate,
         sample_type::SamplingAlgorithm; maxiters = 100,
         num_new_samples = 100)
     x_best = collect(surrn.x[argmin(surrn.y)])
@@ -1210,7 +1212,7 @@ function obj2_1D(value, points)
     return min
 end
 
-function I_tier_ranking_1D(P, surrSOP::AbstractDeterministicSurrogate)
+function I_tier_ranking_1D(P, surrSOP::AbstractSurrogate)
     #obj1 = objective_function
     #obj2 = obj2_1D
     Fronts = Dict{Int, Array{eltype(surrSOP.x[1]), 1}}()
@@ -1259,7 +1261,7 @@ function I_tier_ranking_1D(P, surrSOP::AbstractDeterministicSurrogate)
     return F
 end
 
-function II_tier_ranking_1D(D::Dict, srg::AbstractDeterministicSurrogate)
+function II_tier_ranking_1D(D::Dict, srg::AbstractSurrogate)
     for i in 1:length(D)
         pos = []
         yn = []
@@ -1303,7 +1305,7 @@ function Hypervolume_Pareto_improving(f1_new, f2_new, Pareto_set)
 end
 
 """
-surrogate_optimize(obj::Function,::SOP,lb::Number,ub::Number,surr::AbstractDeterministicSurrogate,sample_type::SamplingAlgorithm;maxiters=100,num_new_samples=100)
+surrogate_optimize(obj::Function,::SOP,lb::Number,ub::Number,surr::AbstractSurrogate,sample_type::SamplingAlgorithm;maxiters=100,num_new_samples=100)
 
 SOP Surrogate optimization method, following closely the following papers:
 
@@ -1313,7 +1315,7 @@ SOP Surrogate optimization method, following closely the following papers:
 #Suggested number of new_samples = min(500*d,5000)
 """
 function surrogate_optimize(obj::Function, sop1::SOP, lb::Number, ub::Number,
-        surrSOP::AbstractDeterministicSurrogate, sample_type::SamplingAlgorithm;
+        surrSOP::AbstractSurrogate, sample_type::SamplingAlgorithm;
         maxiters = 100, num_new_samples = min(500 * 1, 5000))
     d = length(lb)
     N_fail = 3
@@ -1497,7 +1499,7 @@ function obj2_ND(value, points)
     return min
 end
 
-function I_tier_ranking_ND(P, surrSOPD::AbstractDeterministicSurrogate)
+function I_tier_ranking_ND(P, surrSOPD::AbstractSurrogate)
     #obj1 = objective_function
     #obj2 = obj2_1D
     Fronts = Dict{Int, Array{eltype(surrSOPD.x), 1}}()
@@ -1546,7 +1548,7 @@ function I_tier_ranking_ND(P, surrSOPD::AbstractDeterministicSurrogate)
     return F
 end
 
-function II_tier_ranking_ND(D::Dict, srgD::AbstractDeterministicSurrogate)
+function II_tier_ranking_ND(D::Dict, srgD::AbstractSurrogate)
     for i in 1:length(D)
         pos = []
         yn = []
@@ -1560,7 +1562,7 @@ function II_tier_ranking_ND(D::Dict, srgD::AbstractDeterministicSurrogate)
 end
 
 function surrogate_optimize(
-        obj::Function, sopd::SOP, lb, ub, surrSOPD::AbstractDeterministicSurrogate,
+        obj::Function, sopd::SOP, lb, ub, surrSOPD::AbstractSurrogate,
         sample_type::SamplingAlgorithm; maxiters = 100,
         num_new_samples = min(500 * length(lb), 5000))
     d = length(lb)
@@ -1758,7 +1760,7 @@ function _nonDominatedSorting(arr::Array{Float64, 2})
 end
 
 function surrogate_optimize(obj::Function, sbm::SMB, lb::Number, ub::Number,
-        surrSMB::AbstractDeterministicSurrogate, sample_type::SamplingAlgorithm;
+        surrSMB::AbstractSurrogate, sample_type::SamplingAlgorithm;
         maxiters = 100, n_new_look = 1000)
     #obj contains a function for each output dimension
     dim_out = length(surrSMB.y[1])
@@ -1798,7 +1800,7 @@ function surrogate_optimize(obj::Function, sbm::SMB, lb::Number, ub::Number,
 end
 
 function surrogate_optimize(
-        obj::Function, smb::SMB, lb, ub, surrSMBND::AbstractDeterministicSurrogate,
+        obj::Function, smb::SMB, lb, ub, surrSMBND::AbstractSurrogate,
         sample_type::SamplingAlgorithm; maxiters = 100,
         n_new_look = 1000)
     #obj contains a function for each output dimension
@@ -1840,7 +1842,7 @@ end
 # RTEA (Noisy model based multi objective optimization + standard rtea by fieldsen), use this for very noisy objective functions because there are a lot of re-evaluations
 
 function surrogate_optimize(obj, rtea::RTEA, lb::Number, ub::Number,
-        surrRTEA::AbstractDeterministicSurrogate, sample_type::SamplingAlgorithm;
+        surrRTEA::AbstractSurrogate, sample_type::SamplingAlgorithm;
         maxiters = 100, n_new_look = 1000)
     Z = rtea.z
     K = rtea.k
@@ -1892,8 +1894,8 @@ function surrogate_optimize(obj, rtea::RTEA, lb::Number, ub::Number,
 
             #update pareto
             new_to_pareto = false
+            counter = zeros(Int, dim_out)
             for i in 1:length(pareto_set)
-                counter = zeros(Int, dim_out)
                 #compare the y_new values to pareto, if there is at least one entry where it dominates all the others, then it can be in pareto
                 for l in 1:dim_out
                     if y_new[l] < pareto_front[i][l]
@@ -1911,13 +1913,13 @@ function surrogate_optimize(obj, rtea::RTEA, lb::Number, ub::Number,
                 push!(pareto_front, y_new)
                 push!(number_of_revaluations, 0)
             end
-            update!(surrRTEA, new_x, new_y)
+            update!(surrRTEA, x_new, y_new)
         end
         for k in 1:K
             val, pos = findmin(number_of_revaluations)
             x_r = pareto_set[pos]
             y_r = obj(x_r)
-            number_of_revaluations[pos] = number_of_revaluations + 1
+            number_of_revaluations[pos] = number_of_revaluations[pos] + 1
             #check if it is again in the pareto set or not, if not eliminate it from pareto
             still_in_pareto = false
             for i in 1:length(pareto_set)
@@ -1937,7 +1939,7 @@ function surrogate_optimize(obj, rtea::RTEA, lb::Number, ub::Number,
                 #remove from pareto
                 deleteat!(pareto_set, pos)
                 deleteat!(pareto_front, pos)
-                deleteat!(number_of_revaluationsm, pos)
+                deleteat!(number_of_revaluations, pos)
             end
         end
         iter = iter + 1
@@ -1946,7 +1948,7 @@ function surrogate_optimize(obj, rtea::RTEA, lb::Number, ub::Number,
 end
 
 function surrogate_optimize(
-        obj, rtea::RTEA, lb, ub, surrRTEAND::AbstractDeterministicSurrogate,
+        obj, rtea::RTEA, lb, ub, surrRTEAND::AbstractSurrogate,
         sample_type::SamplingAlgorithm; maxiters = 100,
         n_new_look = 1000)
     Z = rtea.z
@@ -2000,8 +2002,8 @@ function surrogate_optimize(
 
             #update pareto
             new_to_pareto = false
+            counter = zeros(Int, dim_out)
             for i in 1:length(pareto_set)
-                counter = zeros(Int, dim_out)
                 #compare the y_new values to pareto, if there is at least one entry where it dominates all the others, then it can be in pareto
                 for l in 1:dim_out
                     if y_new[l] < pareto_front[i][l]
@@ -2019,13 +2021,13 @@ function surrogate_optimize(
                 push!(pareto_front, y_new)
                 push!(number_of_revaluations, 0)
             end
-            update!(surrRTEAND, new_x, new_y)
+            update!(surrRTEAND, x_new, y_new)
         end
         for k in 1:K
             val, pos = findmin(number_of_revaluations)
             x_r = pareto_set[pos]
             y_r = obj(x_r)
-            number_of_revaluations[pos] = number_of_revaluations + 1
+            number_of_revaluations[pos] = number_of_revaluations[pos] + 1
             #check if it is again in the pareto set or not, if not eliminate it from pareto
             still_in_pareto = false
             for i in 1:length(pareto_set)
@@ -2045,7 +2047,7 @@ function surrogate_optimize(
                 #remove from pareto
                 deleteat!(pareto_set, pos)
                 deleteat!(pareto_front, pos)
-                deleteat!(number_of_revaluationsm, pos)
+                deleteat!(number_of_revaluations, pos)
             end
         end
         iter = iter + 1
