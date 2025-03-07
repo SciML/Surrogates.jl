@@ -122,4 +122,5 @@ export WendlandStructure
 export VariableFidelitySurrogate
 export EarthSurrogate
 export GEK
+export AbstractSurrogate
 end
