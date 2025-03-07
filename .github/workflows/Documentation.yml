@@ -20,9 +20,9 @@ jobs:
                                       Pkg.develop(PackageSpec(path=pwd()));
                                       Pkg.develop(PackageSpec(path=joinpath(pwd(), "lib", "SurrogatesAbstractGPs")));
                                       Pkg.develop(PackageSpec(path=joinpath(pwd(), "lib", "SurrogatesFlux")));
-                                      Pkg.develop(PackageSpec(path=joinpath(pwd(), "lib", "SurrogatesMOE")));
                                       Pkg.develop(PackageSpec(path=joinpath(pwd(), "lib", "SurrogatesPolyChaos")));
                                       Pkg.develop(PackageSpec(path=joinpath(pwd(), "lib", "SurrogatesRandomForest")));
+                                      Pkg.develop(PackageSpec(path=joinpath(pwd(), "lib", "SurrogatesMOE")));
                                       Pkg.develop(PackageSpec(path=joinpath(pwd(), "lib", "SurrogatesSVM")));
                                       Pkg.instantiate()'
       - name: Build and deploy
