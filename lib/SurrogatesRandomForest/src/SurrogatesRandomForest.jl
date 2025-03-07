@@ -39,11 +39,11 @@ function RandomForestSurrogate(x, y, lb, ub; num_round::Int = 1)
         end
     else
         for j in eachindex(x)
-            X[j, :] = x[j]
+            X[j, :] .= x[j]
         end
     end
     bst = xgboost((X, y); num_round)
-    RandomForestSurrogate(x, y, bst, lb, ub, num_round)
+    RandomForestSurrogate(X, y, bst, lb, ub, num_round)
 end
 
 function (rndfor::RandomForestSurrogate)(val::Number)
@@ -51,18 +51,29 @@ function (rndfor::RandomForestSurrogate)(val::Number)
 end
 
 function (rndfor::RandomForestSurrogate)(val)
-    return predict(rndfor.bst, reshape(val, length(val), 1))[1]
+    return predict(rndfor.bst, reshape(collect(val), length(val), 1))[1]
 end
 
 function SurrogatesBase.update!(rndfor::RandomForestSurrogate, x_new, y_new)
+    if x_new isa Tuple
+        x_new = reduce(hcat, x_new)
+    elseif x_new isa Vector{<:Tuple}
+        x_new = reduce(hcat, collect.(x_new))
+    elseif x_new isa Vector
+        if size(x_new) == (1,) && size(x_new[1]) == ()
+            x_new = hcat(x_new)'
+        else
+            x_new = reduce(hcat, x_new)'
+        end
+    end
     rndfor.x = vcat(rndfor.x, x_new)
     rndfor.y = vcat(rndfor.y, y_new)
     if length(rndfor.lb) == 1
-        rndfor.bst = xgboost((reshape(rndfor.x, length(rndfor.x), 1), rndfor.y);
+        rndfor.bst = xgboost((rndfor.x, rndfor.y);
             num_round = rndfor.num_round)
     else
         rndfor.bst = xgboost(
-            (transpose(reduce(hcat, rndfor.x)), rndfor.y); num_round = rndfor.num_round)
+            (rndfor.x, rndfor.y); num_round = rndfor.num_round)
     end
     nothing
 end
