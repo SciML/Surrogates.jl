@@ -16,7 +16,7 @@ using Plots
 We choose to sample f in 100 points between 0 and 10 using the `sample` function. The sampling points are chosen using a Sobol sequence, this can be done by passing `SobolSample()` to the `sample` function.
 
 ```@example linear_surrogate1D
-f(x) = 2*x+10.0
+f(x) = 2 * x + 10.0
 n_samples = 100
 lower_bound = 5.2
 upper_bound = 12.5

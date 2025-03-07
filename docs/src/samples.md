@@ -59,8 +59,8 @@ Adding a new sampling method is a two-step process:
 ```julia
 struct NewAmazingSamplingAlgorithm{OPTIONAL} <: QuasiMonteCarlo.SamplingAlgorithm end
 
-function sample(n,lb,ub,::NewAmazingSamplingAlgorithm)
-    if lb is  Number
+function sample(n, lb, ub, ::NewAmazingSamplingAlgorithm)
+    if lb isa Number
         ...
         return x
     else

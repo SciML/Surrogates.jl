@@ -295,8 +295,10 @@ function surrogate_optimize(obj::Function, ::SRBF, lb::Number, ub::Number,
                 end
             end
             #3) Evaluate merit function at the sampled points
-            evaluation_of_merit_function = map(x -> merit_function(x, w, surr, s_max,
-                s_min, d_max, d_min, box_size), new_sample)
+            evaluation_of_merit_function = map(
+                x -> merit_function(x, w, surr, s_max,
+                    s_min, d_max, d_min, box_size),
+                new_sample)
 
             new_addition = false
             adaptive_point_x = zero(eltype(new_sample[1]))

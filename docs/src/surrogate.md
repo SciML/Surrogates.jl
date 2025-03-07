@@ -4,7 +4,7 @@ Every surrogate has a different definition depending on the parameters needed. I
 
  1. `update!(::AbstractDeterministicSurrogate, x_new, y_new)`
  2. `AbstractDeterministicSurrogate(value)`
-    
+
 The first function adds a sample point to the surrogate, thus changing the internal coefficients. The second one calculates the approximation at value.
 
   - Linear surrogate
@@ -62,26 +62,26 @@ You will need to:
 ## Example
 
 ```julia
-mutable struct NewSurrogate{X,Y,L,U,C,A,B} <: AbstractDeterministicSurrogate
-  x::X
-  y::Y
-  lb::L
-  ub::U
-  coeff::C
-  alpha::A
-  beta::B
+mutable struct NewSurrogate{X, Y, L, U, C, A, B} <: AbstractDeterministicSurrogate
+    x::X
+    y::Y
+    lb::L
+    ub::U
+    coeff::C
+    alpha::A
+    beta::B
 end
 
 function NewSurrogate(x, y, lb, ub, parameters)
     ...
-    return NewSurrogate(x, y, lb, ub, calculated\_coeff, alpha, beta)
+    return NewSurrogate(x, y, lb, ub, calculated \ _coeff, alpha, beta)
 end
 
 function update!(NewSurrogate, x_new, y_new)
-  ...
+    ...
 end
 
 function (s::NewSurrogate)(value)
-  return s.coeff*value + s.alpha
+    return s.coeff * value + s.alpha
 end
 ```

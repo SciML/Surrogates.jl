@@ -4,7 +4,8 @@ using LinearAlgebra
 using Distributions
 using GLM
 using ExtendableSparse
-using SurrogatesBase: SurrogatesBase, update!, AbstractDeterministicSurrogate, AbstractStochasticSurrogate
+using SurrogatesBase: SurrogatesBase, update!, AbstractDeterministicSurrogate,
+                      AbstractStochasticSurrogate
 
 include("utils.jl")
 include("Radials.jl")
