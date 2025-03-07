@@ -6,7 +6,7 @@ Let's start with something easy to get our hands dirty. Let's say we want to bui
 
 We will first use the radial basis surrogate for demonstrations.
 
-```@example
+```@example rbf
 # Importing the package
 using Surrogates
 
@@ -28,7 +28,7 @@ approx = my_radial_basis(5.4)
 
 We can plot to see how well the surrogate performs compared to the true function.
 
-```@example
+```@example rbf
 using Plots
 
 plot(x, y, seriestype = :scatter, label = "Sampled points",
@@ -40,7 +40,7 @@ plot!(xs, my_radial_basis.(xs); label = "RBF", legend = :top)
 
 It fits quite well! Now, let's now see an example in 2D.
 
-```@example
+```@example rbf
 using Surrogates
 using LinearAlgebra
 

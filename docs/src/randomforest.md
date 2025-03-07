@@ -69,7 +69,6 @@ First of all we will define the `Bukin Function N. 6` function we are going to b
 
 ```@example RandomForestSurrogateND
 using Plots
-default(c = :matter, legend = false, xlabel = "x", ylabel = "y")
 using Surrogates
 
 function bukin6(x)
