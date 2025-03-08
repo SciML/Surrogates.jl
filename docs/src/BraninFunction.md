@@ -12,7 +12,6 @@ First of all, we will import these two packages: `Surrogates` and `Plots`.
 ```@example BraninFunction
 using Surrogates
 using Plots
-default()
 ```
 
 Now, let's define our objective function:
@@ -40,7 +39,7 @@ n_samples = 80
 lower_bound = [-5, 0]
 upper_bound = [10, 15]
 xys = sample(n_samples, lower_bound, upper_bound, SobolSample())
-zs = branin.(xys);
+zs = branin.(xys)
 x, y = -5.00:10.00, 0.00:15.00
 p1 = surface(x, y, (x1, x2) -> branin((x1, x2)))
 xs = [xy[1] for xy in xys]
@@ -73,11 +72,11 @@ InverseDistance = InverseDistanceSurrogate(xys, zs, lower_bound, upper_bound)
 ```
 
 ```@example BraninFunction
-p1 = surface(x, y, (x, y) -> InverseDistance([x y])) # hide
-scatter!(xs, ys, zs, marker_z = zs) # hide
-p2 = contour(x, y, (x, y) -> InverseDistance([x y])) # hide
-scatter!(xs, ys, marker_z = zs) # hide
-plot(p1, p2, title = "Inverse Distance Surrogate") # hide
+p1 = surface(x, y, (x, y) -> InverseDistance([x y]))
+scatter!(xs, ys, zs, marker_z = zs)
+p2 = contour(x, y, (x, y) -> InverseDistance([x y]))
+scatter!(xs, ys, marker_z = zs)
+plot(p1, p2, title = "Inverse Distance Surrogate")
 ```
 
 Now, let's talk about `Lobachevsky Surrogate`:
@@ -88,9 +87,9 @@ Lobachevsky = LobachevskySurrogate(
 ```
 
 ```@example BraninFunction
-p1 = surface(x, y, (x, y) -> Lobachevsky([x y])) # hide
-scatter!(xs, ys, zs, marker_z = zs) # hide
-p2 = contour(x, y, (x, y) -> Lobachevsky([x y])) # hide
-scatter!(xs, ys, marker_z = zs) # hide
-plot(p1, p2, title = "Lobachevsky Surrogate") # hide
+p1 = surface(x, y, (x, y) -> Lobachevsky([x y]))
+scatter!(xs, ys, zs, marker_z = zs)
+p2 = contour(x, y, (x, y) -> Lobachevsky([x y]))
+scatter!(xs, ys, marker_z = zs)
+plot(p1, p2, title = "Lobachevsky Surrogate")
 ```

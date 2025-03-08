@@ -12,7 +12,6 @@ It has 3 dimension.
 using Surrogates
 using Plots
 using LinearAlgebra
-default()
 ```
 
 Define the objective function:
@@ -37,8 +36,8 @@ ub = [1.0, 10.0, 10.0]
 x = sample(n, lb, ub, SobolSample())
 y = f.(x)
 n_test = 1000
-x_test = sample(n_test, lb, ub, GoldenSample());
-y_true = f.(x_test);
+x_test = sample(n_test, lb, ub, GoldenSample())
+y_true = f.(x_test)
 ```
 
 ```@example welded

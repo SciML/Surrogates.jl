@@ -1,25 +1,21 @@
-# Polynomial chaos surrogate
+# Polynomial Chaos Surrogate Tutorial
 
 !!! note
     
     This surrogate requires the 'SurrogatesPolyChaos' module which can be added by inputting "]add SurrogatesPolyChaos" from the Julia command line.
 
-We can create a surrogate using a polynomial expansion,
-with a different polynomial basis depending on the distribution of the data
-we are trying to fit. Under the hood, PolyChaos.jl has been used.
-It is possible to specify a type of polynomial for each dimension of the problem.
+We can create a surrogate using a polynomial expansion, with a different polynomial basis depending on the distribution of the data we are trying to fit. Under the hood, PolyChaos.jl has been used. It is possible to specify a type of polynomial for each dimension of the problem.
 
-### Sampling
+## Sampling
 
-We choose to sample f in 25 points between 0 and 10 using the `sample` function. The sampling points are chosen using a Low Discrepancy. This can be done by passing `HaltonSample()` to the `sample` function.
+We choose to sample f in 100 points between 0 and 10 using the `sample` function. The sampling points are chosen using a Low Discrepancy. This can be done by passing `HaltonSample()` to the `sample` function.
 
 ```@example polychaos
 using Surrogates
 using SurrogatesPolyChaos
 using Plots
-default()
 
-n = 20
+n = 100
 lower_bound = 1.0
 upper_bound = 6.0
 x = sample(n, lower_bound, upper_bound, HaltonSample())
@@ -34,7 +30,7 @@ plot!(f, label = "True function", xlims = (lower_bound, upper_bound), legend = :
 ```@example polychaos
 poly1 = PolynomialChaosSurrogate(x, y, lower_bound, upper_bound)
 poly2 = PolynomialChaosSurrogate(
-    x, y, lower_bound, upper_bound, op = SurrogatesPolyChaos.GaussOrthoPoly(5))
+    x, y, lower_bound, upper_bound, orthopolys = SurrogatesPolyChaos.GaussOrthoPoly(5))
 plot(x, y, seriestype = :scatter, label = "Sampled points",
     xlims = (lower_bound, upper_bound), legend = :top)
 plot!(f, label = "True function", xlims = (lower_bound, upper_bound), legend = :top)

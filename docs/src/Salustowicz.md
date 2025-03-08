@@ -12,7 +12,6 @@ Let's import these two packages  `Surrogates` and `Plots`:
 ```@example salustowicz1D
 using Surrogates
 using Plots
-default()
 ```
 
 Now, let's define our objective function:

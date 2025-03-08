@@ -12,7 +12,6 @@ Let's import these two packages `Surrogates` and `Plots`:
 using Surrogates
 using SurrogatesPolyChaos
 using Plots
-default()
 ```
 
 Now, let's define our objective function:

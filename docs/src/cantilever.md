@@ -10,7 +10,6 @@ Let's import Surrogates and Plots:
 using Surrogates
 using SurrogatesPolyChaos
 using Plots
-default()
 ```
 
 Define the objective function:

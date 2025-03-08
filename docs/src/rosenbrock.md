@@ -11,7 +11,6 @@ Let's import Surrogates and Plots:
 using Surrogates
 using SurrogatesPolyChaos
 using Plots
-default()
 ```
 
 Define the objective function:
@@ -29,14 +28,14 @@ Let's plot it:
 ```@example rosen
 n = 100
 lb = [0.0, 0.0]
-ub = [8.0, 8.0]
-xys = sample(n, lb, ub, SobolSample());
+ub = [1.0, 1.0]
+xys = sample(n, lb, ub, SobolSample())
 zs = f.(xys);
-x, y = 0:8, 0:8
+x, y = 0:1, 0:1
 p1 = surface(x, y, (x1, x2) -> f((x1, x2)))
 xs = [xy[1] for xy in xys]
 ys = [xy[2] for xy in xys]
-scatter!(xs, ys, zs) # hide
+scatter!(xs, ys, zs)
 p2 = contour(x, y, (x1, x2) -> f((x1, x2)))
 scatter!(xs, ys)
 plot(p1, p2, title = "True function")

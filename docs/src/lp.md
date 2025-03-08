@@ -10,7 +10,6 @@ using Surrogates
 using SurrogatesPolyChaos
 using Plots
 using LinearAlgebra
-default()
 ```
 
 Define the objective function:

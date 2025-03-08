@@ -1,16 +1,14 @@
-# Variable fidelity Surrogates
+# Variable Fidelity Surrogate Tutorial
 
-With the variable fidelity surrogate, we can specify two different surrogates: one for high-fidelity data and one for low-fidelity data.
-By default, the first half of the samples are considered high-fidelity and the second half low-fidelity.
+With the variable fidelity surrogate, we can specify two different surrogates: one for high-fidelity data and one for low-fidelity data. By default, the first half of the samples are considered high-fidelity and the second half low-fidelity.
 
 ```@example variablefid
 using Surrogates
 using Plots
-default()
 ```
 
 ```@example variablefid
-n = 20
+n = 100
 lower_bound = 1.0
 upper_bound = 6.0
 x = sample(n, lower_bound, upper_bound, SobolSample())

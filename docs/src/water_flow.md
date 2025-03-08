@@ -10,7 +10,6 @@ using Surrogates
 using SurrogatesPolyChaos
 using Plots
 using LinearAlgebra
-default()
 ```
 
 Define the objective function:
@@ -39,8 +38,8 @@ ub = [0.15, 50000, 115600, 1110, 116, 820, 1680, 12045]
 x = sample(n, lb, ub, SobolSample())
 y = f.(x)
 n_test = 1000
-x_test = sample(n_test, lb, ub, GoldenSample());
-y_true = f.(x_test);
+x_test = sample(n_test, lb, ub, GoldenSample())
+y_true = f.(x_test)
 ```
 
 ```@example water
