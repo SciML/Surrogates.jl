@@ -52,10 +52,10 @@ plot!(xs, kriging_surrogate.(xs), label = "Surrogate function",
 
 Having built a surrogate, we can now use it to search for minima in our original function `f`.
 
-To optimize using our surrogate, we call `surrogate_optimize` method. We choose to use Stochastic RBF as the optimization technique and again Sobol sampling as the sampling technique.
+To optimize using our surrogate, we call `surrogate_optimize!` method. We choose to use Stochastic RBF as the optimization technique and again Sobol sampling as the sampling technique.
 
 ```@example kriging_tutorial1d
-surrogate_optimize(
+surrogate_optimize!(
     f, SRBF(), lower_bound, upper_bound, kriging_surrogate, SobolSample())
 
 scatter(x, y, label = "Sampled points", ylims = (-7, 7), legend = :top)
@@ -139,7 +139,7 @@ size(xys)
 ```
 
 ```@example kriging_tutorialnd
-surrogate_optimize(branin, SRBF(), lower_bound, upper_bound, kriging_surrogate,
+surrogate_optimize!(branin, SRBF(), lower_bound, upper_bound, kriging_surrogate,
     SobolSample(); maxiters = 100, num_new_samples = 10)
 ```
 

@@ -56,7 +56,7 @@ xs = lower_bound:0.1:upper_bound
 x = sample(n_samples, lower_bound, upper_bound, SobolSample())
 y = f.(x)
 gp_surrogate = AbstractGPSurrogate(x, y)
-surrogate_optimize(f, SRBF(), lower_bound, upper_bound, gp_surrogate, SobolSample())
+surrogate_optimize!(f, SRBF(), lower_bound, upper_bound, gp_surrogate, SobolSample())
 ```
 
 Plotting the function and the sampled points:

@@ -24,7 +24,7 @@ isapprox(f([0, 0, 0]), f_hat([0, 0, 0]))
 
 """ The global minimum is at (0,0) """
 
-(xy_min, f_hat_min) = surrogate_optimize(f,
+(xy_min, f_hat_min) = surrogate_optimize!(f,
     DYCORS(), lb, ub,
     f_hat,
     SobolSample())
@@ -41,7 +41,7 @@ section_sampler_z_is_10 = SectionSample([NaN64, NaN64, 10.0],
 
 Surrogates.sample(5, lb, ub, section_sampler_z_is_10)
 
-(xy_min, f_hat_min) = surrogate_optimize(f,
+(xy_min, f_hat_min) = surrogate_optimize!(f,
     EI(), lb, ub,
     f_hat,
     section_sampler_z_is_10, maxiters = 1000)

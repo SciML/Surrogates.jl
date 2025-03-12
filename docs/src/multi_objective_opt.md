@@ -12,7 +12,7 @@ ub = 10.0
 x = sample(50, lb, ub, GoldenSample())
 y = f.(x)
 my_radial_basis_ego = RadialBasis(x, y, lb, ub)
-pareto_set, pareto_front = surrogate_optimize(
+pareto_set, pareto_front = surrogate_optimize!(
     f, SMB(), lb, ub, my_radial_basis_ego, SobolSample(); maxiters = 10, n_new_look = 100)
 
 m = 5
@@ -27,7 +27,7 @@ K = 2
 p_cross = 0.5
 n_c = 1.0
 sigma = 1.5
-surrogate_optimize(
+surrogate_optimize!(
     f, RTEA(Z, K, p_cross, n_c, sigma), lb, ub, my_radial_basis_rtea, SobolSample())
 ```
 
@@ -43,7 +43,7 @@ ub = [3.5, 0.5]
 x = sample(50, lb, ub, SobolSample())
 y = f.(x)
 my_radial_basis_ego = RadialBasis(x, y, lb, ub)
-#I can find my pareto set and pareto front by calling again the surrogate_optimize function:
-pareto_set, pareto_front = surrogate_optimize(
+#I can find my pareto set and pareto front by calling again the surrogate_optimize! function:
+pareto_set, pareto_front = surrogate_optimize!(
     f, SMB(), lb, ub, my_radial_basis_ego, SobolSample(); maxiters = 10, n_new_look = 100);
 ```

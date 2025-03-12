@@ -108,7 +108,7 @@ export sample, GridSample, RandomSample, SobolSample, LatinHypercubeSample,
 export RandomSample, KroneckerSample, GoldenSample, SectionSample
 
 # Optimization algorithms
-export SRBF, LCBS, EI, DYCORS, SOP, RTEA, SMB, surrogate_optimize
+export SRBF, LCBS, EI, DYCORS, SOP, RTEA, SMB, surrogate_optimize!
 export LobachevskySurrogate, lobachevsky_integral, lobachevsky_integrate_dimension
 export LinearSurrogate
 export InverseDistanceSurrogate

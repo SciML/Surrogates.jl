@@ -84,7 +84,7 @@ std_err = std_error_at_point(my_krig, 5.4)
 Let's now optimize the Kriging surrogate using the lower confidence bound method. This is just a one-liner:
 
 ```@example kriging
-surrogate_optimize(
+surrogate_optimize!(
     f, LCBS(), lb, ub, my_krig, RandomSample(); maxiters = 10, num_new_samples = 10)
 ```
 

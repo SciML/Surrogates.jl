@@ -52,10 +52,10 @@ plot!(randomforest_surrogate, label = "Surrogate function",
 
 Having built a surrogate, we can now use it to search for minima in our original function `f`.
 
-To optimize using our surrogate, we call `surrogate_optimize` method. We choose to use Stochastic RBF as the optimization technique and again Sobol sampling as the sampling technique.
+To optimize using our surrogate, we call `surrogate_optimize!` method. We choose to use Stochastic RBF as the optimization technique and again Sobol sampling as the sampling technique.
 
 ```@example RandomForestSurrogate_tutorial
-surrogate_optimize(
+surrogate_optimize!(
     f, SRBF(), lower_bound, upper_bound, randomforest_surrogate, SobolSample())
 scatter(x, y, label = "Sampled points")
 plot!(f, label = "True function", xlims = (lower_bound, upper_bound), legend = :top)
@@ -133,7 +133,7 @@ size(xys)
 ```
 
 ```@example RandomForestSurrogateND
-surrogate_optimize(
+surrogate_optimize!(
     bukin6, SRBF(), lower_bound, upper_bound, RandomForest, SobolSample(), maxiters = 20)
 ```
 

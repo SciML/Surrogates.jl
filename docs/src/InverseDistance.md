@@ -51,10 +51,10 @@ plot!(InverseDistance, label = "Surrogate function",
 
 Having built a surrogate, we can now use it to search for minima in our original function `f`.
 
-To optimize using our surrogate we call `surrogate_optimize` method. We choose to use Stochastic RBF as the optimization technique and again Sobol sampling as the sampling technique.
+To optimize using our surrogate we call `surrogate_optimize!` method. We choose to use Stochastic RBF as the optimization technique and again Sobol sampling as the sampling technique.
 
 ```@example Inverse_Distance1D
-surrogate_optimize(
+surrogate_optimize!(
     f, SRBF(), lower_bound, upper_bound, InverseDistance, SobolSample())
 scatter(x, y, label = "Sampled points", legend = :top)
 plot!(f, label = "True function", xlims = (lower_bound, upper_bound), legend = :top)
@@ -132,7 +132,7 @@ size(xys)
 ```
 
 ```@example Inverse_DistanceND
-surrogate_optimize(schaffer, SRBF(), lower_bound, upper_bound,
+surrogate_optimize!(schaffer, SRBF(), lower_bound, upper_bound,
     InverseDistance, SobolSample(), maxiters = 10)
 ```
 
