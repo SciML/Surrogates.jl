@@ -84,6 +84,8 @@ function PolyChaosStructure(; op)
     return (name = "PolynomialChaosSurrogate", op = op)
 end
 
+Base.@deprecate_binding surrogate_optimize surrogate_optimize!
+
 export current_surrogates
 export GEKPLS
 export RadialBasisStructure, KrigingStructure, LinearStructure, InverseDistanceStructure
