@@ -244,7 +244,8 @@ surrogate_optimize!(objective_function_ND, DYCORS(), lb, ub, my_k_DYCORSN, Rando
     maxiters = 30)
 
 my_rad_DYCORSN = RadialBasis(x, y, lb, ub, rad = linearRadial())
-surrogate_optimize!(objective_function_ND, DYCORS(), lb, ub, my_rad_DYCORSN, RandomSample(),
+surrogate_optimize!(
+    objective_function_ND, DYCORS(), lb, ub, my_rad_DYCORSN, RandomSample(),
     maxiters = 30)
 
 my_wend_ND = Wendland(x, y, lb, ub)
