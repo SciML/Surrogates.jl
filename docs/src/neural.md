@@ -77,6 +77,6 @@ plot(p1, p2, title = "Surrogate")
 We can now call an optimization function on the neural network:
 
 ```@example Neural_surrogate
-surrogate_optimize(schaffer, SRBF(), lower_bound, upper_bound, neural,
+surrogate_optimize!(schaffer, SRBF(), lower_bound, upper_bound, neural,
     SobolSample(), maxiters = 20, num_new_samples = 10)
 ```

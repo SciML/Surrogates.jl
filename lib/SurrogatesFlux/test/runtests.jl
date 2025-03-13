@@ -72,7 +72,7 @@ using SafeTestsets
         model = Chain(Dense(2, 1), first)
         opt = Descent(0.01)
         my_neural_ND_neural = NeuralSurrogate(x, y, lb, ub, model = model, loss = Flux.mse)
-        surrogate_optimize(objective_function_ND, SRBF(), lb, ub, my_neural_ND_neural,
+        surrogate_optimize!(objective_function_ND, SRBF(), lb, ub, my_neural_ND_neural,
             SobolSample(), maxiters = 15)
     end
 

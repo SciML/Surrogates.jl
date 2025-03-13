@@ -37,7 +37,7 @@ plot!(sec, label = "Surrogate function", xlims = (lb, ub))
 ## Optimizing
 
 ```@example second_order_tut
-surrogate_optimize(f, SRBF(), lb, ub, sec, SobolSample())
+surrogate_optimize!(f, SRBF(), lb, ub, sec, SobolSample())
 scatter(x, y, label = "Sampled points")
 plot!(f, label = "True function", xlims = (lb, ub))
 plot!(sec, label = "Surrogate function", xlims = (lb, ub))

@@ -78,7 +78,7 @@ x = sample(n, lb, ub, SobolSample())
 grads = gradient.(sphere_function, x)
 y = sphere_function.(x)
 g = GEKPLS(x, y, grads, n_comp, delta_x, lb, ub, extra_points, initial_theta)
-x_point, minima = surrogate_optimize(sphere_function, SRBF(), lb, ub, g,
+x_point, minima = surrogate_optimize!(sphere_function, SRBF(), lb, ub, g,
     RandomSample(); maxiters = 20,
     num_new_samples = 20, needs_gradient = true)
 minima

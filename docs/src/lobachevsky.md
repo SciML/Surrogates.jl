@@ -48,10 +48,10 @@ plot!(
 
 Having built a surrogate, we can now use it to search for minima in our original function `f`.
 
-To optimize using our surrogate we call `surrogate_optimize` method. We choose to use Stochastic RBF as the optimization technique and again Sobol sampling as the sampling technique.
+To optimize using our surrogate we call `surrogate_optimize!` method. We choose to use Stochastic RBF as the optimization technique and again Sobol sampling as the sampling technique.
 
 ```@example LobachevskySurrogate_tutorial
-surrogate_optimize(
+surrogate_optimize!(
     f, SRBF(), lower_bound, upper_bound, lobachevsky_surrogate, SobolSample())
 scatter(x, y, label = "Sampled points")
 plot!(f, label = "True function", xlims = (lower_bound, upper_bound))
@@ -132,7 +132,7 @@ size(Lobachevsky.x)
 ```
 
 ```@example LobachevskySurrogate_ND
-surrogate_optimize(schaffer, SRBF(), lower_bound, upper_bound, Lobachevsky,
+surrogate_optimize!(schaffer, SRBF(), lower_bound, upper_bound, Lobachevsky,
     SobolSample(), maxiters = 1, num_new_samples = 10)
 ```
 

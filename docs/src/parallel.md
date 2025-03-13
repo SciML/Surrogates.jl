@@ -4,7 +4,7 @@ There are some situations where it can be beneficial to run multiple optimizatio
 
 ## Ask-Tell Interface
 
-To enable parallel optimization, we make use of an Ask-Tell interface. The user will construct the initial surrogate model the same way as for non-parallel surrogate models, but instead of using `surrogate_optimize`, the user will use `potential_optimal_points`. This will return the coordinates of points that the optimizer has determined are most useful to evaluate next. How the user evaluates these points is up to them. The Ask-Tell interface requires more manual control than `surrogate_optimize`, but it allows for more flexibility. After the point has been evaluated, the user will *tell* the surrogate model the new points with the `update!` function.
+To enable parallel optimization, we make use of an Ask-Tell interface. The user will construct the initial surrogate model the same way as for non-parallel surrogate models, but instead of using `surrogate_optimize!`, the user will use `potential_optimal_points`. This will return the coordinates of points that the optimizer has determined are most useful to evaluate next. How the user evaluates these points is up to them. The Ask-Tell interface requires more manual control than `surrogate_optimize!`, but it allows for more flexibility. After the point has been evaluated, the user will *tell* the surrogate model the new points with the `update!` function.
 
 ## Virtual Points
 

@@ -86,7 +86,7 @@ The weight w is commonly cycled between
 a few values to achieve both exploitation and exploration.
 When w is close to zero, we do pure exploration, while w close to 1 corresponds to exploitation.
 """
-function surrogate_optimize(
+function surrogate_optimize!(
         obj::Function, ::SRBF, lb, ub, surr::AbstractSurrogate,
         sample_type::SamplingAlgorithm; maxiters = 100,
         num_new_samples = 100, needs_gradient = false)
@@ -236,9 +236,9 @@ end
 
 """
 SRBF 1D:
-surrogate_optimize(obj::Function,::SRBF,lb::Number,ub::Number,surr::AbstractSurrogate,sample_type::SamplingAlgorithm;maxiters=100,num_new_samples=100)
+surrogate_optimize!(obj::Function,::SRBF,lb::Number,ub::Number,surr::AbstractSurrogate,sample_type::SamplingAlgorithm;maxiters=100,num_new_samples=100)
 """
-function surrogate_optimize(obj::Function, ::SRBF, lb::Number, ub::Number,
+function surrogate_optimize!(obj::Function, ::SRBF, lb::Number, ub::Number,
         surr::AbstractSurrogate, sample_type::SamplingAlgorithm;
         maxiters = 100, num_new_samples = 100)
     #Suggested by:
@@ -594,7 +594,7 @@ Under a Gaussian process (GP) prior, the goal is to minimize:
 ``LCB(x) := E[x] - k * \\sqrt{(V[x])}``
 default value ``k = 2``.
 """
-function surrogate_optimize(obj::Function, ::LCBS, lb::Number, ub::Number, krig,
+function surrogate_optimize!(obj::Function, ::LCBS, lb::Number, ub::Number, krig,
         sample_type::SamplingAlgorithm; maxiters = 100,
         num_new_samples = 100, k = 2.0)
     dtol = 1e-3 * norm(ub - lb)
@@ -655,7 +655,7 @@ Under a Gaussian process (GP) prior, the goal is to minimize:
 
 default value ``k = 2``.
 """
-function surrogate_optimize(obj::Function, ::LCBS, lb, ub, krig,
+function surrogate_optimize!(obj::Function, ::LCBS, lb, ub, krig,
         sample_type::SamplingAlgorithm; maxiters = 100,
         num_new_samples = 100, k = 2.0)
     dtol = 1e-3 * norm(ub - lb)
@@ -715,7 +715,7 @@ end
 """
 Expected improvement method 1D
 """
-function surrogate_optimize(obj::Function, ::EI, lb::Number, ub::Number, krig,
+function surrogate_optimize!(obj::Function, ::EI, lb::Number, ub::Number, krig,
         sample_type::SamplingAlgorithm; maxiters = 100,
         num_new_samples = 100)
     dtol = 1e-3 * norm(ub - lb)
@@ -856,7 +856,7 @@ maximize expected improvement:
 
 ``EI(x) := E[max(f_{best}-f(x),0)``
 """
-function surrogate_optimize(obj::Function, ::EI, lb, ub, krig,
+function surrogate_optimize!(obj::Function, ::EI, lb, ub, krig,
         sample_type::SamplingAlgorithm; maxiters = 100,
         num_new_samples = 100)
     dtol = 1e-3 * norm(ub - lb)
@@ -994,12 +994,12 @@ function select_evaluation_point_1D(
 end
 
 """
-surrogate_optimize(obj::Function,::DYCORS,lb::Number,ub::Number,surr1::AbstractSurrogate,sample_type::SamplingAlgorithm;maxiters=100,num_new_samples=100)
+surrogate_optimize!(obj::Function,::DYCORS,lb::Number,ub::Number,surr1::AbstractSurrogate,sample_type::SamplingAlgorithm;maxiters=100,num_new_samples=100)
 
 DYCORS optimization method in 1D, following closely: Combining radial basis function
 surrogates and dynamic coordinate search in high-dimensional expensive black-box optimization".
 """
-function surrogate_optimize(obj::Function, ::DYCORS, lb::Number, ub::Number,
+function surrogate_optimize!(obj::Function, ::DYCORS, lb::Number, ub::Number,
         surr1::AbstractSurrogate, sample_type::SamplingAlgorithm;
         maxiters = 100, num_new_samples = 100)
     x_best = argmin(surr1.y)
@@ -1114,7 +1114,7 @@ function select_evaluation_point_ND(
 end
 
 """
-      surrogate_optimize(obj::Function,::DYCORS,lb::Number,ub::Number,surr1::AbstractSurrogate,sample_type::SamplingAlgorithm;maxiters=100,num_new_samples=100)
+      surrogate_optimize!(obj::Function,::DYCORS,lb::Number,ub::Number,surr1::AbstractSurrogate,sample_type::SamplingAlgorithm;maxiters=100,num_new_samples=100)
 
 This is an implementation of the DYCORS strategy by Regis and Shoemaker:
 Rommel G Regis and Christine A Shoemaker.
@@ -1127,7 +1127,7 @@ perturb only a few directions. In particular, we use a perturbation probability
 to perturb a given coordinate and decrease this probability after each function
 evaluation, so fewer coordinates are perturbed later in the optimization.
 """
-function surrogate_optimize(
+function surrogate_optimize!(
         obj::Function, ::DYCORS, lb, ub, surrn::AbstractSurrogate,
         sample_type::SamplingAlgorithm; maxiters = 100,
         num_new_samples = 100)
@@ -1307,7 +1307,7 @@ function Hypervolume_Pareto_improving(f1_new, f2_new, Pareto_set)
 end
 
 """
-surrogate_optimize(obj::Function,::SOP,lb::Number,ub::Number,surr::AbstractSurrogate,sample_type::SamplingAlgorithm;maxiters=100,num_new_samples=100)
+surrogate_optimize!(obj::Function,::SOP,lb::Number,ub::Number,surr::AbstractSurrogate,sample_type::SamplingAlgorithm;maxiters=100,num_new_samples=100)
 
 SOP Surrogate optimization method, following closely the following papers:
 
@@ -1316,7 +1316,7 @@ SOP Surrogate optimization method, following closely the following papers:
 
 #Suggested number of new_samples = min(500*d,5000)
 """
-function surrogate_optimize(obj::Function, sop1::SOP, lb::Number, ub::Number,
+function surrogate_optimize!(obj::Function, sop1::SOP, lb::Number, ub::Number,
         surrSOP::AbstractSurrogate, sample_type::SamplingAlgorithm;
         maxiters = 100, num_new_samples = min(500 * 1, 5000))
     d = length(lb)
@@ -1563,7 +1563,7 @@ function II_tier_ranking_ND(D::Dict, srgD::AbstractSurrogate)
     return D
 end
 
-function surrogate_optimize(
+function surrogate_optimize!(
         obj::Function, sopd::SOP, lb, ub, surrSOPD::AbstractSurrogate,
         sample_type::SamplingAlgorithm; maxiters = 100,
         num_new_samples = min(500 * length(lb), 5000))
@@ -1761,7 +1761,7 @@ function _nonDominatedSorting(arr::Array{Float64, 2})
     return fronts
 end
 
-function surrogate_optimize(obj::Function, sbm::SMB, lb::Number, ub::Number,
+function surrogate_optimize!(obj::Function, sbm::SMB, lb::Number, ub::Number,
         surrSMB::AbstractSurrogate, sample_type::SamplingAlgorithm;
         maxiters = 100, n_new_look = 1000)
     #obj contains a function for each output dimension
@@ -1801,7 +1801,7 @@ function surrogate_optimize(obj::Function, sbm::SMB, lb::Number, ub::Number,
     return pareto_set, pareto_front
 end
 
-function surrogate_optimize(
+function surrogate_optimize!(
         obj::Function, smb::SMB, lb, ub, surrSMBND::AbstractSurrogate,
         sample_type::SamplingAlgorithm; maxiters = 100,
         n_new_look = 1000)
@@ -1843,7 +1843,7 @@ end
 
 # RTEA (Noisy model based multi objective optimization + standard rtea by fieldsen), use this for very noisy objective functions because there are a lot of re-evaluations
 
-function surrogate_optimize(obj, rtea::RTEA, lb::Number, ub::Number,
+function surrogate_optimize!(obj, rtea::RTEA, lb::Number, ub::Number,
         surrRTEA::AbstractSurrogate, sample_type::SamplingAlgorithm;
         maxiters = 100, n_new_look = 1000)
     Z = rtea.z
@@ -1949,7 +1949,7 @@ function surrogate_optimize(obj, rtea::RTEA, lb::Number, ub::Number,
     return pareto_set, pareto_front
 end
 
-function surrogate_optimize(
+function surrogate_optimize!(
         obj, rtea::RTEA, lb, ub, surrRTEAND::AbstractSurrogate,
         sample_type::SamplingAlgorithm; maxiters = 100,
         n_new_look = 1000)
@@ -2057,7 +2057,7 @@ function surrogate_optimize(
     return pareto_set, pareto_front
 end
 
-function surrogate_optimize(
+function surrogate_optimize!(
         obj::Function, ::EI, lb::AbstractArray, ub::AbstractArray, krig,
         sample_type::SectionSample;
         maxiters = 100, num_new_samples = 100)
