@@ -1,7 +1,7 @@
 name = "SurrogatesPolyChaos"
 uuid = "50679fc6-c85c-4a6e-ac63-dc3c8bd8cb1c"
 authors = ["Ranjan Anantharaman <ranjan.anantharaman@gmail.com>"]
-version = "0.1.0"
+version = "0.1.1"
 
 [deps]
 PolyChaos = "8d666b04-775d-5f6e-b778-5ac7c70f65a3"
