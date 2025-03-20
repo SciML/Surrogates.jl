@@ -1,7 +1,7 @@
 name = "SurrogatesAbstractGPs"
 uuid = "78aa1720-c2af-471b-b307-964fd38f9b5f"
 authors = ["Ranjan Anantharaman <ranjan.anantharaman@gmail.com>"]
-version = "0.1.0"
+version = "0.1.1"
 
 [deps]
 AbstractGPs = "99985d1d-32ba-4be9-9821-2ec096f28918"
