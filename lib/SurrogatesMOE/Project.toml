@@ -1,7 +1,7 @@
 name = "SurrogatesMOE"
 uuid = "778709c9-3595-4497-80d4-d1077d5b9fbf"
 authors = ["Vikram <vikramsnarayan@gmail.com>"]
-version = "0.1.4"
+version = "0.1.5"
 
 [deps]
 Distributions = "31c24e10-a181-5473-b8eb-7969acd0382f"
