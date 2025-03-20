@@ -1754,7 +1754,7 @@ version = "0.1.2"
 deps = ["LIBSVM", "SurrogatesBase"]
 path = "/home/runner/work/Surrogates.jl/Surrogates.jl/lib/SurrogatesSVM"
 uuid = "eb0c118b-dd0a-445a-b996-82088348ceb1"
-version = "0.1.1"
+version = "0.1.0"
 
 [[deps.TOML]]
 deps = ["Dates"]
