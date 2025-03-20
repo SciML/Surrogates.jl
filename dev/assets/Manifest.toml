@@ -1719,7 +1719,7 @@ version = "6.11.0"
 deps = ["AbstractGPs", "SurrogatesBase"]
 path = "/home/runner/work/Surrogates.jl/Surrogates.jl/lib/SurrogatesAbstractGPs"
 uuid = "78aa1720-c2af-471b-b307-964fd38f9b5f"
-version = "0.1.0"
+version = "0.1.1"
 
 [[deps.SurrogatesBase]]
 git-tree-sha1 = "4668cf550bcc834e5645229d2d6106e0d02f8263"
@@ -1730,31 +1730,31 @@ version = "1.1.0"
 deps = ["Flux", "Optimisers", "Surrogates", "SurrogatesBase", "Zygote"]
 path = "/home/runner/work/Surrogates.jl/Surrogates.jl/lib/SurrogatesFlux"
 uuid = "4f55584b-dac4-4b1c-802a-b7c47b72cb4c"
-version = "0.1.1"
+version = "0.1.2"
 
 [[deps.SurrogatesMOE]]
 deps = ["Distributions", "GaussianMixtures", "LinearAlgebra", "Random", "Surrogates", "SurrogatesBase", "SurrogatesFlux", "SurrogatesPolyChaos", "SurrogatesRandomForest", "XGBoost"]
 path = "/home/runner/work/Surrogates.jl/Surrogates.jl/lib/SurrogatesMOE"
 uuid = "778709c9-3595-4497-80d4-d1077d5b9fbf"
-version = "0.1.4"
+version = "0.1.5"
 
 [[deps.SurrogatesPolyChaos]]
 deps = ["PolyChaos", "Surrogates", "SurrogatesBase"]
 path = "/home/runner/work/Surrogates.jl/Surrogates.jl/lib/SurrogatesPolyChaos"
 uuid = "50679fc6-c85c-4a6e-ac63-dc3c8bd8cb1c"
-version = "0.1.0"
+version = "0.1.1"
 
 [[deps.SurrogatesRandomForest]]
 deps = ["Surrogates", "SurrogatesBase", "XGBoost"]
 path = "/home/runner/work/Surrogates.jl/Surrogates.jl/lib/SurrogatesRandomForest"
 uuid = "3fee2672-df33-422b-aa65-d915eeac013a"
-version = "0.1.1"
+version = "0.1.2"
 
 [[deps.SurrogatesSVM]]
 deps = ["LIBSVM", "SurrogatesBase"]
 path = "/home/runner/work/Surrogates.jl/Surrogates.jl/lib/SurrogatesSVM"
 uuid = "eb0c118b-dd0a-445a-b996-82088348ceb1"
-version = "0.1.0"
+version = "0.1.1"
 
 [[deps.TOML]]
 deps = ["Dates"]
