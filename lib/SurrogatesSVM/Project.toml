@@ -1,7 +1,7 @@
 name = "SurrogatesSVM"
 uuid = "eb0c118b-dd0a-445a-b996-82088348ceb1"
 authors = ["Ranjan Anantharaman <ranjan.anantharaman@gmail.com>"]
-version = "0.1.0"
+version = "0.1.1"
 
 [deps]
 LIBSVM = "b1bec4e5-fd48-53fe-b0cb-9723c09d164b"
