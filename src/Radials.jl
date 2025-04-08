@@ -4,7 +4,7 @@ using ExtendableSparse
 _copy(t::Tuple) = t
 _copy(t) = copy(t)
 
-mutable struct RadialBasis{F, Q, X, Y, L, U, C, S, D} <: AbstractDeterministicSurrogate
+mutable struct RadialBasis{F, Q, X, Y, L, U, C, S, D, R} <: AbstractDeterministicSurrogate
     phi::F
     dim_poly::Q
     x::X
@@ -14,6 +14,7 @@ mutable struct RadialBasis{F, Q, X, Y, L, U, C, S, D} <: AbstractDeterministicSu
     coeff::C
     scale_factor::S
     sparse::D
+    regularization::R
 end
 
 mutable struct RadialFunction{Q, P}
@@ -31,7 +32,7 @@ thinplateRadial() = RadialFunction(2, z -> begin
 end)
 
 """
-RadialBasis(x,y,lb,ub,rad::RadialFunction, scale_factor::Float = 1.0)
+RadialBasis(x,y,lb,ub,rad::RadialFunction, scale_factor::Float = 1.0, regularization::Real = 0.0)
 
 Constructor for RadialBasis surrogate, of the form
 
@@ -40,21 +41,24 @@ Constructor for RadialBasis surrogate, of the form
 where ``w_i`` are the weights of polyharmonic splines ``\\phi(x)`` and ``\\bold{v}`` are coefficients
 of a polynomial term.
 
+`regularization` is a regularization term added to the diagonal of the interpolation matrix to avoid SingularException.
+
 References:
 https://en.wikipedia.org/wiki/Polyharmonic_spline
 """
 function RadialBasis(x, y, lb, ub; rad::RadialFunction = linearRadial(),
-        scale_factor::Real = 0.5, sparse = false)
+        scale_factor::Real = 0.5, sparse = false, regularization::Real = 0.0)
     q = rad.q
     phi = rad.phi
-    coeff = _calc_coeffs(x, y, lb, ub, phi, q, scale_factor, sparse)
-    return RadialBasis(phi, q, x, y, lb, ub, coeff, scale_factor, sparse)
+    coeff = _calc_coeffs(x, y, lb, ub, phi, q, scale_factor, sparse, regularization)
+    return RadialBasis(phi, q, x, y, lb, ub, coeff, scale_factor, sparse, regularization)
 end
 
-function _calc_coeffs(x, y, lb, ub, phi, q, scale_factor, sparse)
+function _calc_coeffs(x, y, lb, ub, phi, q, scale_factor, sparse, regularization)
     nd = length(first(x))
     num_poly_terms = binomial(q + nd, q)
     D = _construct_rbf_interp_matrix(x, first(x), lb, ub, phi, q, scale_factor, sparse)
+    D += regularization * I # Add regularization to the diagonal
     Y = _construct_rbf_y_matrix(y, first(y), length(y) + num_poly_terms)
     if (typeof(y) == Vector{Float64}) #single output case
         coeff = _copy(transpose(D \ y))
@@ -132,11 +136,11 @@ Time complexity: `(n+1)^d.`
 
 For n=2, d=2 the multivariate polynomial basis is
 
-````
+```
 1,
 x,y
 x^2,y^2,xy
-````
+```
 
 Therefore the 3rd (ix=3) element is `y` .
 Therefore when x=(13,43) and ix=3 this function will return 43.
@@ -245,6 +249,6 @@ function SurrogatesBase.update!(rad::RadialBasis, new_x, new_y)
         append!(rad.y, new_y)
     end
     rad.coeff = _calc_coeffs(rad.x, rad.y, rad.lb, rad.ub, rad.phi, rad.dim_poly,
-        rad.scale_factor, rad.sparse)
+        rad.scale_factor, rad.sparse, rad.regularization)
     nothing
 end
