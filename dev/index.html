@@ -34,9 +34,9 @@ value = my_lobachevsky(5.0)
 surrogate_optimize!(f, SRBF(), lb, ub, my_lobachevsky, RandomSample())
 
 #New approximation
-value = my_lobachevsky(5.0)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">135.03838806044004</code></pre><h2 id="Reproducibility"><a class="docs-heading-anchor" href="#Reproducibility">Reproducibility</a><a id="Reproducibility-1"></a><a class="docs-heading-anchor-permalink" href="#Reproducibility" title="Permalink"></a></h2><details><summary>The documentation of this SciML package was built using these direct dependencies,</summary><pre class="documenter-example-output"><code class="nohighlight hljs ansi">Status `~/work/Surrogates.jl/Surrogates.jl/docs/Project.toml`
-  [99985d1d] AbstractGPs v0.5.23
-  [e30172f5] Documenter v1.9.0
+value = my_lobachevsky(5.0)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">135.03839216424126</code></pre><h2 id="Reproducibility"><a class="docs-heading-anchor" href="#Reproducibility">Reproducibility</a><a id="Reproducibility-1"></a><a class="docs-heading-anchor-permalink" href="#Reproducibility" title="Permalink"></a></h2><details><summary>The documentation of this SciML package was built using these direct dependencies,</summary><pre class="documenter-example-output"><code class="nohighlight hljs ansi">Status `~/work/Surrogates.jl/Surrogates.jl/docs/Project.toml`
+  [99985d1d] AbstractGPs v0.5.24
+  [e30172f5] Documenter v1.10.1
   [587475ba] Flux v0.16.3
   [91a5bcdd] Plots v1.40.11
   [1fd47b50] QuadGK v2.11.2
@@ -46,9 +46,9 @@ value = my_lobachevsky(5.0)</code></pre><pre class="documenter-example-output"><
   [778709c9] SurrogatesMOE v0.1.5 `~/work/Surrogates.jl/Surrogates.jl/lib/SurrogatesMOE`
   [50679fc6] SurrogatesPolyChaos v0.1.1 `~/work/Surrogates.jl/Surrogates.jl/lib/SurrogatesPolyChaos`
   [3fee2672] SurrogatesRandomForest v0.1.2 `~/work/Surrogates.jl/Surrogates.jl/lib/SurrogatesRandomForest`
-  [eb0c118b] SurrogatesSVM v0.1.0 `~/work/Surrogates.jl/Surrogates.jl/lib/SurrogatesSVM`
+  [eb0c118b] SurrogatesSVM v0.1.1 `~/work/Surrogates.jl/Surrogates.jl/lib/SurrogatesSVM`
   [009559a3] XGBoost v2.5.1
-  [e88e6eb3] Zygote v0.7.4</code></pre></details><details><summary>and using this machine and Julia version.</summary><pre class="documenter-example-output"><code class="nohighlight hljs ansi">Julia Version 1.11.4
+  [e88e6eb3] Zygote v0.7.6</code></pre></details><details><summary>and using this machine and Julia version.</summary><pre class="documenter-example-output"><code class="nohighlight hljs ansi">Julia Version 1.11.4
 Commit 8561cc3d68d (2025-03-10 11:36 UTC)
 Build Info:
   Official https://julialang.org/ release
@@ -62,13 +62,13 @@ Environment:
   JULIA_DEBUG = Documenter</code></pre></details><details><summary>A more complete overview of all dependencies and their versions is also provided.</summary><pre class="documenter-example-output"><code class="nohighlight hljs ansi">Status `~/work/Surrogates.jl/Surrogates.jl/docs/Manifest.toml`
   [a4c015fc] ANSIColoredPrinters v0.0.1
   [621f4979] AbstractFFTs v1.5.0
-  [99985d1d] AbstractGPs v0.5.23
+  [99985d1d] AbstractGPs v0.5.24
   [1520ce14] AbstractTrees v0.4.5
   [7d9f7c33] Accessors v0.1.42
   [79e6a3ab] Adapt v4.3.0
 ⌅ [c75e803d] AdaptiveRejectionSampling v0.1.2
   [66dad0bd] AliasTables v1.1.3
-  [dce04be8] ArgCheck v2.4.0
+  [dce04be8] ArgCheck v2.5.0
   [7d9fca2a] Arpack v0.5.4
   [a9b6321e] Atomix v1.1.1
   [198e06fe] BangBang v0.4.4
@@ -80,7 +80,7 @@ Environment:
   [aaaa29a8] Clustering v0.15.8
   [944b1d66] CodecZlib v0.7.8
   [35d6a980] ColorSchemes v3.29.0
-  [3da002f7] ColorTypes v0.12.0
+  [3da002f7] ColorTypes v0.12.1
   [c3611d14] ColorVectorSpace v0.11.0
   [5ae59095] Colors v0.13.0
   [861a8166] Combinatorics v1.0.2
@@ -101,11 +101,11 @@ Environment:
   [b552c78f] DiffRules v1.15.1
   [b4f34e82] Distances v0.10.12
   [31c24e10] Distributions v0.25.118
-  [ffbed154] DocStringExtensions v0.9.3
-  [e30172f5] Documenter v1.9.0
+  [ffbed154] DocStringExtensions v0.9.4
+  [e30172f5] Documenter v1.10.1
   [f151be2c] EnzymeCore v0.8.8
   [460bff9d] ExceptionUnwrapping v0.1.11
-  [95c220a8] ExtendableSparse v1.7.0
+  [95c220a8] ExtendableSparse v1.7.1
   [c87230d0] FFMPEG v0.4.2
   [7a1cc6ca] FFTW v1.8.1
   [cc61a311] FLoops v0.2.2
@@ -115,10 +115,9 @@ Environment:
   [53c48c17] FixedPointNumbers v0.8.5
   [587475ba] Flux v0.16.3
   [1fa38f19] Format v1.3.7
-  [f6369f11] ForwardDiff v0.10.38
+⌅ [f6369f11] ForwardDiff v0.10.38
   [d9f16b24] Functors v0.5.2
   [38e38edf] GLM v1.9.0
-  [0c68f7d7] GPUArrays v11.2.2
   [46192b85] GPUArraysCore v0.2.0
   [28b8d3ca] GR v0.73.13
   [d54b0c1a] GaussQuadrature v0.5.8
@@ -138,18 +137,17 @@ Environment:
   [42fd0dbc] IterativeSolvers v0.9.4
   [82899510] IteratorInterfaceExtensions v1.0.0
 ⌅ [033835bb] JLD2 v0.4.54
-  [1019f520] JLFzf v0.1.9
+  [1019f520] JLFzf v0.1.10
   [692b3bcd] JLLWrappers v1.7.0
   [682c06a0] JSON v0.21.4
-  [0f8b85d8] JSON3 v1.14.1
+  [0f8b85d8] JSON3 v1.14.2
   [b14d175d] JuliaVariables v0.2.4
   [63c18a36] KernelAbstractions v0.9.34
   [ec8451be] KernelFunctions v0.10.65
   [2d691ee1] LIBLINEAR v0.7.1
   [b1bec4e5] LIBSVM v0.8.1
-  [929cbde3] LLVM v9.2.0
   [b964fa9f] LaTeXStrings v1.4.0
-  [23fbe1c1] Latexify v0.16.6
+  [23fbe1c1] Latexify v0.16.7
   [73f95e8e] LatticeRules v0.0.1
   [0e77f7df] LazilyInitializedFields v1.3.0
   [2ab3a3ac] LogExpFunctions v0.3.29
@@ -157,33 +155,32 @@ Environment:
   [c2834f40] MLCore v1.0.0
   [7e8f7934] MLDataDevices v1.9.1
   [d8e11817] MLStyle v0.4.17
-  [f1d291b0] MLUtils v0.4.7
+  [f1d291b0] MLUtils v0.4.8
   [1914dd2f] MacroTools v0.5.15
   [d0879d2d] MarkdownAST v0.1.2
   [739be429] MbedTLS v1.1.9
   [442fdcdd] Measures v0.3.2
   [128add7d] MicroCollections v0.2.0
   [e1d29d7a] Missings v1.2.0
-  [872c559c] NNlib v0.9.29
-  [77ba4419] NaNMath v1.1.2
+  [872c559c] NNlib v0.9.30
+  [77ba4419] NaNMath v1.1.3
   [71a1bf82] NameResolution v0.1.5
   [b8a86587] NearestNeighbors v0.4.21
   [6fe1bfb0] OffsetArrays v1.16.0
-  [0b1bfda6] OneHotArrays v0.2.6
+  [0b1bfda6] OneHotArrays v0.2.7
   [4d8831e6] OpenSSL v1.4.3
-  [3bd65402] Optimisers v0.4.5
+  [3bd65402] Optimisers v0.4.6
   [bac558e1] OrderedCollections v1.8.0
-  [90014a1f] PDMats v0.11.32
+  [90014a1f] PDMats v0.11.33
   [69de0a69] Parsers v2.8.1
-  [b98c9c47] Pipe v1.3.0
   [ccf2f8ad] PlotThemes v3.3.0
   [995b91a9] PlotUtils v1.4.3
   [91a5bcdd] Plots v1.40.11
   [8d666b04] PolyChaos v0.2.11
-  [aea7be01] PrecompileTools v1.2.1
+⌅ [aea7be01] PrecompileTools v1.2.1
   [21216c6a] Preferences v1.4.3
   [8162dcfd] PrettyPrint v0.2.0
-  [27ebfcd6] Primes v0.5.6
+  [27ebfcd6] Primes v0.5.7
   [33c8b6b6] ProgressLogging v0.1.4
   [43287f4e] PtrArrays v1.3.0
   [1fd47b50] QuadGK v2.11.2
@@ -218,9 +215,9 @@ Environment:
   [10745b16] Statistics v1.11.1
   [82ae8749] StatsAPI v1.7.0
   [2913bbd2] StatsBase v0.34.4
-  [4c63d2b9] StatsFuns v1.3.2
+  [4c63d2b9] StatsFuns v1.4.0
   [3eaba693] StatsModels v0.7.4
-  [09ab397b] StructArrays v0.7.0
+  [09ab397b] StructArrays v0.7.1
   [856f2bd8] StructTypes v1.11.0
   [6fc51010] Surrogates v6.11.0 `~/work/Surrogates.jl/Surrogates.jl`
   [78aa1720] SurrogatesAbstractGPs v0.1.1 `~/work/Surrogates.jl/Surrogates.jl/lib/SurrogatesAbstractGPs`
@@ -229,56 +226,55 @@ Environment:
   [778709c9] SurrogatesMOE v0.1.5 `~/work/Surrogates.jl/Surrogates.jl/lib/SurrogatesMOE`
   [50679fc6] SurrogatesPolyChaos v0.1.1 `~/work/Surrogates.jl/Surrogates.jl/lib/SurrogatesPolyChaos`
   [3fee2672] SurrogatesRandomForest v0.1.2 `~/work/Surrogates.jl/Surrogates.jl/lib/SurrogatesRandomForest`
-  [eb0c118b] SurrogatesSVM v0.1.0 `~/work/Surrogates.jl/Surrogates.jl/lib/SurrogatesSVM`
+  [eb0c118b] SurrogatesSVM v0.1.1 `~/work/Surrogates.jl/Surrogates.jl/lib/SurrogatesSVM`
   [3783bdb8] TableTraits v1.0.1
   [bd369af6] Tables v1.12.0
   [62fd8b95] TensorCore v0.1.1
   [3bb67fe8] TranscodingStreams v0.11.3
   [28d57a85] Transducers v0.4.84
-  [5c2747f8] URIs v1.5.1
+  [5c2747f8] URIs v1.5.2
   [1cfade01] UnicodeFun v0.4.1
   [1986cc42] Unitful v1.22.0
   [45397f5d] UnitfulLatexify v1.6.4
   [013be700] UnsafeAtomics v0.3.0
   [41fe7b60] Unzip v0.2.0
   [009559a3] XGBoost v2.5.1
-  [e88e6eb3] Zygote v0.7.4
+  [e88e6eb3] Zygote v0.7.6
   [700de1a5] ZygoteRules v0.2.7
 ⌅ [68821587] Arpack_jll v3.5.1+1
   [6e34b625] Bzip2_jll v1.0.9+0
   [4ee394cb] CUDA_Driver_jll v0.12.1+1
   [76a88914] CUDA_Runtime_jll v0.16.1+0
   [83423d85] Cairo_jll v1.18.4+0
-  [ee1fde0b] Dbus_jll v1.14.10+0
+  [ee1fde0b] Dbus_jll v1.16.2+0
   [2702e6a9] EpollShim_jll v0.0.20230411+1
   [2e619515] Expat_jll v2.6.5+0
 ⌅ [b22a6f82] FFMPEG_jll v4.4.4+1
-  [f5851436] FFTW_jll v3.3.10+3
-  [a3f928ae] Fontconfig_jll v2.15.0+0
-  [d7e528f0] FreeType2_jll v2.13.3+1
-  [559328eb] FriBidi_jll v1.0.16+0
+  [f5851436] FFTW_jll v3.3.11+0
+  [a3f928ae] Fontconfig_jll v2.16.0+0
+  [d7e528f0] FreeType2_jll v2.13.4+0
+  [559328eb] FriBidi_jll v1.0.17+0
   [0656b61e] GLFW_jll v3.4.0+2
   [d2c73de3] GR_jll v0.73.13+0
   [78b55507] Gettext_jll v0.21.0+0
-  [f8c6e375] Git_jll v2.47.1+0
-  [7746bdde] Glib_jll v2.82.4+0
-  [3b182d85] Graphite2_jll v1.3.14+1
+  [f8c6e375] Git_jll v2.49.0+0
+⌃ [7746bdde] Glib_jll v2.82.4+0
+  [3b182d85] Graphite2_jll v1.3.15+0
   [2e76f6c2] HarfBuzz_jll v8.5.0+0
   [1d5cc7b8] IntelOpenMP_jll v2025.0.4+0
   [aacddb02] JpegTurbo_jll v3.1.1+0
   [c1c5ebd0] LAME_jll v3.100.2+0
   [88015f11] LERC_jll v4.0.1+0
-  [dad2f222] LLVMExtra_jll v0.0.35+0
   [1d63c593] LLVMOpenMP_jll v18.1.7+0
   [dd4b983a] LZO_jll v2.10.3+0
 ⌅ [e9f186c6] Libffi_jll v3.2.2+2
-  [d4300ac3] Libgcrypt_jll v1.11.0+0
+  [d4300ac3] Libgcrypt_jll v1.11.1+0
   [7e76a0d4] Libglvnd_jll v1.7.0+0
   [7add5ba3] Libgpg_error_jll v1.51.1+0
   [94ce4f54] Libiconv_jll v1.18.0+0
-  [4b2f31a3] Libmount_jll v2.40.3+0
+  [4b2f31a3] Libmount_jll v2.41.0+0
   [89763e89] Libtiff_jll v4.7.1+0
-  [38a345b3] Libuuid_jll v2.40.3+0
+  [38a345b3] Libuuid_jll v2.41.0+0
   [856f044c] MKL_jll v2025.0.1+1
   [e7412a2a] Ogg_jll v1.3.5+1
   [458c3c95] OpenSSL_jll v3.0.16+0
@@ -292,13 +288,13 @@ Environment:
 ⌃ [e99dba38] Qt6Wayland_jll v6.7.1+1
   [f50d1b31] Rmath_jll v0.5.1+0
   [a44049a8] Vulkan_Loader_jll v1.3.243+0
-  [a2964d1f] Wayland_jll v1.21.0+2
+⌃ [a2964d1f] Wayland_jll v1.21.0+2
   [2381bf8a] Wayland_protocols_jll v1.36.0+0
   [a5c6f535] XGBoost_jll v2.0.1+0
   [02c8fc9c] XML2_jll v2.13.6+1
-  [aed1982a] XSLT_jll v1.1.42+0
-  [ffd25f8a] XZ_jll v5.6.4+1
-  [f67eecfb] Xorg_libICE_jll v1.1.1+0
+  [aed1982a] XSLT_jll v1.1.43+0
+  [ffd25f8a] XZ_jll v5.8.1+0
+  [f67eecfb] Xorg_libICE_jll v1.1.2+0
   [c834827a] Xorg_libSM_jll v1.2.4+0
   [4f6342f7] Xorg_libX11_jll v1.8.6+3
   [0c0b7dd1] Xorg_libXau_jll v1.0.12+0
@@ -321,7 +317,7 @@ Environment:
   [c22f9ab0] Xorg_xcb_util_wm_jll v0.4.1+1
   [35661453] Xorg_xkbcomp_jll v1.4.6+1
   [33bec58e] Xorg_xkeyboard_config_jll v2.39.0+0
-  [c5fb5394] Xorg_xtrans_jll v1.5.1+0
+  [c5fb5394] Xorg_xtrans_jll v1.6.0+0
   [3161d3a3] Zstd_jll v1.5.7+1
   [35ca27e7] eudev_jll v3.2.9+0
   [214eeab7] fzf_jll v0.56.3+0
@@ -388,4 +384,4 @@ Environment:
   [8e850b90] libblastrampoline_jll v5.11.0+0
   [8e850ede] nghttp2_jll v1.59.0+0
   [3f19e933] p7zip_jll v17.4.0+2
-Info Packages marked with ⌃ and ⌅ have new versions available. Those with ⌃ may be upgradable, but those with ⌅ are restricted by compatibility constraints from upgrading. To see why use `status --outdated -m`</code></pre></details><p>You can also download the <a href="https://github.com/SciML/Surrogates.jl/tree/gh-pages/v6.11.0/assets/Manifest.toml">manifest</a> file and the <a href="https://github.com/SciML/Surrogates.jl/tree/gh-pages/v6.11.0/assets/Project.toml">project</a> file.</p></article><nav class="docs-footer"><a class="docs-footer-nextpage" href="tutorials/">Basics »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.9.0 on <span class="colophon-date" title="Thursday 20 March 2025 07:54">Thursday 20 March 2025</span>. Using Julia version 1.11.4.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+Info Packages marked with ⌃ and ⌅ have new versions available. Those with ⌃ may be upgradable, but those with ⌅ are restricted by compatibility constraints from upgrading. To see why use `status --outdated -m`</code></pre></details><p>You can also download the <a href="https://github.com/SciML/Surrogates.jl/tree/gh-pages/v6.11.0/assets/Manifest.toml">manifest</a> file and the <a href="https://github.com/SciML/Surrogates.jl/tree/gh-pages/v6.11.0/assets/Project.toml">project</a> file.</p></article><nav class="docs-footer"><a class="docs-footer-nextpage" href="tutorials/">Basics »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.10.1 on <span class="colophon-date" title="Thursday 10 April 2025 11:58">Thursday 10 April 2025</span>. Using Julia version 1.11.4.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
