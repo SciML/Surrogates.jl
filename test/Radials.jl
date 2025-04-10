@@ -174,3 +174,71 @@ y = mockvalues.(x)
 rbf = RadialBasis(x, y, lb, ub, rad = multiquadricRadial(1.788))
 test = (lb .+ ub) ./ 2
 @test isapprox(rbf(test), mockvalues(test), atol = 0.001)
+
+# Test regularization parameter
+# Check the tests still pass with a small regularization parameter
+# 1D
+lb = 0.0
+ub = 4.0
+x = [1.0, 2.0, 3.0]
+y = [4.0, 5.0, 6.0]
+my_rad = RadialBasis(x, y, lb, ub, rad = linearRadial(), regularization = 1E-12)
+est = my_rad(3.0)
+@test est ≈ 6.0
+update!(my_rad, 4.0, 10.0)
+est = my_rad(3.0)
+@test est ≈ 6.0
+update!(my_rad, [3.2, 3.3, 3.4], [8.0, 9.0, 10.0])
+est = my_rad(3.0)
+@test est ≈ 6.0
+
+#ND
+x = [(1.0, 2.0, 3.0), (4.0, 5.0, 6.0), (7.0, 8.0, 9.0)]
+y = [4.0, 5.0, 6.0]
+lb = [0.0, 3.0, 6.0]
+ub = [4.0, 7.0, 10.0]
+my_rad = RadialBasis(x, y, lb, ub)
+est = my_rad((1.0, 2.0, 3.0))
+@test est ≈ 4.0
+#WITH ADD_POINT, adding singleton
+x = [(1.0, 2.0, 3.0), (4.0, 5.0, 6.0), (7.0, 8.0, 9.0)]
+y = [4.0, 5.0, 6.0]
+lb = [0.0, 3.0, 6.0]
+ub = [4.0, 7.0, 10.0]
+my_rad = RadialBasis(x, y, lb, ub, rad = linearRadial(), scale_factor = 1.0, regularization = 1E-12)
+update!(my_rad, (9.0, 10.0, 11.0), 10.0)
+est = my_rad((1.0, 2.0, 3.0))
+@test est ≈ 4.0
+
+# Check regularization fixes the SingularException
+# 1D
+for reg in [0, 1E-12]
+    local lb = 0.0
+    local ub = 4.0
+    # Pass the first point twice to create a singular matrix
+    # This should throw a SingularException if regularization is not used
+    local x = [1.0, 1.0, 2.0, 3.0]
+    local y = [4.0, 4.0, 5.0, 6.0]
+    if reg == 0
+        @test_throws LinearAlgebra.SingularException RadialBasis(x, y, lb, ub, rad = linearRadial(), regularization = reg)
+    else
+        local my_rad = RadialBasis(x, y, lb, ub, rad = linearRadial(), regularization = reg)
+        @test my_rad(3.0) ≈ 6.0
+        @test my_rad(1.0) ≈ 4.0
+    end
+end
+
+# ND
+for reg in [0, 1E-12]
+    local lb = [0.0, 3.0, 6.0]
+    local ub = [4.0, 7.0, 10.0]
+    local x = [(1.0, 2.0, 3.0), (1.0, 2.0, 3.0), (4.0, 5.0, 6.0), (7.0, 8.0, 9.0)]
+    local y = [4.0, 4.0, 5.0, 6.0]
+    if reg == 0
+        @test_throws LinearAlgebra.SingularException RadialBasis(x, y, lb, ub, rad = linearRadial(), regularization = reg)
+    else
+        local my_rad = RadialBasis(x, y, lb, ub, rad = linearRadial(), regularization = reg)
+        @test my_rad((1.0, 2.0, 3.0)) ≈ 4.0
+        @test my_rad((4.0, 5.0, 6.0)) ≈ 5.0
+    end
+end
