@@ -91,6 +91,8 @@ function SurrogatesBase.update!(my_n::NeuralSurrogate, x_new, y_new)
         else
             x_new = reduce(hcat, x_new)
         end
+    elseif x_new isa Number
+        x_new = reduce(hcat, [[x_new]])
     end
     y_new = reduce(hcat, y_new)
     opt_state = Flux.setup(my_n.opt, my_n.model)
