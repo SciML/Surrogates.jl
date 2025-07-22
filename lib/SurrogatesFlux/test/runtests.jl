@@ -63,7 +63,19 @@ using SafeTestsets
         update!(surrogate, x_new, y_new)
     end
 
-    @testset "Optimization" begin
+    @testset "1D Optimization" begin
+        lb = 0.0
+        ub = 10.0
+        x = sample(5, lb, ub, SobolSample())
+        objective_function_1D = z -> 2 * z + 3
+        y = objective_function_1D.(x)
+        model = Chain(Dense(1, 1), first)
+        my_neural_1D_neural = NeuralSurrogate(x, y, lb, ub, model = model)
+        surrogate_optimize!(objective_function_1D, SRBF(), lb, ub, my_neural_1D_neural,
+            SobolSample(), maxiters = 15)
+    end
+
+    @testset "ND Optimization" begin
         lb = [1.0, 1.0]
         ub = [6.0, 6.0]
         x = sample(5, lb, ub, SobolSample())
