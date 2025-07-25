@@ -51,3 +51,14 @@ mutable struct SVMSurrogate{X, Y, M, L, U} <: AbstractDeterministicSurrogate
     lb::L
     ub::U
 end
+
+mutable struct MOE{X, Y, C, D, M, E, ND, NC} <: AbstractDeterministicSurrogate
+    x::X
+    y::Y
+    c::C #clusters (C) - vector of gaussian mixture clusters
+    d::D #distributions (D) - vector of frozen multivariate distributions
+    m::M # models (M) - vector of trained models correspnoding to clusters (C) and distributions (D)
+    e::E #expert types
+    nd::ND #number of dimensions
+    nc::NC #number of clusters
+end

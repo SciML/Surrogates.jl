@@ -134,5 +134,6 @@ export NeuralSurrogate
 export PolynomialChaosSurrogate
 export RandomForestSurrogate
 export SVMSurrogate
+export MOE
 
 end
