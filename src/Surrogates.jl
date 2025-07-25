@@ -131,5 +131,8 @@ export AbstractSurrogate
 include("extensions.jl")
 export AbstractGPSurrogate, logpdf_surrogate, std_error_at_point
 export NeuralSurrogate
+export PolynomialChaosSurrogate
+export RandomForestSurrogate
+export SVMSurrogate
 
 end
