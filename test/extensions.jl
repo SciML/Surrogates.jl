@@ -187,7 +187,19 @@ end
         update!(surrogate, x_new, y_new)
     end
 
-    @testset "Optimization" begin
+    @testset "1D Optimization" begin
+        lb = 0.0
+        ub = 10.0
+        x = sample(5, lb, ub, SobolSample())
+        objective_function_1D = z -> 2 * z + 3
+        y = objective_function_1D.(x)
+        model = Chain(Dense(1, 1), first)
+        my_neural_1D_neural = NeuralSurrogate(x, y, lb, ub, model = model)
+        surrogate_optimize!(objective_function_1D, SRBF(), lb, ub, my_neural_1D_neural,
+            SobolSample(), maxiters = 15)
+    end
+
+    @testset "ND Optimization" begin
         lb = [1.0, 1.0]
         ub = [6.0, 6.0]
         x = sample(5, lb, ub, SobolSample())
@@ -261,5 +273,148 @@ end
 
         my_second = SecondOrderPolynomialSurrogate(x, y, lb, ub)
         Zygote.gradient(x -> sum(my_second(x)), [2.0, 5.0])
+    end
+end
+
+@safetestset "PolynomialChaosSurrogates" begin
+    using Surrogates
+    using PolyChaos
+    using Zygote
+
+    @testset "Scalar Inputs" begin
+        n = 20
+        lb = 0.0
+        ub = 4.0
+        f = x -> 2 * x
+        x = sample(n, lb, ub, SobolSample())
+        y = f.(x)
+        my_pce = PolynomialChaosSurrogate(x, y, lb, ub)
+        x_val = 1.2
+        @test my_pce(x_val) ≈ f(x_val)
+        update!(my_pce, [3.0], [6.0])
+        my_pce_changed = PolynomialChaosSurrogate(
+            x, y, lb, ub; orthopolys = Uniform01OrthoPoly(1))
+        @test my_pce_changed(x_val) ≈ f(x_val)
+    end
+
+    @testset "Vector Inputs" begin
+        n = 60
+        lb = [0.0, 0.0]
+        ub = [5.0, 5.0]
+        f = x -> x[1] * x[2]
+        x = collect.(sample(n, lb, ub, SobolSample()))
+        y = f.(x)
+        my_pce = PolynomialChaosSurrogate(x, y, lb, ub)
+        x_val = [1.2, 1.4]
+        @test my_pce(x_val) ≈ f(x_val)
+        update!(my_pce, [[2.0, 3.0]], [6.0])
+        @test my_pce(x_val) ≈ f(x_val)
+        op1 = Uniform01OrthoPoly(1)
+        op2 = Beta01OrthoPoly(2, 2, 1.2)
+        ops = [op1, op2]
+        multi_poly = MultiOrthoPoly(ops, min(1, 2))
+        my_pce_changed = PolynomialChaosSurrogate(x, y, lb, ub, orthopolys = multi_poly)
+    end
+
+    @testset "Derivative" begin
+        lb = 0.0
+        ub = 3.0
+        f = x -> x^2
+        n = 50
+        x = collect(sample(n, lb, ub, SobolSample()))
+        y = f.(x)
+        my_poli = PolynomialChaosSurrogate(x, y, lb, ub)
+        g = x -> my_poli'(x)
+        x_val = 3.0
+        @test g(x_val) ≈ 2 * x_val
+    end
+
+    @testset "Gradient" begin
+        n = 50
+        lb = [0.0, 0.0]
+        ub = [10.0, 10.0]
+        x = collect.(sample(n, lb, ub, SobolSample()))
+        f = x -> x[1] * x[2]
+        y = f.(x)
+        my_poli_ND = PolynomialChaosSurrogate(x, y, lb, ub)
+        g = x -> Zygote.gradient(my_poli_ND, x)[1]
+        x_val = [1.0, 2.0]
+        @test g(x_val) ≈ [x_val[2], x_val[1]]
+    end
+end
+
+@safetestset "RandomForestSurrogate" begin
+    using Surrogates
+    using XGBoost: xgboost, predict
+
+    @testset "1D" begin
+        obj_1D = x -> 3 * x + 1
+        x = [1.0, 2.0, 3.0, 4.0, 5.0]
+        y = obj_1D.(x)
+        a = 0.0
+        b = 10.0
+        num_round = 2
+        my_forest_1D = RandomForestSurrogate(x, y, a, b; num_round = 2)
+        xgboost1 = xgboost((reshape(x, length(x), 1), y); num_round = 2)
+        val = my_forest_1D(3.5)
+        @test predict(xgboost1, [3.5;;])[1] == val
+        update!(my_forest_1D, [6.0], [19.0])
+        update!(my_forest_1D, [7.0, 8.0], obj_1D.([7.0, 8.0]))
+    end
+
+    @testset "ND" begin
+        lb = [0.0, 0.0, 0.0]
+        ub = [10.0, 10.0, 10.0]
+        x = sample(5, lb, ub, SobolSample())
+        obj_ND = x -> x[1] * x[2]^2 * x[3]
+        y = obj_ND.(x)
+        my_forest_ND = RandomForestSurrogate(x, y, lb, ub; num_round = 2)
+        xgboostND = xgboost((reduce(hcat, collect.(x))', y); num_round = 2)
+        val = my_forest_ND([1.0, 1.0, 1.0])
+        @test predict(xgboostND, reshape([1.0, 1.0, 1.0], 3, 1))[1] == val
+        update!(my_forest_ND, [[1.0, 1.0, 1.0]], [1.0])
+        update!(my_forest_ND, [[1.2, 1.2, 1.0], [1.5, 1.5, 1.0]], [1.728, 3.375])
+    end
+end
+
+@safetestset "SVMSurrogate" begin
+    using Surrogates
+    using LIBSVM
+
+    @testset "1D" begin
+        obj_1D = x -> 2 * x + 1
+        a = 0.0
+        b = 10.0
+        x = sample(5, a, b, SobolSample())
+        y = obj_1D.(x)
+        svm = LIBSVM.fit!(SVC(), reshape(x, length(x), 1), y)
+        my_svm_1D = SVMSurrogate(x, y, a, b)
+        val = my_svm_1D([5.0])
+        @test LIBSVM.predict(svm, [5.0;;])[1] == val
+        update!(my_svm_1D, [3.1], [7.2])
+        update!(my_svm_1D, [3.2, 3.5], [7.4, 8.0])
+        svm = LIBSVM.fit!(SVC(), reshape(my_svm_1D.x, length(my_svm_1D.x), 1), my_svm_1D.y)
+        val = my_svm_1D(3.1)
+        @test LIBSVM.predict(svm, [3.1;;])[1] == val
+    end
+
+    @testset "ND" begin
+        obj_N = x -> x[1]^2 * x[2]
+        lb = [0.0, 0.0]
+        ub = [10.0, 10.0]
+        x = sample(100, lb, ub, RandomSample())
+        y = obj_N.(x)
+        svm = LIBSVM.fit!(SVC(), transpose(reduce(hcat, collect.(x))), y)
+        my_svm_ND = SVMSurrogate(x, y, lb, ub)
+        x_test = [5.0, 1.2]
+        val = my_svm_ND(x_test)
+        @test LIBSVM.predict(svm, reshape(x_test, 1, 2))[1] == val
+        update!(my_svm_ND, [(1.0, 1.0)], [1.0])
+        update!(my_svm_ND, [(1.2, 1.2), (1.5, 1.5)], [1.728, 3.375])
+        svm = LIBSVM.fit!(
+            SVC(), transpose(reduce(hcat, collect.(my_svm_ND.x))), my_svm_ND.y)
+        x_test = [1.0, 1.0]
+        val = my_svm_ND(x_test)
+        @test LIBSVM.predict(svm, reshape(x_test, 1, 2))[1] == val
     end
 end
