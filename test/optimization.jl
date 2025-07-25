@@ -1,7 +1,7 @@
 using Surrogates
 using LinearAlgebra
 using QuasiMonteCarlo
-using SurrogatesSVM
+using LIBSVM
 #######SRBF############
 ##### 1D #####
 
