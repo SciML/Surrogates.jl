@@ -1,19 +1,8 @@
-module SurrogatesRandomForest
+module SurrogatesRandomForestExt
 
+using Surrogates: RandomForestSurrogate
 using SurrogatesBase
 using XGBoost: xgboost, predict
-
-export RandomForestSurrogate, update!
-
-mutable struct RandomForestSurrogate{X, Y, B, L, U, N} <:
-               SurrogatesBase.AbstractDeterministicSurrogate
-    x::X
-    y::Y
-    bst::B
-    lb::L
-    ub::U
-    num_round::N
-end
 
 """
     RandomForestSurrogate(x, y, lb, ub, num_round)

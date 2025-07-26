@@ -1,20 +1,8 @@
-module SurrogatesPolyChaos
+module SurrogatesPolyChaosExt
 
+using Surrogates: PolynomialChaosSurrogate
 using SurrogatesBase
 using PolyChaos
-
-export PolynomialChaosSurrogate, update!
-
-mutable struct PolynomialChaosSurrogate{X, Y, L, U, C, O, N} <:
-               AbstractDeterministicSurrogate
-    x::X
-    y::Y
-    lb::L
-    ub::U
-    coeff::C
-    orthopolys::O
-    num_of_multi_indexes::N
-end
 
 function PolynomialChaosSurrogate(x, y, lb::Number, ub::Number;
         orthopolys::AbstractCanonicalOrthoPoly = GaussOrthoPoly(2))
