@@ -32,7 +32,7 @@ SurrogatesFluxExt = ["Flux", "Optimisers"]
 SurrogatesPolyChaosExt = "PolyChaos"
 SurrogatesRandomForestExt = "XGBoost"
 SurrogatesSVMExt = "LIBSVM"
-SurrogatesMOEExt = ["Flux", "GaussianMixtures", "PolyChaos", "Random", "XGBoost"]
+SurrogatesMOEExt = ["GaussianMixtures", "Random"]
 
 [compat]
 AbstractGPs = "0.5"
