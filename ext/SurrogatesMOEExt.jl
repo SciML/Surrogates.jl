@@ -11,9 +11,6 @@ using GaussianMixtures
 using Random
 using Distributions
 using LinearAlgebra
-using Flux
-using PolyChaos
-using XGBoost
 
 """
     MOE(x, y, expert_types;  ndim=1, n_clusters=2)
