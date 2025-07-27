@@ -15,15 +15,22 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        version: ['1.10']
+        group:
+          - Core
+        downgrade_mode: ['alldeps']
+        julia-version: ['1.10']
     steps:
       - uses: actions/checkout@v4
       - uses: julia-actions/setup-julia@v2
         with:
-          version: ${{ matrix.version }}
-      - uses: julia-actions/julia-downgrade-compat@v1
+          version: ${{ matrix.julia-version }}
+      - uses: julia-actions/julia-downgrade-compat@v2
 #        if: ${{ matrix.version == '1.6' }}
         with:
           skip: Pkg,TOML
       - uses: julia-actions/julia-buildpkg@v1
       - uses: julia-actions/julia-runtest@v1
+        with:
+          ALLOW_RERESOLVE: false
+        env:
+          GROUP: ${{ matrix.group }}
