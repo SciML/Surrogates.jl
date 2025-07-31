@@ -34,7 +34,7 @@ mutable struct PolynomialChaosSurrogate{X, Y, L, U, C, O, N} <:
     num_of_multi_indexes::N
 end
 
-mutable struct RandomForestSurrogate{X, Y, B, L, U, N} <:
+mutable struct XGBoostSurrogate{X, Y, B, L, U, N} <:
                SurrogatesBase.AbstractDeterministicSurrogate
     x::X
     y::Y

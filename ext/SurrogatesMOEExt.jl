@@ -5,7 +5,7 @@ import Surrogates: linearRadial, cubicRadial, multiquadricRadial,
                    InverseDistanceSurrogate, Kriging, LobachevskyStructure,
                    LobachevskySurrogate, NeuralStructure, PolyChaosStructure,
                    LinearSurrogate, MOE, 
-                   NeuralSurrogate, RandomForestSurrogate, PolynomialChaosSurrogate
+                   NeuralSurrogate, XGBoostSurrogate, PolynomialChaosSurrogate
 using SurrogatesBase
 using GaussianMixtures
 using Random
@@ -306,8 +306,8 @@ function _surrogate_builder(local_kind, k, x, y, lb, ub)
                 n_epochs = local_kind[i].n_epochs)
             push!(local_surr, my_local_i)
 
-        elseif local_kind[i][1] == "RandomForestSurrogate"
-            my_local_i = RandomForestSurrogate(x, y, lb, ub,
+        elseif local_kind[i][1] == "XGBoostSurrogate"
+            my_local_i = XGBoostSurrogate(x, y, lb, ub,
                 num_round = local_kind[i].num_round)
             push!(local_surr, my_local_i)
 

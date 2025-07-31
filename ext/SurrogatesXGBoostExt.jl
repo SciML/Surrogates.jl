@@ -1,11 +1,11 @@
-module SurrogatesRandomForestExt
+module SurrogatesXGBoostExt
 
-using Surrogates: RandomForestSurrogate
+using Surrogates: XGBoostSurrogate
 using SurrogatesBase
 using XGBoost: xgboost, predict
 
 """
-    RandomForestSurrogate(x, y, lb, ub, num_round)
+    XGBoostSurrogate(x, y, lb, ub, num_round)
 
 Build Random forest surrogate. num_round is the number of trees.
 
@@ -20,7 +20,7 @@ Build Random forest surrogate. num_round is the number of trees.
 
   - `num_round`: number of rounds of training.
 """
-function RandomForestSurrogate(x, y, lb, ub; num_round::Int = 1)
+function XGBoostSurrogate(x, y, lb, ub; num_round::Int = 1)
     X = Array{Float64, 2}(undef, length(x), length(x[1]))
     if length(lb) == 1
         for j in eachindex(x)
@@ -32,18 +32,18 @@ function RandomForestSurrogate(x, y, lb, ub; num_round::Int = 1)
         end
     end
     bst = xgboost((X, y); num_round)
-    RandomForestSurrogate(X, y, bst, lb, ub, num_round)
+    XGBoostSurrogate(X, y, bst, lb, ub, num_round)
 end
 
-function (rndfor::RandomForestSurrogate)(val::Number)
+function (rndfor::XGBoostSurrogate)(val::Number)
     return rndfor([val])
 end
 
-function (rndfor::RandomForestSurrogate)(val)
+function (rndfor::XGBoostSurrogate)(val)
     return predict(rndfor.bst, reshape(collect(val), length(val), 1))[1]
 end
 
-function SurrogatesBase.update!(rndfor::RandomForestSurrogate, x_new, y_new)
+function SurrogatesBase.update!(rndfor::XGBoostSurrogate, x_new, y_new)
     if x_new isa Tuple
         x_new = reduce(hcat, x_new)
     elseif x_new isa Vector{<:Tuple}

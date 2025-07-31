@@ -343,7 +343,7 @@ end
     end
 end
 
-@safetestset "RandomForestSurrogate" begin
+@safetestset "XGBoostSurrogate" begin
     using Surrogates
     using XGBoost: xgboost, predict
 
@@ -354,7 +354,7 @@ end
         a = 0.0
         b = 10.0
         num_round = 2
-        my_forest_1D = RandomForestSurrogate(x, y, a, b; num_round = 2)
+        my_forest_1D = XGBoostSurrogate(x, y, a, b; num_round = 2)
         xgboost1 = xgboost((reshape(x, length(x), 1), y); num_round = 2)
         val = my_forest_1D(3.5)
         @test predict(xgboost1, [3.5;;])[1] == val
@@ -368,7 +368,7 @@ end
         x = sample(5, lb, ub, SobolSample())
         obj_ND = x -> x[1] * x[2]^2 * x[3]
         y = obj_ND.(x)
-        my_forest_ND = RandomForestSurrogate(x, y, lb, ub; num_round = 2)
+        my_forest_ND = XGBoostSurrogate(x, y, lb, ub; num_round = 2)
         xgboostND = xgboost((reduce(hcat, collect.(x))', y); num_round = 2)
         val = my_forest_ND([1.0, 1.0, 1.0])
         @test predict(xgboostND, reshape([1.0, 1.0, 1.0], 3, 1))[1] == val
