@@ -114,7 +114,8 @@ using ChainRulesCore: @non_differentiable
 function _make_combination(n, d, ix)
     exponents_combinations = [e
                               for e
-                                  in collect(Iterators.product(Iterators.repeated(0:n,
+                                   in
+                                  collect(Iterators.product(Iterators.repeated(0:n,
                                       d)...))[:]
                               if sum(e) <= n]
 
@@ -151,7 +152,7 @@ function multivar_poly_basis(x, ix, d, n)
     else
         prod(a^d
         for (a, d)
-        in zip(x, _make_combination(n, d, ix)))
+             in  zip(x, _make_combination(n, d, ix)))
     end
 end
 

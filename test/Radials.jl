@@ -205,7 +205,8 @@ x = [(1.0, 2.0, 3.0), (4.0, 5.0, 6.0), (7.0, 8.0, 9.0)]
 y = [4.0, 5.0, 6.0]
 lb = [0.0, 3.0, 6.0]
 ub = [4.0, 7.0, 10.0]
-my_rad = RadialBasis(x, y, lb, ub, rad = linearRadial(), scale_factor = 1.0, regularization = 1E-12)
+my_rad = RadialBasis(
+    x, y, lb, ub, rad = linearRadial(), scale_factor = 1.0, regularization = 1E-12)
 update!(my_rad, (9.0, 10.0, 11.0), 10.0)
 est = my_rad((1.0, 2.0, 3.0))
 @test est ≈ 4.0
@@ -220,7 +221,8 @@ for reg in [0, 1E-12]
     local x = [1.0, 1.0, 2.0, 3.0]
     local y = [4.0, 4.0, 5.0, 6.0]
     if reg == 0
-        @test_throws LinearAlgebra.SingularException RadialBasis(x, y, lb, ub, rad = linearRadial(), regularization = reg)
+        @test_throws LinearAlgebra.SingularException RadialBasis(
+            x, y, lb, ub, rad = linearRadial(), regularization = reg)
     else
         local my_rad = RadialBasis(x, y, lb, ub, rad = linearRadial(), regularization = reg)
         @test my_rad(3.0) ≈ 6.0
@@ -235,7 +237,8 @@ for reg in [0, 1E-12]
     local x = [(1.0, 2.0, 3.0), (1.0, 2.0, 3.0), (4.0, 5.0, 6.0), (7.0, 8.0, 9.0)]
     local y = [4.0, 4.0, 5.0, 6.0]
     if reg == 0
-        @test_throws LinearAlgebra.SingularException RadialBasis(x, y, lb, ub, rad = linearRadial(), regularization = reg)
+        @test_throws LinearAlgebra.SingularException RadialBasis(
+            x, y, lb, ub, rad = linearRadial(), regularization = reg)
     else
         local my_rad = RadialBasis(x, y, lb, ub, rad = linearRadial(), regularization = reg)
         @test my_rad((1.0, 2.0, 3.0)) ≈ 4.0
