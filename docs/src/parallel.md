@@ -58,7 +58,8 @@ y = f.(x)
 my_k = Kriging(x, y, lb, ub)
 
 for _ in 1:10
-    new_x, eis = potential_optimal_points(
+    new_x,
+    eis = potential_optimal_points(
         EI(), MeanConstantLiar(), lb, ub, my_k, SobolSample(), 3)
     update!(my_k, new_x, f.(new_x))
 end

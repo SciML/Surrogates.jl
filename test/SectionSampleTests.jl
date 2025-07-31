@@ -41,7 +41,8 @@ section_sampler_z_is_10 = SectionSample([NaN64, NaN64, 10.0],
 
 Surrogates.sample(5, lb, ub, section_sampler_z_is_10)
 
-(xy_min, f_hat_min) = surrogate_optimize!(f,
+(xy_min,
+    f_hat_min) = surrogate_optimize!(f,
     EI(), lb, ub,
     f_hat,
     section_sampler_z_is_10, maxiters = 1000)
