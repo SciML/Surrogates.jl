@@ -1,9 +1,5 @@
 # Gaussian Process Surrogate Tutorial
 
-!!! note
-    
-    This surrogate requires the 'SurrogatesAbstractGPs' module, which can be added by inputting "]add SurrogatesAbstractGPs" from the Julia command line.
-
 Gaussian Process regression in Surrogates.jl is implemented as a simple wrapper around the [AbstractGPs.jl](https://github.com/JuliaGaussianProcesses/AbstractGPs.jl) package. AbstractGPs comes with a variety of covariance functions (kernels). See [KernelFunctions.jl](https://github.com/JuliaGaussianProcesses/KernelFunctions.jl/) for examples.
 
 !!! tip
@@ -19,8 +15,7 @@ In the example below, the 'gp_surrogate' assignment code can be commented / unco
 ```@example gp_tutorial1d
 using Surrogates
 using Plots
-using AbstractGPs #required to access different types of kernels
-using SurrogatesAbstractGPs
+using AbstractGPs
 
 f(x) = (6 * x - 2)^2 * sin(12 * x - 4)
 n_samples = 100
@@ -46,7 +41,6 @@ This example shows the use of AbstractGP Surrogates to find the minima of a func
 using Surrogates
 using Plots
 using AbstractGPs
-using SurrogatesAbstractGPs
 
 f(x) = (x - 2)^2
 n_samples = 100
@@ -76,7 +70,6 @@ using Plots
 default(c = :matter, legend = false, xlabel = "x", ylabel = "y")
 using Surrogates
 using AbstractGPs
-using SurrogatesAbstractGPs
 
 hypot_func = z -> 3 * hypot(z...) + 1
 n_samples = 100

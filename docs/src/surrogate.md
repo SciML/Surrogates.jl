@@ -32,19 +32,19 @@ LobachevskySurrogate(x,y,lb,ub; alpha = collect(one.(x[1])),n::Int = 4, sparse =
 lobachevsky_integral(loba::LobachevskySurrogate,lb,ub)
 ```
 
-  - Support vector machine surrogate, requires `using LIBSVM` and `using SurrogatesSVM`
+  - Support vector machine surrogate, requires `using LIBSVM`.
 
 ```
 SVMSurrogate(x,y,lb::Number,ub::Number)
 ```
 
-  - Random forest surrogate, requires `using XGBoost` and `using SurrogatesRandomForest`
+  - Random forest surrogate, requires `using XGBoost`.
 
 ```
 RandomForestSurrogate(x,y,lb,ub;num_round::Int = 1)
 ```
 
-  - Neural network surrogate, requires `using Flux` and `using SurrogatesFlux`
+  - Neural network surrogate, requires `using Flux`.
 
 ```
 NeuralSurrogate(x,y,lb,ub; model = Chain(Dense(length(x[1]),1), first), loss = (x,y) -> Flux.mse(model(x), y),opt = Descent(0.01),n_echos::Int = 1)

@@ -1,18 +1,14 @@
 ## Random Forests Surrogate Tutorial
 
-!!! note
-    
-    This surrogate requires the 'SurrogatesRandomForest' module, which can be added by inputting "]add SurrogatesRandomForest" from the Julia command line.
-
 Random forests is a supervised learning algorithm that randomly creates and merges multiple decision trees into one forest.
 
-We are going to use a random forests surrogate to optimize $f(x)=sin(x)+sin(10/3 * x)$.
+We are going to use a xgboost surrogate to optimize $f(x)=sin(x)+sin(10/3 * x)$.
 
-First of all import `Surrogates` and `Plots`.
+First of all import `Surrogates`, `XGBoost` and `Plots`.
 
 ```@example RandomForestSurrogate_tutorial
 using Surrogates
-using SurrogatesRandomForest
+using XGBoost
 using Plots
 ```
 
@@ -33,7 +29,7 @@ plot!(f, label = "True function", xlims = (lower_bound, upper_bound), legend = :
 
 ### Building a surrogate
 
-With our sampled points, we can build the Random forests surrogate using the `RandomForestSurrogate` function.
+With our sampled points, we can build the XGBoost surrogate using the `RandomForestSurrogate` function.
 
 `randomforest_surrogate` behaves like an ordinary function, which we can simply plot. Additionally, you can specify the number of trees created
 using the parameter num_round
@@ -70,6 +66,7 @@ First of all we will define the `Bukin Function N. 6` function we are going to b
 ```@example RandomForestSurrogateND
 using Plots
 using Surrogates
+using XGBoost
 
 function bukin6(x)
     x1 = x[1]
@@ -109,7 +106,6 @@ plot(p1, p2, title = "True function")
 Using the sampled points, we build the surrogate, the steps are analogous to the 1-dimensional case.
 
 ```@example RandomForestSurrogateND
-using SurrogatesRandomForest
 RandomForest = RandomForestSurrogate(xys, zs, lower_bound, upper_bound)
 ```
 
