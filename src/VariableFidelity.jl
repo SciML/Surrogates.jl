@@ -58,8 +58,8 @@ function VariableFidelitySurrogate(x, y, lb, ub;
             opt = low_fid_structure.opt,
             n_epochs = low_fid_structure.n_epochs)
 
-    elseif low_fid_structure[1] == "RandomForestSurrogate"
-        low_fid_surr = RandomForestSurrogate(x_low, y_low, lb, ub,
+    elseif low_fid_structure[1] == "XGBoostSurrogate"
+        low_fid_surr = XGBoostSurrogate(x_low, y_low, lb, ub,
             num_round = low_fid_structure.num_round)
 
     elseif low_fid_structure == "SecondOrderPolynomialSurrogate"
@@ -104,8 +104,8 @@ function VariableFidelitySurrogate(x, y, lb, ub;
             loss = high_fid_structure.loss, opt = high_fid_structure.opt,
             n_epochs = high_fid_structure.n_epochs)
 
-    elseif high_fid_structure[1] == "RandomForestSurrogate"
-        eps = RandomForestSurrogate(x_high, y_eps, lb, ub,
+    elseif high_fid_structure[1] == "XGBoostSurrogate"
+        eps = XGBoostSurrogate(x_high, y_eps, lb, ub,
             num_round = high_fid_structure.num_round)
 
     elseif high_fid_structure == "SecondOrderPolynomialSurrogate"

@@ -8,7 +8,7 @@ Let's import Surrogates and Plots:
 
 ```@example beam
 using Surrogates
-using SurrogatesPolyChaos
+using PolyChaos
 using Plots
 ```
 

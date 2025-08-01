@@ -7,7 +7,7 @@ Let's import Surrogates and Plots:
 
 ```@example lp
 using Surrogates
-using SurrogatesPolyChaos
+using PolyChaos
 using Plots
 using LinearAlgebra
 ```

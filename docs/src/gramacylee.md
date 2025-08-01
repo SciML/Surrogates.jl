@@ -10,7 +10,7 @@ Let's import these two packages `Surrogates` and `Plots`:
 
 ```@example gramacylee1D
 using Surrogates
-using SurrogatesPolyChaos
+using PolyChaos
 using Plots
 ```
 

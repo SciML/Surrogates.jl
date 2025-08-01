@@ -9,7 +9,7 @@ Let's import Surrogates and Plots:
 
 ```@example rosen
 using Surrogates
-using SurrogatesPolyChaos
+using PolyChaos
 using Plots
 ```
 

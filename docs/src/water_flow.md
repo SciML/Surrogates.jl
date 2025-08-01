@@ -7,7 +7,7 @@ It has 8 dimensions.
 
 ```@example water
 using Surrogates
-using SurrogatesPolyChaos
+using PolyChaos
 using Plots
 using LinearAlgebra
 ```

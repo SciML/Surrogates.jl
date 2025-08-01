@@ -3,6 +3,7 @@ module Surrogates
 using LinearAlgebra
 using Distributions
 using GLM
+using Random
 using ExtendableSparse
 using SurrogatesBase: SurrogatesBase, update!, AbstractDeterministicSurrogate,
                       AbstractStochasticSurrogate
@@ -25,7 +26,7 @@ include("VirtualStrategy.jl")
 
 current_surrogates = ["Kriging", "LinearSurrogate", "LobachevskySurrogate",
     "NeuralSurrogate",
-    "RadialBasis", "RandomForestSurrogate", "SecondOrderPolynomialSurrogate",
+    "RadialBasis", "XGBoostSurrogate", "SecondOrderPolynomialSurrogate",
     "Wendland", "GEK", "PolynomialChaosSurrogate"]
 
 #Radial structure:
@@ -64,9 +65,9 @@ function NeuralStructure(; model, loss, opt, n_epochs)
         n_epochs = n_epochs)
 end
 
-#Random forest structure
-function RandomForestStructure(; num_round)
-    return (name = "RandomForestSurrogate", num_round = num_round)
+#XGBoost structure
+function XGBoostStructure(; num_round)
+    return (name = "XGBoostSurrogate", num_round = num_round)
 end
 
 #Second order poly structure
@@ -90,7 +91,7 @@ export current_surrogates
 export GEKPLS
 export RadialBasisStructure, KrigingStructure, LinearStructure, InverseDistanceStructure
 export LobachevskyStructure,
-       NeuralStructure, RandomForestStructure,
+       NeuralStructure, XGBoostStructure,
        SecondOrderPolynomialStructure
 export WendlandStructure
 export SamplingAlgorithm
@@ -118,7 +119,7 @@ export SecondOrderPolynomialSurrogate
 export Wendland
 export RadialBasisStructure, KrigingStructure, LinearStructure, InverseDistanceStructure
 export LobachevskyStructure,
-       NeuralStructure, RandomForestStructure,
+       NeuralStructure, XGBoostStructure,
        SecondOrderPolynomialStructure
 export WendlandStructure
 #export MOE
@@ -126,4 +127,14 @@ export VariableFidelitySurrogate
 export EarthSurrogate
 export GEK
 export AbstractSurrogate
+
+# Extensions
+include("extensions.jl")
+export AbstractGPSurrogate, logpdf_surrogate, std_error_at_point
+export NeuralSurrogate
+export PolynomialChaosSurrogate
+export XGBoostSurrogate
+export SVMSurrogate
+export MOE
+
 end
