@@ -59,7 +59,7 @@ Plotting the function and the sampled points:
 scatter(gp_surrogate.x, gp_surrogate.y, label = "Sampled points",
     ylims = (-1.0, 5.0), legend = :top)
 plot!(xs, gp_surrogate.(xs), label = "Surrogate function",
-    ribbon = p -> SurrogatesAbstractGPs.std_error_at_point(gp_surrogate, p), legend = :top)
+    ribbon = p -> Surrogates.std_error_at_point(gp_surrogate, p), legend = :top)
 plot!(xs, f.(xs), label = "True function", legend = :top)
 ```
 
