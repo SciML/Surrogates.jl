@@ -7,7 +7,7 @@ using Pkg
     @safetestset "Quality Assurance" begin
         include("qa.jl")
     end
-   @testset "Extensions" begin
+    @testset "Extensions" begin
         include("extensions.jl")
     end
     @testset "Algorithms" begin

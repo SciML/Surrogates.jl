@@ -14,7 +14,8 @@ y = f.(x)
 # TODO
 
 my_k = Kriging(x, y, lb, ub)
-new_x, eis = potential_optimal_points(EI(),
+new_x,
+eis = potential_optimal_points(EI(),
     MeanConstantLiar(),
     lb,
     ub,
@@ -28,7 +29,8 @@ new_x, eis = potential_optimal_points(EI(),
 # Test lengths of new_x and SRBF (1D)
 
 my_surr = RadialBasis(x, y, lb, ub)
-new_x, eis = potential_optimal_points(SRBF(),
+new_x,
+eis = potential_optimal_points(SRBF(),
     MeanConstantLiar(),
     lb,
     ub,
@@ -48,7 +50,8 @@ y = f.(x)
 
 my_k = Kriging(x, y, lb, ub)
 
-new_x, eis = potential_optimal_points(EI(),
+new_x,
+eis = potential_optimal_points(EI(),
     MeanConstantLiar(),
     lb,
     ub,
@@ -64,7 +67,8 @@ new_x, eis = potential_optimal_points(EI(),
 # Test lengths of new_x and SRBF (ND)
 
 my_surr = RadialBasis(x, y, lb, ub)
-new_x, eis = potential_optimal_points(SRBF(),
+new_x,
+eis = potential_optimal_points(SRBF(),
     MeanConstantLiar(),
     lb,
     ub,
@@ -78,7 +82,8 @@ new_x, eis = potential_optimal_points(SRBF(),
 @test length(new_x[1]) == 3
 
 # # Check hyperparameter validation for potential_optimal_points 
-@test_throws ArgumentError new_x, eis=potential_optimal_points(EI(),
+@test_throws ArgumentError new_x,
+eis=potential_optimal_points(EI(),
     MeanConstantLiar(),
     lb,
     ub,

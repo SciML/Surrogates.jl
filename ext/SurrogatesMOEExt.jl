@@ -4,7 +4,7 @@ import Surrogates: linearRadial, cubicRadial, multiquadricRadial,
                    thinplateRadial, RadialBasisStructure, RadialBasis,
                    InverseDistanceSurrogate, Kriging, LobachevskyStructure,
                    LobachevskySurrogate, NeuralStructure, PolyChaosStructure,
-                   LinearSurrogate, MOE, 
+                   LinearSurrogate, MOE,
                    NeuralSurrogate, XGBoostSurrogate, PolynomialChaosSurrogate
 using SurrogatesBase
 using GaussianMixtures

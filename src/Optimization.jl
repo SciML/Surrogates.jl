@@ -1046,7 +1046,8 @@ function surrogate_optimize!(obj::Function, ::DYCORS, lb::Number, ub::Number,
             C_success = 0
         end
 
-        sigma_n, C_success, C_fail = adjust_step_size(sigma_n, sigma_min, C_success,
+        sigma_n, C_success,
+        C_fail = adjust_step_size(sigma_n, sigma_min, C_success,
             t_success, C_fail, t_fail)
 
         if f_new < y_best
@@ -1189,7 +1190,8 @@ function surrogate_optimize!(
             C_success = 0
         end
 
-        sigma_n, C_success, C_fail = adjust_step_size(sigma_n, sigma_min, C_success,
+        sigma_n, C_success,
+        C_fail = adjust_step_size(sigma_n, sigma_min, C_success,
             t_success, C_fail, t_fail)
 
         if f_new < y_best

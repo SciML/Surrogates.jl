@@ -23,7 +23,8 @@ b = 6
 x = [2.5, 4.0, 6.0]
 y = [6.0, 9.0, 13.0]
 my_k_SRBF1 = Kriging(x, y, lb, ub; p)
-xstar, fstar = surrogate_optimize!(objective_function, SRBF(), a, b, my_k_SRBF1,
+xstar,
+fstar = surrogate_optimize!(objective_function, SRBF(), a, b, my_k_SRBF1,
     RandomSample())
 
 #Using RadialBasis
@@ -31,19 +32,22 @@ xstar, fstar = surrogate_optimize!(objective_function, SRBF(), a, b, my_k_SRBF1,
 x = [2.5, 4.0, 6.0]
 y = [6.0, 9.0, 13.0]
 my_rad_SRBF1 = RadialBasis(x, y, a, b, rad = linearRadial())
-(xstar, fstar) = surrogate_optimize!(objective_function, SRBF(), a, b, my_rad_SRBF1,
+(xstar,
+    fstar) = surrogate_optimize!(objective_function, SRBF(), a, b, my_rad_SRBF1,
     RandomSample())
 
 x = [2.5, 4.0, 6.0]
 y = [6.0, 9.0, 13.0]
 my_wend_1d = Wendland(x, y, lb, ub)
-xstar, fstar = surrogate_optimize!(objective_function, SRBF(), a, b, my_wend_1d,
+xstar,
+fstar = surrogate_optimize!(objective_function, SRBF(), a, b, my_wend_1d,
     RandomSample())
 
 x = [2.5, 4.0, 6.0]
 y = [6.0, 9.0, 13.0]
 my_earth1d = EarthSurrogate(x, y, lb, ub)
-xstar, fstar = surrogate_optimize!(objective_function, SRBF(), a, b, my_earth1d,
+xstar,
+fstar = surrogate_optimize!(objective_function, SRBF(), a, b, my_earth1d,
     HaltonSample())
 
 ##### ND #####
@@ -57,7 +61,8 @@ y = objective_function_ND.(x)
 
 my_k_SRBFN = Kriging(x, y, lb, ub)
 #Every optimization method now returns the y_min and its position
-x_min, y_min = surrogate_optimize!(objective_function_ND, SRBF(), lb, ub, my_k_SRBFN,
+x_min,
+y_min = surrogate_optimize!(objective_function_ND, SRBF(), lb, ub, my_k_SRBFN,
     RandomSample())
 
 #Radials

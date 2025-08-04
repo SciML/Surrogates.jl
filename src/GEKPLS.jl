@@ -70,16 +70,19 @@ function GEKPLS(x_vec, y_vec, grads_vec, n_comp, delta_x, lb, ub, extra_points, 
         return
     end
 
-    pls_mean, X_after_PLS, y_after_PLS = _ge_compute_pls(X, y, n_comp, grads, delta_x,
+    pls_mean, X_after_PLS,
+    y_after_PLS = _ge_compute_pls(X, y, n_comp, grads, delta_x,
         xlimits, extra_points)
-    X_after_std, y_after_std, X_offset, y_mean, X_scale, y_std = standardization(
+    X_after_std, y_after_std, X_offset, y_mean,
+    X_scale, y_std = standardization(
         X_after_PLS,
         y_after_PLS)
     D, ij = cross_distances(X_after_std)
     pls_mean_reshaped = reshape(pls_mean, (size(X, 2), n_comp))
     d = componentwise_distance_PLS(D, "squar_exp", n_comp, pls_mean_reshaped)
     nt, nd = size(X_after_PLS)
-    beta, gamma, reduced_likelihood_function_value = _reduced_likelihood_function(theta,
+    beta, gamma,
+    reduced_likelihood_function_value = _reduced_likelihood_function(theta,
         "squar_exp",
         d, nt, ij,
         y_after_std)
@@ -133,18 +136,21 @@ function SurrogatesBase.update!(g::GEKPLS, x_tup, y_val, grad_tup)
     g.x_matrix = vcat(g.x_matrix, new_x)
     g.y_matrix = vcat(g.y_matrix, y_val)
     g.grads = vcat(g.grads, new_grads)
-    pls_mean, X_after_PLS, y_after_PLS = _ge_compute_pls(g.x_matrix, g.y_matrix,
+    pls_mean, X_after_PLS,
+    y_after_PLS = _ge_compute_pls(g.x_matrix, g.y_matrix,
         g.num_components,
         g.grads, g.delta, g.xl,
         g.extra_points)
-    g.X_after_std, y_after_std, g.X_offset, g.y_mean, g.X_scale, g.y_std = standardization(
+    g.X_after_std, y_after_std, g.X_offset, g.y_mean,
+    g.X_scale, g.y_std = standardization(
         X_after_PLS,
         y_after_PLS)
     D, ij = cross_distances(g.X_after_std)
     g.pls_mean = reshape(pls_mean, (size(g.x_matrix, 2), g.num_components))
     d = componentwise_distance_PLS(D, "squar_exp", g.num_components, g.pls_mean)
     nt, nd = size(X_after_PLS)
-    g.beta, g.gamma, g.reduced_likelihood_function_value = _reduced_likelihood_function(
+    g.beta, g.gamma,
+    g.reduced_likelihood_function_value = _reduced_likelihood_function(
         g.theta,
         "squar_exp",
         d,
@@ -279,9 +285,9 @@ function boxbehnken(matrix_size::Int, center::Int)
         for j in (i + 1):matrix_size
             l = l + 1
             A[(max(0, (l - 1) * size(A_fact)[1]) + 1):(l * size(A_fact)[1]), i] = A_fact[:,
-                1]
+            1]
             A[(max(0, (l - 1) * size(A_fact)[1]) + 1):(l * size(A_fact)[1]), j] = A_fact[:,
-                2]
+            2]
         end
     end
 
