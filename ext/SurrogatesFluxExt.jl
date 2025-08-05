@@ -2,7 +2,7 @@ module SurrogatesFluxExt
 
 using Surrogates: NeuralSurrogate
 using SurrogatesBase
-using Optimisers
+using Flux: Flux.Optimizers
 using Flux
 
 """
