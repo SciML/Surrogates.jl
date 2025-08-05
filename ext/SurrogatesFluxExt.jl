@@ -1,6 +1,6 @@
 module SurrogatesFluxExt
 
-using Surrogates: NeuralSurrogate
+using import: NeuralSurrogate
 using SurrogatesBase
 using Flux: Flux.Optimizers
 using Flux
