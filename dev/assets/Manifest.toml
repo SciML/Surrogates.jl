@@ -2,7 +2,7 @@
 
 julia_version = "1.11.6"
 manifest_format = "2.0"
-project_hash = "8f3fd428aa498f7453cfaa0a6bb63eed2c1d7a22"
+project_hash = "0612fe686845625457a9f94f26c24be9c8013cd7"
 
 [[deps.ANSIColoredPrinters]]
 git-tree-sha1 = "574baf8110975760d391c710b6341da1afa48d8c"
@@ -846,18 +846,6 @@ git-tree-sha1 = "aaafe88dccbd957a8d82f7d05be9b69172e0cee3"
 uuid = "88015f11-f218-50d7-93a8-a6af411a945d"
 version = "4.0.1+0"
 
-[[deps.LIBLINEAR]]
-deps = ["Libdl", "SparseArrays", "liblinear_jll"]
-git-tree-sha1 = "2cd424d3bf9b36098009df5b1f399614c12b2ee4"
-uuid = "2d691ee1-e668-5016-a719-b2531b85e0f5"
-version = "0.7.1"
-
-[[deps.LIBSVM]]
-deps = ["LIBLINEAR", "LinearAlgebra", "ScikitLearnBase", "SparseArrays", "libsvm_jll"]
-git-tree-sha1 = "9016c6032aac779b13bbd1b3ce997606a6eb7a2b"
-uuid = "b1bec4e5-fd48-53fe-b0cb-9723c09d164b"
-version = "0.8.1"
-
 [[deps.LLVMOpenMP_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl"]
 git-tree-sha1 = "eb62a3deb62fc6d8822c0c4bef73e4412419c5d8"
@@ -1549,9 +1537,9 @@ version = "1.11.0"
 
 [[deps.SortingAlgorithms]]
 deps = ["DataStructures"]
-git-tree-sha1 = "66e0a8e672a0bdfca2c3f5937efb8538b9ddc085"
+git-tree-sha1 = "64d974c2e6fdf07f8155b5b2ca2ffa9069b608d9"
 uuid = "a2af1166-a08f-5f64-846c-94a0d3cef48c"
-version = "1.2.1"
+version = "1.2.2"
 
 [[deps.SparseArrays]]
 deps = ["Libdl", "LinearAlgebra", "Random", "Serialization", "SuiteSparse_jll"]
@@ -1687,51 +1675,32 @@ uuid = "bea87d4a-7f5b-5778-9afe-8cc45184846c"
 version = "7.7.0+0"
 
 [[deps.Surrogates]]
-deps = ["ChainRulesCore", "Distributions", "ExtendableSparse", "GLM", "IterativeSolvers", "LinearAlgebra", "QuasiMonteCarlo", "SparseArrays", "Statistics", "SurrogatesBase", "Zygote"]
+deps = ["ChainRulesCore", "Distributions", "ExtendableSparse", "GLM", "IterativeSolvers", "LinearAlgebra", "QuasiMonteCarlo", "Random", "SparseArrays", "Statistics", "SurrogatesBase", "Zygote"]
 path = "/home/runner/work/Surrogates.jl/Surrogates.jl"
 uuid = "6fc51010-71bc-11e9-0e15-a3fcc6593c49"
 version = "6.11.0"
 
-[[deps.SurrogatesAbstractGPs]]
-deps = ["AbstractGPs", "SurrogatesBase"]
-path = "/home/runner/work/Surrogates.jl/Surrogates.jl/lib/SurrogatesAbstractGPs"
-uuid = "78aa1720-c2af-471b-b307-964fd38f9b5f"
-version = "0.1.1"
+    [deps.Surrogates.extensions]
+    SurrogatesAbstractGPsExt = "AbstractGPs"
+    SurrogatesFluxExt = ["Flux"]
+    SurrogatesMOEExt = "GaussianMixtures"
+    SurrogatesPolyChaosExt = "PolyChaos"
+    SurrogatesSVMExt = "LIBSVM"
+    SurrogatesXGBoostExt = "XGBoost"
+
+    [deps.Surrogates.weakdeps]
+    AbstractGPs = "99985d1d-32ba-4be9-9821-2ec096f28918"
+    Flux = "587475ba-b771-5e3f-ad9e-33799f191a9c"
+    GaussianMixtures = "cc18c42c-b769-54ff-9e2a-b28141a64aae"
+    LIBSVM = "b1bec4e5-fd48-53fe-b0cb-9723c09d164b"
+    Optimisers = "3bd65402-5787-11e9-1adc-39752487f4e2"
+    PolyChaos = "8d666b04-775d-5f6e-b778-5ac7c70f65a3"
+    XGBoost = "009559a3-9522-5dbb-924b-0b6ed2b22bb9"
 
 [[deps.SurrogatesBase]]
 git-tree-sha1 = "4668cf550bcc834e5645229d2d6106e0d02f8263"
 uuid = "89f642e6-4179-4274-8202-c11f4bd9a72c"
 version = "1.1.0"
-
-[[deps.SurrogatesFlux]]
-deps = ["Flux", "Optimisers", "Surrogates", "SurrogatesBase", "Zygote"]
-path = "/home/runner/work/Surrogates.jl/Surrogates.jl/lib/SurrogatesFlux"
-uuid = "4f55584b-dac4-4b1c-802a-b7c47b72cb4c"
-version = "0.1.2"
-
-[[deps.SurrogatesMOE]]
-deps = ["Distributions", "GaussianMixtures", "LinearAlgebra", "Random", "Surrogates", "SurrogatesBase", "SurrogatesFlux", "SurrogatesPolyChaos", "SurrogatesRandomForest", "XGBoost"]
-path = "/home/runner/work/Surrogates.jl/Surrogates.jl/lib/SurrogatesMOE"
-uuid = "778709c9-3595-4497-80d4-d1077d5b9fbf"
-version = "0.1.5"
-
-[[deps.SurrogatesPolyChaos]]
-deps = ["PolyChaos", "Surrogates", "SurrogatesBase"]
-path = "/home/runner/work/Surrogates.jl/Surrogates.jl/lib/SurrogatesPolyChaos"
-uuid = "50679fc6-c85c-4a6e-ac63-dc3c8bd8cb1c"
-version = "0.1.1"
-
-[[deps.SurrogatesRandomForest]]
-deps = ["Surrogates", "SurrogatesBase", "XGBoost"]
-path = "/home/runner/work/Surrogates.jl/Surrogates.jl/lib/SurrogatesRandomForest"
-uuid = "3fee2672-df33-422b-aa65-d915eeac013a"
-version = "0.1.2"
-
-[[deps.SurrogatesSVM]]
-deps = ["LIBSVM", "SurrogatesBase"]
-path = "/home/runner/work/Surrogates.jl/Surrogates.jl/lib/SurrogatesSVM"
-uuid = "eb0c118b-dd0a-445a-b996-82088348ceb1"
-version = "0.1.1"
 
 [[deps.TOML]]
 deps = ["Dates"]
@@ -2112,23 +2081,11 @@ git-tree-sha1 = "91d05d7f4a9f67205bd6cf395e488009fe85b499"
 uuid = "36db933b-70db-51c0-b978-0f229ee0e533"
 version = "1.28.1+0"
 
-[[deps.liblinear_jll]]
-deps = ["Artifacts", "JLLWrappers", "Libdl"]
-git-tree-sha1 = "7f5f1953394b74739eaebd345f4515515a022a5b"
-uuid = "275f1f90-abd2-5ca1-9ad8-abd4e3d66eb7"
-version = "2.47.0+0"
-
 [[deps.libpng_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl", "Zlib_jll"]
 git-tree-sha1 = "07b6a107d926093898e82b3b1db657ebe33134ec"
 uuid = "b53b4c65-9356-5827-b1ea-8c7a1a84506f"
 version = "1.6.50+0"
-
-[[deps.libsvm_jll]]
-deps = ["Artifacts", "CompilerSupportLibraries_jll", "JLLWrappers", "LLVMOpenMP_jll", "Libdl", "Pkg"]
-git-tree-sha1 = "7625dde5e9eab416c1cb791627f065ce55297eff"
-uuid = "08558c22-525a-5d2a-acf6-0ac6658ffce4"
-version = "3.25.0+0"
 
 [[deps.libvorbis_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl", "Ogg_jll"]
