@@ -3,25 +3,12 @@ using Test
 using SafeTestsets
 using Pkg
 
-function dev_subpkg(subpkg)
-    subpkg_path = joinpath(dirname(@__DIR__), "lib", subpkg)
-    Pkg.develop(PackageSpec(path = subpkg_path))
-end
-
 @testset "Surrogates" begin
     @safetestset "Quality Assurance" begin
         include("qa.jl")
     end
-    @testset "Libs" begin
-        @testset "$pkg" for pkg in [
-            "SurrogatesAbstractGPs", "SurrogatesFlux",
-            "SurrogatesPolyChaos", "SurrogatesRandomForest",
-            "SurrogatesMOE", "SurrogatesSVM"]
-            @time begin
-                dev_subpkg(pkg)
-                Pkg.test(pkg)
-            end
-        end
+    @testset "Extensions" begin
+        include("extensions.jl")
     end
     @testset "Algorithms" begin
         @time @safetestset "GEKPLS" begin

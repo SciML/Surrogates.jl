@@ -1,33 +1,16 @@
-module SurrogatesMOE
+module SurrogatesMOEExt
 
 import Surrogates: linearRadial, cubicRadial, multiquadricRadial,
                    thinplateRadial, RadialBasisStructure, RadialBasis,
                    InverseDistanceSurrogate, Kriging, LobachevskyStructure,
                    LobachevskySurrogate, NeuralStructure, PolyChaosStructure,
-                   LinearSurrogate
+                   LinearSurrogate, MOE,
+                   NeuralSurrogate, XGBoostSurrogate, PolynomialChaosSurrogate
 using SurrogatesBase
-
-export MOE, update!
-
 using GaussianMixtures
 using Random
 using Distributions
 using LinearAlgebra
-using SurrogatesFlux
-using SurrogatesPolyChaos
-using SurrogatesRandomForest
-using XGBoost
-
-mutable struct MOE{X, Y, C, D, M, E, ND, NC} <: AbstractDeterministicSurrogate
-    x::X
-    y::Y
-    c::C #clusters (C) - vector of gaussian mixture clusters
-    d::D #distributions (D) - vector of frozen multivariate distributions
-    m::M # models (M) - vector of trained models correspnoding to clusters (C) and distributions (D)
-    e::E #expert types
-    nd::ND #number of dimensions
-    nc::NC #number of clusters
-end
 
 """
     MOE(x, y, expert_types;  ndim=1, n_clusters=2)
@@ -323,8 +306,8 @@ function _surrogate_builder(local_kind, k, x, y, lb, ub)
                 n_epochs = local_kind[i].n_epochs)
             push!(local_surr, my_local_i)
 
-        elseif local_kind[i][1] == "RandomForestSurrogate"
-            my_local_i = RandomForestSurrogate(x, y, lb, ub,
+        elseif local_kind[i][1] == "XGBoostSurrogate"
+            my_local_i = XGBoostSurrogate(x, y, lb, ub,
                 num_round = local_kind[i].num_round)
             push!(local_surr, my_local_i)
 

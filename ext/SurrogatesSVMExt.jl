@@ -1,17 +1,8 @@
-module SurrogatesSVM
+module SurrogatesSVMExt
 
+using Surrogates: SVMSurrogate
 using SurrogatesBase
 using LIBSVM
-
-export SVMSurrogate, update!
-
-mutable struct SVMSurrogate{X, Y, M, L, U} <: AbstractDeterministicSurrogate
-    x::X
-    y::Y
-    model::M
-    lb::L
-    ub::U
-end
 
 """
     SVMSurrogate(x, y, lb, ub)

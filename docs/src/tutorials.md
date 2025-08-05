@@ -123,7 +123,6 @@ Basic example of fitting a neural network on a simple function of two variables.
 using Surrogates
 using Flux
 using Statistics
-using SurrogatesFlux
 
 f = x -> x[1]^2 + x[2]^2
 # Flux models are in single precision by default.

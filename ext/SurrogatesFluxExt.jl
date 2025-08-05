@@ -1,26 +1,13 @@
-module SurrogatesFlux
+module SurrogatesFluxExt
 
+using Surrogates: NeuralSurrogate
 using SurrogatesBase
-using Optimisers
+using Flux: Flux.Optimisers
 using Flux
-
-export NeuralSurrogate, update!
-
-mutable struct NeuralSurrogate{X, Y, M, L, O, P, N, A, U} <: AbstractDeterministicSurrogate
-    x::X
-    y::Y
-    model::M
-    loss::L
-    opt::O
-    ps::P
-    n_epochs::N
-    lb::A
-    ub::U
-end
 
 """
     NeuralSurrogate(x, y, lb, ub; model = Chain(Dense(length(x[1]), 1), first), 
-                                 loss = (x, y) -> Flux.mse(model(x), y), 
+                                 loss = Flux.mse, 
                                  opt = Optimisers.Adam(1e-3), 
                                  n_epochs = 10)
 

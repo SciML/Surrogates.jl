@@ -1,9 +1,5 @@
 # Mixture of Experts (MOE) Surrogate Tutorial
 
-!!! note
-    
-    This surrogate requires the 'SurrogatesMOE' module, which can be added by inputting "]add SurrogatesMOE" from the Julia command line.
-
 The Mixture of Experts (MOE) Surrogate model represents the interpolating function as a combination of other surrogate models. SurrogatesMOE is a Julia implementation of the [Python version from SMT](https://smt.readthedocs.io/en/latest/_src_docs/applications/moe.html).
 
 MOE is most useful when we have a discontinuous function. For example, let's say we want to build a surrogate for the following function:
@@ -20,11 +16,11 @@ function discont_1D(x)
 end
 ```
 
-Let's choose the MOE Surrogate for 1D. Note that we have to import the `SurrogatesMOE` package in addition to `Surrogates` and `Plots`.
+Let's choose the MOE Surrogate for 1D. Note that we have to import the `GaussianMixtures` in addition to `Surrogates` and `Plots`.
 
 ```@example MOE_1D
 using Surrogates
-using SurrogatesMOE
+using GaussianMixtures
 using Plots
 
 lb = -1.0
@@ -66,7 +62,7 @@ First, we create Gaussian Mixture Models for the number of expert types provided
 
 ```@example MOE_ND
 using Surrogates
-using SurrogatesMOE
+using GaussianMixtures
 
 # helper to test accuracy of predictors
 function rmse(a, b)
