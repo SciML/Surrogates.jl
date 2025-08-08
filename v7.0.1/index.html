@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Surrogates.jl: Surrogate models and optimization for scientific machine learning · Surrogates.jl</title><meta name="title" content="Surrogates.jl: Surrogate models and optimization for scientific machine learning · Surrogates.jl"/><meta property="og:title" content="Surrogates.jl: Surrogate models and optimization for scientific machine learning · Surrogates.jl"/><meta property="twitter:title" content="Surrogates.jl: Surrogate models and optimization for scientific machine learning · Surrogates.jl"/><meta name="description" content="Documentation for Surrogates.jl."/><meta property="og:description" content="Documentation for Surrogates.jl."/><meta property="twitter:description" content="Documentation for Surrogates.jl."/><meta property="og:url" content="https://docs.sciml.ai/Surrogates/stable/"/><meta property="twitter:url" content="https://docs.sciml.ai/Surrogates/stable/"/><link rel="canonical" href="https://docs.sciml.ai/Surrogates/stable/"/><script async src="https://www.googletagmanager.com/gtag/js?id=UA-90474609-3"></script><script>  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'UA-90474609-3', {'page_path': location.pathname + location.search + location.hash});
+</script><script data-outdated-warner src="assets/warner.js"></script><link href="https://cdnjs.cloudflare.com/ajax/libs/lato-font/3.0.0/css/lato-font.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/juliamono/0.050/juliamono.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.8/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="assets/documenter.js"></script><script src="search_index.js"></script><script src="siteinfo.js"></script><script src="../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="assets/themes/catppuccin-mocha.css" data-theme-name="catppuccin-mocha"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="assets/themes/catppuccin-macchiato.css" data-theme-name="catppuccin-macchiato"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="assets/themes/catppuccin-frappe.css" data-theme-name="catppuccin-frappe"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="assets/themes/catppuccin-latte.css" data-theme-name="catppuccin-latte"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="assets/themeswap.js"></script><link href="assets/favicon.ico" rel="icon" type="image/x-icon"/></head><body><div id="documenter"><nav class="docs-sidebar"><a class="docs-logo" href><img src="assets/logo.png" alt="Surrogates.jl logo"/></a><div class="docs-package-name"><span class="docs-autofit"><a href>Surrogates.jl</a></span></div><button class="docs-search-query input is-rounded is-small is-clickable my-2 mx-auto py-1 px-2" id="documenter-search-query">Search docs (Ctrl + /)</button><ul class="docs-menu"><li class="is-active"><a class="tocitem" href>Surrogates.jl: Surrogate models and optimization for scientific machine learning</a><ul class="internal"><li><a class="tocitem" href="#Multi-output-Surrogates"><span>Multi-output Surrogates</span></a></li><li><a class="tocitem" href="#Gradients"><span>Gradients</span></a></li><li><a class="tocitem" href="#Installation"><span>Installation</span></a></li><li><a class="tocitem" href="#Contributing"><span>Contributing</span></a></li><li><a class="tocitem" href="#Quick-example"><span>Quick example</span></a></li><li><a class="tocitem" href="#Reproducibility"><span>Reproducibility</span></a></li></ul></li><li><span class="tocitem">Tutorials</span><ul><li><a class="tocitem" href="tutorials/">Basics</a></li><li><a class="tocitem" href="radials/">Radials</a></li><li><a class="tocitem" href="kriging/">Kriging</a></li><li><a class="tocitem" href="abstractgps/">Gaussian Process</a></li><li><a class="tocitem" href="lobachevsky/">Lobachevsky</a></li><li><a class="tocitem" href="LinearSurrogate/">Linear</a></li><li><a class="tocitem" href="InverseDistance/">InverseDistance</a></li><li><a class="tocitem" href="xgboost/">XGBoost</a></li><li><a class="tocitem" href="secondorderpoly/">SecondOrderPolynomial</a></li><li><a class="tocitem" href="neural/">NeuralSurrogate</a></li><li><a class="tocitem" href="wendland/">Wendland</a></li><li><a class="tocitem" href="polychaos/">Polynomial Chaos</a></li><li><a class="tocitem" href="variablefidelity/">Variable Fidelity</a></li><li><a class="tocitem" href="gek/">Gradient Enhanced Kriging</a></li><li><a class="tocitem" href="gekpls/">GEKPLS</a></li><li><a class="tocitem" href="moe/">MOE</a></li><li><a class="tocitem" href="parallel/">Parallel Optimization</a></li></ul></li><li><span class="tocitem">User guide</span><ul><li><a class="tocitem" href="samples/">Samples</a></li><li><a class="tocitem" href="surrogate/">Surrogates</a></li><li><a class="tocitem" href="optimizations/">Optimization</a></li></ul></li><li><span class="tocitem">Benchmarks</span><ul><li><a class="tocitem" href="sphere_function/">Sphere function</a></li><li><a class="tocitem" href="lp/">Lp norm</a></li><li><a class="tocitem" href="rosenbrock/">Rosenbrock</a></li><li><a class="tocitem" href="tensor_prod/">Tensor product</a></li><li><a class="tocitem" href="cantilever/">Cantilever beam</a></li><li><a class="tocitem" href="water_flow/">Water Flow function</a></li><li><a class="tocitem" href="welded_beam/">Welded beam function</a></li><li><a class="tocitem" href="BraninFunction/">Branin function</a></li><li><a class="tocitem" href="ImprovedBraninFunction/">Improved Branin function</a></li><li><a class="tocitem" href="ackley/">Ackley function</a></li><li><a class="tocitem" href="gramacylee/">Gramacy &amp; Lee Function</a></li><li><a class="tocitem" href="Salustowicz/">Salustowicz Benchmark</a></li><li><a class="tocitem" href="multi_objective_opt/">Multi objective optimization</a></li></ul></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><a class="docs-sidebar-button docs-navbar-link fa-solid fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a><nav class="breadcrumb"><ul class="is-hidden-mobile"><li class="is-active"><a href>Surrogates.jl: Surrogate models and optimization for scientific machine learning</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>Surrogates.jl: Surrogate models and optimization for scientific machine learning</a></li></ul></nav><div class="docs-right"><a class="docs-navbar-link" href="https://github.com/SciML/Surrogates.jl" title="View the repository on GitHub"><span class="docs-icon fa-brands"></span><span class="docs-label is-hidden-touch">GitHub</span></a><a class="docs-navbar-link" href="https://github.com/SciML/Surrogates.jl/blob/master/docs/src/index.md" title="Edit source on GitHub"><span class="docs-icon fa-solid"></span></a><a class="docs-settings-button docs-navbar-link fa-solid fa-gear" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-article-toggle-button fa-solid fa-chevron-up" id="documenter-article-toggle-button" href="javascript:;" title="Collapse all docstrings"></a></div></header><article class="content" id="documenter-page"><h1 id="Surrogates.jl:-Surrogate-models-and-optimization-for-scientific-machine-learning"><a class="docs-heading-anchor" href="#Surrogates.jl:-Surrogate-models-and-optimization-for-scientific-machine-learning">Surrogates.jl: Surrogate models and optimization for scientific machine learning</a><a id="Surrogates.jl:-Surrogate-models-and-optimization-for-scientific-machine-learning-1"></a><a class="docs-heading-anchor-permalink" href="#Surrogates.jl:-Surrogate-models-and-optimization-for-scientific-machine-learning" title="Permalink"></a></h1><p>A surrogate model is an approximation method that mimics the behavior of a computationally expensive simulation. In more mathematical terms: suppose we are attempting to optimize a function <span>$\; f(p)$</span>, but each calculation of <span>$\; f$</span> is very expensive. It may be the case that we need to solve a PDE for each point or use advanced numerical linear algebra machinery, which is usually costly. The idea is then to develop a surrogate model <span>$\; g$</span> which approximates <span>$\; f$</span> by training on previous data collected from evaluations of <span>$\; f$</span>. The construction of a surrogate model can be seen as a three-step process:</p><ol><li>Sample selection</li><li>Construction of the surrogate model</li><li>Surrogate optimization</li></ol><p>The sampling methods are super important for the behavior of the surrogate. Sampling can be done through <a href="https://github.com/SciML/QuasiMonteCarlo.jl">QuasiMonteCarlo.jl</a>, all the functions available there can be used in Surrogates.jl.</p><p>The available surrogates are:</p><ul><li>Linear</li><li>Radial Basis</li><li>Kriging</li><li>Custom Kriging provided with Stheno</li><li>Neural Network</li><li>Support Vector Machine</li><li>Random Forest</li><li>Second Order Polynomial</li><li>Inverse Distance</li></ul><p>After the surrogate is built, we need to optimize it with respect to some objective function. That is, simultaneously looking for a minimum <strong>and</strong> sampling the most unknown region. The available optimization methods are:</p><ul><li>Stochastic RBF (SRBF)</li><li>Lower confidence-bound strategy (LCBS)</li><li>Expected improvement (EI)</li><li>Dynamic coordinate search (DYCORS)</li></ul><h2 id="Multi-output-Surrogates"><a class="docs-heading-anchor" href="#Multi-output-Surrogates">Multi-output Surrogates</a><a id="Multi-output-Surrogates-1"></a><a class="docs-heading-anchor-permalink" href="#Multi-output-Surrogates" title="Permalink"></a></h2><p>In certain situations, the function being modeled may have a multi-dimensional output space. In such a case, the surrogate models can take advantage of correlations between the observed output variables to obtain more accurate predictions.</p><p>When constructing the original surrogate, each element of the passed <code>y</code> vector should itself be a vector. For example, the following <code>y</code> are all valid.</p><pre><code class="nohighlight hljs">using Surrogates
+using StaticArrays
+
+x = sample(5, [0.0; 0.0], [1.0; 1.0], SobolSample())
+f_static = (x) -&gt; StaticVector(x[1], log(x[2]*x[1]))
+f = (x) -&gt; [x, log(x)/2]
+
+y = f_static.(x)
+y = f.(x)</code></pre><p>Currently, the following are implemented as multi-output surrogates:</p><ul><li>Radial Basis</li><li>Neural Network (via Flux)</li><li>Second Order Polynomial</li><li>Inverse Distance</li><li>Custom Kriging (via Stheno)</li></ul><h2 id="Gradients"><a class="docs-heading-anchor" href="#Gradients">Gradients</a><a id="Gradients-1"></a><a class="docs-heading-anchor-permalink" href="#Gradients" title="Permalink"></a></h2><p>The surrogates implemented here are all automatically differentiable via Zygote. Because of this property, surrogates are useful models for processes which aren&#39;t explicitly differentiable, and can be used as layers in, for instance, Flux models.</p><h2 id="Installation"><a class="docs-heading-anchor" href="#Installation">Installation</a><a id="Installation-1"></a><a class="docs-heading-anchor-permalink" href="#Installation" title="Permalink"></a></h2><p>Surrogates is registered in the Julia General Registry. In the REPL:</p><pre><code class="nohighlight hljs">using Pkg
+Pkg.add(&quot;Surrogates&quot;)</code></pre><h2 id="Contributing"><a class="docs-heading-anchor" href="#Contributing">Contributing</a><a id="Contributing-1"></a><a class="docs-heading-anchor-permalink" href="#Contributing" title="Permalink"></a></h2><ul><li><p>Please refer to the <a href="https://github.com/SciML/ColPrac/blob/master/README.md">SciML ColPrac: Contributor&#39;s Guide on Collaborative Practices for Community Packages</a> for guidance on PRs, issues, and other matters relating to contributing to SciML.</p></li><li><p>See the <a href="https://github.com/SciML/SciMLStyle">SciML Style Guide</a> for common coding practices and other style decisions.</p></li><li><p>There are a few community forums:</p><ul><li>The #diffeq-bridged and #sciml-bridged channels in the <a href="https://julialang.org/slack/">Julia Slack</a></li><li>The #diffeq-bridged and #sciml-bridged channels in the <a href="https://julialang.zulipchat.com/#narrow/stream/279055-sciml-bridged">Julia Zulip</a></li><li>On the <a href="https://discourse.julialang.org">Julia Discourse forums</a></li><li>See also <a href="https://sciml.ai/community/">SciML Community page</a></li></ul></li></ul><h2 id="Quick-example"><a class="docs-heading-anchor" href="#Quick-example">Quick example</a><a id="Quick-example-1"></a><a class="docs-heading-anchor-permalink" href="#Quick-example" title="Permalink"></a></h2><pre><code class="language-julia hljs">using Surrogates
+num_samples = 10
+lb = 0.0
+ub = 10.0
+
+#Sampling
+x = sample(num_samples, lb, ub, SobolSample())
+f = x -&gt; log(x) * x^2 + x^3
+y = f.(x)
+
+#Creating surrogate
+alpha = 2.0
+n = 6
+my_lobachevsky = LobachevskySurrogate(x, y, lb, ub, alpha = alpha, n = n)
+
+#Approximating value at 5.0
+value = my_lobachevsky(5.0)
+
+#Adding more data points
+surrogate_optimize!(f, SRBF(), lb, ub, my_lobachevsky, RandomSample())
+
+#New approximation
+value = my_lobachevsky(5.0)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">135.03846788010213</code></pre><h2 id="Reproducibility"><a class="docs-heading-anchor" href="#Reproducibility">Reproducibility</a><a id="Reproducibility-1"></a><a class="docs-heading-anchor-permalink" href="#Reproducibility" title="Permalink"></a></h2><details><summary>The documentation of this SciML package was built using these direct dependencies,</summary><pre class="documenter-example-output"><code class="nohighlight hljs ansi">Status `~/work/Surrogates.jl/Surrogates.jl/docs/Project.toml`
+  [99985d1d] AbstractGPs v0.5.24
+  [e30172f5] Documenter v1.14.1
+  [587475ba] Flux v0.16.5
+  [cc18c42c] GaussianMixtures v0.3.13
+  [91a5bcdd] Plots v1.40.17
+  [8d666b04] PolyChaos v0.2.11
+  [1fd47b50] QuadGK v2.11.2
+  [6fc51010] Surrogates v7.0.1 `~/work/Surrogates.jl/Surrogates.jl`
+  [009559a3] XGBoost v2.5.1
+  [e88e6eb3] Zygote v0.7.10</code></pre></details><details><summary>and using this machine and Julia version.</summary><pre class="documenter-example-output"><code class="nohighlight hljs ansi">Julia Version 1.11.6
+Commit 9615af0f269 (2025-07-09 12:58 UTC)
+Build Info:
+  Official https://julialang.org/ release
+Platform Info:
+  OS: Linux (x86_64-linux-gnu)
+  CPU: 4 × AMD EPYC 7763 64-Core Processor
+  WORD_SIZE: 64
+  LLVM: libLLVM-16.0.6 (ORCJIT, znver3)
+Threads: 1 default, 0 interactive, 1 GC (on 4 virtual cores)
+Environment:
+  JULIA_DEBUG = Documenter</code></pre></details><details><summary>A more complete overview of all dependencies and their versions is also provided.</summary><pre class="documenter-example-output"><code class="nohighlight hljs ansi">Status `~/work/Surrogates.jl/Surrogates.jl/docs/Manifest.toml`
+  [a4c015fc] ANSIColoredPrinters v0.0.1
+  [621f4979] AbstractFFTs v1.5.0
+  [99985d1d] AbstractGPs v0.5.24
+  [1520ce14] AbstractTrees v0.4.5
+  [7d9f7c33] Accessors v0.1.42
+  [79e6a3ab] Adapt v4.3.0
+⌅ [c75e803d] AdaptiveRejectionSampling v0.1.2
+  [66dad0bd] AliasTables v1.1.3
+  [dce04be8] ArgCheck v2.5.0
+  [7d9fca2a] Arpack v0.5.4
+  [a9b6321e] Atomix v1.1.1
+  [198e06fe] BangBang v0.4.4
+  [9718e550] Baselet v0.1.1
+  [d1d4a3ce] BitFlags v0.1.9
+  [fa961155] CEnum v0.5.0
+  [082447d4] ChainRules v1.72.5
+  [d360d2e6] ChainRulesCore v1.25.2
+  [aaaa29a8] Clustering v0.15.8
+  [944b1d66] CodecZlib v0.7.8
+  [35d6a980] ColorSchemes v3.30.0
+  [3da002f7] ColorTypes v0.12.1
+  [c3611d14] ColorVectorSpace v0.11.0
+  [5ae59095] Colors v0.13.1
+  [861a8166] Combinatorics v1.0.3
+  [bbf7d656] CommonSubexpressions v0.3.1
+  [34da2185] Compat v4.18.0
+  [a33af91c] CompositionsBase v0.1.2
+  [2569d6c7] ConcreteStructs v0.2.3
+  [f0e56b4a] ConcurrentUtilities v2.5.0
+  [187b0558] ConstructionBase v1.6.0
+  [6add18c4] ContextVariablesX v0.1.3
+  [d38c429a] Contour v0.6.3
+  [9a962f9c] DataAPI v1.16.0
+⌅ [864edb3b] DataStructures v0.18.22
+  [e2d170a0] DataValueInterfaces v1.0.0
+  [244e2a9f] DefineSingletons v0.1.2
+  [8bb1440f] DelimitedFiles v1.9.1
+  [163ba53b] DiffResults v1.1.0
+  [b552c78f] DiffRules v1.15.1
+  [b4f34e82] Distances v0.10.12
+  [31c24e10] Distributions v0.25.120
+  [ffbed154] DocStringExtensions v0.9.5
+  [e30172f5] Documenter v1.14.1
+  [f151be2c] EnzymeCore v0.8.12
+  [460bff9d] ExceptionUnwrapping v0.1.11
+  [95c220a8] ExtendableSparse v1.7.1
+  [c87230d0] FFMPEG v0.4.4
+  [7a1cc6ca] FFTW v1.9.0
+  [cc61a311] FLoops v0.2.2
+  [b9860ae5] FLoopsBase v0.1.1
+  [5789e2e9] FileIO v1.17.0
+  [1a297f60] FillArrays v1.13.0
+  [53c48c17] FixedPointNumbers v0.8.5
+  [587475ba] Flux v0.16.5
+  [1fa38f19] Format v1.3.7
+⌅ [f6369f11] ForwardDiff v0.10.38
+  [d9f16b24] Functors v0.5.2
+  [38e38edf] GLM v1.9.0
+  [46192b85] GPUArraysCore v0.2.0
+  [28b8d3ca] GR v0.73.17
+  [d54b0c1a] GaussQuadrature v0.5.8
+  [cc18c42c] GaussianMixtures v0.3.13
+  [d7ba0133] Git v1.4.0
+  [42e2da0e] Grisu v1.0.2
+  [cd3eb016] HTTP v1.10.17
+  [076d061b] HashArrayMappedTries v0.2.0
+  [34004b35] HypergeometricFunctions v0.3.28
+  [88f59080] ILUZero v0.2.0
+  [b5f81e59] IOCapture v0.2.5
+  [7869d1d1] IRTools v0.4.15
+  [22cec73e] InitialValues v0.3.1
+  [18e54dd8] IntegerMathUtils v0.1.3
+  [3587e190] InverseFunctions v0.1.17
+  [92d709cd] IrrationalConstants v0.2.4
+  [42fd0dbc] IterativeSolvers v0.9.4
+  [82899510] IteratorInterfaceExtensions v1.0.0
+  [033835bb] JLD2 v0.5.15
+  [1019f520] JLFzf v0.1.11
+  [692b3bcd] JLLWrappers v1.7.1
+  [682c06a0] JSON v0.21.4
+  [0f8b85d8] JSON3 v1.14.3
+  [b14d175d] JuliaVariables v0.2.4
+  [63c18a36] KernelAbstractions v0.9.38
+  [ec8451be] KernelFunctions v0.10.65
+  [b964fa9f] LaTeXStrings v1.4.0
+  [23fbe1c1] Latexify v0.16.8
+  [73f95e8e] LatticeRules v0.0.1
+  [0e77f7df] LazilyInitializedFields v1.3.0
+  [2ab3a3ac] LogExpFunctions v0.3.29
+  [e6f89c97] LoggingExtras v1.1.0
+  [c2834f40] MLCore v1.0.0
+  [7e8f7934] MLDataDevices v1.11.1
+  [d8e11817] MLStyle v0.4.17
+  [f1d291b0] MLUtils v0.4.8
+  [1914dd2f] MacroTools v0.5.16
+  [d0879d2d] MarkdownAST v0.1.2
+  [739be429] MbedTLS v1.1.9
+  [442fdcdd] Measures v0.3.2
+  [128add7d] MicroCollections v0.2.0
+  [e1d29d7a] Missings v1.2.0
+  [872c559c] NNlib v0.9.31
+  [77ba4419] NaNMath v1.1.3
+  [71a1bf82] NameResolution v0.1.5
+  [b8a86587] NearestNeighbors v0.4.22
+  [6fe1bfb0] OffsetArrays v1.17.0
+  [0b1bfda6] OneHotArrays v0.2.10
+  [4d8831e6] OpenSSL v1.5.0
+  [3bd65402] Optimisers v0.4.6
+  [bac558e1] OrderedCollections v1.8.1
+  [90014a1f] PDMats v0.11.35
+  [69de0a69] Parsers v2.8.3
+  [ccf2f8ad] PlotThemes v3.3.0
+  [995b91a9] PlotUtils v1.4.3
+  [91a5bcdd] Plots v1.40.17
+  [8d666b04] PolyChaos v0.2.11
+⌅ [aea7be01] PrecompileTools v1.2.1
+  [21216c6a] Preferences v1.4.3
+  [8162dcfd] PrettyPrint v0.2.0
+  [27ebfcd6] Primes v0.5.7
+  [33c8b6b6] ProgressLogging v0.1.5
+  [43287f4e] PtrArrays v1.3.0
+  [1fd47b50] QuadGK v2.11.2
+  [8a4e6c94] QuasiMonteCarlo v0.3.3
+  [c1ae055f] RealDot v0.1.0
+  [3cdcf5f2] RecipesBase v1.3.4
+  [01d81517] RecipesPipeline v0.6.12
+  [189a3867] Reexport v1.2.2
+  [2792f1a3] RegistryInstances v0.1.0
+  [05181044] RelocatableFolders v1.0.1
+  [ae029012] Requires v1.3.1
+  [79098fc4] Rmath v0.8.0
+  [6e75b9c4] ScikitLearnBase v0.5.0
+  [7e506255] ScopedValues v1.4.0
+  [6c6a2e73] Scratch v1.3.0
+  [efcf1570] Setfield v1.1.2
+  [1277b4bf] ShiftedArrays v2.0.0
+  [605ecd9f] ShowCases v0.1.0
+  [992d4aef] Showoff v1.0.3
+  [777ac1f9] SimpleBufferStream v1.2.0
+  [699a6c99] SimpleTraits v0.9.5
+  [ed01d8cd] Sobol v1.5.0
+  [a2af1166] SortingAlgorithms v1.2.2
+  [dc90abb0] SparseInverseSubset v0.1.2
+  [a0a7dd2c] SparseMatricesCSR v0.6.9
+  [e56a9233] Sparspak v0.3.12
+  [276daf66] SpecialFunctions v2.5.1
+  [171d559e] SplittablesBase v0.1.15
+  [860ef19b] StableRNGs v1.0.3
+  [90137ffa] StaticArrays v1.9.14
+  [1e83bf80] StaticArraysCore v1.4.3
+  [10745b16] Statistics v1.11.1
+  [82ae8749] StatsAPI v1.7.1
+  [2913bbd2] StatsBase v0.34.6
+  [4c63d2b9] StatsFuns v1.5.0
+  [3eaba693] StatsModels v0.7.5
+  [09ab397b] StructArrays v0.7.1
+  [856f2bd8] StructTypes v1.11.0
+  [6fc51010] Surrogates v7.0.1 `~/work/Surrogates.jl/Surrogates.jl`
+  [89f642e6] SurrogatesBase v1.1.0
+  [3783bdb8] TableTraits v1.0.1
+  [bd369af6] Tables v1.12.1
+  [62fd8b95] TensorCore v0.1.1
+  [3bb67fe8] TranscodingStreams v0.11.3
+  [28d57a85] Transducers v0.4.84
+  [5c2747f8] URIs v1.6.1
+  [1cfade01] UnicodeFun v0.4.1
+  [1986cc42] Unitful v1.24.0
+  [45397f5d] UnitfulLatexify v1.7.0
+  [013be700] UnsafeAtomics v0.3.0
+  [41fe7b60] Unzip v0.2.0
+  [009559a3] XGBoost v2.5.1
+  [e88e6eb3] Zygote v0.7.10
+  [700de1a5] ZygoteRules v0.2.7
+⌅ [68821587] Arpack_jll v3.5.1+1
+  [6e34b625] Bzip2_jll v1.0.9+0
+  [4ee394cb] CUDA_Driver_jll v13.0.0+0
+  [76a88914] CUDA_Runtime_jll v0.19.0+0
+  [83423d85] Cairo_jll v1.18.5+0
+  [ee1fde0b] Dbus_jll v1.16.2+0
+  [2702e6a9] EpollShim_jll v0.0.20230411+1
+  [2e619515] Expat_jll v2.6.5+0
+  [b22a6f82] FFMPEG_jll v7.1.1+0
+  [f5851436] FFTW_jll v3.3.11+0
+  [a3f928ae] Fontconfig_jll v2.16.0+0
+  [d7e528f0] FreeType2_jll v2.13.4+0
+  [559328eb] FriBidi_jll v1.0.17+0
+  [0656b61e] GLFW_jll v3.4.0+2
+  [d2c73de3] GR_jll v0.73.17+0
+  [b0724c58] GettextRuntime_jll v0.22.4+0
+  [f8c6e375] Git_jll v2.50.1+0
+  [7746bdde] Glib_jll v2.84.3+0
+  [3b182d85] Graphite2_jll v1.3.15+0
+  [2e76f6c2] HarfBuzz_jll v8.5.1+0
+  [1d5cc7b8] IntelOpenMP_jll v2025.2.0+0
+  [aacddb02] JpegTurbo_jll v3.1.1+0
+  [c1c5ebd0] LAME_jll v3.100.3+0
+  [88015f11] LERC_jll v4.0.1+0
+  [1d63c593] LLVMOpenMP_jll v18.1.8+0
+  [dd4b983a] LZO_jll v2.10.3+0
+  [e9f186c6] Libffi_jll v3.4.7+0
+  [7e76a0d4] Libglvnd_jll v1.7.1+1
+  [94ce4f54] Libiconv_jll v1.18.0+0
+  [4b2f31a3] Libmount_jll v2.41.0+0
+  [89763e89] Libtiff_jll v4.7.1+0
+  [38a345b3] Libuuid_jll v2.41.0+0
+  [856f044c] MKL_jll v2025.2.0+0
+  [e7412a2a] Ogg_jll v1.3.6+0
+  [9bd350c2] OpenSSH_jll v10.0.1+0
+  [458c3c95] OpenSSL_jll v3.5.2+0
+  [efe28fd5] OpenSpecFun_jll v0.5.6+0
+  [91d4177d] Opus_jll v1.5.2+0
+  [36c8627f] Pango_jll v1.56.3+0
+⌅ [30392449] Pixman_jll v0.44.2+0
+  [c0090381] Qt6Base_jll v6.8.2+1
+  [629bc702] Qt6Declarative_jll v6.8.2+1
+  [ce943373] Qt6ShaderTools_jll v6.8.2+1
+  [e99dba38] Qt6Wayland_jll v6.8.2+1
+  [f50d1b31] Rmath_jll v0.5.1+0
+  [a44049a8] Vulkan_Loader_jll v1.3.243+0
+  [a2964d1f] Wayland_jll v1.24.0+0
+  [a5c6f535] XGBoost_jll v2.0.1+0
+  [ffd25f8a] XZ_jll v5.8.1+0
+  [f67eecfb] Xorg_libICE_jll v1.1.2+0
+  [c834827a] Xorg_libSM_jll v1.2.6+0
+  [4f6342f7] Xorg_libX11_jll v1.8.12+0
+  [0c0b7dd1] Xorg_libXau_jll v1.0.13+0
+  [935fb764] Xorg_libXcursor_jll v1.2.4+0
+  [a3789734] Xorg_libXdmcp_jll v1.1.6+0
+  [1082639a] Xorg_libXext_jll v1.3.7+0
+  [d091e8ba] Xorg_libXfixes_jll v6.0.1+0
+  [a51aa0fd] Xorg_libXi_jll v1.8.3+0
+  [d1454406] Xorg_libXinerama_jll v1.1.6+0
+  [ec84b674] Xorg_libXrandr_jll v1.5.5+0
+  [ea2f1a96] Xorg_libXrender_jll v0.9.12+0
+  [c7cfdc94] Xorg_libxcb_jll v1.17.1+0
+  [cc61e674] Xorg_libxkbfile_jll v1.1.3+0
+  [e920d4aa] Xorg_xcb_util_cursor_jll v0.1.5+0
+  [12413925] Xorg_xcb_util_image_jll v0.4.1+0
+  [2def613f] Xorg_xcb_util_jll v0.4.1+0
+  [975044d2] Xorg_xcb_util_keysyms_jll v0.4.1+0
+  [0d47668e] Xorg_xcb_util_renderutil_jll v0.3.10+0
+  [c22f9ab0] Xorg_xcb_util_wm_jll v0.4.2+0
+  [35661453] Xorg_xkbcomp_jll v1.4.7+0
+  [33bec58e] Xorg_xkeyboard_config_jll v2.44.0+0
+  [c5fb5394] Xorg_xtrans_jll v1.6.0+0
+  [3161d3a3] Zstd_jll v1.5.7+1
+  [35ca27e7] eudev_jll v3.2.14+0
+  [214eeab7] fzf_jll v0.61.1+0
+  [a4ae2306] libaom_jll v3.12.1+0
+  [0ac62f75] libass_jll v0.17.4+0
+  [1183f4f0] libdecor_jll v0.2.2+0
+  [2db6ffa8] libevdev_jll v1.13.4+0
+  [f638f0a6] libfdk_aac_jll v2.0.4+0
+  [36db933b] libinput_jll v1.28.1+0
+  [b53b4c65] libpng_jll v1.6.50+0
+  [f27f6e37] libvorbis_jll v1.3.8+0
+  [009596ad] mtdev_jll v1.1.7+0
+  [1317d2d5] oneTBB_jll v2022.0.0+0
+  [1270edf5] x264_jll v10164.0.1+0
+  [dfaa095f] x265_jll v4.1.0+0
+  [d8fb68d0] xkbcommon_jll v1.9.2+0
+  [0dad84c5] ArgTools v1.1.2
+  [56f22d72] Artifacts v1.11.0
+  [2a0f44e3] Base64 v1.11.0
+  [ade2ca70] Dates v1.11.0
+  [8ba89e20] Distributed v1.11.0
+  [f43a241f] Downloads v1.6.0
+  [7b1f6079] FileWatching v1.11.0
+  [9fa8497b] Future v1.11.0
+  [b77e0a4c] InteractiveUtils v1.11.0
+  [4af54fe1] LazyArtifacts v1.11.0
+  [b27032c2] LibCURL v0.6.4
+  [76f85450] LibGit2 v1.11.0
+  [8f399da3] Libdl v1.11.0
+  [37e2e46d] LinearAlgebra v1.11.0
+  [56ddb016] Logging v1.11.0
+  [d6f4376e] Markdown v1.11.0
+  [a63ad114] Mmap v1.11.0
+  [ca575930] NetworkOptions v1.2.0
+  [44cfe95a] Pkg v1.11.0
+  [de0858da] Printf v1.11.0
+  [3fa0cd96] REPL v1.11.0
+  [9a3f8284] Random v1.11.0
+  [ea8e919c] SHA v0.7.0
+  [9e88b42a] Serialization v1.11.0
+  [6462fe0b] Sockets v1.11.0
+  [2f01184e] SparseArrays v1.11.0
+  [f489334b] StyledStrings v1.11.0
+  [4607b0f0] SuiteSparse
+  [fa267f1f] TOML v1.0.3
+  [a4e569a6] Tar v1.10.0
+  [8dfed614] Test v1.11.0
+  [cf7118a7] UUIDs v1.11.0
+  [4ec0a83e] Unicode v1.11.0
+  [e66e0078] CompilerSupportLibraries_jll v1.1.1+0
+  [deac9b47] LibCURL_jll v8.6.0+0
+  [e37daf67] LibGit2_jll v1.7.2+0
+  [29816b5a] LibSSH2_jll v1.11.0+1
+  [c8ffd9c3] MbedTLS_jll v2.28.6+0
+  [14a3606d] MozillaCACerts_jll v2023.12.12
+  [4536629a] OpenBLAS_jll v0.3.27+1
+  [05823500] OpenLibm_jll v0.8.5+0
+  [efcefdf7] PCRE2_jll v10.42.0+1
+  [bea87d4a] SuiteSparse_jll v7.7.0+0
+  [83775a58] Zlib_jll v1.2.13+1
+  [8e850b90] libblastrampoline_jll v5.11.0+0
+  [8e850ede] nghttp2_jll v1.59.0+0
+  [3f19e933] p7zip_jll v17.4.0+2
+Info Packages marked with ⌅ have new versions available but compatibility constraints restrict them from upgrading. To see why use `status --outdated -m`</code></pre></details><p>You can also download the <a href="https://github.com/SciML/Surrogates.jl/tree/gh-pages/v7.0.1/assets/Manifest.toml">manifest</a> file and the <a href="https://github.com/SciML/Surrogates.jl/tree/gh-pages/v7.0.1/assets/Project.toml">project</a> file.</p></article><nav class="docs-footer"><a class="docs-footer-nextpage" href="tutorials/">Basics »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.14.1 on <span class="colophon-date" title="Friday 8 August 2025 21:47">Friday 8 August 2025</span>. Using Julia version 1.11.6.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
