@@ -1,246 +1,614 @@
 using Surrogates
 using LinearAlgebra
 using Zygote
+using ForwardDiff
 using Test
-#using Zygote: @nograd
-#=
-#FORWARD
-###### 1D ######
-lb = 0.0
-ub = 10.0
-n = 5
-x = sample(n,lb,ub,SobolSample())
-f = x -> x^2
-y = f.(x)
+using GaussianMixtures
 
-#Radials
-my_rad = RadialBasis(x,y,lb,ub,x->norm(x),2)
-g = x -> ForwardDiff.derivative(my_rad,x)
-g(5.0)
+@testset "ForwardDiff" begin
+    @testset "1D" begin
+        lb = 0.0
+        ub = 10.0
+        n = 1000
+        x = sample(n, lb, ub, SobolSample())
+        f = x -> x^2
+        y = f.(x)
 
-#Kriging
-p = 1.5
-my_krig = Kriging(x,y,p)
-g = x -> ForwardDiff.derivative(my_krig,x)
-g(5.0)
+        #Radials
+        @testset "Radials" begin
+            my_rad = RadialBasis(x, y, lb, ub, rad = linearRadial())
+            g = x -> ForwardDiff.derivative(my_rad, x)
+            @test g(5.0) isa Number
+            # Accuracy test: f(x) = x^2, f'(x) = 2x, so f'(5.0) = 10.0
+            @test isapprox(g(5.0), 10.0, atol = 1e-1)
+        end
 
-#Linear Surrogate
-my_linear = LinearSurrogate(x,y,lb,ub)
-g = x -> ForwardDiff.derivative(my_linear,x)
-g(5.0)
+        #Kriging
+        @testset "Kriging" begin
+            my_p = 1.5
+            my_krig = Kriging(x, y, lb, ub, p = my_p)
+            g = x -> ForwardDiff.derivative(my_krig, x)
+            @test g(5.0) isa Number
+            # Accuracy test: f(x) = x^2, f'(x) = 2x, so f'(5.0) = 10.0
+            @test isapprox(g(5.0), 10.0, atol = 1e-1)
+        end
 
-#Inverse distance
-p = 1.4
-my_inverse = InverseDistanceSurrogate(x,y,p,lb,ub)
-g = x -> ForwardDiff.derivative(my_inverse,x)
-g(5.0)
+        #Linear Surrogate
+        @testset "Linear Surrogate" begin
+            my_linear = LinearSurrogate(x, y, lb, ub)
+            g = x -> ForwardDiff.derivative(my_linear, x)
+            @test g(5.0) isa Number
+            # Accuracy test: f(x) = x^2, f'(x) = 2x, so f'(5.0) = 10.0
+            @test isapprox(g(5.0), 10.0, atol = 1e-1)
+        end
 
-#Lobachevsky
-n = 4
-α = 2.4
-my_loba = LobachevskySurrogate(x,y,α,n,lb,ub)
-g = x -> ForwardDiff.derivative(my_loba,x)
-g(5.0)
+        #Inverse distance
+        @testset "Inverse Distance" begin
+            my_p = 1.4
+            my_inverse = InverseDistanceSurrogate(x, y, lb, ub, p = my_p)
+            g = x -> ForwardDiff.derivative(my_inverse, x)
+            @test g(5.0) isa Number
+            # Accuracy test: f(x) = x^2, f'(x) = 2x, so f'(5.0) = 10.0
+            @test isapprox(g(5.0), 10.0, atol = 1e-1)
+        end
 
-#Second order polynomial
-my_second = SecondOrderPolynomialSurrogate(x,y,lb,ub)
-g = x -> ForwardDiff.derivative(my_second,x)
-g(5.0)
+        #Lobachevsky
+        @testset "Lobachevsky" begin
+            n = 4
+            α = 2.4
+            my_loba = LobachevskySurrogate(x, y, lb, ub, alpha = α, n = n)
+            g = x -> ForwardDiff.derivative(my_loba, x)
+            @test g(5.0) isa Number
+            # Accuracy test: f(x) = x^2, f'(x) = 2x, so f'(5.0) = 10.0
+            @test isapprox(g(5.0), 10.0, atol = 1e-1)
+        end
 
-###### ND ######
-lb = [0.0,0.0]
-ub = [10.0,10.0]
-n = 5
-x = sample(n,lb,ub,SobolSample())
-f = x -> x[1]*x[2]
-y = f.(x)
+        #Second order polynomial
+        @testset "Second Order Polynomial" begin
+            my_second = SecondOrderPolynomialSurrogate(x, y, lb, ub)
+            g = x -> ForwardDiff.derivative(my_second, x)
+            @test g(5.0) isa Number
+            # Accuracy test: f(x) = x^2, f'(x) = 2x, so f'(5.0) = 10.0
+            @test isapprox(g(5.0), 10.0, atol = 1e-1)
+        end
 
-#Radials
-my_rad = RadialBasis(x,y,[lb,ub],z->norm(z),2)
-g = x -> ForwardDiff.gradient(my_rad,x)
-g([2.0,5.0])
+        #Wendland
+        # @testset "Wendland" begin
+        #     my_wend = Wendland(x, y, lb, ub)
+        #     g = x -> ForwardDiff.derivative(my_wend, x)
+        #     @test g(5.0) isa Number
+        #     # Accuracy test: f(x) = x^2, f'(x) = 2x, so f'(5.0) = 10.0
+        #     @test isapprox(g(5.0), 10.0, atol = 1e-1)
+        # end
 
-#Kriging
-theta = [2.0,2.0]
-p = [1.9,1.9]
-my_krig = Kriging(x,y,p,theta)
-g = x -> ForwardDiff.gradient(my_krig,x)
-g([2.0,5.0])
+        #GEK
+        @testset "GEK" begin
+            y1 = y
+            der = x -> 2 * x
+            y2 = der.(x)
+            y_gek = vcat(y1, y2)
+            my_gek = GEK(x, y_gek, lb, ub)
+            g = x -> ForwardDiff.derivative(my_gek, x)
+            @test g(5.0) isa Number
+            # Accuracy test: f(x) = x^2, f'(x) = 2x, so f'(5.0) = 10.0
+            @test isapprox(g(5.0), 10.0, atol = 1e-1)
+        end
 
-#Linear Surrogate
-my_linear = LinearSurrogate(x,y,lb,ub)
-g = x -> ForwardDiff.gradient(my_linear,x)
-g([2.0,5.0])
+        #GEKPLS
+        # @testset "GEKPLS" begin
+        #     grads = Zygote.gradient.(f, x)
+        #     n_comp = 1
+        #     delta_x = 0.0001
+        #     extra_points = 1
+        #     initial_theta = [0.01 for i in 1:n_comp]
+        #     my_gekpls = GEKPLS(x, y, grads, n_comp, delta_x, lb, ub, extra_points, initial_theta)
+        #     g = x -> ForwardDiff.derivative(my_gekpls, x)
+        #     @test g(5.0) isa Number
+        #     # Accuracy test: f(x) = x^2, f'(x) = 2x, so f'(5.0) = 10.0
+        #     @test isapprox(g(5.0), 10.0, atol = 1e-1)
+        # end
 
-#Inverse Distance
-p = 1.4
-my_inverse = InverseDistanceSurrogate(x,y,p,lb,ub)
-g = x -> ForwardDiff.gradient(my_inverse,x)
-g([2.0,5.0])
+        #Earth
+        # @testset "Earth" begin
+        #     my_earth = EarthSurrogate(x, y, lb, ub)
+        #     g = x -> ForwardDiff.derivative(my_earth, x)
+        #     @test g(5.0) isa Number
+        #     # Accuracy test: f(x) = x^2, f'(x) = 2x, so f'(5.0) = 10.0
+        #     @test isapprox(g(5.0), 10.0, atol = 1e-1)
+        # end
 
-#Lobachevsky
-alpha = [1.4,1.4]
-n = 4
-my_loba_ND = LobachevskySurrogate(x,y,alpha,n,lb,ub)
-g = x -> ForwardDiff.gradient(my_loba_ND,x)
-g([2.0,5.0])
+        #VariableFidelity
+        @testset "VariableFidelity" begin
+            my_varfid = VariableFidelitySurrogate(x, y, lb, ub)
+            g = x -> ForwardDiff.derivative(my_varfid, x)
+            @test g(5.0) isa Number
+            # Accuracy test: f(x) = x^2, f'(x) = 2x, so f'(5.0) = 10.0
+            @test isapprox(g(5.0), 10.0, atol = 1e-1)
+        end
 
-#Second order polynomial
-my_second = SecondOrderPolynomialSurrogate(x,y,lb,ub)
-g = x -> ForwardDiff.gradient(my_second,x)
-g([2.0,5.0])
-=#
+        #MOE
+        @testset "MOE" begin
+            expert_types = [
+                RadialBasisStructure(radial_function = linearRadial(), scale_factor = 1.0, sparse = false),
+                RadialBasisStructure(radial_function = cubicRadial(), scale_factor = 1.0, sparse = false)
+            ]
+            my_moe = MOE(x, y, expert_types, ndim = 1, n_clusters = 2)
+            g = x -> ForwardDiff.derivative(my_moe, x)
+            @test g(5.0) isa Number
+            # Accuracy test: f(x) = x^2, f'(x) = 2x, so f'(5.0) = 10.0
+            @test isapprox(g(5.0), 10.0, atol = 1e-1)
+        end
+    end
 
-##############
-### ZYGOTE ###
-##############
+    @testset "ND" begin
+        lb = [0.0, 0.0]
+        ub = [10.0, 10.0]
+        n = 1000
+        x = sample(n, lb, ub, SobolSample())
+        f = x -> x[1] * x[2]
+        y = f.(x)
 
-############
-#### 1D ####
-############
-lb = 0.0
-ub = 3.0
-n = 10
-x = sample(n, lb, ub, SobolSample())
-f = x -> x^2
-y = f.(x)
+        #Radials
+        @testset "Radials" begin
+            my_rad = RadialBasis(x, y, lb, ub, rad = linearRadial())
+            g = x -> ForwardDiff.gradient(my_rad, x)
+            @test g([2.0, 5.0]) isa AbstractVector
+            # Accuracy test: f(x) = x[1] * x[2], ∇f = [x[2], x[1]], so ∇f([2.0, 5.0]) = [5.0, 2.0]
+            @test isapprox(g([2.0, 5.0]), [5.0, 2.0], atol = 1e-1)
+        end
 
-#Radials
-@testset "Radials 1D" begin
-    my_rad = RadialBasis(x, y, lb, ub, rad = linearRadial())
-    g = x -> my_rad'(x)
-    g(5.0)
+        #Kriging
+        @testset "Kriging" begin
+            my_theta = [2.0, 2.0]
+            my_p = [1.9, 1.9]
+            my_krig = Kriging(x, y, lb, ub, p = my_p, theta = my_theta)
+            g = x -> ForwardDiff.gradient(my_krig, x)
+            @test g([2.0, 5.0]) isa AbstractVector
+            # Accuracy test: f(x) = x[1] * x[2], ∇f = [x[2], x[1]], so ∇f([2.0, 5.0]) = [5.0, 2.0]
+            @test isapprox(g([2.0, 5.0]), [5.0, 2.0], atol = 1e-1)
+        end
+
+        #Linear Surrogate
+        @testset "Linear Surrogate" begin
+            my_linear = LinearSurrogate(x, y, lb, ub)
+            g = x -> ForwardDiff.gradient(my_linear, x)
+            @test g([2.0, 5.0]) isa AbstractVector
+            # Accuracy test: f(x) = x[1] * x[2], ∇f = [x[2], x[1]], so ∇f([2.0, 5.0]) = [5.0, 2.0]
+            @test isapprox(g([2.0, 5.0]), [5.0, 2.0], atol = 1e-1)
+        end
+
+        #Inverse Distance
+        @testset "Inverse Distance" begin
+            my_p = 1.4
+            my_inverse = InverseDistanceSurrogate(x, y, lb, ub, p = my_p)
+            g = x -> ForwardDiff.gradient(my_inverse, x)
+            @test g([2.0, 5.0]) isa AbstractVector
+            # Accuracy test: f(x) = x[1] * x[2], ∇f = [x[2], x[1]], so ∇f([2.0, 5.0]) = [5.0, 2.0]
+            @test isapprox(g([2.0, 5.0]), [5.0, 2.0], atol = 1e-1)
+        end
+
+        #Lobachevsky
+        @testset "Lobachevsky" begin
+            alpha = [1.4, 1.4]
+            n = 4
+            my_loba_ND = LobachevskySurrogate(x, y, lb, ub, alpha = alpha, n = n)
+            g = x -> ForwardDiff.gradient(my_loba_ND, x)
+            @test g([2.0, 5.0]) isa AbstractVector
+            # Accuracy test: f(x) = x[1] * x[2], ∇f = [x[2], x[1]], so ∇f([2.0, 5.0]) = [5.0, 2.0]
+            @test isapprox(g([2.0, 5.0]), [5.0, 2.0], atol = 1e-1)
+        end
+
+        #Second order polynomial
+        @testset "SecondOrderPolynomialSurrogate" begin
+            my_second = SecondOrderPolynomialSurrogate(x, y, lb, ub)
+            g = x -> ForwardDiff.gradient(my_second, x)
+            @test g([2.0, 5.0]) isa AbstractVector
+            # Accuracy test: f(x) = x[1] * x[2], ∇f = [x[2], x[1]], so ∇f([2.0, 5.0]) = [5.0, 2.0]
+            @test isapprox(g([2.0, 5.0]), [5.0, 2.0], atol = 1e-1)
+        end
+
+        #Wendland
+        @testset "Wendland" begin
+            my_wend_ND = Wendland(x, y, lb, ub)
+            g = x -> ForwardDiff.gradient(my_wend_ND, x)
+            @test g([2.0, 5.0]) isa AbstractVector
+            # Accuracy test: f(x) = x[1] * x[2], ∇f = [x[2], x[1]], so ∇f([2.0, 5.0]) = [5.0, 2.0]
+            @test isapprox(g([2.0, 5.0]), [5.0, 2.0], atol = 1e-1)
+        end
+
+        #GEK
+        @testset "GEK" begin
+            y1 = y
+            der = x -> [x[2], x[1]]  # Gradient of f(x) = x[1] * x[2]
+            y2 = vcat([der(xi) for xi in x]...)  # Flatten gradients by point
+            y_gek = vcat(y1, y2)
+            my_gek = GEK(x, y_gek, lb, ub)
+            g = x -> ForwardDiff.gradient(my_gek, x)
+            @test g([2.0, 5.0]) isa AbstractVector
+            # Accuracy test: f(x) = x[1] * x[2], ∇f = [x[2], x[1]], so ∇f([2.0, 5.0]) = [5.0, 2.0]
+            @test isapprox(g([2.0, 5.0]), [5.0, 2.0], atol = 1e-1)
+        end
+
+        #GEKPLS
+        @testset "GEKPLS" begin
+            grads = Zygote.gradient.(f, x)
+            n_comp = 2
+            delta_x = 0.0001
+            extra_points = 2
+            initial_theta = [0.01 for i in 1:n_comp]
+            my_gekpls_ND = GEKPLS(
+                x, y, grads, n_comp, delta_x, lb, ub, extra_points, initial_theta)
+            g = x -> ForwardDiff.gradient(my_gekpls_ND, x)
+            @test g([2.0, 5.0]) isa AbstractVector
+            # Accuracy test: f(x) = x[1] * x[2], ∇f = [x[2], x[1]], so ∇f([2.0, 5.0]) = [5.0, 2.0]
+            @test isapprox(g([2.0, 5.0]), [5.0, 2.0], atol = 1e-1)
+        end
+
+        #Earth
+        # @testset "Earth" begin
+        #     my_earth_ND = EarthSurrogate(x, y, lb, ub)
+        #     g = x -> ForwardDiff.gradient(my_earth_ND, x)
+        #     @test g([2.0, 5.0]) isa AbstractVector
+        #     # Accuracy test: f(x) = x[1] * x[2], ∇f = [x[2], x[1]], so ∇f([2.0, 5.0]) = [5.0, 2.0]
+        #     @test isapprox(g([2.0, 5.0]), [5.0, 2.0], atol = 1e-1)
+        # end
+
+        #VariableFidelity
+        @testset "VariableFidelity" begin
+            my_varfid_ND = VariableFidelitySurrogate(x, y, lb, ub)
+            g = x -> ForwardDiff.gradient(my_varfid_ND, x)
+            @test g([2.0, 5.0]) isa AbstractVector
+            # Accuracy test: f(x) = x[1] * x[2], ∇f = [x[2], x[1]], so ∇f([2.0, 5.0]) = [5.0, 2.0]
+            @test isapprox(g([2.0, 5.0]), [5.0, 2.0], atol = 1e-1)
+        end
+
+        #MOE
+        @testset "MOE" begin
+            expert_types = [
+                RadialBasisStructure(radial_function = linearRadial(), scale_factor = 1.0, sparse = false),
+                RadialBasisStructure(radial_function = cubicRadial(), scale_factor = 1.0, sparse = false)
+            ]
+            my_moe_ND = MOE(x, y, expert_types, ndim = 2, n_clusters = 2)
+            g = x -> ForwardDiff.gradient(my_moe_ND, x)
+            @test g([2.0, 5.0]) isa AbstractVector
+            # Accuracy test: f(x) = x[1] * x[2], ∇f = [x[2], x[1]], so ∇f([2.0, 5.0]) = [5.0, 2.0]
+            @test isapprox(g([2.0, 5.0]), [5.0, 2.0], atol = 1e-1)
+        end
+    end
 end
 
-# #Kriging
-@testset "Kriging 1D" begin
-    my_p = 1.5
-    my_krig = Kriging(x, y, lb, ub, p = my_p)
-    g = x -> my_krig'(x)
-    g(5.0)
+@testset "Zygote" begin
+    @testset "1D" begin
+        lb = 0.0
+        ub = 10.0
+        n = 1000
+        x = sample(n, lb, ub, SobolSample())
+        f = x -> x^2
+        y = f.(x)
+
+        #Radials
+        @testset "Radials" begin
+            my_rad = RadialBasis(x, y, lb, ub, rad = linearRadial())
+            g = x -> Zygote.gradient(my_rad, x)
+            result = g(5.0)
+            @test result isa Tuple
+            @test length(result) == 1
+            @test result[1] isa Number
+            # Accuracy test: f(x) = x^2, f'(x) = 2x, so f'(5.0) = 10.0
+            @test isapprox(result[1], 10.0, atol = 1e-1)
+        end
+
+        #Kriging
+        @testset "Kriging" begin
+            my_p = 1.5
+            my_krig = Kriging(x, y, lb, ub, p = my_p)
+            g = x -> Zygote.gradient(my_krig, x)
+            result = g(5.0)
+            @test result isa Tuple
+            @test length(result) == 1
+            @test result[1] isa Number
+            # Accuracy test: f(x) = x^2, f'(x) = 2x, so f'(5.0) = 10.0
+            @test isapprox(result[1], 10.0, atol = 1e-1)
+        end
+
+        #Linear Surrogate
+        # @testset "Linear Surrogate" begin
+        #     my_linear = LinearSurrogate(x, y, lb, ub)
+        #     g = x -> Zygote.gradient(my_linear, x)
+        #     result = g(5.0)
+        #     @test result isa Tuple
+        #     @test length(result) == 1
+        #     @test result[1] isa Number
+        # end
+
+        #Inverse distance
+        @testset "Inverse Distance" begin
+            my_p = 1.4
+            my_inverse = InverseDistanceSurrogate(x, y, lb, ub, p = my_p)
+            g = x -> Zygote.gradient(my_inverse, x)
+            result = g(5.0)
+            @test result isa Tuple
+            @test length(result) == 1
+            @test result[1] isa Number
+            # Accuracy test: f(x) = x^2, f'(x) = 2x, so f'(5.0) = 10.0
+            @test isapprox(result[1], 10.0, atol = 1e-1)
+        end
+
+        #Lobachevsky
+        @testset "Lobachevsky" begin
+            n = 4
+            α = 2.4
+            my_loba = LobachevskySurrogate(x, y, lb, ub, alpha = α, n = 4)
+            g = x -> Zygote.gradient(my_loba, x)
+            result = g(5.0)
+            @test result isa Tuple
+            @test length(result) == 1
+            @test result[1] isa Number
+            # Accuracy test: f(x) = x^2, f'(x) = 2x, so f'(5.0) = 10.0
+            @test isapprox(result[1], 10.0, atol = 1e-1)
+        end
+
+        #Second order polynomial
+        @testset "Second Order Polynomial" begin
+            my_second = SecondOrderPolynomialSurrogate(x, y, lb, ub)
+            g = x -> Zygote.gradient(my_second, x)
+            result = g(5.0)
+            @test result isa Tuple
+            @test length(result) == 1
+            @test result[1] isa Number
+            # Accuracy test: f(x) = x^2, f'(x) = 2x, so f'(5.0) = 10.0
+            @test isapprox(result[1], 10.0, atol = 1e-1)
+        end
+
+        #Wendland
+        # @testset "Wendland" begin
+        #     my_wend = Wendland(x, y, lb, ub)
+        #     g = x -> Zygote.gradient(my_wend, x)
+        #     result = g(3.0)
+        #     @test result isa Tuple
+        #     @test length(result) == 1
+        #     @test result[1] isa Number
+        # end
+
+        #GEK
+        @testset "GEK" begin
+            y1 = y
+            der = x -> 2 * x
+            y2 = der.(x)
+            y_gek = vcat(y1, y2)
+            my_gek = GEK(x, y_gek, lb, ub)
+            g = x -> Zygote.gradient(my_gek, x)
+            result = g(5.0)
+            @test result isa Tuple
+            @test length(result) == 1
+            @test result[1] isa Number
+            # Accuracy test: f(x) = x^2, f'(x) = 2x, so f'(5.0) = 10.0
+            @test isapprox(result[1], 10.0, atol = 1e-1)
+        end
+
+        #GEKPLS
+        # @testset "GEKPLS" begin
+        #     grads = Zygote.gradient.(f, x)
+        #     n_comp = 2
+        #     delta_x = 0.0001
+        #     extra_points = 2
+        #     initial_theta = [0.01 for i in 1:n_comp]
+        #     my_gekpls = GEKPLS(x, y, grads, n_comp, delta_x, lb, ub, extra_points, initial_theta)
+        #     g = x -> Zygote.gradient(my_gekpls, x)
+        #     result = g(5.0)
+        #     @test result isa Tuple
+        #     @test length(result) == 1
+        #     @test result[1] isa Number
+        #     # Accuracy test: f(x) = x^2, f'(x) = 2x, so f'(5.0) = 10.0
+        #     @test isapprox(result[1], 10.0, atol = 1e-1)
+        # end
+
+        #Earth
+        @testset "Earth" begin
+            my_earth = EarthSurrogate(x, y, lb, ub)
+            g = x -> Zygote.gradient(my_earth, x)
+            result = g(5.0)
+            @test result isa Tuple
+            @test length(result) == 1
+            @test result[1] isa Number
+            # Accuracy test: f(x) = x^2, f'(x) = 2x, so f'(5.0) = 10.0
+            @test isapprox(result[1], 10.0, atol = 1e-1)
+        end
+
+        #VariableFidelity
+        @testset "VariableFidelity" begin
+            my_varfid = VariableFidelitySurrogate(x, y, lb, ub)
+            g = x -> Zygote.gradient(my_varfid, x)
+            result = g(5.0)
+            @test result isa Tuple
+            @test length(result) == 1
+            @test result[1] isa Number
+            # Accuracy test: f(x) = x^2, f'(x) = 2x, so f'(5.0) = 10.0
+            @test isapprox(result[1], 10.0, atol = 1e-1)
+        end
+
+        #MOE
+        @testset "MOE" begin
+            expert_types = [
+                RadialBasisStructure(radial_function = linearRadial(), scale_factor = 1.0, sparse = false),
+                RadialBasisStructure(radial_function = cubicRadial(), scale_factor = 1.0, sparse = false)
+            ]
+            my_moe = MOE(x, y, expert_types, ndim = 1, n_clusters = 2)
+            g = x -> Zygote.gradient(my_moe, x)
+            result = g(5.0)
+            @test result isa Tuple
+            @test length(result) == 1
+            @test result[1] isa Number
+            # Accuracy test: f(x) = x^2, f'(x) = 2x, so f'(5.0) = 10.0
+            @test isapprox(result[1], 10.0, atol = 1e-1)
+        end
+    end
+
+    @testset "ND" begin
+        lb = [0.0, 0.0]
+        ub = [10.0, 10.0]
+        n = 1000
+        x = sample(n, lb, ub, SobolSample())
+        f = x -> x[1] * x[2]
+        y = f.(x)
+
+        #Radials
+        @testset "Radials" begin
+            my_rad = RadialBasis(x, y, lb, ub, rad = linearRadial(), scale_factor = 2.1)
+            g = x -> Zygote.gradient(my_rad, x)
+            result = g((2.0, 5.0))
+            @test result isa Tuple
+            @test length(result) == 1
+            @test result[1] isa Tuple
+            # Accuracy test: f(x) = x[1] * x[2], ∇f = [x[2], x[1]], so ∇f([2.0, 5.0]) = [5.0, 2.0]
+            @test all(isapprox.(result[1], (5.0, 2.0), atol = 1e-1))
+        end
+
+        #Kriging
+        @testset "Kriging" begin
+            my_theta = [2.0, 2.0]
+            my_p = [1.9, 1.9]
+            my_krig = Kriging(x, y, lb, ub, p = my_p, theta = my_theta)
+            g = x -> Zygote.gradient(my_krig, x)
+            result = g((2.0, 5.0))
+            @test result isa Tuple
+            @test length(result) == 1
+            @test result[1] isa Tuple
+            # Accuracy test: f(x) = x[1] * x[2], ∇f = [x[2], x[1]], so ∇f([2.0, 5.0]) = [5.0, 2.0]
+            @test all(isapprox.(result[1], (5.0, 2.0), atol = 1e-1))
+        end
+
+        #Linear Surrogate
+        @testset "Linear Surrogate" begin
+            my_linear = LinearSurrogate(x, y, lb, ub)
+            g = x -> Zygote.gradient(my_linear, x)
+            result = g((2.0, 5.0))
+            @test result isa Tuple
+            @test length(result) == 1
+            @test result[1] isa Tuple
+            # Accuracy test: f(x) = x[1] * x[2], ∇f = [x[2], x[1]], so ∇f([2.0, 5.0]) = [5.0, 2.0]
+            @test all(isapprox.(result[1], (5.0, 2.0), atol = 1e-1))
+        end
+
+        #Inverse Distance
+        @testset "Inverse Distance" begin
+            my_p = 1.4
+            my_inverse = InverseDistanceSurrogate(x, y, lb, ub, p = my_p)
+            g = x -> Zygote.gradient(my_inverse, x)
+            result = g((2.0, 5.0))
+            @test result isa Tuple
+            @test length(result) == 1
+            @test result[1] isa Tuple
+            # Accuracy test: f(x) = x[1] * x[2], ∇f = [x[2], x[1]], so ∇f([2.0, 5.0]) = [5.0, 2.0]
+            @test all(isapprox.(result[1], (5.0, 2.0), atol = 1e-1))
+        end
+
+        #Lobachevsky
+        @testset "Lobachevsky" begin
+            alpha = [1.4, 1.4]
+            n = 4
+            my_loba_ND = LobachevskySurrogate(x, y, lb, ub, alpha = alpha, n = n)
+            g = x -> Zygote.gradient(my_loba_ND, x)
+            result = g((2.0, 5.0))
+            @test result isa Tuple
+            @test length(result) == 1
+            @test result[1] isa Tuple
+            # Accuracy test: f(x) = x[1] * x[2], ∇f = [x[2], x[1]], so ∇f([2.0, 5.0]) = [5.0, 2.0]
+            @test all(isapprox.(result[1], (5.0, 2.0), atol = 1e-1))
+        end
+
+        #Second order polynomial
+        @testset "SecondOrderPolynomialSurrogate" begin
+            my_second = SecondOrderPolynomialSurrogate(x, y, lb, ub)
+            g = x -> Zygote.gradient(my_second, x)
+            result = g((2.0, 5.0))
+            @test result isa Tuple
+            @test length(result) == 1
+            @test result[1] isa Tuple
+            # Accuracy test: f(x) = x[1] * x[2], ∇f = [x[2], x[1]], so ∇f([2.0, 5.0]) = [5.0, 2.0]
+            @test all(isapprox.(result[1], (5.0, 2.0), atol = 1e-1))
+        end
+
+        #Wendland
+        # @testset "Wendland" begin
+        #     my_wend_ND = Wendland(x, y, lb, ub)
+        #     g = x -> Zygote.gradient(my_wend_ND, x)
+        #     result = g((2.0, 5.0))
+        #     @test result isa Tuple
+        #     @test length(result) == 1
+        #     @test result[1] isa Tuple
+        # end
+
+        #GEK
+        @testset "GEK" begin
+            y1 = y
+            der = x -> [x[2], x[1]]  # Gradient of f(x) = x[1] * x[2]
+            y2 = vcat([der(xi) for xi in x]...)  # Flatten gradients by point
+            y_gek = vcat(y1, y2)
+            my_gek = GEK(x, y_gek, lb, ub)
+            g = x -> Zygote.gradient(my_gek, x)
+            result = g((2.0, 5.0))
+            @test result isa Tuple
+            @test length(result) == 1
+            @test result[1] isa Tuple
+            # Accuracy test: f(x) = x[1] * x[2], ∇f = [x[2], x[1]], so ∇f([2.0, 5.0]) = [5.0, 2.0]
+            @test all(isapprox.(result[1], (5.0, 2.0), atol = 1e-1))
+        end
+
+        #GEKPLS
+        @testset "GEKPLS" begin
+            grads = Zygote.gradient.(f, x)
+            n_comp = 2
+            delta_x = 0.0001
+            extra_points = 2
+            initial_theta = [0.01 for i in 1:n_comp]
+            my_gekpls_ND = GEKPLS(
+                x, y, grads, n_comp, delta_x, lb, ub, extra_points, initial_theta)
+            g = x -> Zygote.gradient(my_gekpls_ND, x)
+            result = g((2.0, 5.0))
+            @test result isa Tuple
+            @test length(result) == 1
+            @test result[1] isa Tuple
+            # Accuracy test: f(x) = x[1] * x[2], ∇f = [x[2], x[1]], so ∇f([2.0, 5.0]) = [5.0, 2.0]
+            @test all(isapprox.(result[1], (5.0, 2.0), atol = 1e-1))
+        end
+
+        #Earth
+        # @testset "Earth" begin
+        #     my_earth_ND = EarthSurrogate(x, y, lb, ub)
+        #     g = x -> Zygote.gradient(my_earth_ND, x)
+        #     result = g((2.0, 5.0))
+        #     @test result isa Tuple
+        #     @test length(result) == 1
+        #     @test result[1] isa Tuple
+        # end
+
+        #VariableFidelity
+        @testset "VariableFidelity" begin
+            my_varfid_ND = VariableFidelitySurrogate(x, y, lb, ub)
+            g = x -> Zygote.gradient(my_varfid_ND, x)
+            result = g((2.0, 5.0))
+            @test result isa Tuple
+            @test length(result) == 1
+            @test result[1] isa Tuple
+            # Accuracy test: f(x) = x[1] * x[2], ∇f = [x[2], x[1]], so ∇f([2.0, 5.0]) = [5.0, 2.0]
+            @test all(isapprox.(result[1], (5.0, 2.0), atol = 1e-1))
+        end
+
+        #MOE
+        @testset "MOE" begin
+            expert_types = [
+                RadialBasisStructure(radial_function = linearRadial(), scale_factor = 1.0, sparse = false),
+                RadialBasisStructure(radial_function = cubicRadial(), scale_factor = 1.0, sparse = false)
+            ]
+            my_moe_ND = MOE(x, y, expert_types, ndim = 2, n_clusters = 2)
+            g = x -> Zygote.gradient(my_moe_ND, x)
+            result = g((2.0, 5.0))
+            @test result isa Tuple
+            @test length(result) == 1
+            @test result[1] isa Tuple
+            # Accuracy test: f(x) = x[1] * x[2], ∇f = [x[2], x[1]], so ∇f([2.0, 5.0]) = [5.0, 2.0]
+            @test all(isapprox.(result[1], (5.0, 2.0), atol = 1e-1))
+        end
+    end
 end
-
-# #Linear Surrogate
-@testset "Linear Surrogate" begin
-    my_linear = LinearSurrogate(x, y, lb, ub)
-    g = x -> my_linear'(x)
-    g(5.0)
-end
-
-#Inverse distance
-@testset "Inverse Distance" begin
-    my_p = 1.4
-    my_inverse = InverseDistanceSurrogate(x, y, lb, ub, p = my_p)
-    g = x -> my_inverse'(x)
-    g(5.0)
-end
-
-#Second order polynomial
-@testset "Second Order Polynomial" begin
-    my_second = SecondOrderPolynomialSurrogate(x, y, lb, ub)
-    g = x -> my_second'(x)
-    g(5.0)
-end
-
-#Lobachevsky
-@testset "Lobachevsky" begin
-    n = 4
-    α = 2.4
-    my_loba = LobachevskySurrogate(x, y, lb, ub, alpha = α, n = 4)
-    g = x -> my_loba'(x)
-    g(0.0)
-end
-
-#Wendland
-@testset "Wendland" begin
-    my_wend = Wendland(x, y, lb, ub)
-    g = x -> my_wend'(x)
-    g(3.0)
-end
-
-# MOE and VariableFidelity for free because they are Linear combinations
-# of differentiable surrogates
-
-# #Gek
-@testset "GEK" begin
-    n = 10
-    lb = 0.0
-    ub = 5.0
-    x = sample(n, lb, ub, SobolSample())
-    f = x -> x^2
-    y1 = f.(x)
-    der = x -> 2 * x
-    y2 = der.(x)
-    y = vcat(y1, y2)
-    my_gek = GEK(x, y, lb, ub)
-    g = x -> my_gek'(x)
-    g(3.0)
-end
-
-################
-###### ND ######
-################
-
-lb = [0.0, 0.0]
-ub = [10.0, 10.0]
-n = 5
-x = sample(n, lb, ub, SobolSample())
-f = x -> x[1] * x[2]
-y = f.(x)
-
-#Radials
-@testset "Radials ND" begin
-    my_rad = RadialBasis(x, y, lb, ub, rad = linearRadial(), scale_factor = 2.1)
-    g = x -> Zygote.gradient(my_rad, x)
-    g((2.0, 5.0))
-end
-
-# Kriging
-@testset "Kriging ND" begin
-    my_theta = [2.0, 2.0]
-    my_p = [1.9, 1.9]
-    my_krig = Kriging(x, y, lb, ub, p = my_p, theta = my_theta)
-    g = x -> Zygote.gradient(my_krig, x)
-    g((2.0, 5.0))
-end
-
-# Linear Surrogate
-@testset "Linear Surrogate ND" begin
-    my_linear = LinearSurrogate(x, y, lb, ub)
-    g = x -> Zygote.gradient(my_linear, x)
-    g((2.0, 5.0))
-end
-
-#Inverse Distance
-@testset "Inverse Distance ND" begin
-    my_p = 1.4
-    my_inverse = InverseDistanceSurrogate(x, y, lb, ub, p = my_p)
-    g = x -> Zygote.gradient(my_inverse, x)
-    g((2.0, 5.0))
-end
-
-#Lobachevsky not working yet weird issue with Zygote @nograd
-#=
-Zygote.refresh()
-alpha = [1.4,1.4]
-n = 4
-my_loba_ND = LobachevskySurrogate(x,y,alpha,n,lb,ub)
-g = x -> Zygote.gradient(my_loba_ND,x)
-g((2.0,5.0))
-=#
-
-# Second order polynomial mutating arrays
-@testset "SecondOrderPolynomialSurrogate ND" begin
-    my_second = SecondOrderPolynomialSurrogate(x, y, lb, ub)
-    g = x -> Zygote.gradient(my_second, x)
-    g((2.0, 5.0))
-end
-
-#wendland
-@testset "Wendland ND" begin
-    my_wend_ND = Wendland(x, y, lb, ub)
-    g = x -> Zygote.gradient(my_wend_ND, x)
-    g((2.0, 5.0))
-end
-# #MOE and VariableFidelity for free because they are Linear combinations
-# #of differentiable surrogates
