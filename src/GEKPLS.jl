@@ -97,6 +97,24 @@ end
 
     Take in a set of one or more points and provide predicted approximate outputs (predictor).
 """
+function (g::GEKPLS)(x_vec::Number)
+    # Check to make sure dimensions of input matches expected dimension of surrogate
+    _check_dimension(g, x_vec)
+    # Convert scalar to tuple format for prep_data_for_pred
+    x_vec_tuple = [(x_vec,)]
+    X_test = prep_data_for_pred(x_vec_tuple)
+    n_eval, n_features_x = size(X_test)
+    X_cont = (X_test .- g.X_offset) ./ g.X_scale
+    dx = differences(X_cont, g.X_after_std)
+    pred_d = componentwise_distance_PLS(dx, "squar_exp", g.num_components, g.pls_mean)
+    nt = size(g.X_after_std, 1)
+    r = transpose(reshape(squar_exp(g.theta, pred_d), (nt, n_eval)))
+    f = ones(n_eval, 1)
+    y_ = (f * g.beta) + (r * g.gamma)
+    y = g.y_mean .+ g.y_std * y_
+    return y[1]
+end
+
 function (g::GEKPLS)(x_vec)
     _check_dimension(g, x_vec)
     X_test = prep_data_for_pred(x_vec)
@@ -195,7 +213,7 @@ function _ge_compute_pls(X, y, n_comp, grads, delta_x, xlimits, extra_points)
     for i in 1:nt
         if dim >= 3
             bb_vals = circshift(boxbehnken(dim, 1), 1)
-        else
+        elseif dim == 2
             bb_vals = [0.0 0.0; #center
                        1.0 0.0; #right
                        0.0 1.0; #up
@@ -205,6 +223,10 @@ function _ge_compute_pls(X, y, n_comp, grads, delta_x, xlimits, extra_points)
                        -1.0 1.0; #left up
                        -1.0 -1.0; #left down
                        1.0 -1.0]
+        else # dim == 1
+            bb_vals = [0.0; #center
+                       1.0; #right
+                       -1.0] #left
         end
         _X = zeros((size(bb_vals)[1], dim))
         _y = zeros((size(bb_vals)[1], 1))

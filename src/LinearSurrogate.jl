@@ -48,6 +48,11 @@ function SurrogatesBase.update!(my_linear::LinearSurrogate, new_x, new_y)
     nothing
 end
 
+function (lin::LinearSurrogate)(val::Number)
+    _check_dimension(lin, val)
+    return lin.coeff[1]*val
+end
+
 function (lin::LinearSurrogate)(val)
     # Check to make sure dimensions of input matches expected dimension of surrogate
     _check_dimension(lin, val)
