@@ -110,13 +110,13 @@ using GaussianMixtures
         end
 
         #Earth
-        # @testset "Earth" begin
-        #     my_earth = EarthSurrogate(x, y, lb, ub)
-        #     g = x -> ForwardDiff.derivative(my_earth, x)
-        #     @test g(5.0) isa Number
-        #     # Accuracy test: f(x) = x^2, f'(x) = 2x, so f'(5.0) = 10.0
-        #     @test isapprox(g(5.0), 10.0, atol = 1e-1)
-        # end
+        @testset "Earth" begin
+            my_earth = EarthSurrogate(x, y, lb, ub)
+            g = x -> ForwardDiff.derivative(my_earth, x)
+            @test g(5.0) isa Number
+            # Accuracy test: f(x) = x^2, f'(x) = 2x, so f'(5.0) = 10.0
+            # @test isapprox(g(5.0), 10.0, atol = 1e-1)
+        end
 
         #VariableFidelity
         @testset "VariableFidelity" begin
@@ -246,13 +246,13 @@ using GaussianMixtures
         end
 
         #Earth
-        # @testset "Earth" begin
-        #     my_earth_ND = EarthSurrogate(x, y, lb, ub)
-        #     g = x -> ForwardDiff.gradient(my_earth_ND, x)
-        #     @test g([2.0, 5.0]) isa AbstractVector
-        #     # Accuracy test: f(x) = x[1] * x[2], ∇f = [x[2], x[1]], so ∇f([2.0, 5.0]) = [5.0, 2.0]
-        #     @test isapprox(g([2.0, 5.0]), [5.0, 2.0], atol = 1e-1)
-        # end
+        @testset "Earth" begin
+            my_earth_ND = EarthSurrogate(x[1:10], y[1:10], lb, ub)
+            g = x -> ForwardDiff.gradient(my_earth_ND, x)
+            @test g([2.0, 5.0]) isa AbstractVector
+            # Accuracy test: f(x) = x[1] * x[2], ∇f = [x[2], x[1]], so ∇f([2.0, 5.0]) = [5.0, 2.0]
+            # @test isapprox(g([2.0, 5.0]), [5.0, 2.0], atol = 1e-1)
+        end
 
         #VariableFidelity
         @testset "VariableFidelity" begin
@@ -410,16 +410,16 @@ end
         end
 
         #Earth
-        # @testset "Earth" begin
-        #     my_earth = EarthSurrogate(x, y, lb, ub)
-        #     g = x -> Zygote.gradient(my_earth, x)
-        #     result = g(5.0)
-        #     @test result isa Tuple
-        #     @test length(result) == 1
-        #     @test result[1] isa Number
-        #     # Accuracy test: f(x) = x^2, f'(x) = 2x, so f'(5.0) = 10.0
-        #     @test isapprox(result[1], 10.0, atol = 1e-1)
-        # end
+        @testset "Earth" begin
+            my_earth = EarthSurrogate(x, y, lb, ub)
+            g = x -> Zygote.gradient(my_earth, x)
+            result = g(5.0)
+            @test result isa Tuple
+            @test length(result) == 1
+            @test result[1] isa Number
+            # Accuracy test: f(x) = x^2, f'(x) = 2x, so f'(5.0) = 10.0
+            # @test isapprox(result[1], 10.0, atol = 1e-1)
+        end
 
         #VariableFidelity
         @testset "VariableFidelity" begin
@@ -582,14 +582,16 @@ end
         end
 
         #Earth
-        # @testset "Earth" begin
-        #     my_earth_ND = EarthSurrogate(x, y, lb, ub)
-        #     g = x -> Zygote.gradient(my_earth_ND, x)
-        #     result = g((2.0, 5.0))
-        #     @test result isa Tuple
-        #     @test length(result) == 1
-        #     @test result[1] isa Tuple
-        # end
+        @testset "Earth" begin
+            my_earth_ND = EarthSurrogate(x[1:10], y[1:10], lb, ub)
+            g = x -> Zygote.gradient(my_earth_ND, x)
+            result = g((2.0, 5.0))
+            @test result isa Tuple
+            @test length(result) == 1
+            @test result[1] isa Tuple
+            # Accuracy test: f(x) = x[1] * x[2], ∇f = [x[2], x[1]], so ∇f([2.0, 5.0]) = [5.0, 2.0]
+            # @test all(isapprox.(result[1], (5.0, 2.0), atol = 1e-1))
+        end
 
         #VariableFidelity
         @testset "VariableFidelity" begin
