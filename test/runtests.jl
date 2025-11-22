@@ -55,4 +55,7 @@ using Pkg
             include("SectionSampleTests.jl")
         end
     end
+    @time @safetestset "AD" begin
+        include("AD_compatibility.jl")
+    end
 end

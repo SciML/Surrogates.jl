@@ -53,7 +53,8 @@ function (wend::Wendland)(val)
     # Check to make sure dimensions of input matches expected dimension of surrogate
     _check_dimension(wend, val)
 
-    return sum(wend.coeff[j] * _wendland(val, wend.eps) for j in 1:length(wend.coeff))
+    return sum(wend.coeff[j] * _wendland(val .- wend.x[j], wend.eps)
+    for j in 1:length(wend.coeff))
 end
 
 function SurrogatesBase.update!(wend::Wendland, new_x, new_y)
