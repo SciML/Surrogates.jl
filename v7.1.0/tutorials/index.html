@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Basics · Surrogates.jl</title><meta name="title" content="Basics · Surrogates.jl"/><meta property="og:title" content="Basics · Surrogates.jl"/><meta property="twitter:title" content="Basics · Surrogates.jl"/><meta name="description" content="Documentation for Surrogates.jl."/><meta property="og:description" content="Documentation for Surrogates.jl."/><meta property="twitter:description" content="Documentation for Surrogates.jl."/><meta property="og:url" content="https://docs.sciml.ai/Surrogates/stable/tutorials/"/><meta property="twitter:url" content="https://docs.sciml.ai/Surrogates/stable/tutorials/"/><link rel="canonical" href="https://docs.sciml.ai/Surrogates/stable/tutorials/"/><script async src="https://www.googletagmanager.com/gtag/js?id=UA-90474609-3"></script><script>  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'UA-90474609-3', {'page_path': location.pathname + location.search + location.hash});
+</script><script data-outdated-warner src="../assets/warner.js"></script><link href="https://cdnjs.cloudflare.com/ajax/libs/lato-font/3.0.0/css/lato-font.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/juliamono/0.050/juliamono.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.8/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL=".."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../assets/documenter.js"></script><script src="../search_index.js"></script><script src="../siteinfo.js"></script><script src="../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/catppuccin-mocha.css" data-theme-name="catppuccin-mocha"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/catppuccin-macchiato.css" data-theme-name="catppuccin-macchiato"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/catppuccin-frappe.css" data-theme-name="catppuccin-frappe"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/catppuccin-latte.css" data-theme-name="catppuccin-latte"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../assets/themeswap.js"></script><link href="../assets/favicon.ico" rel="icon" type="image/x-icon"/></head><body><div id="documenter"><nav class="docs-sidebar"><a class="docs-logo" href="../"><img src="../assets/logo.png" alt="Surrogates.jl logo"/></a><div class="docs-package-name"><span class="docs-autofit"><a href="../">Surrogates.jl</a></span></div><button class="docs-search-query input is-rounded is-small is-clickable my-2 mx-auto py-1 px-2" id="documenter-search-query">Search docs (Ctrl + /)</button><ul class="docs-menu"><li><a class="tocitem" href="../">Surrogates.jl: Surrogate models and optimization for scientific machine learning</a></li><li><span class="tocitem">Tutorials</span><ul><li class="is-active"><a class="tocitem" href>Basics</a><ul class="internal"><li><a class="tocitem" href="#RBF"><span>RBF</span></a></li><li><a class="tocitem" href="#Kriging"><span>Kriging</span></a></li><li><a class="tocitem" href="#Lobachevsky-integral"><span>Lobachevsky integral</span></a></li><li><a class="tocitem" href="#NeuralSurrogate"><span>NeuralSurrogate</span></a></li></ul></li><li><a class="tocitem" href="../radials/">Radials</a></li><li><a class="tocitem" href="../kriging/">Kriging</a></li><li><a class="tocitem" href="../abstractgps/">Gaussian Process</a></li><li><a class="tocitem" href="../lobachevsky/">Lobachevsky</a></li><li><a class="tocitem" href="../LinearSurrogate/">Linear</a></li><li><a class="tocitem" href="../InverseDistance/">InverseDistance</a></li><li><a class="tocitem" href="../xgboost/">XGBoost</a></li><li><a class="tocitem" href="../secondorderpoly/">SecondOrderPolynomial</a></li><li><a class="tocitem" href="../neural/">NeuralSurrogate</a></li><li><a class="tocitem" href="../wendland/">Wendland</a></li><li><a class="tocitem" href="../polychaos/">Polynomial Chaos</a></li><li><a class="tocitem" href="../variablefidelity/">Variable Fidelity</a></li><li><a class="tocitem" href="../gek/">Gradient Enhanced Kriging</a></li><li><a class="tocitem" href="../gekpls/">GEKPLS</a></li><li><a class="tocitem" href="../moe/">MOE</a></li><li><a class="tocitem" href="../parallel/">Parallel Optimization</a></li></ul></li><li><span class="tocitem">User guide</span><ul><li><a class="tocitem" href="../samples/">Samples</a></li><li><a class="tocitem" href="../surrogate/">Surrogates</a></li><li><a class="tocitem" href="../optimizations/">Optimization</a></li></ul></li><li><span class="tocitem">Benchmarks</span><ul><li><a class="tocitem" href="../sphere_function/">Sphere function</a></li><li><a class="tocitem" href="../lp/">Lp norm</a></li><li><a class="tocitem" href="../rosenbrock/">Rosenbrock</a></li><li><a class="tocitem" href="../tensor_prod/">Tensor product</a></li><li><a class="tocitem" href="../cantilever/">Cantilever beam</a></li><li><a class="tocitem" href="../water_flow/">Water Flow function</a></li><li><a class="tocitem" href="../welded_beam/">Welded beam function</a></li><li><a class="tocitem" href="../BraninFunction/">Branin function</a></li><li><a class="tocitem" href="../ImprovedBraninFunction/">Improved Branin function</a></li><li><a class="tocitem" href="../ackley/">Ackley function</a></li><li><a class="tocitem" href="../gramacylee/">Gramacy &amp; Lee Function</a></li><li><a class="tocitem" href="../Salustowicz/">Salustowicz Benchmark</a></li><li><a class="tocitem" href="../multi_objective_opt/">Multi objective optimization</a></li></ul></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><a class="docs-sidebar-button docs-navbar-link fa-solid fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a><nav class="breadcrumb"><ul class="is-hidden-mobile"><li><a class="is-disabled">Tutorials</a></li><li class="is-active"><a href>Basics</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>Basics</a></li></ul></nav><div class="docs-right"><a class="docs-navbar-link" href="https://github.com/SciML/Surrogates.jl" title="View the repository on GitHub"><span class="docs-icon fa-brands"></span><span class="docs-label is-hidden-touch">GitHub</span></a><a class="docs-navbar-link" href="https://github.com/SciML/Surrogates.jl/blob/master/docs/src/tutorials.md" title="Edit source on GitHub"><span class="docs-icon fa-solid"></span></a><a class="docs-settings-button docs-navbar-link fa-solid fa-gear" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-article-toggle-button fa-solid fa-chevron-up" id="documenter-article-toggle-button" href="javascript:;" title="Collapse all docstrings"></a></div></header><article class="content" id="documenter-page"><h1 id="Surrogates-101"><a class="docs-heading-anchor" href="#Surrogates-101">Surrogates 101</a><a id="Surrogates-101-1"></a><a class="docs-heading-anchor-permalink" href="#Surrogates-101" title="Permalink"></a></h1><p>Let&#39;s start with something easy to get our hands dirty. Let&#39;s say we want to build a surrogate for <span>$f(x) = \log(x) \cdot x^2+x^3$</span>.</p><h2 id="RBF"><a class="docs-heading-anchor" href="#RBF">RBF</a><a id="RBF-1"></a><a class="docs-heading-anchor-permalink" href="#RBF" title="Permalink"></a></h2><p>We will first use the radial basis surrogate for demonstrations.</p><pre><code class="language-julia hljs"># Importing the package
+using Surrogates
+
+# Defining the function
+f = x -&gt; log(x) * x^2 + x^3
+
+# Sampling points from the function
+lb = 1.0
+ub = 10.0
+x = sample(50, lb, ub, SobolSample())
+y = f.(x)
+
+# Constructing the surrogate
+my_radial_basis = RadialBasis(x, y, lb, ub)
+
+# Predicting at x=5.4
+approx = my_radial_basis(5.4)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">206.83097750423224</code></pre><p>We can plot to see how well the surrogate performs compared to the true function.</p><pre><code class="language-julia hljs">using Plots
+
+plot(x, y, seriestype = :scatter, label = &quot;Sampled points&quot;,
+    xlims = (lb, ub), legend = :top)
+xs = 1.0:0.001:10.0
+plot!(xs, f.(xs), label = &quot;True function&quot;, legend = :top)
+plot!(xs, my_radial_basis.(xs); label = &quot;RBF&quot;, legend = :top)</code></pre><img src="eabfa70a.svg" alt="Example block output"/><p>It fits quite well! Now, let&#39;s now see an example in 2D.</p><pre><code class="language-julia hljs">using Surrogates
+using LinearAlgebra
+
+f = x -&gt; x[1] * x[2]
+
+lb = [1.0, 2.0]
+ub = [10.0, 8.5]
+x = sample(50, lb, ub, SobolSample())
+y = f.(x)
+
+my_radial_basis = RadialBasis(x, y, lb, ub)
+
+# Predicting at x=(1.0,1.4)
+approx = my_radial_basis((1.0, 1.4))</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">7.393838848775784</code></pre><h2 id="Kriging"><a class="docs-heading-anchor" href="#Kriging">Kriging</a><a id="Kriging-1"></a><a class="docs-heading-anchor-permalink" href="#Kriging" title="Permalink"></a></h2><p>Let&#39;s now use the Kriging surrogate, which is a single-output Gaussian process. This surrogate has a nice feature - not only does it approximate the solution at a point, it also calculates the standard error at such a point.</p><pre><code class="language-julia hljs">using Surrogates
+
+f = x -&gt; exp(-x) * x^2 + x^3
+
+lb = 0.0
+ub = 10.0
+x = sample(50, lb, ub, RandomSample())
+y = f.(x)
+
+p = 1.9
+my_krig = Kriging(x, y, lb, ub, p = p)
+
+# Predicting at x=5.4
+approx = my_krig(5.4)
+
+# Predicting error at x=5.4
+std_err = std_error_at_point(my_krig, 5.4)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">0.9706364875554234</code></pre><p>Let&#39;s now optimize the Kriging surrogate using the lower confidence bound method. This is just a one-liner:</p><pre><code class="language-julia hljs">surrogate_optimize!(
+    f, LCBS(), lb, ub, my_krig, RandomSample(); maxiters = 10, num_new_samples = 10)</code></pre><p>Surrogate optimization methods have two purposes: they both sample the space in unknown regions and look for the minima at the same time.</p><h2 id="Lobachevsky-integral"><a class="docs-heading-anchor" href="#Lobachevsky-integral">Lobachevsky integral</a><a id="Lobachevsky-integral-1"></a><a class="docs-heading-anchor-permalink" href="#Lobachevsky-integral" title="Permalink"></a></h2><p>The Lobachevsky surrogate has the nice feature of having a closed formula for its integral, which is something that other surrogates are missing. Let&#39;s compare it with QuadGK:</p><pre><code class="language-julia hljs">using Surrogates
+using QuadGK
+
+obj = x -&gt; 3 * x + log(x)
+a = 1.0
+b = 4.0
+x = sample(2000, a, b, SobolSample())
+y = obj.(x)
+alpha = 2.0
+n = 6
+my_loba = LobachevskySurrogate(x, y, a, b, alpha = alpha, n = n)
+
+#1D integral
+int_1D = lobachevsky_integral(my_loba, a, b)
+int = quadgk(obj, a, b)
+int_val_true = int[1] - int[2]
+println(int_1D)
+println(int_val_true)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">25.045177430962212
+25.04517738347907</code></pre><h2 id="NeuralSurrogate"><a class="docs-heading-anchor" href="#NeuralSurrogate">NeuralSurrogate</a><a id="NeuralSurrogate-1"></a><a class="docs-heading-anchor-permalink" href="#NeuralSurrogate" title="Permalink"></a></h2><p>Basic example of fitting a neural network on a simple function of two variables.</p><pre><code class="language-julia hljs">using Surrogates
+using Flux
+using Statistics
+
+f = x -&gt; x[1]^2 + x[2]^2
+# Flux models are in single precision by default.
+# Thus, single precision will also be used here for our training samples.
+bounds = Float32[-1.0, -1.0], Float32[1.0, 1.0]
+
+x_train = sample(500, bounds..., SobolSample())
+y_train = f.(x_train)
+
+# Perceptron with one hidden layer of 20 neurons.
+model = Chain(Dense(2, 20, relu), Dense(20, 1))
+
+# Training of the neural network
+learning_rate = 0.1
+optimizer = Descent(learning_rate)  # Simple gradient descent. See Flux documentation for other options.
+n_epochs = 50
+sgt = NeuralSurrogate(x_train, y_train, bounds..., model = model,
+    opt = optimizer, n_epochs = n_epochs)
+
+# Testing the new model
+x_test = sample(30, bounds..., RandomSample())
+test_error = mean(abs2, sgt(x)[1] - f(x) for x in x_test)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">0.097622015f0</code></pre></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../">« Surrogates.jl: Surrogate models and optimization for scientific machine learning</a><a class="docs-footer-nextpage" href="../radials/">Radials »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.16.0 on <span class="colophon-date" title="Saturday 22 November 2025 15:01">Saturday 22 November 2025</span>. Using Julia version 1.12.2.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
