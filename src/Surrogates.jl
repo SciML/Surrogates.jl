@@ -137,4 +137,7 @@ export XGBoostSurrogate
 export SVMSurrogate
 export MOE
 
+# Precompilation workloads
+include("precompilation.jl")
+
 end
