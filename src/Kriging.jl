@@ -131,7 +131,8 @@ function _calc_kriging_coeffs(x, y, p::Number, theta::Number)
     # singular, at the cost of slightly relaxing the interpolation condition
     # Derived from "An analytic comparison of regularization methods for Gaussian Processes"
     # by Mohammadi et al (https://arxiv.org/pdf/1602.00853.pdf)
-    λ = eigen(R).values
+    # Use Symmetric wrapper to ensure real eigenvalues for the symmetric correlation matrix
+    λ = eigvals(Symmetric(R))
     λmax = λ[end]
     λmin = λ[1]
 
@@ -140,7 +141,7 @@ function _calc_kriging_coeffs(x, y, p::Number, theta::Number)
     if λdiff ≥ 0
         nugget = λdiff / (κmax - 1)
     else
-        nugget = 0.0
+        nugget = zero(λdiff)
     end
 
     one = ones(eltype(x[1]), n)
@@ -208,7 +209,8 @@ function _calc_kriging_coeffs(x, y, p, theta)
     # singular, at the cost of slightly relaxing the interpolation condition
     # Derived from "An analytic comparison of regularization methods for Gaussian Processes"
     # by Mohammadi et al (https://arxiv.org/pdf/1602.00853.pdf)
-    λ = eigen(R).values
+    # Use Symmetric wrapper to ensure real eigenvalues for the symmetric correlation matrix
+    λ = eigvals(Symmetric(R))
 
     λmax = λ[end]
     λmin = λ[1]
@@ -218,7 +220,7 @@ function _calc_kriging_coeffs(x, y, p, theta)
     if λdiff ≥ 0
         nugget = λdiff / (κmax - 1)
     else
-        nugget = 0.0
+        nugget = zero(λdiff)
     end
 
     one = ones(eltype(x[1]), n)
