@@ -3,14 +3,24 @@ using Test
 using SafeTestsets
 using Pkg
 
-@testset "Surrogates" begin
-    @safetestset "Quality Assurance" begin
-        include("qa.jl")
-    end
+const GROUP = get(ENV, "GROUP", "All")
+
+# Don't run JET tests on prerelease Julia versions
+if GROUP == "NoPre" && isempty(VERSION.prerelease)
+    Pkg.activate("nopre")
+    Pkg.develop(PackageSpec(path = dirname(@__DIR__)))
+    Pkg.instantiate()
     @safetestset "JET Static Analysis" begin
-        include("jet.jl")
+        include("nopre/jet.jl")
     end
-    @testset "Extensions" begin
+end
+
+if GROUP == "All" || GROUP == "Core"
+    @testset "Surrogates" begin
+        @safetestset "Quality Assurance" begin
+            include("qa.jl")
+        end
+        @testset "Extensions" begin
         include("extensions.jl")
     end
     @testset "Algorithms" begin
@@ -60,5 +70,6 @@ using Pkg
     end
     @time @safetestset "AD" begin
         include("AD_compatibility.jl")
+    end
     end
 end
