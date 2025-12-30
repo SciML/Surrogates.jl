@@ -29,6 +29,11 @@ jobs:
           - "pre"
         group:
           - Core
+          - NoPre
+        exclude:
+          # Don't run NoPre group on prerelease Julia (JET compatibility issues)
+          - group: NoPre
+            version: "pre"
     uses: "SciML/.github/.github/workflows/tests.yml@v1"
     with:
       julia-version: "${{ matrix.version }}"
