@@ -29,6 +29,11 @@ jobs:
           - "pre"
         group:
           - Core
+          - QA
+        exclude:
+          # Don't run QA tests on prerelease Julia
+          - version: "pre"
+            group: QA
     uses: "SciML/.github/.github/workflows/tests.yml@v1"
     with:
       julia-version: "${{ matrix.version }}"
