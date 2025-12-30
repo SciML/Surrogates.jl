@@ -71,5 +71,8 @@ if GROUP == "All" || GROUP == "Core"
     @time @safetestset "AD" begin
         include("AD_compatibility.jl")
     end
+    @time @safetestset "Interface Compatibility" begin
+        include("interface_tests.jl")
+    end
     end
 end
