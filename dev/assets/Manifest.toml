@@ -2,7 +2,7 @@
 
 julia_version = "1.12.3"
 manifest_format = "2.0"
-project_hash = "ec37b0e972a4cf2382645ecf2ce6ffee27d74bae"
+project_hash = "b9a8f15a9cc54af21a36604c2266a7d177316eb6"
 
 [[deps.ANSIColoredPrinters]]
 git-tree-sha1 = "574baf8110975760d391c710b6341da1afa48d8c"
@@ -1348,10 +1348,10 @@ version = "1.41.3"
     Unitful = "1986cc42-f94f-5a68-af5c-568840ba703d"
 
 [[deps.PolyChaos]]
-deps = ["AdaptiveRejectionSampling", "Combinatorics", "Distributions", "FFTW", "GaussQuadrature", "LinearAlgebra", "QuadGK", "SparseArrays", "SpecialFunctions", "StaticArrays", "Statistics", "Test"]
-git-tree-sha1 = "a04e721292aaa645d042d279355debd2905fe05e"
+deps = ["AdaptiveRejectionSampling", "Combinatorics", "Distributions", "FFTW", "GaussQuadrature", "LinearAlgebra", "QuadGK", "SparseArrays", "SpecialFunctions", "Statistics"]
+git-tree-sha1 = "2688e5ac099988e18b06a361242005ad00d0ff3f"
 uuid = "8d666b04-775d-5f6e-b778-5ac7c70f65a3"
-version = "0.2.11"
+version = "1.0.0"
 
 [[deps.PrecompileTools]]
 deps = ["Preferences"]
@@ -1429,10 +1429,10 @@ version = "2.11.2"
     Enzyme = "7da242da-08ed-463a-9acd-ee780be4f1d9"
 
 [[deps.QuasiMonteCarlo]]
-deps = ["Accessors", "ConcreteStructs", "LatticeRules", "LinearAlgebra", "Primes", "Random", "Sobol"]
-git-tree-sha1 = "c030fe979d333a7a3ece7fced3ac9cf9f5b888e8"
+deps = ["Accessors", "ConcreteStructs", "LatticeRules", "LinearAlgebra", "PrecompileTools", "Primes", "Random", "Sobol"]
+git-tree-sha1 = "017a6731a1754173013b98f458adb631e368a9d2"
 uuid = "8a4e6c94-4038-4cdc-81c3-7e6ffdb2a71b"
-version = "0.3.4"
+version = "0.3.5"
 weakdeps = ["Distributions"]
 
     [deps.QuasiMonteCarlo.extensions]
@@ -1506,9 +1506,9 @@ uuid = "ea8e919c-243c-51af-8825-aaa63cd721ce"
 version = "0.7.0"
 
 [[deps.SciMLPublic]]
-git-tree-sha1 = "ed647f161e8b3f2973f24979ec074e8d084f1bee"
+git-tree-sha1 = "0ba076dbdce87ba230fff48ca9bca62e1f345c9b"
 uuid = "431bcebd-1456-4ced-9d72-93c2757fff0b"
-version = "1.0.0"
+version = "1.0.1"
 
 [[deps.ScikitLearnBase]]
 deps = ["LinearAlgebra", "Random", "Statistics"]
@@ -1628,9 +1628,9 @@ version = "1.0.4"
 
 [[deps.StaticArrays]]
 deps = ["LinearAlgebra", "PrecompileTools", "Random", "StaticArraysCore"]
-git-tree-sha1 = "b8693004b385c842357406e3af647701fe783f98"
+git-tree-sha1 = "eee1b9ad8b29ef0d936e3ec9838c7ec089620308"
 uuid = "90137ffa-7385-5640-81b9-e52037218182"
-version = "1.9.15"
+version = "1.9.16"
 weakdeps = ["ChainRulesCore", "Statistics"]
 
     [deps.StaticArrays.extensions]
@@ -1730,7 +1730,7 @@ version = "7.8.3+2"
 
 [[deps.Surrogates]]
 deps = ["ChainRulesCore", "Distributions", "ExtendableSparse", "GLM", "IterativeSolvers", "LinearAlgebra", "PrecompileTools", "QuasiMonteCarlo", "Random", "SparseArrays", "Statistics", "SurrogatesBase", "Zygote"]
-path = "/home/chrisrackauckas/github-runners/deepsea4-25/_work/Surrogates.jl/Surrogates.jl"
+path = "/home/chrisrackauckas/github-runners/deepsea4-3/_work/Surrogates.jl/Surrogates.jl"
 uuid = "6fc51010-71bc-11e9-0e15-a3fcc6593c49"
 version = "7.2.0"
 
