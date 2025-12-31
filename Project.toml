@@ -1,6 +1,6 @@
 name = "Surrogates"
 uuid = "6fc51010-71bc-11e9-0e15-a3fcc6593c49"
-version = "7.2.0"
+version = "7.3.0"
 authors = ["SciML"]
 
 [deps]
