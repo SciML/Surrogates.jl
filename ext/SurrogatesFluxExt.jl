@@ -25,9 +25,11 @@ using Flux
   - `opt`: Optimiser defined using Optimisers.jl
   - `n_epochs`: number of epochs for training
 """
-function NeuralSurrogate(x, y, lb, ub; model = Chain(Dense(length(x[1]), 1)),
-        loss = Flux.mse, opt = Optimisers.Adam(1e-3),
-        n_epochs::Int = 10)
+function NeuralSurrogate(
+        x, y, lb, ub; model = Chain(Dense(length(x[1]), 1)),
+        loss = Flux.mse, opt = Optimisers.Adam(1.0e-3),
+        n_epochs::Int = 10
+    )
     if x isa Tuple
         x = reduce(hcat, x)'
     elseif x isa Vector{<:Tuple}
@@ -93,7 +95,7 @@ function SurrogatesBase.update!(my_n::NeuralSurrogate, x_new, y_new)
     my_n.ps = Flux.trainable(my_n.model)
     my_n.x = hcat(my_n.x, x_new)
     my_n.y = hcat(my_n.y, y_new)
-    nothing
+    return nothing
 end
 
 end # module

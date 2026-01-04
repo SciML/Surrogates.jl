@@ -56,9 +56,11 @@ using Surrogates
 
     @testset "BigFloat Support - ND Surrogates" begin
         # Test data with BigFloat for N-dimensional
-        x_bf = [(BigFloat(1.0), BigFloat(2.0)), (BigFloat(2.0), BigFloat(3.0)),
+        x_bf = [
+            (BigFloat(1.0), BigFloat(2.0)), (BigFloat(2.0), BigFloat(3.0)),
             (BigFloat(3.0), BigFloat(1.0)), (BigFloat(4.0), BigFloat(4.0)),
-            (BigFloat(5.0), BigFloat(2.0))]
+            (BigFloat(5.0), BigFloat(2.0)),
+        ]
         y_bf = BigFloat[0.5, 1.2, 2.1, 2.8, 3.5]
         lb_bf = (BigFloat(0.0), BigFloat(0.0))
         ub_bf = (BigFloat(6.0), BigFloat(5.0))

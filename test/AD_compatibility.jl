@@ -20,7 +20,7 @@ using GaussianMixtures
             g = x -> ForwardDiff.derivative(my_rad, x)
             @test g(5.0) isa Number
             # Accuracy test: f(x) = x^2, f'(x) = 2x, so f'(5.0) = 10.0
-            @test isapprox(g(5.0), 10.0, atol = 1e-1)
+            @test isapprox(g(5.0), 10.0, atol = 1.0e-1)
         end
 
         #Kriging
@@ -30,7 +30,7 @@ using GaussianMixtures
             g = x -> ForwardDiff.derivative(my_krig, x)
             @test g(5.0) isa Number
             # Accuracy test: f(x) = x^2, f'(x) = 2x, so f'(5.0) = 10.0
-            @test isapprox(g(5.0), 10.0, atol = 1e-1)
+            @test isapprox(g(5.0), 10.0, atol = 1.0e-1)
         end
 
         #Linear Surrogate
@@ -60,7 +60,7 @@ using GaussianMixtures
             g = x -> ForwardDiff.derivative(my_loba, x)
             @test g(5.0) isa Number
             # Accuracy test: f(x) = x^2, f'(x) = 2x, so f'(5.0) = 10.0
-            @test isapprox(g(5.0), 10.0, atol = 1e-1)
+            @test isapprox(g(5.0), 10.0, atol = 1.0e-1)
         end
 
         #Second order polynomial
@@ -69,7 +69,7 @@ using GaussianMixtures
             g = x -> ForwardDiff.derivative(my_second, x)
             @test g(5.0) isa Number
             # Accuracy test: f(x) = x^2, f'(x) = 2x, so f'(5.0) = 10.0
-            @test isapprox(g(5.0), 10.0, atol = 1e-1)
+            @test isapprox(g(5.0), 10.0, atol = 1.0e-1)
         end
 
         #Wendland
@@ -102,11 +102,12 @@ using GaussianMixtures
             extra_points = 1
             initial_theta = [0.01 for i in 1:n_comp]
             my_gekpls = GEKPLS(
-                x, y, grads, n_comp, delta_x, lb, ub, extra_points, initial_theta)
+                x, y, grads, n_comp, delta_x, lb, ub, extra_points, initial_theta
+            )
             g = x -> ForwardDiff.derivative(my_gekpls, x)
             @test g(5.0) isa Number
             # Accuracy test: f(x) = x^2, f'(x) = 2x, so f'(5.0) = 10.0
-            @test isapprox(g(5.0), 10.0, atol = 1e-1)
+            @test isapprox(g(5.0), 10.0, atol = 1.0e-1)
         end
 
         #Earth
@@ -124,20 +125,20 @@ using GaussianMixtures
             g = x -> ForwardDiff.derivative(my_varfid, x)
             @test g(5.0) isa Number
             # Accuracy test: f(x) = x^2, f'(x) = 2x, so f'(5.0) = 10.0
-            @test isapprox(g(5.0), 10.0, atol = 1e-1)
+            @test isapprox(g(5.0), 10.0, atol = 1.0e-1)
         end
 
         #MOE
         @testset "MOE" begin
             expert_types = [
                 RadialBasisStructure(radial_function = linearRadial(), scale_factor = 1.0, sparse = false),
-                RadialBasisStructure(radial_function = cubicRadial(), scale_factor = 1.0, sparse = false)
+                RadialBasisStructure(radial_function = cubicRadial(), scale_factor = 1.0, sparse = false),
             ]
             my_moe = MOE(x, y, expert_types, ndim = 1, n_clusters = 2)
             g = x -> ForwardDiff.derivative(my_moe, x)
             @test g(5.0) isa Number
             # Accuracy test: f(x) = x^2, f'(x) = 2x, so f'(5.0) = 10.0
-            @test isapprox(g(5.0), 10.0, atol = 1e-1)
+            @test isapprox(g(5.0), 10.0, atol = 1.0e-1)
         end
     end
 
@@ -155,7 +156,7 @@ using GaussianMixtures
             g = x -> ForwardDiff.gradient(my_rad, x)
             @test g([2.0, 5.0]) isa AbstractVector
             # Accuracy test: f(x) = x[1] * x[2], ∇f = [x[2], x[1]], so ∇f([2.0, 5.0]) = [5.0, 2.0]
-            @test isapprox(g([2.0, 5.0]), [5.0, 2.0], atol = 1e-1)
+            @test isapprox(g([2.0, 5.0]), [5.0, 2.0], atol = 1.0e-1)
         end
 
         #Kriging
@@ -166,7 +167,7 @@ using GaussianMixtures
             g = x -> ForwardDiff.gradient(my_krig, x)
             @test g([2.0, 5.0]) isa AbstractVector
             # Accuracy test: f(x) = x[1] * x[2], ∇f = [x[2], x[1]], so ∇f([2.0, 5.0]) = [5.0, 2.0]
-            @test isapprox(g([2.0, 5.0]), [5.0, 2.0], atol = 1e-1)
+            @test isapprox(g([2.0, 5.0]), [5.0, 2.0], atol = 1.0e-1)
         end
 
         #Linear Surrogate
@@ -196,7 +197,7 @@ using GaussianMixtures
             g = x -> ForwardDiff.gradient(my_loba_ND, x)
             @test g([2.0, 5.0]) isa AbstractVector
             # Accuracy test: f(x) = x[1] * x[2], ∇f = [x[2], x[1]], so ∇f([2.0, 5.0]) = [5.0, 2.0]
-            @test isapprox(g([2.0, 5.0]), [5.0, 2.0], atol = 1e-1)
+            @test isapprox(g([2.0, 5.0]), [5.0, 2.0], atol = 1.0e-1)
         end
 
         #Second order polynomial
@@ -205,7 +206,7 @@ using GaussianMixtures
             g = x -> ForwardDiff.gradient(my_second, x)
             @test g([2.0, 5.0]) isa AbstractVector
             # Accuracy test: f(x) = x[1] * x[2], ∇f = [x[2], x[1]], so ∇f([2.0, 5.0]) = [5.0, 2.0]
-            @test isapprox(g([2.0, 5.0]), [5.0, 2.0], atol = 1e-1)
+            @test isapprox(g([2.0, 5.0]), [5.0, 2.0], atol = 1.0e-1)
         end
 
         #Wendland
@@ -238,11 +239,12 @@ using GaussianMixtures
             extra_points = 2
             initial_theta = [0.01 for i in 1:n_comp]
             my_gekpls_ND = GEKPLS(
-                x, y, grads, n_comp, delta_x, lb, ub, extra_points, initial_theta)
+                x, y, grads, n_comp, delta_x, lb, ub, extra_points, initial_theta
+            )
             g = x -> ForwardDiff.gradient(my_gekpls_ND, x)
             @test g([2.0, 5.0]) isa AbstractVector
             # Accuracy test: f(x) = x[1] * x[2], ∇f = [x[2], x[1]], so ∇f([2.0, 5.0]) = [5.0, 2.0]
-            @test isapprox(g([2.0, 5.0]), [5.0, 2.0], atol = 1e-1)
+            @test isapprox(g([2.0, 5.0]), [5.0, 2.0], atol = 1.0e-1)
         end
 
         #Earth
@@ -260,20 +262,20 @@ using GaussianMixtures
             g = x -> ForwardDiff.gradient(my_varfid_ND, x)
             @test g([2.0, 5.0]) isa AbstractVector
             # Accuracy test: f(x) = x[1] * x[2], ∇f = [x[2], x[1]], so ∇f([2.0, 5.0]) = [5.0, 2.0]
-            @test isapprox(g([2.0, 5.0]), [5.0, 2.0], atol = 1e-1)
+            @test isapprox(g([2.0, 5.0]), [5.0, 2.0], atol = 1.0e-1)
         end
 
         #MOE
         @testset "MOE" begin
             expert_types = [
                 RadialBasisStructure(radial_function = linearRadial(), scale_factor = 1.0, sparse = false),
-                RadialBasisStructure(radial_function = cubicRadial(), scale_factor = 1.0, sparse = false)
+                RadialBasisStructure(radial_function = cubicRadial(), scale_factor = 1.0, sparse = false),
             ]
             my_moe_ND = MOE(x, y, expert_types, ndim = 2, n_clusters = 2)
             g = x -> ForwardDiff.gradient(my_moe_ND, x)
             @test g([2.0, 5.0]) isa AbstractVector
             # Accuracy test: f(x) = x[1] * x[2], ∇f = [x[2], x[1]], so ∇f([2.0, 5.0]) = [5.0, 2.0]
-            @test isapprox(g([2.0, 5.0]), [5.0, 2.0], atol = 1e-1)
+            @test isapprox(g([2.0, 5.0]), [5.0, 2.0], atol = 1.0e-1)
         end
     end
 end
@@ -296,7 +298,7 @@ end
             @test length(result) == 1
             @test result[1] isa Number
             # Accuracy test: f(x) = x^2, f'(x) = 2x, so f'(5.0) = 10.0
-            @test isapprox(result[1], 10.0, atol = 1e-1)
+            @test isapprox(result[1], 10.0, atol = 1.0e-1)
         end
 
         #Kriging
@@ -309,7 +311,7 @@ end
             @test length(result) == 1
             @test result[1] isa Number
             # Accuracy test: f(x) = x^2, f'(x) = 2x, so f'(5.0) = 10.0
-            @test isapprox(result[1], 10.0, atol = 1e-1)
+            @test isapprox(result[1], 10.0, atol = 1.0e-1)
         end
 
         #Linear Surrogate
@@ -348,7 +350,7 @@ end
             @test length(result) == 1
             @test result[1] isa Number
             # Accuracy test: f(x) = x^2, f'(x) = 2x, so f'(5.0) = 10.0
-            @test isapprox(result[1], 10.0, atol = 1e-1)
+            @test isapprox(result[1], 10.0, atol = 1.0e-1)
         end
 
         #Second order polynomial
@@ -360,7 +362,7 @@ end
             @test length(result) == 1
             @test result[1] isa Number
             # Accuracy test: f(x) = x^2, f'(x) = 2x, so f'(5.0) = 10.0
-            @test isapprox(result[1], 10.0, atol = 1e-1)
+            @test isapprox(result[1], 10.0, atol = 1.0e-1)
         end
 
         #Wendland
@@ -399,14 +401,15 @@ end
             extra_points = 2
             initial_theta = [0.01 for i in 1:n_comp]
             my_gekpls = GEKPLS(
-                x, y, grads, n_comp, delta_x, lb, ub, extra_points, initial_theta)
+                x, y, grads, n_comp, delta_x, lb, ub, extra_points, initial_theta
+            )
             g = x -> Zygote.gradient(my_gekpls, x)
             result = g(5.0)
             @test result isa Tuple
             @test length(result) == 1
             @test result[1] isa Number
             # Accuracy test: f(x) = x^2, f'(x) = 2x, so f'(5.0) = 10.0
-            @test isapprox(result[1], 10.0, atol = 1e-1)
+            @test isapprox(result[1], 10.0, atol = 1.0e-1)
         end
 
         #Earth
@@ -430,14 +433,14 @@ end
             @test length(result) == 1
             @test result[1] isa Number
             # Accuracy test: f(x) = x^2, f'(x) = 2x, so f'(5.0) = 10.0
-            @test isapprox(result[1], 10.0, atol = 1e-1)
+            @test isapprox(result[1], 10.0, atol = 1.0e-1)
         end
 
         #MOE
         @testset "MOE" begin
             expert_types = [
                 RadialBasisStructure(radial_function = linearRadial(), scale_factor = 1.0, sparse = false),
-                RadialBasisStructure(radial_function = cubicRadial(), scale_factor = 1.0, sparse = false)
+                RadialBasisStructure(radial_function = cubicRadial(), scale_factor = 1.0, sparse = false),
             ]
             my_moe = MOE(x, y, expert_types, ndim = 1, n_clusters = 2)
             g = x -> Zygote.gradient(my_moe, x)
@@ -446,7 +449,7 @@ end
             @test length(result) == 1
             @test result[1] isa Number
             # Accuracy test: f(x) = x^2, f'(x) = 2x, so f'(5.0) = 10.0
-            @test isapprox(result[1], 10.0, atol = 1e-1)
+            @test isapprox(result[1], 10.0, atol = 1.0e-1)
         end
     end
 
@@ -467,7 +470,7 @@ end
             @test length(result) == 1
             @test result[1] isa Tuple
             # Accuracy test: f(x) = x[1] * x[2], ∇f = [x[2], x[1]], so ∇f([2.0, 5.0]) = [5.0, 2.0]
-            @test all(isapprox.(result[1], (5.0, 2.0), atol = 1e-1))
+            @test all(isapprox.(result[1], (5.0, 2.0), atol = 1.0e-1))
         end
 
         #Kriging
@@ -481,7 +484,7 @@ end
             @test length(result) == 1
             @test result[1] isa Tuple
             # Accuracy test: f(x) = x[1] * x[2], ∇f = [x[2], x[1]], so ∇f([2.0, 5.0]) = [5.0, 2.0]
-            @test all(isapprox.(result[1], (5.0, 2.0), atol = 1e-1))
+            @test all(isapprox.(result[1], (5.0, 2.0), atol = 1.0e-1))
         end
 
         #Linear Surrogate
@@ -520,7 +523,7 @@ end
             @test length(result) == 1
             @test result[1] isa Tuple
             # Accuracy test: f(x) = x[1] * x[2], ∇f = [x[2], x[1]], so ∇f([2.0, 5.0]) = [5.0, 2.0]
-            @test all(isapprox.(result[1], (5.0, 2.0), atol = 1e-1))
+            @test all(isapprox.(result[1], (5.0, 2.0), atol = 1.0e-1))
         end
 
         #Second order polynomial
@@ -532,7 +535,7 @@ end
             @test length(result) == 1
             @test result[1] isa Tuple
             # Accuracy test: f(x) = x[1] * x[2], ∇f = [x[2], x[1]], so ∇f([2.0, 5.0]) = [5.0, 2.0]
-            @test all(isapprox.(result[1], (5.0, 2.0), atol = 1e-1))
+            @test all(isapprox.(result[1], (5.0, 2.0), atol = 1.0e-1))
         end
 
         #Wendland
@@ -571,14 +574,15 @@ end
             extra_points = 2
             initial_theta = [0.01 for i in 1:n_comp]
             my_gekpls_ND = GEKPLS(
-                x, y, grads, n_comp, delta_x, lb, ub, extra_points, initial_theta)
+                x, y, grads, n_comp, delta_x, lb, ub, extra_points, initial_theta
+            )
             g = x -> Zygote.gradient(my_gekpls_ND, x)
             result = g((2.0, 5.0))
             @test result isa Tuple
             @test length(result) == 1
             @test result[1] isa Tuple
             # Accuracy test: f(x) = x[1] * x[2], ∇f = [x[2], x[1]], so ∇f([2.0, 5.0]) = [5.0, 2.0]
-            @test all(isapprox.(result[1], (5.0, 2.0), atol = 1e-1))
+            @test all(isapprox.(result[1], (5.0, 2.0), atol = 1.0e-1))
         end
 
         #Earth
@@ -602,14 +606,14 @@ end
             @test length(result) == 1
             @test result[1] isa Tuple
             # Accuracy test: f(x) = x[1] * x[2], ∇f = [x[2], x[1]], so ∇f([2.0, 5.0]) = [5.0, 2.0]
-            @test all(isapprox.(result[1], (5.0, 2.0), atol = 1e-1))
+            @test all(isapprox.(result[1], (5.0, 2.0), atol = 1.0e-1))
         end
 
         #MOE
         @testset "MOE" begin
             expert_types = [
                 RadialBasisStructure(radial_function = linearRadial(), scale_factor = 1.0, sparse = false),
-                RadialBasisStructure(radial_function = cubicRadial(), scale_factor = 1.0, sparse = false)
+                RadialBasisStructure(radial_function = cubicRadial(), scale_factor = 1.0, sparse = false),
             ]
             my_moe_ND = MOE(x, y, expert_types, ndim = 2, n_clusters = 2)
             g = x -> Zygote.gradient(my_moe_ND, x)
@@ -618,7 +622,7 @@ end
             @test length(result) == 1
             @test result[1] isa Tuple
             # Accuracy test: f(x) = x[1] * x[2], ∇f = [x[2], x[1]], so ∇f([2.0, 5.0]) = [5.0, 2.0]
-            @test all(isapprox.(result[1], (5.0, 2.0), atol = 1e-1))
+            @test all(isapprox.(result[1], (5.0, 2.0), atol = 1.0e-1))
         end
     end
 end

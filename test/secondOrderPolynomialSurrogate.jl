@@ -63,7 +63,7 @@ update!(surrogate, x_new, y_new)
 
 # surrogate should recover 2nd order polynomial
 function second_order_target(x; a = 0.3, b = [0.7, 0.1], c = [0.3 0.4; 0.4 0.1])
-    a + b' * x + x' * c * x
+    return a + b' * x + x' * c * x
 end
 second_order_target(x::Tuple; kwargs...) = f([x...]; kwargs...)
 lb = fill(-5.0, 2);

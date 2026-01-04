@@ -24,8 +24,10 @@ using SafeTestsets, Test
         f = x -> x^2
         x_points = sample(5, lb, ub, SobolSample())
         y_points = f.(x_points)
-        agp1D = AbstractGPSurrogate([x_points[1]], [y_points[1]],
-            gp = GP(SqExponentialKernel()), Σy = 0.05)
+        agp1D = AbstractGPSurrogate(
+            [x_points[1]], [y_points[1]],
+            gp = GP(SqExponentialKernel()), Σy = 0.05
+        )
         x_new = 2.5
         y_actual = f.(x_new)
         for i in 2:length(x_points)
@@ -72,7 +74,7 @@ using SafeTestsets, Test
         y = f.(x)
         agpND = AbstractGPSurrogate(x, y, gp = GP(SqExponentialKernel()), Σy = 0.05)
         x_new = (-0.8, 0.8, 0.8)
-        @test agpND(x_new)≈f(x_new) atol=0.2
+        @test agpND(x_new) ≈ f(x_new) atol = 0.2
     end
 
     @testset "check working of logpdf_surrogate 1D" begin
@@ -106,7 +108,7 @@ using SafeTestsets, Test
             agp1D = AbstractGPSurrogate(x, y, gp = GP(SqExponentialKernel()), Σy = 0.05)
             g = x -> Zygote.gradient(agp1D, x)
             x_val = 2.0
-            @test g(x_val)[1]≈2 * x_val rtol=1e-1
+            @test g(x_val)[1] ≈ 2 * x_val rtol = 1.0e-1
         end
         @testset "ND" begin
             lb = [0.0, 0.0]
@@ -119,8 +121,8 @@ using SafeTestsets, Test
             g = x -> Zygote.gradient(my_agp, x)
             x_val = (2.0, 5.0)
             g_val = g(x_val)[1]
-            @test g_val[1]≈x_val[2] rtol=1e-1
-            @test g_val[2]≈x_val[1] rtol=1e-1
+            @test g_val[1] ≈ x_val[2] rtol = 1.0e-1
+            @test g_val[2] ≈ x_val[1] rtol = 1.0e-1
         end
     end
 end
@@ -153,8 +155,10 @@ end
         y = obj_ND_neural.(x)
         my_model = Chain(Dense(2, 1))
         my_opt = Descent(0.01)
-        my_neural = NeuralSurrogate(x, y, lb, ub, model = my_model, loss = Flux.mse,
-            opt = my_opt, n_epochs = 1)
+        my_neural = NeuralSurrogate(
+            x, y, lb, ub, model = my_model, loss = Flux.mse,
+            opt = my_opt, n_epochs = 1
+        )
         my_neural_kwargs = NeuralSurrogate(x, y, lb, ub, model = my_model)
         my_neural([3.4, 1.4])
         update!(my_neural, [[3.5, 1.4]], [4.9])
@@ -169,8 +173,10 @@ end
         y = f.(x)
         my_model = Chain(Dense(1, 2))
         my_opt = Descent(0.01)
-        surrogate = NeuralSurrogate(x, y, lb, ub, model = my_model, loss = Flux.mse,
-            opt = my_opt, n_epochs = 1)
+        surrogate = NeuralSurrogate(
+            x, y, lb, ub, model = my_model, loss = Flux.mse,
+            opt = my_opt, n_epochs = 1
+        )
 
         f = x -> [x[1], x[2]^2]
         lb = [1.0, 2.0]
@@ -179,8 +185,10 @@ end
         y = f.(x)
         my_model = Chain(Dense(2, 2))
         my_opt = Descent(0.01)
-        surrogate = NeuralSurrogate(x, y, lb, ub, model = my_model, loss = Flux.mse,
-            opt = my_opt, n_epochs = 1)
+        surrogate = NeuralSurrogate(
+            x, y, lb, ub, model = my_model, loss = Flux.mse,
+            opt = my_opt, n_epochs = 1
+        )
         surrogate([1.0, 2.0])
         x_new = [[2.0, 2.0]]
         y_new = [f(x_new[1])]
@@ -195,8 +203,10 @@ end
         y = objective_function_1D.(x)
         model = Chain(Dense(1, 1), first)
         my_neural_1D_neural = NeuralSurrogate(x, y, lb, ub, model = model)
-        surrogate_optimize!(objective_function_1D, SRBF(), lb, ub, my_neural_1D_neural,
-            SobolSample(), maxiters = 15)
+        surrogate_optimize!(
+            objective_function_1D, SRBF(), lb, ub, my_neural_1D_neural,
+            SobolSample(), maxiters = 15
+        )
     end
 
     @testset "ND Optimization" begin
@@ -208,8 +218,10 @@ end
         model = Chain(Dense(2, 1), first)
         opt = Descent(0.01)
         my_neural_ND_neural = NeuralSurrogate(x, y, lb, ub, model = model, loss = Flux.mse)
-        surrogate_optimize!(objective_function_ND, SRBF(), lb, ub, my_neural_ND_neural,
-            SobolSample(), maxiters = 15)
+        surrogate_optimize!(
+            objective_function_ND, SRBF(), lb, ub, my_neural_ND_neural,
+            SobolSample(), maxiters = 15
+        )
     end
 
     # AD Compatibility
@@ -223,8 +235,10 @@ end
     @testset "NN" begin
         my_model = Chain(Dense(1, 1), first)
         my_opt = Descent(0.01)
-        my_neural = NeuralSurrogate(x, y, lb, ub, model = my_model, loss = Flux.mse,
-            opt = my_opt, n_epochs = 1)
+        my_neural = NeuralSurrogate(
+            x, y, lb, ub, model = my_model, loss = Flux.mse,
+            opt = my_opt, n_epochs = 1
+        )
         g = x -> my_neural'(x)
         g(3.4)
     end
@@ -240,8 +254,10 @@ end
     @testset "NN ND" begin
         my_model = Chain(Dense(2, 1), first)
         my_opt = Descent(0.01)
-        my_neural = NeuralSurrogate(x, y, lb, ub, model = my_model, loss = Flux.mse,
-            opt = my_opt, n_epochs = 1)
+        my_neural = NeuralSurrogate(
+            x, y, lb, ub, model = my_model, loss = Flux.mse,
+            opt = my_opt, n_epochs = 1
+        )
         g = x -> Zygote.gradient(my_neural, x)
         g([2.0, 5.0])
     end
@@ -259,8 +275,10 @@ end
     @testset "NN ND -> ND" begin
         my_model = Chain(Dense(2, 2))
         my_opt = Descent(0.01)
-        my_neural = NeuralSurrogate(x, y, lb, ub, model = my_model, loss = Flux.mse,
-            opt = my_opt, n_epochs = 1)
+        my_neural = NeuralSurrogate(
+            x, y, lb, ub, model = my_model, loss = Flux.mse,
+            opt = my_opt, n_epochs = 1
+        )
         Zygote.gradient(x -> sum(my_neural(x)), [2.0, 5.0])
 
         my_rad = RadialBasis(x, y, lb, ub, rad = linearRadial())
@@ -293,7 +311,8 @@ end
         @test my_pce(x_val) ≈ f(x_val)
         update!(my_pce, [3.0], [6.0])
         my_pce_changed = PolynomialChaosSurrogate(
-            x, y, lb, ub; orthopolys = Uniform01OrthoPoly(1))
+            x, y, lb, ub; orthopolys = Uniform01OrthoPoly(1)
+        )
         @test my_pce_changed(x_val) ≈ f(x_val)
     end
 
@@ -412,7 +431,8 @@ end
         update!(my_svm_ND, [(1.0, 1.0)], [1.0])
         update!(my_svm_ND, [(1.2, 1.2), (1.5, 1.5)], [1.728, 3.375])
         svm = LIBSVM.fit!(
-            SVC(), transpose(reduce(hcat, collect.(my_svm_ND.x))), my_svm_ND.y)
+            SVC(), transpose(reduce(hcat, collect.(my_svm_ND.x))), my_svm_ND.y
+        )
         x_test = [1.0, 1.0]
         val = my_svm_ND(x_test)
         @test LIBSVM.predict(svm, reshape(x_test, 1, 2))[1] == val
@@ -439,14 +459,20 @@ end
         x = sample(50, lb, ub, SobolSample())
         y = discont_1D.(x)
 
-        # Radials vs MOE 
-        RAD_1D = RadialBasis(x, y, lb, ub, rad = linearRadial(), scale_factor = 1.0,
-            sparse = false)
+        # Radials vs MOE
+        RAD_1D = RadialBasis(
+            x, y, lb, ub, rad = linearRadial(), scale_factor = 1.0,
+            sparse = false
+        )
         expert_types = [
-            RadialBasisStructure(radial_function = linearRadial(), scale_factor = 1.0,
-                sparse = false),
-            RadialBasisStructure(radial_function = cubicRadial(), scale_factor = 1.0,
-                sparse = false)
+            RadialBasisStructure(
+                radial_function = linearRadial(), scale_factor = 1.0,
+                sparse = false
+            ),
+            RadialBasisStructure(
+                radial_function = cubicRadial(), scale_factor = 1.0,
+                sparse = false
+            ),
         ]
 
         MOE_1D_RAD_RAD = MOE(x, y, expert_types)
@@ -457,8 +483,9 @@ end
 
         # Krig vs MOE
         KRIG_1D = Kriging(x, y, lb, ub, p = 1.0, theta = 1.0)
-        expert_types = [InverseDistanceStructure(p = 1.0),
-            KrigingStructure(p = 1.0, theta = 1.0)
+        expert_types = [
+            InverseDistanceStructure(p = 1.0),
+            KrigingStructure(p = 1.0, theta = 1.0),
         ]
         MOE_1D_INV_KRIG = MOE(x, y, expert_types)
         MOE_at0 = MOE_1D_INV_KRIG(0.0)
@@ -499,8 +526,10 @@ end
 
         expert_types = [
             KrigingStructure(p = [1.0, 1.0], theta = [1.0, 1.0]),
-            RadialBasisStructure(radial_function = linearRadial(), scale_factor = 1.0,
-                sparse = false)
+            RadialBasisStructure(
+                radial_function = linearRadial(), scale_factor = 1.0,
+                sparse = false
+            ),
         ]
         moe_nd_krig_rad = MOE(x, y, expert_types, ndim = 2, quantile = 5)
         moe_pred_vals = moe_nd_krig_rad.(x_test)
@@ -536,10 +565,12 @@ end
 
         # test if MOE handles 3 experts including SurrogatesFlux
         expert_types = [
-            RadialBasisStructure(radial_function = linearRadial(), scale_factor = 1.0,
-                sparse = false),
+            RadialBasisStructure(
+                radial_function = linearRadial(), scale_factor = 1.0,
+                sparse = false
+            ),
             LinearStructure(),
-            InverseDistanceStructure(p = 1.0)
+            InverseDistanceStructure(p = 1.0),
         ]
         moe_nd_3_experts = MOE(x, y, expert_types, ndim = 2, n_clusters = 3)
         moe_pred_vals = moe_nd_3_experts.(x_test)
@@ -551,7 +582,7 @@ end
         n_epochs = 1
         expert_types = [
             NeuralStructure(model = model, loss = loss, opt = opt, n_epochs = n_epochs),
-            LinearStructure()
+            LinearStructure(),
         ]
         moe_nn_ln = MOE(x, y, expert_types, ndim = 2)
         moe_pred_vals = moe_nn_ln.(x_test)
@@ -573,10 +604,14 @@ end
         y = discont_1D.(x)
 
         expert_types = [
-            RadialBasisStructure(radial_function = linearRadial(), scale_factor = 1.0,
-                sparse = false),
-            RadialBasisStructure(radial_function = cubicRadial(), scale_factor = 1.0,
-                sparse = false)
+            RadialBasisStructure(
+                radial_function = linearRadial(), scale_factor = 1.0,
+                sparse = false
+            ),
+            RadialBasisStructure(
+                radial_function = cubicRadial(), scale_factor = 1.0,
+                sparse = false
+            ),
         ]
         moe = MOE(x, y, expert_types)
         Surrogates.update!(moe, 0.5, 5.0)
@@ -598,9 +633,12 @@ end
         n = 110
         x = sample(n, lb, ub, LatinHypercubeSample())
         y = discont_NDIM.(x)
-        expert_types = [InverseDistanceStructure(p = 1.0),
-            RadialBasisStructure(radial_function = linearRadial(), scale_factor = 1.0,
-                sparse = false)
+        expert_types = [
+            InverseDistanceStructure(p = 1.0),
+            RadialBasisStructure(
+                radial_function = linearRadial(), scale_factor = 1.0,
+                sparse = false
+            ),
         ]
         moe_nd_inv_rad = MOE(x, y, expert_types, ndim = 2)
         Surrogates.update!(moe_nd_inv_rad, (0.5, 0.5), sum((0.5, 0.5) .^ 2) + 5)

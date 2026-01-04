@@ -29,9 +29,11 @@ function (k::Kriging)(val)
     d = length(val)
 
     return k.mu +
-           sum(k.b[i] *
-               exp(-sum(k.theta[j] * norm(val[j] - k.x[i][j])^k.p[j] for j in 1:d))
-    for i in 1:n)
+        sum(
+        k.b[i] *
+            exp(-sum(k.theta[j] * norm(val[j] - k.x[i][j])^k.p[j] for j in 1:d))
+            for i in 1:n
+    )
 end
 
 """
@@ -45,14 +47,16 @@ function std_error_at_point(k::Kriging, val)
     n = length(k.x)
     d = length(k.x[1])
     r = zeros(eltype(k.x[1]), n, 1)
-    r = [let
-             sum = zero(eltype(k.x[1]))
-             for l in 1:d
-                 sum = sum + k.theta[l] * norm(val[l] - k.x[i][l])^(k.p[l])
-             end
-             exp(-sum)
-         end
-         for i in 1:n]
+    r = [
+        let
+                sum = zero(eltype(k.x[1]))
+                for l in 1:d
+                    sum = sum + k.theta[l] * norm(val[l] - k.x[i][l])^(k.p[l])
+            end
+                exp(-sum)
+        end
+            for i in 1:n
+    ]
 
     one = ones(eltype(k.x[1]), n, 1)
     one_t = one'
@@ -102,8 +106,10 @@ smoothness of the function being approximated, 0-> rough  2-> C^infinity
 
   - theta: value > 0 modeling how much the function is changing in the i-th variable.
 """
-function Kriging(x, y, lb::Number, ub::Number; p = 2.0,
-        theta = 0.5 / max(1e-6 * abs(ub - lb), std(x))^p)
+function Kriging(
+        x, y, lb::Number, ub::Number; p = 2.0,
+        theta = 0.5 / max(1.0e-6 * abs(ub - lb), std(x))^p
+    )
     if length(x) != length(unique(x))
         println("There exists a repetition in the samples, cannot build Kriging.")
         return
@@ -118,7 +124,7 @@ function Kriging(x, y, lb::Number, ub::Number; p = 2.0,
     end
 
     mu, b, sigma, inverse_of_R = _calc_kriging_coeffs(x, y, p, theta)
-    Kriging(x, y, lb, ub, p, theta, mu, b, sigma, inverse_of_R)
+    return Kriging(x, y, lb, ub, p, theta, mu, b, sigma, inverse_of_R)
 end
 
 function _calc_kriging_coeffs(x, y, p::Number, theta::Number)
@@ -136,7 +142,7 @@ function _calc_kriging_coeffs(x, y, p::Number, theta::Number)
     λmax = λ[end]
     λmin = λ[1]
 
-    κmax = 1e8
+    κmax = 1.0e8
     λdiff = λmax - κmax * λmin
     if λdiff ≥ 0
         nugget = λdiff / (κmax - 1)
@@ -154,7 +160,7 @@ function _calc_kriging_coeffs(x, y, p::Number, theta::Number)
     mu = (one_t * inverse_of_R * y) / (one_t * inverse_of_R * one)
     b = inverse_of_R * (y - one * mu)
     sigma = ((y - one * mu)' * b) / n
-    mu[1], b, sigma[1], inverse_of_R
+    return mu[1], b, sigma[1], inverse_of_R
 end
 
 """
@@ -169,9 +175,13 @@ Constructor for Kriging surrogate.
   - theta: array of values > 0 modeling how much the function is
     changing in the i-th variable.
 """
-function Kriging(x, y, lb, ub; p = 2.0 .* collect(one.(x[1])),
-        theta = [0.5 / max(1e-6 * norm(ub .- lb), std(x_i[i] for x_i in x))^p[i]
-                 for i in 1:length(x[1])])
+function Kriging(
+        x, y, lb, ub; p = 2.0 .* collect(one.(x[1])),
+        theta = [
+            0.5 / max(1.0e-6 * norm(ub .- lb), std(x_i[i] for x_i in x))^p[i]
+                for i in 1:length(x[1])
+        ]
+    )
     if length(x) != length(unique(x))
         println("There exists a repetition in the samples, cannot build Kriging.")
         return
@@ -188,21 +198,23 @@ function Kriging(x, y, lb, ub; p = 2.0 .* collect(one.(x[1])),
     end
 
     mu, b, sigma, inverse_of_R = _calc_kriging_coeffs(x, y, p, theta)
-    Kriging(x, y, lb, ub, p, theta, mu, b, sigma, inverse_of_R)
+    return Kriging(x, y, lb, ub, p, theta, mu, b, sigma, inverse_of_R)
 end
 
 function _calc_kriging_coeffs(x, y, p, theta)
     n = length(x)
     d = length(x[1])
 
-    R = [let
-             sum = zero(eltype(x[1]))
-             for l in 1:d
-                 sum = sum + theta[l] * norm(x[i][l] - x[j][l])^p[l]
-             end
-             exp(-sum)
-         end
-         for j in 1:n, i in 1:n]
+    R = [
+        let
+                sum = zero(eltype(x[1]))
+                for l in 1:d
+                    sum = sum + theta[l] * norm(x[i][l] - x[j][l])^p[l]
+            end
+                exp(-sum)
+        end
+            for j in 1:n, i in 1:n
+    ]
 
     # Estimate nugget based on maximum allowed condition number
     # This regularizes R to allow for points being close to each other without R becoming
@@ -215,7 +227,7 @@ function _calc_kriging_coeffs(x, y, p, theta)
     λmax = λ[end]
     λmin = λ[1]
 
-    κmax = 1e8
+    κmax = 1.0e8
     λdiff = λmax - κmax * λmin
     if λdiff ≥ 0
         nugget = λdiff / (κmax - 1)
@@ -237,7 +249,7 @@ function _calc_kriging_coeffs(x, y, p, theta)
 
     sigma = (y_minus_1μ' * b) / n
 
-    mu[1], b, sigma[1], inverse_of_R
+    return mu[1], b, sigma[1], inverse_of_R
 end
 
 """
@@ -253,7 +265,7 @@ function SurrogatesBase.update!(k::Kriging, new_x, new_y)
         return
     end
     if (length(new_x) == 1 && length(new_x[1]) == 1) ||
-       (length(new_x) > 1 && length(new_x[1]) == 1 && length(k.theta) > 1)
+            (length(new_x) > 1 && length(new_x[1]) == 1 && length(k.theta) > 1)
         push!(k.x, new_x)
         push!(k.y, new_y)
     else
@@ -261,5 +273,5 @@ function SurrogatesBase.update!(k::Kriging, new_x, new_y)
         append!(k.y, new_y)
     end
     k.mu, k.b, k.sigma, k.inverse_of_R = _calc_kriging_coeffs(k.x, k.y, k.p, k.theta)
-    nothing
+    return nothing
 end

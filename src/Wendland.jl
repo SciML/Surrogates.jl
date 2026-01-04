@@ -44,7 +44,7 @@ function _calc_coeffs_wend(x, y, eps, maxiters, tol)
     return cg(U, y, maxiter = maxiters, reltol = tol)
 end
 
-function Wendland(x, y, lb, ub; eps = 1.0, maxiters = 300, tol = 1e-6)
+function Wendland(x, y, lb, ub; eps = 1.0, maxiters = 300, tol = 1.0e-6)
     c = _calc_coeffs_wend(x, y, eps, maxiters, tol)
     return Wendland(x, y, lb, ub, c, maxiters, tol, eps)
 end
@@ -53,13 +53,15 @@ function (wend::Wendland)(val)
     # Check to make sure dimensions of input matches expected dimension of surrogate
     _check_dimension(wend, val)
 
-    return sum(wend.coeff[j] * _wendland(val .- wend.x[j], wend.eps)
-    for j in 1:length(wend.coeff))
+    return sum(
+        wend.coeff[j] * _wendland(val .- wend.x[j], wend.eps)
+            for j in 1:length(wend.coeff)
+    )
 end
 
 function SurrogatesBase.update!(wend::Wendland, new_x, new_y)
     if (length(new_x) == 1 && length(new_x[1]) == 1) ||
-       (length(new_x) > 1 && length(new_x[1]) == 1 && length(wend.lb) > 1)
+            (length(new_x) > 1 && length(new_x[1]) == 1 && length(wend.lb) > 1)
         push!(wend.x, new_x)
         push!(wend.y, new_y)
     else
@@ -67,5 +69,5 @@ function SurrogatesBase.update!(wend::Wendland, new_x, new_y)
         append!(wend.y, new_y)
     end
     wend.coeff = _calc_coeffs_wend(wend.x, wend.y, wend.eps, wend.maxiters, wend.tol)
-    nothing
+    return nothing
 end

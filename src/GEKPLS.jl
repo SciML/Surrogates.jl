@@ -71,25 +71,32 @@ function GEKPLS(x_vec, y_vec, grads_vec, n_comp, delta_x, lb, ub, extra_points, 
     end
 
     pls_mean, X_after_PLS,
-    y_after_PLS = _ge_compute_pls(X, y, n_comp, grads, delta_x,
-        xlimits, extra_points)
+        y_after_PLS = _ge_compute_pls(
+        X, y, n_comp, grads, delta_x,
+        xlimits, extra_points
+    )
     X_after_std, y_after_std, X_offset, y_mean,
-    X_scale, y_std = standardization(
+        X_scale, y_std = standardization(
         X_after_PLS,
-        y_after_PLS)
+        y_after_PLS
+    )
     D, ij = cross_distances(X_after_std)
     pls_mean_reshaped = reshape(pls_mean, (size(X, 2), n_comp))
     d = componentwise_distance_PLS(D, "squar_exp", n_comp, pls_mean_reshaped)
     nt, nd = size(X_after_PLS)
     beta, gamma,
-    reduced_likelihood_function_value = _reduced_likelihood_function(theta,
+        reduced_likelihood_function_value = _reduced_likelihood_function(
+        theta,
         "squar_exp",
         d, nt, ij,
-        y_after_std)
-    return GEKPLS(x_vec, y_vec, X, y, grads, xlimits, delta_x, extra_points, n_comp, beta,
+        y_after_std
+    )
+    return GEKPLS(
+        x_vec, y_vec, X, y, grads, xlimits, delta_x, extra_points, n_comp, beta,
         gamma, theta,
         reduced_likelihood_function_value,
-        X_offset, X_scale, X_after_std, pls_mean_reshaped, y_mean, y_std)
+        X_offset, X_scale, X_after_std, pls_mean_reshaped, y_mean, y_std
+    )
 end
 
 """
@@ -155,26 +162,30 @@ function SurrogatesBase.update!(g::GEKPLS, x_tup, y_val, grad_tup)
     g.y_matrix = vcat(g.y_matrix, y_val)
     g.grads = vcat(g.grads, new_grads)
     pls_mean, X_after_PLS,
-    y_after_PLS = _ge_compute_pls(g.x_matrix, g.y_matrix,
+        y_after_PLS = _ge_compute_pls(
+        g.x_matrix, g.y_matrix,
         g.num_components,
         g.grads, g.delta, g.xl,
-        g.extra_points)
+        g.extra_points
+    )
     g.X_after_std, y_after_std, g.X_offset, g.y_mean,
-    g.X_scale, g.y_std = standardization(
+        g.X_scale, g.y_std = standardization(
         X_after_PLS,
-        y_after_PLS)
+        y_after_PLS
+    )
     D, ij = cross_distances(g.X_after_std)
     g.pls_mean = reshape(pls_mean, (size(g.x_matrix, 2), g.num_components))
     d = componentwise_distance_PLS(D, "squar_exp", g.num_components, g.pls_mean)
     nt, nd = size(X_after_PLS)
-    g.beta, g.gamma,
-    g.reduced_likelihood_function_value = _reduced_likelihood_function(
+    return g.beta, g.gamma,
+        g.reduced_likelihood_function_value = _reduced_likelihood_function(
         g.theta,
         "squar_exp",
         d,
         nt,
         ij,
-        y_after_std)
+        y_after_std
+    )
 end
 
 """
@@ -214,19 +225,23 @@ function _ge_compute_pls(X, y, n_comp, grads, delta_x, xlimits, extra_points)
         if dim >= 3
             bb_vals = circshift(boxbehnken(dim, 1), 1)
         elseif dim == 2
-            bb_vals = [0.0 0.0; #center
-                       1.0 0.0; #right
-                       0.0 1.0; #up
-                       -1.0 0.0; #left
-                       0.0 -1.0; #down
-                       1.0 1.0; #right up
-                       -1.0 1.0; #left up
-                       -1.0 -1.0; #left down
-                       1.0 -1.0]
+            bb_vals = [
+                0.0 0.0; #center
+                1.0 0.0; #right
+                0.0 1.0; #up
+                -1.0 0.0; #left
+                0.0 -1.0; #down
+                1.0 1.0; #right up
+                -1.0 1.0; #left up
+                -1.0 -1.0; #left down
+                1.0 -1.0
+            ]
         else # dim == 1
-            bb_vals = [0.0; #center
-                       1.0; #right
-                       -1.0] #left
+            bb_vals = [
+                0.0; #center
+                1.0; #right
+                -1.0
+            ] #left
         end
         _X = zeros((size(bb_vals)[1], dim))
         _y = zeros((size(bb_vals)[1], 1))
@@ -290,7 +305,7 @@ end
 #
 
 function boxbehnken(matrix_size::Int)
-    boxbehnken(matrix_size, matrix_size)
+    return boxbehnken(matrix_size, matrix_size)
 end
 
 function boxbehnken(matrix_size::Int, center::Int)
@@ -306,10 +321,14 @@ function boxbehnken(matrix_size::Int, center::Int)
     for i in 1:(matrix_size - 1)
         for j in (i + 1):matrix_size
             l = l + 1
-            A[(max(0, (l - 1) * size(A_fact)[1]) + 1):(l * size(A_fact)[1]), i] = A_fact[:,
-            1]
-            A[(max(0, (l - 1) * size(A_fact)[1]) + 1):(l * size(A_fact)[1]), j] = A_fact[:,
-            2]
+            A[(max(0, (l - 1) * size(A_fact)[1]) + 1):(l * size(A_fact)[1]), i] = A_fact[
+                :,
+                1,
+            ]
+            A[(max(0, (l - 1) * size(A_fact)[1]) + 1):(l * size(A_fact)[1]), j] = A_fact[
+                :,
+                2,
+            ]
         end
     end
 
@@ -320,19 +339,19 @@ function boxbehnken(matrix_size::Int, center::Int)
         end
     end
 
-    A = transpose(hcat(transpose(A), transpose(zeros(center, matrix_size))))
+    return A = transpose(hcat(transpose(A), transpose(zeros(center, matrix_size))))
 end
 
 function explicit_fullfactorial(factors::Tuple)
-    explicit_fullfactorial(fullfactorial(factors))
+    return explicit_fullfactorial(fullfactorial(factors))
 end
 
 function explicit_fullfactorial(iterator::Base.Iterators.ProductIterator)
-    hcat(vcat.(collect(iterator)...)...)
+    return hcat(vcat.(collect(iterator)...)...)
 end
 
 function fullfactorial(factors::Tuple)
-    Base.Iterators.product(factors...)
+    return Base.Iterators.product(factors...)
 end
 
 ######end of bb design######
@@ -590,7 +609,7 @@ function _svd_flip_1d(u, v)
     biggest_abs_val_idx = findmax(abs.(vec(u)))[2]
     sign_ = sign(u[biggest_abs_val_idx])
     u .*= sign_
-    v .*= sign_
+    return v .*= sign_
 end
 
 function _get_first_singular_vectors_power_method(X, Y)

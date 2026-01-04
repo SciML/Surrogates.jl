@@ -4,7 +4,7 @@ mutable struct InverseDistanceSurrogate{X,Y,P,L,U} <: AbstractSurrogate
 The square polynomial model can be expressed by 𝐲 = 𝐗β + ϵ, with β = 𝐗ᵗ𝐗⁻¹𝐗ᵗ𝐲
 """
 mutable struct SecondOrderPolynomialSurrogate{X, Y, B, L, U} <:
-               AbstractDeterministicSurrogate
+    AbstractDeterministicSurrogate
     x::X
     y::Y
     β::B
@@ -82,5 +82,5 @@ function SurrogatesBase.update!(my_second::SecondOrderPolynomialSurrogate, x_new
     Y = _construct_y_matrix(my_second.y, first(my_second.y))
     β = X \ Y
     my_second.β = β
-    nothing
+    return nothing
 end

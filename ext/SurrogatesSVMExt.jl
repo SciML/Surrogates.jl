@@ -28,7 +28,7 @@ function SVMSurrogate(x, y, lb, ub)
         end
     end
     model = LIBSVM.fit!(SVC(), X, y)
-    SVMSurrogate(x, y, model, lb, ub)
+    return SVMSurrogate(x, y, model, lb, ub)
 end
 
 function (svmsurr::SVMSurrogate)(val::Number)
@@ -52,12 +52,14 @@ end
 function SurrogatesBase.update!(svmsurr::SVMSurrogate, x_new, y_new)
     svmsurr.x = vcat(svmsurr.x, x_new)
     svmsurr.y = vcat(svmsurr.y, y_new)
-    if length(svmsurr.lb) == 1
+    return if length(svmsurr.lb) == 1
         svmsurr.model = LIBSVM.fit!(
-            SVC(), reshape(svmsurr.x, length(svmsurr.x), 1), svmsurr.y)
+            SVC(), reshape(svmsurr.x, length(svmsurr.x), 1), svmsurr.y
+        )
     else
         svmsurr.model = LIBSVM.fit!(
-            SVC(), transpose(reduce(hcat, collect.(svmsurr.x))), svmsurr.y)
+            SVC(), transpose(reduce(hcat, collect.(svmsurr.x))), svmsurr.y
+        )
     end
 end
 

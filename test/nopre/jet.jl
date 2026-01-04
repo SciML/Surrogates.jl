@@ -14,38 +14,50 @@ using Test
     jet_kwargs = (; target_modules = (Surrogates,))
 
     @testset "LinearSurrogate" begin
-        rep = JET.report_call(LinearSurrogate,
-            (typeof(x1d), typeof(y1d), Float64, Float64); jet_kwargs...)
+        rep = JET.report_call(
+            LinearSurrogate,
+            (typeof(x1d), typeof(y1d), Float64, Float64); jet_kwargs...
+        )
         @test isempty(JET.get_reports(rep))
     end
 
     @testset "RadialBasis" begin
-        rep = JET.report_call(RadialBasis,
-            (typeof(x1d), typeof(y1d), Float64, Float64); jet_kwargs...)
+        rep = JET.report_call(
+            RadialBasis,
+            (typeof(x1d), typeof(y1d), Float64, Float64); jet_kwargs...
+        )
         @test isempty(JET.get_reports(rep))
     end
 
     @testset "Kriging" begin
-        rep = JET.report_call(Kriging,
-            (typeof(x1d), typeof(y1d), Float64, Float64); jet_kwargs...)
+        rep = JET.report_call(
+            Kriging,
+            (typeof(x1d), typeof(y1d), Float64, Float64); jet_kwargs...
+        )
         @test isempty(JET.get_reports(rep))
     end
 
     @testset "InverseDistanceSurrogate" begin
-        rep = JET.report_call(InverseDistanceSurrogate,
-            (typeof(x1d), typeof(y1d), Float64, Float64); jet_kwargs...)
+        rep = JET.report_call(
+            InverseDistanceSurrogate,
+            (typeof(x1d), typeof(y1d), Float64, Float64); jet_kwargs...
+        )
         @test isempty(JET.get_reports(rep))
     end
 
     @testset "SecondOrderPolynomialSurrogate" begin
-        rep = JET.report_call(SecondOrderPolynomialSurrogate,
-            (typeof(x1d), typeof(y1d), Float64, Float64); jet_kwargs...)
+        rep = JET.report_call(
+            SecondOrderPolynomialSurrogate,
+            (typeof(x1d), typeof(y1d), Float64, Float64); jet_kwargs...
+        )
         @test isempty(JET.get_reports(rep))
     end
 
     @testset "LobachevskySurrogate" begin
-        rep = JET.report_call(LobachevskySurrogate,
-            (typeof(x1d), typeof(y1d), Float64, Float64); jet_kwargs...)
+        rep = JET.report_call(
+            LobachevskySurrogate,
+            (typeof(x1d), typeof(y1d), Float64, Float64); jet_kwargs...
+        )
         @test isempty(JET.get_reports(rep))
     end
 end

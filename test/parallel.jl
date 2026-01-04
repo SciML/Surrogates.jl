@@ -15,13 +15,15 @@ y = f.(x)
 
 my_k = Kriging(x, y, lb, ub)
 new_x,
-eis = potential_optimal_points(EI(),
+    eis = potential_optimal_points(
+    EI(),
     MeanConstantLiar(),
     lb,
     ub,
     my_k,
     SobolSample(),
-    3)
+    3
+)
 
 @test length(new_x) == 3
 @test length(eis) == 3
@@ -30,13 +32,15 @@ eis = potential_optimal_points(EI(),
 
 my_surr = RadialBasis(x, y, lb, ub)
 new_x,
-eis = potential_optimal_points(SRBF(),
+    eis = potential_optimal_points(
+    SRBF(),
     MeanConstantLiar(),
     lb,
     ub,
     my_surr,
     SobolSample(),
-    3)
+    3
+)
 @test length(new_x) == 3
 @test length(eis) == 3
 
@@ -51,13 +55,15 @@ y = f.(x)
 my_k = Kriging(x, y, lb, ub)
 
 new_x,
-eis = potential_optimal_points(EI(),
+    eis = potential_optimal_points(
+    EI(),
     MeanConstantLiar(),
     lb,
     ub,
     my_k,
     SobolSample(),
-    5)
+    5
+)
 
 @test length(new_x) == 5
 @test length(eis) == 5
@@ -68,25 +74,29 @@ eis = potential_optimal_points(EI(),
 
 my_surr = RadialBasis(x, y, lb, ub)
 new_x,
-eis = potential_optimal_points(SRBF(),
+    eis = potential_optimal_points(
+    SRBF(),
     MeanConstantLiar(),
     lb,
     ub,
     my_surr,
     SobolSample(),
-    5)
+    5
+)
 
 @test length(new_x) == 5
 @test length(eis) == 5
 
 @test length(new_x[1]) == 3
 
-# # Check hyperparameter validation for potential_optimal_points 
+# # Check hyperparameter validation for potential_optimal_points
 @test_throws ArgumentError new_x,
-eis=potential_optimal_points(EI(),
+    eis = potential_optimal_points(
+    EI(),
     MeanConstantLiar(),
     lb,
     ub,
     my_k,
     SobolSample(),
-    -1)
+    -1
+)

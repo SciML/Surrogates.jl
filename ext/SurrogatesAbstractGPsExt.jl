@@ -5,7 +5,7 @@ using SurrogatesBase, AbstractGPs
 
 # constructor
 function AbstractGPSurrogate(x, y; gp = GP(Matern52Kernel()), Σy = 0.1)
-    AbstractGPSurrogate(x, y, gp, posterior(gp(x, Σy), y), Σy)
+    return AbstractGPSurrogate(x, y, gp, posterior(gp(x, Σy), y), Σy)
 end
 
 # predictor
@@ -21,11 +21,11 @@ function SurrogatesBase.update!(g::AbstractGPSurrogate, new_x, new_y)
     g.x = vcat(g.x, new_x)
     g.y = vcat(g.y, new_y)
     g.gp_posterior = posterior(g.gp(g.x, g.Σy), g.y)
-    nothing
+    return nothing
 end
 
 function SurrogatesBase.finite_posterior(g::AbstractGPSurrogate, xs)
-    g.gp_posterior(xs)
+    return g.gp_posterior(xs)
 end
 
 function Surrogates.std_error_at_point(g::AbstractGPSurrogate, val)

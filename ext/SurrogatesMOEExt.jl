@@ -1,11 +1,11 @@
 module SurrogatesMOEExt
 
 import Surrogates: linearRadial, cubicRadial, multiquadricRadial,
-                   thinplateRadial, RadialBasisStructure, RadialBasis,
-                   InverseDistanceSurrogate, Kriging, LobachevskyStructure,
-                   LobachevskySurrogate, NeuralStructure, PolyChaosStructure,
-                   LinearSurrogate, MOE,
-                   NeuralSurrogate, XGBoostSurrogate, PolynomialChaosSurrogate
+    thinplateRadial, RadialBasisStructure, RadialBasis,
+    InverseDistanceSurrogate, Kriging, LobachevskyStructure,
+    LobachevskySurrogate, NeuralStructure, PolyChaosStructure,
+    LinearSurrogate, MOE,
+    NeuralSurrogate, XGBoostSurrogate, PolynomialChaosSurrogate
 using SurrogatesBase
 using GaussianMixtures
 using Random
@@ -27,11 +27,13 @@ function MOE(x, y, expert_types; ndim = 1, n_clusters = 2, quantile = 10)
     end
 
     x_and_y_test, x_and_y_train = _extract_part(values, quantile)
-    # We get posdef error without jitter; And if values repeat we get NaN vals 
-    # https://github.com/davidavdav/GaussianMixtures.jl/issues/21 
+    # We get posdef error without jitter; And if values repeat we get NaN vals
+    # https://github.com/davidavdav/GaussianMixtures.jl/issues/21
     jitter_vals = ((rand(eltype(x_and_y_train), size(x_and_y_train))) ./ 10000)
-    gm_cluster = GMM(n_clusters, x_and_y_train + jitter_vals, kind = :full, nInit = 50,
-        nIter = 20)
+    gm_cluster = GMM(
+        n_clusters, x_and_y_train + jitter_vals, kind = :full, nInit = 50,
+        nIter = 20
+    )
     mvn_distributions = _create_clusters_distributions(gm_cluster, ndim, n_clusters)
     cluster_classifier_train = _cluster_predict(gm_cluster, x_and_y_train)
     clusters_train = _cluster_values(x_and_y_train, cluster_classifier_train, n_clusters)
@@ -39,16 +41,20 @@ function MOE(x, y, expert_types; ndim = 1, n_clusters = 2, quantile = 10)
     clusters_test = _cluster_values(x_and_y_test, cluster_classifier_test, n_clusters)
     best_models = []
     for i in 1:n_clusters
-        best_model = _find_best_model(clusters_train[i], clusters_test[i], ndim,
-            expert_types)
+        best_model = _find_best_model(
+            clusters_train[i], clusters_test[i], ndim,
+            expert_types
+        )
         push!(best_models, best_model)
     end
     # X = values[:, 1:ndim]
     # y = values[:, 2]
 
     #return MOE(X, y, gm_cluster, mvn_distributions, best_models)
-    return MOE(x, y, gm_cluster, mvn_distributions, best_models, expert_types, ndim,
-        n_clusters)
+    return MOE(
+        x, y, gm_cluster, mvn_distributions, best_models, expert_types, ndim,
+        n_clusters
+    )
 end
 
 """
@@ -209,8 +215,10 @@ end
 _find_best_model(clustered_values, clustered_test_values)
 finds best model for each set of clustered values by validating against the clustered_test_values
 """
-function _find_best_model(clustered_train_values, clustered_test_values, dim,
-        enabled_expert_types)
+function _find_best_model(
+        clustered_train_values, clustered_test_values, dim,
+        enabled_expert_types
+    )
     # find upper and lower bounds for clustered_train and test values concatenated
 
     x_vec = [a[1:dim] for a in clustered_train_values]
@@ -232,13 +240,14 @@ function _find_best_model(clustered_train_values, clustered_test_values, dim,
     y_test_vec = !isnothing(xtest_mat) ? y_test_vec : y_vec
     lb, ub = _find_upper_lower_bounds(X)
 
-    # call on _surrogate_builder with clustered_train_vals, enabled expert types, lb, ub 
+    # call on _surrogate_builder with clustered_train_vals, enabled expert types, lb, ub
 
     surr_vec = _surrogate_builder(
         enabled_expert_types, length(enabled_expert_types), x_vec,
-        y_vec, lb, ub)
+        y_vec, lb, ub
+    )
 
-    # use the models to find best model after validating against test data and return best model 
+    # use the models to find best model after validating against test data and return best model
     best_rmse = Inf
     best_model = surr_vec[1] #initial assignment can be any model
     for surr_model in surr_vec
@@ -263,10 +272,12 @@ function _surrogate_builder(local_kind, k, x, y, lb, ub)
     for i in 1:k
         if local_kind[i][1] == "RadialBasis"
             #fit and append to local_surr
-            my_local_i = RadialBasis(x, y, lb, ub,
+            my_local_i = RadialBasis(
+                x, y, lb, ub,
                 rad = local_kind[i].radial_function,
                 scale_factor = local_kind[i].scale_factor,
-                sparse = local_kind[i].sparse)
+                sparse = local_kind[i].sparse
+            )
             push!(local_surr, my_local_i)
 
         elseif local_kind[i][1] == "Kriging"
@@ -275,13 +286,17 @@ function _surrogate_builder(local_kind, k, x, y, lb, ub)
                 x = [a[1] for a in x]
             end
 
-            my_local_i = Kriging(x, y, lb, ub, p = local_kind[i].p,
-                theta = local_kind[i].theta)
+            my_local_i = Kriging(
+                x, y, lb, ub, p = local_kind[i].p,
+                theta = local_kind[i].theta
+            )
             push!(local_surr, my_local_i)
 
         elseif local_kind[i][1] == "GEK"
-            my_local_i = GEK(x, y, lb, ub, p = local_kind[i].p,
-                theta = local_kind[i].theta)
+            my_local_i = GEK(
+                x, y, lb, ub, p = local_kind[i].p,
+                theta = local_kind[i].theta
+            )
             push!(local_surr, my_local_i)
 
         elseif local_kind[i] == "LinearSurrogate"
@@ -293,22 +308,28 @@ function _surrogate_builder(local_kind, k, x, y, lb, ub)
             push!(local_surr, my_local_i)
 
         elseif local_kind[i][1] == "LobachevskySurrogate"
-            my_local_i = LobachevskyStructure(x, y, lb, ub,
+            my_local_i = LobachevskyStructure(
+                x, y, lb, ub,
                 alpha = local_kind[i].alpha,
                 n = local_kind[i].n,
-                sparse = local_kind[i].sparse)
+                sparse = local_kind[i].sparse
+            )
             push!(local_surr, my_local_i)
 
         elseif local_kind[i][1] == "NeuralSurrogate"
-            my_local_i = NeuralSurrogate(x, y, lb, ub,
+            my_local_i = NeuralSurrogate(
+                x, y, lb, ub,
                 model = local_kind[i].model,
                 loss = local_kind[i].loss, opt = local_kind[i].opt,
-                n_epochs = local_kind[i].n_epochs)
+                n_epochs = local_kind[i].n_epochs
+            )
             push!(local_surr, my_local_i)
 
         elseif local_kind[i][1] == "XGBoostSurrogate"
-            my_local_i = XGBoostSurrogate(x, y, lb, ub,
-                num_round = local_kind[i].num_round)
+            my_local_i = XGBoostSurrogate(
+                x, y, lb, ub,
+                num_round = local_kind[i].num_round
+            )
             push!(local_surr, my_local_i)
 
         elseif local_kind[i] == "SecondOrderPolynomialSurrogate"
@@ -316,8 +337,10 @@ function _surrogate_builder(local_kind, k, x, y, lb, ub)
             push!(local_surr, my_local_i)
 
         elseif local_kind[i][1] == "Wendland"
-            my_local_i = Wendand(x, y, lb, ub, eps = local_kind[i].eps,
-                maxiters = local_kind[i].maxiters, tol = local_kind[i].tol)
+            my_local_i = Wendand(
+                x, y, lb, ub, eps = local_kind[i].eps,
+                maxiters = local_kind[i].maxiters, tol = local_kind[i].tol
+            )
             push!(local_surr, my_local_i)
 
         elseif local_kind[i][1] == "PolynomialChaosSurrogate"
@@ -349,11 +372,13 @@ function SurrogatesBase.update!(m::MOE, x, y)
         values = hcat(m.x, m.y)
     end
     x_and_y_test, x_and_y_train = _extract_part(values, quantile)
-    # We get posdef error without jitter; And if values repeat we get NaN vals 
-    # https://github.com/davidavdav/GaussianMixtures.jl/issues/21 
+    # We get posdef error without jitter; And if values repeat we get NaN vals
+    # https://github.com/davidavdav/GaussianMixtures.jl/issues/21
     jitter_vals = ((rand(eltype(x_and_y_train), size(x_and_y_train))) ./ 10000)
-    gm_cluster = GMM(m.nc, x_and_y_train + jitter_vals, kind = :full, nInit = 50,
-        nIter = 20)
+    gm_cluster = GMM(
+        m.nc, x_and_y_train + jitter_vals, kind = :full, nInit = 50,
+        nIter = 20
+    )
     mvn_distributions = _create_clusters_distributions(gm_cluster, m.nd, m.nc)
     cluster_classifier_train = _cluster_predict(gm_cluster, x_and_y_train)
     clusters_train = _cluster_values(x_and_y_train, cluster_classifier_train, m.nc)
@@ -361,13 +386,15 @@ function SurrogatesBase.update!(m::MOE, x, y)
     clusters_test = _cluster_values(x_and_y_test, cluster_classifier_test, m.nc)
     best_models = []
     for i in 1:(m.nc)
-        best_model = _find_best_model(clusters_train[i], clusters_test[i], m.nd,
-            m.e)
+        best_model = _find_best_model(
+            clusters_train[i], clusters_test[i], m.nd,
+            m.e
+        )
         push!(best_models, best_model)
     end
     m.c = gm_cluster
     m.d = mvn_distributions
-    m.m = best_models
+    return m.m = best_models
 end
 
 """

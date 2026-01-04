@@ -13,7 +13,7 @@ function water_flow(x)
     K_w = x[8]
     log_val = log(r / r_w)
     return (2 * pi * T_u * (H_u - H_l)) /
-           (log_val * (1 + (2 * L * T_u / (log_val * r_w^2 * K_w)) + T_u / T_l))
+        (log_val * (1 + (2 * L * T_u / (log_val * r_w^2 * K_w)) + T_u / T_l))
 end
 
 n = 1000
@@ -88,7 +88,7 @@ y_true = welded_beam.(x_test)
     g = GEKPLS(x, y, grads, n_comp, delta_x, lb, ub, extra_points, initial_theta)
     y_pred = g.(x_test)
     rmse = sqrt(sum(((y_pred - y_true) .^ 2) / n_test))
-    @test isapprox(rmse, 50.0, atol = 0.5)#rmse: 38.988
+    @test isapprox(rmse, 50.0, atol = 0.5) #rmse: 38.988
 end
 
 @testset "Test 5: Welded Beam Function Test (dimensions = 3; n_comp = 2; extra_points = 2)" begin
@@ -174,9 +174,11 @@ end
     delta_x = 0.0001
     extra_points = 2
     initial_theta = [0.01 for i in 1:n_comp]
-    g = GEKPLS(initial_x_vec, initial_y, initial_grads, n_comp, delta_x, lb, ub,
+    g = GEKPLS(
+        initial_x_vec, initial_y, initial_grads, n_comp, delta_x, lb, ub,
         extra_points,
-        initial_theta)
+        initial_theta
+    )
     n_test = 100
     x_test = sample(n_test, lb, ub, GoldenSample())
     y_true = sphere_function.(x_test)
@@ -209,9 +211,11 @@ end
     y = sphere_function.(x)
     g = GEKPLS(x, y, grads, n_comp, delta_x, lb, ub, extra_points, initial_theta)
     x_point,
-    minima = surrogate_optimize!(sphere_function, SRBF(), lb, ub, g,
+        minima = surrogate_optimize!(
+        sphere_function, SRBF(), lb, ub, g,
         RandomSample(); maxiters = 20,
-        num_new_samples = 20, needs_gradient = true)
+        num_new_samples = 20, needs_gradient = true
+    )
     @test isapprox(minima, 0.0, atol = 0.0001)
 end
 
