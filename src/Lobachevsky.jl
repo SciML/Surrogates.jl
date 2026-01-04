@@ -1,5 +1,5 @@
 mutable struct LobachevskySurrogate{X, Y, A, N, L, U, C, S} <:
-               AbstractDeterministicSurrogate
+    AbstractDeterministicSurrogate
     x::X
     y::Y
     alpha::A
@@ -46,7 +46,8 @@ Lobachevsky interpolation, suggested parameters: 0 <= alpha <= 4, n must be even
 """
 function LobachevskySurrogate(
         x, y, lb::Number, ub::Number; alpha::Number = 1.0, n::Int = 4,
-        sparse = false)
+        sparse = false
+    )
     if alpha > 4 || alpha < 0
         error("Alpha must be between 0 and 4")
     end
@@ -54,15 +55,17 @@ function LobachevskySurrogate(
         error("Parameter n must be even")
     end
     coeff = _calc_loba_coeff1D(x, y, alpha, n, sparse)
-    LobachevskySurrogate(x, y, alpha, n, lb, ub, coeff, sparse)
+    return LobachevskySurrogate(x, y, alpha, n, lb, ub, coeff, sparse)
 end
 
 function (loba::LobachevskySurrogate)(val::Number)
     # Check to make sure dimensions of input matches expected dimension of surrogate
     _check_dimension(loba, val)
 
-    return sum(loba.coeff[j] * phi_nj1D(val, loba.x[j], loba.alpha, loba.n)
-    for j in 1:length(loba.x))
+    return sum(
+        loba.coeff[j] * phi_nj1D(val, loba.x[j], loba.alpha, loba.n)
+            for j in 1:length(loba.x)
+    )
 end
 
 function phi_njND(point, x, alpha, n)
@@ -89,20 +92,24 @@ LobachevskySurrogate(x,y,alpha,n::Int,lb,ub,sparse = false)
 
 Build the Lobachevsky surrogate with parameters alpha and n.
 """
-function LobachevskySurrogate(x, y, lb, ub; alpha = collect(one.(x[1])), n::Int = 4,
-        sparse = false)
+function LobachevskySurrogate(
+        x, y, lb, ub; alpha = collect(one.(x[1])), n::Int = 4,
+        sparse = false
+    )
     if n % 2 != 0
         error("Parameter n must be even")
     end
     coeff = _calc_loba_coeffND(x, y, alpha, n, sparse)
-    LobachevskySurrogate(x, y, alpha, n, lb, ub, coeff, sparse)
+    return LobachevskySurrogate(x, y, alpha, n, lb, ub, coeff, sparse)
 end
 
 function (loba::LobachevskySurrogate)(val)
     # Check to make sure dimensions of input matches expected dimension of surrogate
     _check_dimension(loba, val)
-    return sum(loba.coeff[j] * phi_njND(val, loba.x[j], loba.alpha, loba.n)
-    for j in 1:length(loba.x))
+    return sum(
+        loba.coeff[j] * phi_njND(val, loba.x[j], loba.alpha, loba.n)
+            for j in 1:length(loba.x)
+    )
 end
 
 function SurrogatesBase.update!(loba::LobachevskySurrogate, x_new, y_new)
@@ -117,7 +124,7 @@ function SurrogatesBase.update!(loba::LobachevskySurrogate, x_new, y_new)
         loba.y = vcat(loba.y, y_new)
         loba.coeff = _calc_loba_coeffND(loba.x, loba.y, loba.alpha, loba.n, loba.sparse)
     end
-    nothing
+    return nothing
 end
 
 #Lobachevsky integrals
@@ -129,7 +136,7 @@ function _phi_int(point, n)
             res = res + (-1)^k * binomial(n, k) * c^n
         end
     end
-    res *= 1 / (2^n * factorial(n))
+    return res *= 1 / (2^n * factorial(n))
 end
 
 function lobachevsky_integral(loba::LobachevskySurrogate, lb::Number, ub::Number)
@@ -197,6 +204,8 @@ function lobachevsky_integrate_dimension(loba::LobachevskySurrogate, lb, ub, dim
     new_lb = deleteat!(lb, dim)
     new_ub = deleteat!(ub, dim)
     new_loba = deleteat!(loba.alpha, dim)
-    return LobachevskySurrogate(new_x, loba.y, loba.alpha, loba.n, new_lb, new_ub,
-        new_coeff, loba.sparse)
+    return LobachevskySurrogate(
+        new_x, loba.y, loba.alpha, loba.n, new_lb, new_ub,
+        new_coeff, loba.sparse
+    )
 end

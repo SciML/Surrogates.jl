@@ -6,7 +6,7 @@ using GLM
 using Random
 using ExtendableSparse
 using SurrogatesBase: SurrogatesBase, update!, AbstractDeterministicSurrogate,
-                      AbstractStochasticSurrogate
+    AbstractStochasticSurrogate
 
 include("utils.jl")
 include("Radials.jl")
@@ -24,15 +24,19 @@ include("GEK.jl")
 include("GEKPLS.jl")
 include("VirtualStrategy.jl")
 
-current_surrogates = ["Kriging", "LinearSurrogate", "LobachevskySurrogate",
+current_surrogates = [
+    "Kriging", "LinearSurrogate", "LobachevskySurrogate",
     "NeuralSurrogate",
     "RadialBasis", "XGBoostSurrogate", "SecondOrderPolynomialSurrogate",
-    "Wendland", "GEK", "PolynomialChaosSurrogate"]
+    "Wendland", "GEK", "PolynomialChaosSurrogate",
+]
 
 #Radial structure:
 function RadialBasisStructure(; radial_function, scale_factor, sparse)
-    return (name = "RadialBasis", radial_function = radial_function,
-        scale_factor = scale_factor, sparse = sparse)
+    return (
+        name = "RadialBasis", radial_function = radial_function,
+        scale_factor = scale_factor, sparse = sparse,
+    )
 end
 
 #Kriging structure:
@@ -61,8 +65,10 @@ end
 
 #Neural structure
 function NeuralStructure(; model, loss, opt, n_epochs)
-    return (name = "NeuralSurrogate", model = model, loss = loss, opt = opt,
-        n_epochs = n_epochs)
+    return (
+        name = "NeuralSurrogate", model = model, loss = loss, opt = opt,
+        n_epochs = n_epochs,
+    )
 end
 
 #XGBoost structure
@@ -91,15 +97,15 @@ export current_surrogates
 export GEKPLS
 export RadialBasisStructure, KrigingStructure, LinearStructure, InverseDistanceStructure
 export LobachevskyStructure,
-       NeuralStructure, XGBoostStructure,
-       SecondOrderPolynomialStructure
+    NeuralStructure, XGBoostStructure,
+    SecondOrderPolynomialStructure
 export WendlandStructure
 export SamplingAlgorithm
 export Kriging, RadialBasis, std_error_at_point
 # Parallelization Strategies
 export potential_optimal_points
 export MinimumConstantLiar, MaximumConstantLiar, MeanConstantLiar, KrigingBeliever,
-       KrigingBelieverUpperBound, KrigingBelieverLowerBound
+    KrigingBelieverUpperBound, KrigingBelieverLowerBound
 export update!
 
 # radial basis functions
@@ -107,7 +113,7 @@ export linearRadial, cubicRadial, multiquadricRadial, thinplateRadial
 
 # samplers
 export sample, GridSample, RandomSample, SobolSample, LatinHypercubeSample,
-       HaltonSample
+    HaltonSample
 export RandomSample, KroneckerSample, GoldenSample, SectionSample
 
 # Optimization algorithms
@@ -119,8 +125,8 @@ export SecondOrderPolynomialSurrogate
 export Wendland
 export RadialBasisStructure, KrigingStructure, LinearStructure, InverseDistanceStructure
 export LobachevskyStructure,
-       NeuralStructure, XGBoostStructure,
-       SecondOrderPolynomialStructure
+    NeuralStructure, XGBoostStructure,
+    SecondOrderPolynomialStructure
 export WendlandStructure
 #export MOE
 export VariableFidelitySurrogate

@@ -38,7 +38,7 @@ function _calc_gek_coeffs(x, y, p::Number, theta::Number)
     @inbounds for i in (n + 1):nd1
         for j in (n + 1):nd1
             R[i, j] = -4 * theta * (x[i - n] - x[j - n])^2 *
-                      exp(-theta * abs(x[i - n] - x[j - n])^p)
+                exp(-theta * abs(x[i - n] - x[j - n])^p)
         end
     end
     one = ones(eltype(x[1]), nd1, 1)
@@ -50,7 +50,7 @@ function _calc_gek_coeffs(x, y, p::Number, theta::Number)
     mu = (one_t * inverse_of_R * y) / (one_t * inverse_of_R * one)
     b = inverse_of_R * (y - one * mu)
     sigma = ((y - one * mu)' * inverse_of_R * (y - one * mu)) / n
-    mu[1], b, sigma[1], inverse_of_R
+    return mu[1], b, sigma[1], inverse_of_R
 end
 
 function std_error_at_point(k::GEK, val::Number)
@@ -143,8 +143,8 @@ function _calc_gek_coeffs(x, y, p, theta)
             for l in 1:d
                 for k in 1:d
                     R[i + l - 1, j + k - 1] = -4 * theta[l] * theta[k] *
-                                              (x[ir][l] - x[jr][l]) *
-                                              (x[ir][k] - x[jr][k]) * R[ir, jr]
+                        (x[ir][l] - x[jr][l]) *
+                        (x[ir][k] - x[jr][k]) * R[ir, jr]
                 end
             end
             jr = jr + 1
@@ -161,7 +161,7 @@ function _calc_gek_coeffs(x, y, p, theta)
     mu = (one_t * inverse_of_R * y) / (one_t * inverse_of_R * one)
     b = inverse_of_R * (y - one * mu)
     sigma = ((y - one * mu)' * inverse_of_R * (y - one * mu)) / n
-    mu[1], b, sigma[1], inverse_of_R
+    return mu[1], b, sigma[1], inverse_of_R
 end
 
 function std_error_at_point(k::GEK, val)
@@ -200,9 +200,11 @@ function (k::GEK)(val)
     d = length(val)
     n = length(k.x)
     return k.mu +
-           sum(k.b[i] *
-               exp(-sum(k.theta[j] * norm(val[j] - k.x[i][j])^k.p[j] for j in 1:d))
-    for i in 1:n)
+        sum(
+        k.b[i] *
+            exp(-sum(k.theta[j] * norm(val[j] - k.x[i][j])^k.p[j] for j in 1:d))
+            for i in 1:n
+    )
 end
 
 function GEK(x, y, lb, ub; p = collect(one.(x[1])), theta = collect(one.(x[1])))
@@ -211,7 +213,7 @@ function GEK(x, y, lb, ub; p = collect(one.(x[1])), theta = collect(one.(x[1])))
         return
     end
     mu, b, sigma, inverse_of_R = _calc_gek_coeffs(x, y, p, theta)
-    GEK(x, y, lb, ub, p, theta, mu, b, sigma, inverse_of_R)
+    return GEK(x, y, lb, ub, p, theta, mu, b, sigma, inverse_of_R)
 end
 
 function SurrogatesBase.update!(k::GEK, new_x, new_y)
@@ -220,7 +222,7 @@ function SurrogatesBase.update!(k::GEK, new_x, new_y)
         return
     end
     if (length(new_x) == 1 && length(new_x[1]) == 1) ||
-       (length(new_x) > 1 && length(new_x[1]) == 1 && length(k.theta) > 1)
+            (length(new_x) > 1 && length(new_x[1]) == 1 && length(k.theta) > 1)
         n = length(k.x)
         k.x = insert!(k.x, n + 1, new_x)
         k.y = insert!(k.y, n + 1, new_y)
@@ -230,5 +232,5 @@ function SurrogatesBase.update!(k::GEK, new_x, new_y)
         k.y = insert!(k.y, n + 1, new_y)
     end
     k.mu, k.b, k.sigma, k.inverse_of_R = _calc_gek_coeffs(k.x, k.y, k.p, k.theta)
-    nothing
+    return nothing
 end

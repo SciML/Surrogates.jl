@@ -12,9 +12,9 @@ y = f.(x)
 my_p = 1.9
 
 # Check hyperparameter validation for constructing 1D Kriging surrogates
-@test_throws ArgumentError my_k=Kriging(x, y, lb, ub, p = -1.0)
-@test_throws ArgumentError my_k=Kriging(x, y, lb, ub, p = 3.0)
-@test_throws ArgumentError my_k=Kriging(x, y, lb, ub, theta = -2.0)
+@test_throws ArgumentError my_k = Kriging(x, y, lb, ub, p = -1.0)
+@test_throws ArgumentError my_k = Kriging(x, y, lb, ub, p = 3.0)
+@test_throws ArgumentError my_k = Kriging(x, y, lb, ub, theta = -2.0)
 
 my_k = Kriging(x, y, lb, ub, p = my_p)
 @test my_k.theta ≈ 0.5 * std(x)^(-my_p)
@@ -29,7 +29,7 @@ pred = my_k(5.5)
 
 @test 238.86 ≤ pred ≤ 722.84
 @test my_k(5.0) ≈ 238.86
-@test std_error_at_point(my_k, 5.0) < 1e-3 * my_k(5.0)
+@test std_error_at_point(my_k, 5.0) < 1.0e-3 * my_k(5.0)
 
 #WITHOUT ADD POINT
 x = [1.0, 2.0, 3.0]

@@ -157,17 +157,17 @@ mq_rad = RadialBasis(x, y, lb, ub, rad = multiquadricRadial(0.9)) # different sh
 
 # Issue 316
 
-x = sample(1024, [-0.45, -0.4, -0.9], [0.40, 0.55, 0.35], SobolSample())
+x = sample(1024, [-0.45, -0.4, -0.9], [0.4, 0.55, 0.35], SobolSample())
 lb = [-0.45 -0.4 -0.9]
-ub = [0.40 0.55 0.35]
+ub = [0.4 0.55 0.35]
 
 function mockvalues(in)
     x, y, z = in
-    p1 = reverse(vec([1.09903695e+01 -1.01500500e+01 -4.06629740e+01 -1.41834931e+01 1.00604784e+01 4.34951623e+00 -1.06519689e-01 -1.93335202e-03]))
+    p1 = reverse(vec([1.09903695e+1 -1.015005e+1 -4.0662974e+1 -1.41834931e+1 1.00604784e+1 4.34951623e+0 -1.06519689e-1 -1.93335202e-3]))
     p2 = vec([2.12791877 2.12791877 4.23881665 -1.05464575])
     f = evalpoly(z, p1)
     f += p2[1] * x^2 + p2[2] * y^2 + p2[3] * x^2 * y + p2[4] * x * y^2
-    f
+    return f
 end
 
 y = mockvalues.(x)
@@ -182,7 +182,7 @@ lb = 0.0
 ub = 4.0
 x = [1.0, 2.0, 3.0]
 y = [4.0, 5.0, 6.0]
-my_rad = RadialBasis(x, y, lb, ub, rad = linearRadial(), regularization = 1E-12)
+my_rad = RadialBasis(x, y, lb, ub, rad = linearRadial(), regularization = 1.0e-12)
 est = my_rad(3.0)
 @test est ≈ 6.0
 update!(my_rad, 4.0, 10.0)
@@ -206,14 +206,15 @@ y = [4.0, 5.0, 6.0]
 lb = [0.0, 3.0, 6.0]
 ub = [4.0, 7.0, 10.0]
 my_rad = RadialBasis(
-    x, y, lb, ub, rad = linearRadial(), scale_factor = 1.0, regularization = 1E-12)
+    x, y, lb, ub, rad = linearRadial(), scale_factor = 1.0, regularization = 1.0e-12
+)
 update!(my_rad, (9.0, 10.0, 11.0), 10.0)
 est = my_rad((1.0, 2.0, 3.0))
 @test est ≈ 4.0
 
 # Check regularization fixes the SingularException
 # 1D
-for reg in [0, 1E-12]
+for reg in [0, 1.0e-12]
     local lb = 0.0
     local ub = 4.0
     # Pass the first point twice to create a singular matrix
@@ -222,7 +223,8 @@ for reg in [0, 1E-12]
     local y = [4.0, 4.0, 5.0, 6.0]
     if reg == 0
         @test_throws LinearAlgebra.SingularException RadialBasis(
-            x, y, lb, ub, rad = linearRadial(), regularization = reg)
+            x, y, lb, ub, rad = linearRadial(), regularization = reg
+        )
     else
         local my_rad = RadialBasis(x, y, lb, ub, rad = linearRadial(), regularization = reg)
         @test my_rad(3.0) ≈ 6.0
@@ -231,14 +233,15 @@ for reg in [0, 1E-12]
 end
 
 # ND
-for reg in [0, 1E-12]
+for reg in [0, 1.0e-12]
     local lb = [0.0, 3.0, 6.0]
     local ub = [4.0, 7.0, 10.0]
     local x = [(1.0, 2.0, 3.0), (1.0, 2.0, 3.0), (4.0, 5.0, 6.0), (7.0, 8.0, 9.0)]
     local y = [4.0, 4.0, 5.0, 6.0]
     if reg == 0
         @test_throws LinearAlgebra.SingularException RadialBasis(
-            x, y, lb, ub, rad = linearRadial(), regularization = reg)
+            x, y, lb, ub, rad = linearRadial(), regularization = reg
+        )
     else
         local my_rad = RadialBasis(x, y, lb, ub, rad = linearRadial(), regularization = reg)
         @test my_rad((1.0, 2.0, 3.0)) ≈ 4.0

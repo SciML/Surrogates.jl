@@ -26,10 +26,12 @@ linearRadial() = RadialFunction(0, z -> norm(z))
 cubicRadial() = RadialFunction(1, z -> norm(z)^3)
 multiquadricRadial(c = 1.0) = RadialFunction(1, z -> sqrt((c * norm(z))^2 + 1))
 
-thinplateRadial() = RadialFunction(2, z -> begin
-    result = norm(z)^2 * log(norm(z))
-    ifelse(iszero(z), zero(result), result)
-end)
+thinplateRadial() = RadialFunction(
+    2, z -> begin
+        result = norm(z)^2 * log(norm(z))
+        ifelse(iszero(z), zero(result), result)
+    end
+)
 
 """
 RadialBasis(x,y,lb,ub,rad::RadialFunction, scale_factor::Float = 1.0, regularization::Real = 0.0)
@@ -46,8 +48,10 @@ of a polynomial term.
 References:
 https://en.wikipedia.org/wiki/Polyharmonic_spline
 """
-function RadialBasis(x, y, lb, ub; rad::RadialFunction = linearRadial(),
-        scale_factor::Real = 0.5, sparse = false, regularization::Real = 0.0)
+function RadialBasis(
+        x, y, lb, ub; rad::RadialFunction = linearRadial(),
+        scale_factor::Real = 0.5, sparse = false, regularization::Real = 0.0
+    )
     q = rad.q
     phi = rad.phi
     coeff = _calc_coeffs(x, y, lb, ub, phi, q, scale_factor, sparse, regularization)
@@ -102,22 +106,30 @@ function _construct_rbf_interp_matrix(x, x_el, lb, ub, phi, q, scale_factor, spa
 end
 
 function _construct_rbf_y_matrix(y, y_el::Number, m)
-    [i <= length(y) ? y[i] : zero(y_el) for i in 1:m]
+    return [i <= length(y) ? y[i] : zero(y_el) for i in 1:m]
 end
 function _construct_rbf_y_matrix(y, y_el, m)
-    [i <= length(y) ? y[i][j] : zero(first(y_el)) for i in 1:m, j in 1:length(y_el)]
+    return [i <= length(y) ? y[i][j] : zero(first(y_el)) for i in 1:m, j in 1:length(y_el)]
 end
 
 using Zygote: Buffer
 using ChainRulesCore: @non_differentiable
 
 function _make_combination(n, d, ix)
-    exponents_combinations = [e
-                              for e
-                                   in
-                                  collect(Iterators.product(Iterators.repeated(0:n,
-                                      d)...))[:]
-                              if sum(e) <= n]
+    exponents_combinations = [
+        e
+            for e
+            in
+            collect(
+                Iterators.product(
+                    Iterators.repeated(
+                        0:n,
+                        d
+                    )...
+                )
+            )[:]
+            if sum(e) <= n
+    ]
 
     return exponents_combinations[ix + 1]
 end
@@ -150,9 +162,11 @@ function multivar_poly_basis(x, ix, d, n)
     if n == 0
         return one(eltype(x))
     else
-        prod(a^d
-        for (a, d)
-             in  zip(x, _make_combination(n, d, ix)))
+        prod(
+            a^d
+                for (a, d)
+                in zip(x, _make_combination(n, d, ix))
+        )
     end
 end
 
@@ -181,19 +195,23 @@ function _make_approx(val, rad::RadialBasis)
     return Buffer(zeros(eltype(val), l), false)
 end
 function _add_tmp_to_approx!(approx, i, tmp, rad::RadialBasis; f = identity)
-    @inbounds @simd ivdep for j in 1:size(rad.coeff, 1)
+    return @inbounds @simd ivdep for j in 1:size(rad.coeff, 1)
         approx[j] += rad.coeff[j, i] * f(tmp)
     end
 end
 # specialise when only single output dimension
-function _make_approx(val,
-        ::RadialBasis{F, Q, X, <:AbstractArray{<:Number}}) where {F, Q, X}
+function _make_approx(
+        val,
+        ::RadialBasis{F, Q, X, <:AbstractArray{<:Number}}
+    ) where {F, Q, X}
     return Ref(zero(eltype(val)))
 end
-function _add_tmp_to_approx!(approx::Base.RefValue, i, tmp,
+function _add_tmp_to_approx!(
+        approx::Base.RefValue, i, tmp,
         rad::RadialBasis{F, Q, X, <:AbstractArray{<:Number}};
-        f = identity) where {F, Q, X}
-    @inbounds @simd ivdep for j in 1:size(rad.coeff, 1)
+        f = identity
+    ) where {F, Q, X}
+    return @inbounds @simd ivdep for j in 1:size(rad.coeff, 1)
         approx[] += rad.coeff[j, i] * f(tmp)
     end
 end
@@ -242,14 +260,16 @@ Add new samples x and y and update the coefficients. Return the new object radia
 """
 function SurrogatesBase.update!(rad::RadialBasis, new_x, new_y)
     if (length(new_x) == 1 && length(new_x[1]) == 1) ||
-       (length(new_x) > 1 && length(new_x[1]) == 1 && length(rad.lb) > 1)
+            (length(new_x) > 1 && length(new_x[1]) == 1 && length(rad.lb) > 1)
         push!(rad.x, new_x)
         push!(rad.y, new_y)
     else
         append!(rad.x, new_x)
         append!(rad.y, new_y)
     end
-    rad.coeff = _calc_coeffs(rad.x, rad.y, rad.lb, rad.ub, rad.phi, rad.dim_poly,
-        rad.scale_factor, rad.sparse, rad.regularization)
-    nothing
+    rad.coeff = _calc_coeffs(
+        rad.x, rad.y, rad.lb, rad.ub, rad.phi, rad.dim_poly,
+        rad.scale_factor, rad.sparse, rad.regularization
+    )
+    return nothing
 end

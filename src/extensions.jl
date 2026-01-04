@@ -24,7 +24,7 @@ mutable struct NeuralSurrogate{X, Y, M, L, O, P, N, A, U} <: AbstractDeterminist
 end
 
 mutable struct PolynomialChaosSurrogate{X, Y, L, U, C, O, N} <:
-               AbstractDeterministicSurrogate
+    AbstractDeterministicSurrogate
     x::X
     y::Y
     lb::L
@@ -35,7 +35,7 @@ mutable struct PolynomialChaosSurrogate{X, Y, L, U, C, O, N} <:
 end
 
 mutable struct XGBoostSurrogate{X, Y, B, L, U, N} <:
-               SurrogatesBase.AbstractDeterministicSurrogate
+    SurrogatesBase.AbstractDeterministicSurrogate
     x::X
     y::Y
     bst::B
