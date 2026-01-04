@@ -25,7 +25,7 @@ int = quadgk(obj, a, b)
 int_val_true = int[1] - int[2]
 @test abs(int_1D - int_val_true) < 2 * 10^-5
 update!(my_loba, 3.7, 12.1)
-update!(my_loba, [1.23, 3.45], [5.20, 109.67])
+update!(my_loba, [1.23, 3.45], [5.2, 109.67])
 
 #ND
 

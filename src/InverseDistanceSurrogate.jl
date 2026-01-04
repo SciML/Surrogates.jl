@@ -26,10 +26,14 @@ function (inverSurr::InverseDistanceSurrogate)(val)
         return inverSurr.y[findfirst(x -> x == val, inverSurr.x)]
     else
         if length(inverSurr.lb) == 1
-            num = sum(inverSurr.y[i] * (norm(val .- inverSurr.x[i]))^(-inverSurr.p)
-            for i in 1:length(inverSurr.x))
-            den = sum(norm(val .- inverSurr.x[i])^(-inverSurr.p)
-            for i in 1:length(inverSurr.x))
+            num = sum(
+                inverSurr.y[i] * (norm(val .- inverSurr.x[i]))^(-inverSurr.p)
+                    for i in 1:length(inverSurr.x)
+            )
+            den = sum(
+                norm(val .- inverSurr.x[i])^(-inverSurr.p)
+                    for i in 1:length(inverSurr.x)
+            )
             return num / den
         else
             βᵢ = [norm(val .- inverSurr.x[i])^(-inverSurr.p) for i in 1:length(inverSurr.x)]
@@ -50,5 +54,5 @@ function SurrogatesBase.update!(inverSurr::InverseDistanceSurrogate, x_new, y_ne
         push!(inverSurr.x, x_new)
         push!(inverSurr.y, y_new)
     end
-    nothing
+    return nothing
 end

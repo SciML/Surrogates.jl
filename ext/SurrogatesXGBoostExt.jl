@@ -32,7 +32,7 @@ function XGBoostSurrogate(x, y, lb, ub; num_round::Int = 1)
         end
     end
     bst = xgboost((X, y); num_round)
-    XGBoostSurrogate(X, y, bst, lb, ub, num_round)
+    return XGBoostSurrogate(X, y, bst, lb, ub, num_round)
 end
 
 function (rndfor::XGBoostSurrogate)(val::Number)
@@ -58,13 +58,16 @@ function SurrogatesBase.update!(rndfor::XGBoostSurrogate, x_new, y_new)
     rndfor.x = vcat(rndfor.x, x_new)
     rndfor.y = vcat(rndfor.y, y_new)
     if length(rndfor.lb) == 1
-        rndfor.bst = xgboost((rndfor.x, rndfor.y);
-            num_round = rndfor.num_round)
+        rndfor.bst = xgboost(
+            (rndfor.x, rndfor.y);
+            num_round = rndfor.num_round
+        )
     else
         rndfor.bst = xgboost(
-            (rndfor.x, rndfor.y); num_round = rndfor.num_round)
+            (rndfor.x, rndfor.y); num_round = rndfor.num_round
+        )
     end
-    nothing
+    return nothing
 end
 
 end # module

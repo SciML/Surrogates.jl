@@ -8,7 +8,7 @@ end
 
 function LinearSurrogate(x, y, lb::Number, ub::Number)
     ols = lm(reshape(x, length(x), 1), y)
-    LinearSurrogate(x, y, coef(ols), lb, ub)
+    return LinearSurrogate(x, y, coef(ols), lb, ub)
 end
 
 function SurrogatesBase.update!(my_linear::LinearSurrogate, new_x, new_y)
@@ -45,12 +45,12 @@ function SurrogatesBase.update!(my_linear::LinearSurrogate, new_x, new_y)
         md = lm(X, my_linear.y)
         my_linear.coeff = coef(md)
     end
-    nothing
+    return nothing
 end
 
 function (lin::LinearSurrogate)(val::Number)
     _check_dimension(lin, val)
-    return lin.coeff[1]*val
+    return lin.coeff[1] * val
 end
 
 function (lin::LinearSurrogate)(val)

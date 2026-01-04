@@ -1,5 +1,5 @@
 mutable struct EarthSurrogate{X, Y, L, U, B, C, P, M, N, R, G, I, T} <:
-               AbstractDeterministicSurrogate
+    AbstractDeterministicSurrogate
     x::X
     y::Y
     lb::L
@@ -71,7 +71,7 @@ function _forward_pass_1d(x, y, n_max_terms, rel_res_error, maxiters)
                     X[k, j] = _eval_basis_term_1d(new_basis[j], x[k])
                 end
             end
-            if (cond(X' * X) > 1e8)
+            if (cond(X' * X) > 1.0e8)
                 condition_number = false
                 new_sse = +Inf
             else
@@ -79,14 +79,18 @@ function _forward_pass_1d(x, y, n_max_terms, rel_res_error, maxiters)
                 coeff = (X' * X) \ (X' * y)
                 new_sse = zero(y[1])
                 for k in 1:n
-                    val_k = sum(coeff[j] * _eval_basis_term_1d(new_basis[j], x[k])
-                    for j in 1:d) + intercept
+                    val_k = sum(
+                        coeff[j] * _eval_basis_term_1d(new_basis[j], x[k])
+                            for j in 1:d
+                    ) + intercept
                     new_sse = new_sse + (y[k] - val_k)^2
                 end
             end
             #is the i-esim the best?
-            if ((new_sse < current_sse) && (abs(current_sse - new_sse) >= rel_res_error) &&
-                condition_number)
+            if (
+                    (new_sse < current_sse) && (abs(current_sse - new_sse) >= rel_res_error) &&
+                        condition_number
+                )
                 #Add the hinge function to the basis
                 pos_of_knot = i
                 current_sse = new_sse
@@ -135,8 +139,10 @@ function _backward_pass_1d(x, y, n_min_terms, basis, penalty, rel_GCV)
             new_sse = zero(y[1])
             current_base_len = num_terms - 1
             for a in 1:n
-                val_a = sum(coef[j] * _eval_basis_term_1d(current_basis[j], x[a])
-                for j in 1:current_base_len) + intercept
+                val_a = sum(
+                    coef[j] * _eval_basis_term_1d(current_basis[j], x[a])
+                        for j in 1:current_base_len
+                ) + intercept
                 new_sse = new_sse + (y[a] - val_a)^2
             end
             effect_num_params = current_base_len + penalty * (current_base_len - 1) / 2
@@ -161,24 +167,30 @@ function _backward_pass_1d(x, y, n_min_terms, basis, penalty, rel_GCV)
     return basis
 end
 
-function EarthSurrogate(x, y, lb::Number, ub::Number; penalty::Number = 2.0,
+function EarthSurrogate(
+        x, y, lb::Number, ub::Number; penalty::Number = 2.0,
         n_min_terms::Int = 2, n_max_terms::Int = 10,
-        rel_res_error::Number = 1e-2, rel_GCV::Number = 1e-2,
-        maxiters = 100)
+        rel_res_error::Number = 1.0e-2, rel_GCV::Number = 1.0e-2,
+        maxiters = 100
+    )
     intercept = sum(y) / length(y)
     basis_after_forward = _forward_pass_1d(x, y, n_max_terms, rel_res_error, maxiters)
     basis = _backward_pass_1d(x, y, n_min_terms, basis_after_forward, penalty, rel_GCV)
     coeff = _coeff_1d(x, y, basis)
-    return EarthSurrogate(x, y, lb, ub, basis, coeff, penalty, n_min_terms, n_max_terms,
-        rel_res_error, rel_GCV, intercept, maxiters)
+    return EarthSurrogate(
+        x, y, lb, ub, basis, coeff, penalty, n_min_terms, n_max_terms,
+        rel_res_error, rel_GCV, intercept, maxiters
+    )
 end
 
 function (earth::EarthSurrogate)(val::Number)
     # Check to make sure dimensions of input matches expected dimension of surrogate
     _check_dimension(earth, val)
-    return sum(earth.coeff[i] * _eval_basis_term_1d(earth.basis[i], val)
-    for i in 1:length(earth.coeff)) +
-           earth.intercept
+    return sum(
+        earth.coeff[i] * _eval_basis_term_1d(earth.basis[i], val)
+            for i in 1:length(earth.coeff)
+    ) +
+        earth.intercept
 end
 
 #ND
@@ -250,7 +262,7 @@ function _forward_pass_nd(x, y, n_max_terms, rel_res_error, maxiters)
 
                         # Check condition number
                         XtX = X' * X
-                        if cond(XtX) > 1e8
+                        if cond(XtX) > 1.0e8
                             continue
                         end
 
@@ -266,7 +278,7 @@ function _forward_pass_nd(x, y, n_max_terms, rel_res_error, maxiters)
 
                         # Check if this is the best so far
                         if (new_sse < current_sse) &&
-                           (abs(current_sse - new_sse) >= rel_res_error)
+                                (abs(current_sse - new_sse) >= rel_res_error)
                             best_term1 = term1
                             best_term2 = term2
                             current_sse = new_sse
@@ -304,7 +316,7 @@ function _backward_pass_nd(x, y, n_min_terms, basis, penalty, rel_GCV)
     sse = zero(y[1])
     @inbounds for a in 1:n
         val_a = sum(coeff[b] * _eval_basis_term_nd(basis[b], x[a]) for b in 1:base_len) +
-                intercept
+            intercept
         sse = sse + (y[a] - val_a)^2
     end
 
@@ -328,8 +340,10 @@ function _backward_pass_nd(x, y, n_min_terms, basis, penalty, rel_GCV)
             new_sse = zero(y[1])
             current_base_len = num_terms - 1
             @inbounds for a in 1:n
-                val_a = sum(coef[b] * _eval_basis_term_nd(current_basis[b], x[a])
-                for b in 1:current_base_len) + intercept
+                val_a = sum(
+                    coef[b] * _eval_basis_term_nd(current_basis[b], x[a])
+                        for b in 1:current_base_len
+                ) + intercept
                 new_sse = new_sse + (y[a] - val_a)^2
             end
 
@@ -360,35 +374,45 @@ function _backward_pass_nd(x, y, n_min_terms, basis, penalty, rel_GCV)
     return basis
 end
 
-function EarthSurrogate(x, y, lb, ub; penalty::Number = 2.0, n_min_terms::Int = 2,
-        n_max_terms::Int = 10, rel_res_error::Number = 1e-2,
-        rel_GCV::Number = 1e-2, maxiters = 100)
+function EarthSurrogate(
+        x, y, lb, ub; penalty::Number = 2.0, n_min_terms::Int = 2,
+        n_max_terms::Int = 10, rel_res_error::Number = 1.0e-2,
+        rel_GCV::Number = 1.0e-2, maxiters = 100
+    )
     intercept = sum(y) / length(y)
     basis_after_forward = _forward_pass_nd(x, y, n_max_terms, rel_res_error, maxiters)
     basis = _backward_pass_nd(x, y, n_min_terms, basis_after_forward, penalty, rel_GCV)
     coeff = _coeff_nd(x, y, basis)
-    return EarthSurrogate(x, y, lb, ub, basis, coeff, penalty, n_min_terms, n_max_terms,
-        rel_res_error, rel_GCV, intercept, maxiters)
+    return EarthSurrogate(
+        x, y, lb, ub, basis, coeff, penalty, n_min_terms, n_max_terms,
+        rel_res_error, rel_GCV, intercept, maxiters
+    )
 end
 
 function (earth::EarthSurrogate)(val)
     # Check to make sure dimensions of input matches expected dimension of surrogate
     _check_dimension(earth, val)
-    return sum(earth.coeff[i] * _eval_basis_term_nd(earth.basis[i], val)
-    for i in 1:length(earth.coeff)) +
-           earth.intercept
+    return sum(
+        earth.coeff[i] * _eval_basis_term_nd(earth.basis[i], val)
+            for i in 1:length(earth.coeff)
+    ) +
+        earth.intercept
 end
 
 function SurrogatesBase.update!(earth::EarthSurrogate, x_new, y_new)
-    if length(earth.x[1]) == 1
+    return if length(earth.x[1]) == 1
         #1D
         earth.x = vcat(earth.x, x_new)
         earth.y = vcat(earth.y, y_new)
         earth.intercept = sum(earth.y) / length(earth.y)
-        basis_after_forward = _forward_pass_1d(earth.x, earth.y, earth.n_max_terms,
-            earth.rel_res_error, earth.maxiters)
-        earth.basis = _backward_pass_1d(earth.x, earth.y, earth.n_min_terms,
-            basis_after_forward, earth.penalty, earth.rel_GCV)
+        basis_after_forward = _forward_pass_1d(
+            earth.x, earth.y, earth.n_max_terms,
+            earth.rel_res_error, earth.maxiters
+        )
+        earth.basis = _backward_pass_1d(
+            earth.x, earth.y, earth.n_min_terms,
+            basis_after_forward, earth.penalty, earth.rel_GCV
+        )
         earth.coeff = _coeff_1d(earth.x, earth.y, earth.basis)
         nothing
     else
@@ -396,10 +420,14 @@ function SurrogatesBase.update!(earth::EarthSurrogate, x_new, y_new)
         earth.x = vcat(earth.x, x_new)
         earth.y = vcat(earth.y, y_new)
         earth.intercept = sum(earth.y) / length(earth.y)
-        basis_after_forward = _forward_pass_nd(earth.x, earth.y, earth.n_max_terms,
-            earth.rel_res_error, earth.maxiters)
-        earth.basis = _backward_pass_nd(earth.x, earth.y, earth.n_min_terms,
-            basis_after_forward, earth.penalty, earth.rel_GCV)
+        basis_after_forward = _forward_pass_nd(
+            earth.x, earth.y, earth.n_max_terms,
+            earth.rel_res_error, earth.maxiters
+        )
+        earth.basis = _backward_pass_nd(
+            earth.x, earth.y, earth.n_min_terms,
+            basis_after_forward, earth.penalty, earth.rel_GCV
+        )
         earth.coeff = _coeff_nd(earth.x, earth.y, earth.basis)
         nothing
     end
