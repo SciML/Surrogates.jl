@@ -13,6 +13,9 @@ using PrecompileTools
     lb_nd = (0.0, 0.0)
     ub_nd = (10.0, 10.0)
 
+    # GEK test data (1D) - includes gradients
+    y_gek_1d = vcat(y_1d, 2.0 .* x_1d)
+
     @compile_workload begin
         # RadialBasis - most used surrogate (1D)
         rad_1d = RadialBasis(x_1d, y_1d, lb_1d, ub_1d)
@@ -30,6 +33,7 @@ using PrecompileTools
         # Kriging - nD
         krig_nd = Kriging(x_nd, y_nd, lb_nd, ub_nd)
         krig_nd((2.5, 3.5))
+        std_error_at_point(krig_nd, (2.5, 3.5))
 
         # LinearSurrogate (1D)
         lin_1d = LinearSurrogate(x_1d, y_1d, lb_1d, ub_1d)
@@ -54,6 +58,19 @@ using PrecompileTools
         # Wendland (1D)
         wend_1d = Wendland(x_1d, y_1d, lb_1d, ub_1d)
         wend_1d(2.5)
+
+        # GEK - Gradient Enhanced Kriging (1D)
+        gek_1d = GEK(x_1d, y_gek_1d, lb_1d, ub_1d)
+        gek_1d(2.5)
+        std_error_at_point(gek_1d, 2.5)
+
+        # EarthSurrogate (1D)
+        earth_1d = EarthSurrogate(x_1d, y_1d, lb_1d, ub_1d)
+        earth_1d(2.5)
+
+        # EarthSurrogate (nD)
+        earth_nd = EarthSurrogate(x_nd, y_nd, lb_nd, ub_nd)
+        earth_nd((2.5, 3.5))
 
         # Sampling - Sobol
         sample(5, lb_1d, ub_1d, SobolSample())
