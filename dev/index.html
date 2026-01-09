@@ -34,30 +34,29 @@ value = my_lobachevsky(5.0)
 surrogate_optimize!(f, SRBF(), lb, ub, my_lobachevsky, RandomSample())
 
 #New approximation
-value = my_lobachevsky(5.0)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">135.038435560248</code></pre><h2 id="Reproducibility"><a class="docs-heading-anchor" href="#Reproducibility">Reproducibility</a><a id="Reproducibility-1"></a><a class="docs-heading-anchor-permalink" href="#Reproducibility" title="Permalink"></a></h2><details><summary>The documentation of this SciML package was built using these direct dependencies,</summary><pre class="documenter-example-output"><code class="nohighlight hljs ansi">Status `~/github-runners/demeter4-7/_work/Surrogates.jl/Surrogates.jl/docs/Project.toml`
+value = my_lobachevsky(5.0)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">135.03842446889894</code></pre><h2 id="Reproducibility"><a class="docs-heading-anchor" href="#Reproducibility">Reproducibility</a><a id="Reproducibility-1"></a><a class="docs-heading-anchor-permalink" href="#Reproducibility" title="Permalink"></a></h2><details><summary>The documentation of this SciML package was built using these direct dependencies,</summary><pre class="documenter-example-output"><code class="nohighlight hljs ansi">Status `~/work/Surrogates.jl/Surrogates.jl/docs/Project.toml`
   [99985d1d] AbstractGPs v0.5.24
   [e30172f5] Documenter v1.16.1
   [587475ba] Flux v0.16.7
-  [cc18c42c] GaussianMixtures v0.3.13
-  [91a5bcdd] Plots v1.41.3
+  [cc18c42c] GaussianMixtures v0.3.14
+  [91a5bcdd] Plots v1.41.4
   [8d666b04] PolyChaos v1.0.0
   [1fd47b50] QuadGK v2.11.2
-  [6fc51010] Surrogates v7.3.0 `~/github-runners/demeter4-7/_work/Surrogates.jl/Surrogates.jl`
+  [6fc51010] Surrogates v7.3.0 `~/work/Surrogates.jl/Surrogates.jl`
   [009559a3] XGBoost v2.5.2
-  [e88e6eb3] Zygote v0.7.10</code></pre></details><details><summary>and using this machine and Julia version.</summary><pre class="documenter-example-output"><code class="nohighlight hljs ansi">Julia Version 1.12.3
-Commit 966d0af0fdf (2025-12-15 11:20 UTC)
+  [e88e6eb3] Zygote v0.7.10</code></pre></details><details><summary>and using this machine and Julia version.</summary><pre class="documenter-example-output"><code class="nohighlight hljs ansi">Julia Version 1.12.4
+Commit 01a2eadb047 (2026-01-06 16:56 UTC)
 Build Info:
   Official https://julialang.org release
 Platform Info:
   OS: Linux (x86_64-linux-gnu)
-  CPU: 64 × AMD EPYC 9354 32-Core Processor
+  CPU: 4 × AMD EPYC 7763 64-Core Processor
   WORD_SIZE: 64
-  LLVM: libLLVM-18.1.7 (ORCJIT, znver4)
+  LLVM: libLLVM-18.1.7 (ORCJIT, znver3)
   GC: Built with stock GC
-Threads: 1 default, 1 interactive, 1 GC (on 64 virtual cores)
+Threads: 1 default, 1 interactive, 1 GC (on 4 virtual cores)
 Environment:
-  JULIA_DEPOT_PATH = /home/chrisrackauckas/github-runners/demeter4-7/.julia
-  JULIA_DEBUG = Documenter</code></pre></details><details><summary>A more complete overview of all dependencies and their versions is also provided.</summary><pre class="documenter-example-output"><code class="nohighlight hljs ansi">Status `~/github-runners/demeter4-7/_work/Surrogates.jl/Surrogates.jl/docs/Manifest.toml`
+  JULIA_DEBUG = Documenter</code></pre></details><details><summary>A more complete overview of all dependencies and their versions is also provided.</summary><pre class="documenter-example-output"><code class="nohighlight hljs ansi">Status `~/work/Surrogates.jl/Surrogates.jl/docs/Manifest.toml`
   [a4c015fc] ANSIColoredPrinters v0.0.1
   [621f4979] AbstractFFTs v1.5.0
   [99985d1d] AbstractGPs v0.5.24
@@ -101,25 +100,24 @@ Environment:
   [31c24e10] Distributions v0.25.123
   [ffbed154] DocStringExtensions v0.9.5
   [e30172f5] Documenter v1.16.1
-  [f151be2c] EnzymeCore v0.8.17
+  [f151be2c] EnzymeCore v0.8.18
   [460bff9d] ExceptionUnwrapping v0.1.11
-  [95c220a8] ExtendableSparse v1.7.1
+⌅ [95c220a8] ExtendableSparse v1.7.1
   [c87230d0] FFMPEG v0.4.5
   [7a1cc6ca] FFTW v1.10.0
   [cc61a311] FLoops v0.2.2
   [b9860ae5] FLoopsBase v0.1.1
-  [5789e2e9] FileIO v1.17.1
   [1a297f60] FillArrays v1.15.0
   [53c48c17] FixedPointNumbers v0.8.5
   [587475ba] Flux v0.16.7
   [1fa38f19] Format v1.3.7
 ⌅ [f6369f11] ForwardDiff v0.10.39
   [d9f16b24] Functors v0.5.2
-  [38e38edf] GLM v1.9.1
+  [38e38edf] GLM v1.9.2
   [46192b85] GPUArraysCore v0.2.0
   [28b8d3ca] GR v0.73.19
   [d54b0c1a] GaussQuadrature v0.5.8
-  [cc18c42c] GaussianMixtures v0.3.13
+  [cc18c42c] GaussianMixtures v0.3.14
   [d7ba0133] Git v1.5.0
   [42e2da0e] Grisu v1.0.2
   [cd3eb016] HTTP v1.10.19
@@ -134,7 +132,6 @@ Environment:
   [92d709cd] IrrationalConstants v0.2.6
   [42fd0dbc] IterativeSolvers v0.9.4
   [82899510] IteratorInterfaceExtensions v1.0.0
-⌅ [033835bb] JLD2 v0.5.15
   [1019f520] JLFzf v0.1.11
   [692b3bcd] JLLWrappers v1.7.1
   [682c06a0] JSON v1.3.0
@@ -149,7 +146,7 @@ Environment:
   [2ab3a3ac] LogExpFunctions v0.3.29
   [e6f89c97] LoggingExtras v1.2.0
   [c2834f40] MLCore v1.0.0
-  [7e8f7934] MLDataDevices v1.16.0
+  [7e8f7934] MLDataDevices v1.17.0
   [d8e11817] MLStyle v0.4.17
   [f1d291b0] MLUtils v0.4.8
   [1914dd2f] MacroTools v0.5.16
@@ -171,7 +168,7 @@ Environment:
   [69de0a69] Parsers v2.8.3
   [ccf2f8ad] PlotThemes v3.3.0
   [995b91a9] PlotUtils v1.4.4
-  [91a5bcdd] Plots v1.41.3
+  [91a5bcdd] Plots v1.41.4
   [8d666b04] PolyChaos v1.0.0
   [aea7be01] PrecompileTools v1.3.3
   [21216c6a] Preferences v1.5.1
@@ -216,8 +213,8 @@ Environment:
   [3eaba693] StatsModels v0.7.7
   [09ab397b] StructArrays v0.7.2
   [856f2bd8] StructTypes v1.11.0
-  [ec057cc2] StructUtils v2.6.0
-  [6fc51010] Surrogates v7.3.0 `~/github-runners/demeter4-7/_work/Surrogates.jl/Surrogates.jl`
+  [ec057cc2] StructUtils v2.6.1
+  [6fc51010] Surrogates v7.3.0 `~/work/Surrogates.jl/Surrogates.jl`
   [89f642e6] SurrogatesBase v1.1.0
   [3783bdb8] TableTraits v1.0.1
   [bd369af6] Tables v1.12.1
@@ -360,7 +357,7 @@ Environment:
   [deac9b47] LibCURL_jll v8.15.0+0
   [e37daf67] LibGit2_jll v1.9.0+0
   [29816b5a] LibSSH2_jll v1.11.3+1
-  [14a3606d] MozillaCACerts_jll v2025.5.20
+  [14a3606d] MozillaCACerts_jll v2025.11.4
   [4536629a] OpenBLAS_jll v0.3.29+0
   [05823500] OpenLibm_jll v0.8.7+0
   [458c3c95] OpenSSL_jll v3.5.4+0
@@ -370,4 +367,4 @@ Environment:
   [8e850b90] libblastrampoline_jll v5.15.0+0
   [8e850ede] nghttp2_jll v1.64.0+1
   [3f19e933] p7zip_jll v17.7.0+0
-Info Packages marked with ⌃ and ⌅ have new versions available. Those with ⌃ may be upgradable, but those with ⌅ are restricted by compatibility constraints from upgrading. To see why use `status --outdated -m`</code></pre></details><p>You can also download the <a href="https://github.com/SciML/Surrogates.jl/tree/gh-pages/v7.3.0/assets/Manifest.toml">manifest</a> file and the <a href="https://github.com/SciML/Surrogates.jl/tree/gh-pages/v7.3.0/assets/Project.toml">project</a> file.</p></article><nav class="docs-footer"><a class="docs-footer-nextpage" href="tutorials/">Basics »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.16.1 on <span class="colophon-date" title="Monday 5 January 2026 10:49">Monday 5 January 2026</span>. Using Julia version 1.12.3.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+Info Packages marked with ⌃ and ⌅ have new versions available. Those with ⌃ may be upgradable, but those with ⌅ are restricted by compatibility constraints from upgrading. To see why use `status --outdated -m`</code></pre></details><p>You can also download the <a href="https://github.com/SciML/Surrogates.jl/tree/gh-pages/v7.3.0/assets/Manifest.toml">manifest</a> file and the <a href="https://github.com/SciML/Surrogates.jl/tree/gh-pages/v7.3.0/assets/Project.toml">project</a> file.</p></article><nav class="docs-footer"><a class="docs-footer-nextpage" href="tutorials/">Basics »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.16.1 on <span class="colophon-date" title="Friday 9 January 2026 13:00">Friday 9 January 2026</span>. Using Julia version 1.12.4.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
