@@ -170,9 +170,9 @@ version = "0.5.0"
 
 [[deps.CUDA_Driver_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
-git-tree-sha1 = "63b4911c80ade9de10ec4b766e99cb1a628f465f"
+git-tree-sha1 = "2167b7813be655e6777df44d0b2b40c17be3d45e"
 uuid = "4ee394cb-3365-5eb0-8335-949819d2adfc"
-version = "13.1.0+0"
+version = "13.1.0+1"
 
 [[deps.CUDA_Runtime_jll]]
 deps = ["Artifacts", "CUDA_Driver_jll", "JLLWrappers", "LazyArtifacts", "Libdl", "TOML"]
@@ -1717,9 +1717,9 @@ version = "7.8.3+2"
 
 [[deps.Surrogates]]
 deps = ["ChainRulesCore", "Distributions", "ExtendableSparse", "GLM", "IterativeSolvers", "LinearAlgebra", "PrecompileTools", "QuasiMonteCarlo", "Random", "SparseArrays", "Statistics", "SurrogatesBase", "Zygote"]
-path = "/home/runner/work/Surrogates.jl/Surrogates.jl"
+path = "/home/chrisrackauckas/github-runners/deepsea4-9/_work/Surrogates.jl/Surrogates.jl"
 uuid = "6fc51010-71bc-11e9-0e15-a3fcc6593c49"
-version = "7.3.0"
+version = "7.4.0"
 
     [deps.Surrogates.extensions]
     SurrogatesAbstractGPsExt = "AbstractGPs"
