@@ -4,6 +4,7 @@ using Zygote
 using ForwardDiff
 using Test
 using GaussianMixtures
+using Flux
 
 @testset "ForwardDiff" begin
     @testset "1D" begin
@@ -143,9 +144,8 @@ using GaussianMixtures
 
         #GENN
         @testset "GENN" begin
-            using Flux
             df = x -> 2 * x
-            dydx = df.(x)
+            dydx = reshape(df.(x), :, 1)
             my_genn = GENNSurrogate(x, y, lb, ub, dydx = dydx, n_epochs = 100)
             g = x -> ForwardDiff.derivative(my_genn, x)
             @test g(5.0) isa Number
@@ -261,9 +261,8 @@ using GaussianMixtures
 
         #GENN
         @testset "GENN" begin
-            using Flux
             der = x -> [x[2], x[1]]  # Gradient of f(x) = x[1] * x[2]
-            dydx = [der(xi) for xi in x]
+            dydx = reduce(hcat, (der(xi) for xi in x))'  # (n_samples, n_inputs)
             my_genn_ND = GENNSurrogate(x, y, lb, ub, dydx = dydx, n_epochs = 100)
             g = x -> ForwardDiff.gradient(my_genn_ND, x)
             @test g([2.0, 5.0]) isa AbstractVector
@@ -438,9 +437,8 @@ end
 
         #GENN
         @testset "GENN" begin
-            using Flux
             df = x -> 2 * x
-            dydx = df.(x)
+            dydx = reshape(df.(x), :, 1)
             my_genn = GENNSurrogate(x, y, lb, ub, dydx = dydx, n_epochs = 100)
             g = x -> Zygote.gradient(my_genn, x)
             result = g(5.0)
@@ -626,9 +624,8 @@ end
 
         #GENN
         @testset "GENN" begin
-            using Flux
             der = x -> [x[2], x[1]]  # Gradient of f(x) = x[1] * x[2]
-            dydx = [der(xi) for xi in x]
+            dydx = reduce(hcat, (der(xi) for xi in x))'  # (n_samples, n_inputs)
             my_genn_ND = GENNSurrogate(x, y, lb, ub, dydx = dydx, n_epochs = 100)
             g = x -> Zygote.gradient(my_genn_ND, x)
             result = g((2.0, 5.0))
