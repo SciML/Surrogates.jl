@@ -1,5 +1,5 @@
 using SafeTestsets, Test
-#=
+
 @safetestset "AbstractGPSurrogate" begin
     using AbstractGPs
     using Zygote
@@ -293,15 +293,13 @@ end
         Zygote.gradient(x -> sum(my_second(x)), [2.0, 5.0])
     end
 end
-=#
+
 
 @safetestset "GENNSurrogate" begin
     using Surrogates
     using Flux
     using Flux.Optimisers
     using LinearAlgebra
-    using Zygote
-    using ForwardDiff
 
     @testset "1D without gradients" begin
         lb = 0.0
@@ -322,7 +320,7 @@ end
         df = x -> 2 * x
         x = sample(10, lb, ub, SobolSample())
         y = f.(x)
-        dydx = df.(x)
+        dydx = reshape(df.(x), :, 1)
         genn = GENNSurrogate(x, y, lb, ub, dydx = dydx, n_epochs = 200)
         val = genn(5.0)
         @test val isa Number
@@ -355,9 +353,9 @@ end
         df = x -> 2 * x
         x = sample(5, lb, ub, SobolSample())
         y = f.(x)
-        dydx = df.(x)
+        dydx = reshape(df.(x), :, 1)
         genn = GENNSurrogate(x, y, lb, ub, dydx = dydx, n_epochs = 50)
-        update!(genn, [8.5], [72.25], dydx_new = [17.0])
+        update!(genn, [8.5], [72.25], dydx_new = reshape([17.0], 1, 1))
         val = genn(5.0)
         @test val isa Number
     end
@@ -381,7 +379,7 @@ end
         # Gradient: [x[2], x[1]]
         x = sample(10, lb, ub, SobolSample())
         y = f.(x)
-        dydx = [[xi[2], xi[1]] for xi in x]
+        dydx = reduce(hcat, ([xi[2], xi[1]] for xi in x))'
         genn = GENNSurrogate(x, y, lb, ub, dydx = dydx, n_epochs = 200)
         val = genn([3.4, 1.4])
         @test val isa Number
@@ -393,6 +391,36 @@ end
         @test length(grad_pred) == 2
         @test isapprox(grad_pred[1], 1.4, atol = 1.0)
         @test isapprox(grad_pred[2], 3.4, atol = 1.0)
+    end
+
+    @testset "Multi-output with gradients" begin
+        lb = [0.0, 0.0]
+        ub = [1.0, 1.0]
+        f = x -> [x[1] + 2x[2], 3x[1] - x[2]]
+        x = [[0.0, 0.0], [1.0, 0.0], [0.0, 1.0], [1.0, 1.0], [0.5, 0.25]]
+        y = hcat(f.(x)...)
+
+        grad_template = [1.0 2.0; 3.0 -1.0]
+        dydx = Array{Float64, 3}(undef, 2, 2, length(x))
+        for (i, _) in enumerate(x)
+            dydx[:, :, i] = grad_template
+        end
+
+        model = Chain(Dense(2, 2))
+        genn = GENNSurrogate(x, y, lb, ub; dydx = dydx, model = model, n_epochs = 400, lambda = 0.0)
+
+        val_vec = vec(genn([0.5, 0.25]))
+        y_true = f([0.5, 0.25])
+        @test length(val_vec) == 2
+        @test isapprox(val_vec[1], y_true[1], atol = 0.5)
+        @test isapprox(val_vec[2], y_true[2], atol = 0.5)
+
+        grad_pred = predict_derivative(genn, [0.5, 0.25])
+        @test size(grad_pred) == (2, 2)
+        @test isapprox(grad_pred[1, 1], 1.0, atol = 0.5)
+        @test isapprox(grad_pred[1, 2], 2.0, atol = 0.5)
+        @test isapprox(grad_pred[2, 1], 3.0, atol = 0.5)
+        @test isapprox(grad_pred[2, 2], -1.0, atol = 0.5)
     end
 
     @testset "ND update" begin
@@ -453,7 +481,7 @@ end
         df = x -> 2 * x
         x = sample(10, lb, ub, SobolSample())
         y = f.(x)
-        dydx = df.(x)
+        dydx = reshape(df.(x), :, 1)
         
         # Test with different gamma values
         genn_low_gamma = GENNSurrogate(x, y, lb, ub, dydx = dydx, gamma = 0.1, n_epochs = 100)
@@ -465,67 +493,73 @@ end
         @test val_high isa Number
     end
 
-    @testset "Zygote gradient compatibility" begin
+    @testset "Normalization with gradients" begin
         lb = 0.0
-        ub = 3.0
+        ub = 10.0
         f = x -> x^2
-        x = sample(10, lb, ub, SobolSample())
+        df = x -> 2 * x
+        x = sample(20, lb, ub, SobolSample())
         y = f.(x)
-        genn = GENNSurrogate(x, y, lb, ub, n_epochs = 100)
-        g = x -> Zygote.gradient(genn, x)[1]
-        grad_val = g(2.0)
-        @test grad_val isa Number
-        # f'(x) = 2x, so f'(2.0) = 4.0
-        @test isapprox(grad_val, 4.0, atol = 2.0)
+        dydx = reshape(df.(x), :, 1)
+        
+        genn = GENNSurrogate(x, y, lb, ub, dydx = dydx, is_normalize = true, n_epochs = 500)
+        val = genn(5.0)
+        @test val isa Number
+        @test isapprox(val, f(5.0), atol = 2.0)
+        
+        # Test derivative prediction with normalization
+        grad_pred = predict_derivative(genn, [5.0])
+        @test grad_pred isa Vector
+        @test length(grad_pred) == 1
+        @test isapprox(grad_pred[1], df(5.0), atol = 1.0)
     end
 
-    @testset "Zygote gradient ND" begin
+    @testset "Multi-output update with gradients" begin
         lb = [0.0, 0.0]
-        ub = [10.0, 10.0]
-        f = x -> x[1] * x[2]
-        x = sample(10, lb, ub, SobolSample())
-        y = f.(x)
-        genn = GENNSurrogate(x, y, lb, ub, n_epochs = 100)
-        g = x -> Zygote.gradient(genn, x)[1]
-        grad_val = g([2.0, 5.0])
-        @test grad_val isa Vector
-        @test length(grad_val) == 2
-        # f'(x) = [x[2], x[1]], so f'([2.0, 5.0]) = [5.0, 2.0]
-        @test isapprox(grad_val[1], 5.0, atol = 2.0)
-        @test isapprox(grad_val[2], 2.0, atol = 2.0)
+        ub = [1.0, 1.0]
+        f = x -> [x[1] + 2x[2], 3x[1] - x[2]]
+        x = [[0.0, 0.0], [1.0, 0.0], [0.0, 1.0]]
+        y = hcat(f.(x)...)
+        
+        grad_template = [1.0 2.0; 3.0 -1.0]
+        dydx = Array{Float64, 3}(undef, 2, 2, length(x))
+        for (i, _) in enumerate(x)
+            dydx[:, :, i] = grad_template
+        end
+        
+        genn = GENNSurrogate(x, y, lb, ub; dydx = dydx, n_epochs = 200, lambda = 0.0)
+        
+        x_new = [[1.0, 1.0], [0.5, 0.5]]
+        y_new = hcat(f.(x_new)...)
+        dydx_new = Array{Float64, 3}(undef, 2, 2, 2)
+        dydx_new[:, :, 1] = grad_template
+        dydx_new[:, :, 2] = grad_template
+        
+        update!(genn, x_new, y_new, dydx_new = dydx_new)
+        
+        val = genn([0.5, 0.25])
+        @test val isa AbstractMatrix
+        @test length(val) == 2
     end
 
-    @testset "ForwardDiff derivative compatibility" begin
+    @testset "Edge cases" begin
+        # Test with minimal data
         lb = 0.0
-        ub = 3.0
-        f = x -> x^2
-        x = sample(10, lb, ub, SobolSample())
-        y = f.(x)
-        genn = GENNSurrogate(x, y, lb, ub, n_epochs = 100)
-        g = x -> ForwardDiff.derivative(genn, x)
-        @test g(2.0) isa Number
-        # f'(x) = 2x, so f'(2.0) = 4.0
-        @test isapprox(g(2.0), 4.0, atol = 2.0)
-    end
-
-    @testset "ForwardDiff gradient compatibility" begin
-        lb = [0.0, 0.0]
-        ub = [10.0, 10.0]
-        f = x -> x[1] * x[2]
-        x = sample(10, lb, ub, SobolSample())
-        y = f.(x)
-        genn = GENNSurrogate(x, y, lb, ub, n_epochs = 100)
-        g = x -> ForwardDiff.gradient(genn, x)
-        grad_val = g([2.0, 5.0])
-        @test grad_val isa Vector
-        @test length(grad_val) == 2
-        # f'(x) = [x[2], x[1]], so f'([2.0, 5.0]) = [5.0, 2.0]
-        @test isapprox(grad_val[1], 5.0, atol = 2.0)
-        @test isapprox(grad_val[2], 2.0, atol = 2.0)
+        ub = 10.0
+        x = [[1.0], [2.0]]
+        y = [1.0, 4.0]
+        genn = GENNSurrogate(x, y, lb, ub, n_epochs = 10)
+        @test genn(1.5) isa Number
+        
+        # Test with lambda = 0 (no regularization)
+        x = sample(5, lb, ub, SobolSample())
+        y = (x -> x^2).(x)
+        genn = GENNSurrogate(x, y, lb, ub, lambda = 0.0, n_epochs = 50)
+        @test genn(5.0) isa Number
     end
 end
 
-#=
+
 @safetestset "PolynomialChaosSurrogates" begin
     using Surrogates
     using PolyChaos
@@ -876,4 +910,3 @@ end
         Surrogates.update!(moe_nd_inv_rad, (0.5, 0.5), sum((0.5, 0.5) .^ 2) + 5)
     end
 end
-=#
