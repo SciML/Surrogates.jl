@@ -4,6 +4,7 @@ using Zygote
 using ForwardDiff
 using Test
 using GaussianMixtures
+using Flux
 
 @testset "ForwardDiff" begin
     @testset "1D" begin
@@ -140,6 +141,17 @@ using GaussianMixtures
             # Accuracy test: f(x) = x^2, f'(x) = 2x, so f'(5.0) = 10.0
             @test isapprox(g(5.0), 10.0, atol = 1.0e-1)
         end
+
+        #GENN
+        @testset "GENN" begin
+            df = x -> 2 * x
+            dydx = reshape(df.(x), :, 1)
+            my_genn = GENNSurrogate(x, y, lb, ub, dydx = dydx, n_epochs = 100)
+            g = x -> ForwardDiff.derivative(my_genn, x)
+            @test g(5.0) isa Number
+            # Accuracy test: f(x) = x^2, f'(x) = 2x, so f'(5.0) = 10.0
+            @test isapprox(g(5.0), 10.0, atol = 2.0)
+        end
     end
 
     @testset "ND" begin
@@ -245,6 +257,17 @@ using GaussianMixtures
             @test g([2.0, 5.0]) isa AbstractVector
             # Accuracy test: f(x) = x[1] * x[2], ∇f = [x[2], x[1]], so ∇f([2.0, 5.0]) = [5.0, 2.0]
             @test isapprox(g([2.0, 5.0]), [5.0, 2.0], atol = 1.0e-1)
+        end
+
+        #GENN
+        @testset "GENN" begin
+            der = x -> [x[2], x[1]]  # Gradient of f(x) = x[1] * x[2]
+            dydx = reduce(hcat, (der(xi) for xi in x))'  # (n_samples, n_inputs)
+            my_genn_ND = GENNSurrogate(x, y, lb, ub, dydx = dydx, n_epochs = 100)
+            g = x -> ForwardDiff.gradient(my_genn_ND, x)
+            @test g([2.0, 5.0]) isa AbstractVector
+            # Accuracy test: f(x) = x[1] * x[2], ∇f = [x[2], x[1]], so ∇f([2.0, 5.0]) = [5.0, 2.0]
+            @test isapprox(g([2.0, 5.0]), [5.0, 2.0], atol = 2.0)
         end
 
         #Earth
@@ -410,6 +433,20 @@ end
             @test result[1] isa Number
             # Accuracy test: f(x) = x^2, f'(x) = 2x, so f'(5.0) = 10.0
             @test isapprox(result[1], 10.0, atol = 1.0e-1)
+        end
+
+        #GENN
+        @testset "GENN" begin
+            df = x -> 2 * x
+            dydx = reshape(df.(x), :, 1)
+            my_genn = GENNSurrogate(x, y, lb, ub, dydx = dydx, n_epochs = 100)
+            g = x -> Zygote.gradient(my_genn, x)
+            result = g(5.0)
+            @test result isa Tuple
+            @test length(result) == 1
+            @test result[1] isa Number
+            # Accuracy test: f(x) = x^2, f'(x) = 2x, so f'(5.0) = 10.0
+            @test isapprox(result[1], 10.0, atol = 2.0)
         end
 
         #Earth
@@ -583,6 +620,20 @@ end
             @test result[1] isa Tuple
             # Accuracy test: f(x) = x[1] * x[2], ∇f = [x[2], x[1]], so ∇f([2.0, 5.0]) = [5.0, 2.0]
             @test all(isapprox.(result[1], (5.0, 2.0), atol = 1.0e-1))
+        end
+
+        #GENN
+        @testset "GENN" begin
+            der = x -> [x[2], x[1]]  # Gradient of f(x) = x[1] * x[2]
+            dydx = reduce(hcat, (der(xi) for xi in x))'  # (n_samples, n_inputs)
+            my_genn_ND = GENNSurrogate(x, y, lb, ub, dydx = dydx, n_epochs = 100)
+            g = x -> Zygote.gradient(my_genn_ND, x)
+            result = g((2.0, 5.0))
+            @test result isa Tuple
+            @test length(result) == 1
+            @test result[1] isa Tuple
+            # Accuracy test: f(x) = x[1] * x[2], ∇f = [x[2], x[1]], so ∇f([2.0, 5.0]) = [5.0, 2.0]
+            @test all(isapprox.(result[1], (5.0, 2.0), atol = 2.0))
         end
 
         #Earth
