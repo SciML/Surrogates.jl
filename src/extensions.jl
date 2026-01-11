@@ -62,3 +62,16 @@ mutable struct MOE{X, Y, C, D, M, E, ND, NC} <: AbstractDeterministicSurrogate
     nd::ND #number of dimensions
     nc::NC #number of clusters
 end
+
+mutable struct GENNSurrogate{X, Y, D, M, O, P, N, A, U, G} <: AbstractDeterministicSurrogate
+    x::X
+    y::Y
+    dydx::D  # gradients (can be nothing if not provided)
+    model::M
+    opt::O
+    ps::P
+    n_epochs::N
+    lb::A
+    ub::U
+    gamma::G  # gradient-enhancement coefficient
+end
