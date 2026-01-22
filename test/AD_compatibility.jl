@@ -146,7 +146,7 @@ using Flux
         @testset "GENN" begin
             df = x -> 2 * x
             dydx = reshape(df.(x), :, 1)
-            my_genn = GENNSurrogate(x[1:100], y[1:100], lb, ub, dydx = dydx[1:100, :], n_epochs = 100)
+            my_genn = GENNSurrogate(x[1:200], y[1:200], lb, ub, dydx = dydx[1:200, :], n_epochs = 500)
             g = x -> ForwardDiff.derivative(my_genn, x)
             @test g(5.0) isa Number
             # Accuracy test: f(x) = x^2, f'(x) = 2x, so f'(5.0) = 10.0
@@ -263,7 +263,7 @@ using Flux
         @testset "GENN" begin
             der = x -> [x[2], x[1]]  # Gradient of f(x) = x[1] * x[2]
             dydx = reduce(hcat, (der(xi) for xi in x))'  # (n_samples, n_inputs)
-            my_genn_ND = GENNSurrogate(x[1:100], y[1:100], lb, ub, dydx = dydx[1:100, :], n_epochs = 100)
+            my_genn_ND = GENNSurrogate(x[1:200], y[1:200], lb, ub, dydx = dydx[1:200, :], n_epochs = 500)
             g = x -> ForwardDiff.gradient(my_genn_ND, x)
             @test g([2.0, 5.0]) isa AbstractVector
             # Accuracy test: f(x) = x[1] * x[2], ∇f = [x[2], x[1]], so ∇f([2.0, 5.0]) = [5.0, 2.0]
@@ -440,7 +440,7 @@ end
         @testset "GENN" begin
             df = x -> 2 * x
             dydx = reshape(df.(x), :, 1)
-            my_genn = GENNSurrogate(x[1:100], y[1:100], lb, ub, dydx = dydx[1:100, :], n_epochs = 100)
+            my_genn = GENNSurrogate(x[1:200], y[1:200], lb, ub, dydx = dydx[1:200, :], n_epochs = 500)
             g = x -> Zygote.gradient(my_genn, x)
             result = g(5.0)
             @test result isa Tuple
@@ -627,7 +627,7 @@ end
         @testset "GENN" begin
             der = x -> [x[2], x[1]]  # Gradient of f(x) = x[1] * x[2]
             dydx = reduce(hcat, (der(xi) for xi in x))'  # (n_samples, n_inputs)
-            my_genn_ND = GENNSurrogate(x[1:100], y[1:100], lb, ub, dydx = dydx[1:100, :], n_epochs = 100)
+            my_genn_ND = GENNSurrogate(x[1:200], y[1:200], lb, ub, dydx = dydx[1:200, :], n_epochs = 500)
             g = x -> Zygote.gradient(my_genn_ND, x)
             result = g((2.0, 5.0))
             @test result isa Tuple

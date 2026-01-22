@@ -321,7 +321,7 @@ end
         x = sample(10, lb, ub, SobolSample())
         y = f.(x)
         dydx = reshape(df.(x), :, 1)
-        genn = GENNSurrogate(x, y, lb, ub, dydx = dydx, n_epochs = 200)
+        genn = GENNSurrogate(x, y, lb, ub, dydx = dydx, n_epochs = 500)
         val = genn(5.0)
         @test val isa Number
         @test isapprox(val, f(5.0), atol = 2.0)
@@ -380,7 +380,7 @@ end
         x = sample(10, lb, ub, SobolSample())
         y = f.(x)
         dydx = reduce(hcat, ([xi[2], xi[1]] for xi in x))'
-        genn = GENNSurrogate(x, y, lb, ub, dydx = dydx, n_epochs = 200)
+        genn = GENNSurrogate(x, y, lb, ub, dydx = dydx, n_epochs = 500)
         val = genn([3.4, 1.4])
         @test val isa Number
         @test isapprox(val, f([3.4, 1.4]), atol = 2.0)
