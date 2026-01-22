@@ -227,7 +227,9 @@ function _train_genn!(model, x_normalized, y_normalized, dydx_processed, opt, n_
     opt_state = Flux.setup(opt, model)
     
     for i in 1:n_epochs
-        @info "Epoch $i"
+        if i % 100 == 0
+            @info "Epoch $i"
+        end
         grads = Flux.gradient(model) do m
             y_pred = m(x_normalized)
             value_loss = Flux.mse(y_pred, y_normalized)
