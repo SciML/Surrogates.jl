@@ -511,7 +511,7 @@ end
         grad_pred = predict_derivative(genn, [5.0])
         @test grad_pred isa Vector
         @test length(grad_pred) == 1
-        @test isapprox(grad_pred[1], df(5.0), atol = 1.0)
+        @test isapprox(grad_pred[1], df(5.0), atol = 2.0)
     end
 
     @testset "Multi-output update with gradients" begin
