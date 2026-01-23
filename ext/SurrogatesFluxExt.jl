@@ -124,11 +124,11 @@ end
 function _normalize_y(y)
     """
     Convert y to matrix (n_outputs × n_samples).
-    
+
     Required input formats:
     - Single output: vector of scalars [y1, y2, ...] or matrix of shape (1, n_samples) or (n_samples, 1)
     - Multi-output: matrix of shape (n_outputs, n_samples) where n_outputs > 1
-    
+
     For single output, vectors and column vectors are converted to row vector (1 × n_samples).
     For multi-output, the matrix must already be in (n_outputs × n_samples) format and is kept as-is.
     Note: For multi-output with 1 sample, provide as (n_outputs, 1) matrix, not as a column vector.
@@ -159,7 +159,7 @@ end
 function _normalize_dydx(dydx, n_inputs, n_outputs, n_samples)
     """
     Convert dydx to internal format (n_outputs × n_inputs × n_samples).
-    
+
     Required input shapes:
     - Single output: matrix of shape (n_samples, n_inputs)
     - Multi-output: 3D array of shape (n_outputs, n_inputs, n_samples)
@@ -200,7 +200,7 @@ function _compute_gradient_loss(model, x_normalized, dydx_true, n_inputs, n_outp
     size(dydx_true, 3) == n_samples || throw(ArgumentError("Gradient sample count $(size(dydx_true, 3)) does not match input sample count $n_samples"))
     gradient_loss = 0.0
     x_scale = vec(x_std)
-    
+
     for i in 1:n_samples
         x_i = x_normalized[:, i]
 
@@ -214,18 +214,20 @@ function _compute_gradient_loss(model, x_normalized, dydx_true, n_inputs, n_outp
             end
 
             dydx_pred_i = Zygote.gradient(x -> model(reshape(x, n_inputs, 1))[out_idx], x_i)[1]
-            gradient_loss += sum((dydx_pred_i .- grad_true_scaled).^2)
+            gradient_loss += sum((dydx_pred_i .- grad_true_scaled) .^ 2)
         end
     end
-    
+
     return gradient_loss / (n_samples * n_outputs)
 end
 
-function _train_genn!(model, x_normalized, y_normalized, dydx_processed, opt, n_epochs, gamma, 
-                     n_inputs, n_outputs, is_normalize, x_std, y_std)
+function _train_genn!(
+        model, x_normalized, y_normalized, dydx_processed, opt, n_epochs, gamma,
+        n_inputs, n_outputs, is_normalize, x_std, y_std
+    )
     """Shared training function for GENN"""
     opt_state = Flux.setup(opt, model)
-    
+
     for i in 1:n_epochs
         if i % 100 == 0
             @info "Epoch $i"
@@ -233,19 +235,21 @@ function _train_genn!(model, x_normalized, y_normalized, dydx_processed, opt, n_
         grads = Flux.gradient(model) do m
             y_pred = m(x_normalized)
             value_loss = Flux.mse(y_pred, y_normalized)
-            
+
             gradient_loss = 0.0
             if dydx_processed !== nothing
-                gradient_loss = _compute_gradient_loss(m, x_normalized, dydx_processed, 
-                                                      n_inputs, n_outputs, is_normalize, x_std, y_std)
+                gradient_loss = _compute_gradient_loss(
+                    m, x_normalized, dydx_processed,
+                    n_inputs, n_outputs, is_normalize, x_std, y_std
+                )
             end
-            
+
             return value_loss + gamma * gradient_loss
         end
-        
+
         Flux.update!(opt_state, model, grads[1])
     end
-    
+
     return Flux.trainable(model)
 end
 
@@ -314,26 +318,28 @@ dydx[:, :, 3] = [1.0 0.0; 0.0 1.0]  # gradients for sample 3
 genn = GENNSurrogate(x, y, [0.0, 0.0], [1.0, 1.0], dydx = dydx)
 ```
 """
-function GENNSurrogate(x, y, lb, ub;
+function GENNSurrogate(
+        x, y, lb, ub;
         dydx = nothing,
         model = nothing,
         opt = Optimisers.Adam(0.05),
         n_epochs::Int = 1000,
         gamma::Real = 1.0,
         lambda::Real = 0.01,
-        is_normalize::Bool = false)
-    
+        is_normalize::Bool = false
+    )
+
     # Normalize input data formats
     x_mat = _normalize_x(x)
     y_mat = _normalize_y(y)
-    
+
     n_inputs = size(x_mat, 1)
     n_outputs = size(y_mat, 1)
     n_samples = size(x_mat, 2)
-    
+
     # Normalize gradients (validates shape and converts to internal format)
     dydx_processed = _normalize_dydx(dydx, n_inputs, n_outputs, n_samples)
-    
+
     # Create default model if not provided
     if model === nothing
         model = Chain(
@@ -342,18 +348,18 @@ function GENNSurrogate(x, y, lb, ub;
             Dense(12, n_outputs)
         )
     end
-    
+
     # Add L2 regularization if specified
     if lambda > 0.0
         opt = Optimisers.OptimiserChain(Optimisers.WeightDecay(lambda), opt)
     end
-    
+
     # Normalize data if requested
     if is_normalize
-        x_mean = mean(x_mat, dims=2)
-        x_std = std(x_mat, dims=2) .+ 1e-8
-        y_mean = mean(y_mat, dims=2)
-        y_std = std(y_mat, dims=2) .+ 1e-8
+        x_mean = mean(x_mat, dims = 2)
+        x_std = std(x_mat, dims = 2) .+ 1.0e-8
+        y_mean = mean(y_mat, dims = 2)
+        y_std = std(y_mat, dims = 2) .+ 1.0e-8
         x_normalized = (x_mat .- x_mean) ./ x_std
         y_normalized = (y_mat .- y_mean) ./ y_std
     else
@@ -364,15 +370,19 @@ function GENNSurrogate(x, y, lb, ub;
         y_mean = nothing
         y_std = nothing
     end
-    
+
     # Train the model
     x_std_for_training = is_normalize ? x_std : ones(size(x_mat, 1), 1)
     y_std_for_training = is_normalize ? y_std : ones(size(y_mat, 1), 1)
-    ps = _train_genn!(model, x_normalized, y_normalized, dydx_processed, opt, n_epochs, gamma,
-                     n_inputs, n_outputs, is_normalize, x_std_for_training, y_std_for_training)
-    
-    return GENNSurrogate(x_mat, y_mat, dydx_processed, model, opt, ps, n_epochs, lb, ub, gamma,
-                        x_mean, x_std, y_mean, y_std, is_normalize)
+    ps = _train_genn!(
+        model, x_normalized, y_normalized, dydx_processed, opt, n_epochs, gamma,
+        n_inputs, n_outputs, is_normalize, x_std_for_training, y_std_for_training
+    )
+
+    return GENNSurrogate(
+        x_mat, y_mat, dydx_processed, model, opt, ps, n_epochs, lb, ub, gamma,
+        x_mean, x_std, y_mean, y_std, is_normalize
+    )
 end
 
 function (genn::GENNSurrogate)(val)
@@ -381,26 +391,26 @@ function (genn::GENNSurrogate)(val)
     elseif val isa Number
         val = [val]
     end
-    
+
     expected_dim = size(genn.x, 1)
     input_dim = length(val)
     if input_dim != expected_dim
         throw(ArgumentError("Expected $expected_dim-dimensional input, got $input_dim-dimensional input."))
     end
-    
+
     # Normalize input if normalization was used during training
     val_matrix = reshape(val, expected_dim, 1)
     if genn.is_normalize && genn.x_mean !== nothing
         val_matrix = (val_matrix .- genn.x_mean) ./ genn.x_std
     end
-    
+
     out = genn.model(val_matrix)
-    
+
     # Denormalize output if normalization was used during training
     if genn.is_normalize && genn.y_mean !== nothing
         out = out .* genn.y_std .+ genn.y_mean
     end
-    
+
     if size(out, 1) == 1 && size(out, 2) == 1
         return out[1]
     elseif size(out, 1) == 1
@@ -440,26 +450,26 @@ function Surrogates.predict_derivative(genn::GENNSurrogate, val)
     elseif val isa Number
         val = [val]
     end
-    
+
     expected_dim = size(genn.x, 1)  # Fixed: x is (n_features × n_samples)
     input_dim = length(val)
     if input_dim != expected_dim
         throw(ArgumentError("Expected $expected_dim-dimensional input, got $input_dim-dimensional input."))
     end
-    
+
     # Normalize input if normalization was used during training
     val_matrix = reshape(val, expected_dim, 1)
     if genn.is_normalize && genn.x_mean !== nothing
         val_matrix = (val_matrix .- genn.x_mean) ./ genn.x_std
     end
-    
+
     n_inputs = size(val_matrix, 1)
     n_outputs = size(genn.y, 1)  # Fixed: y is (n_outputs × n_samples)
-    
+
     # Compute Jacobian: dy/dx for each output (on normalized space)
     jac_normalized = Zygote.jacobian(x -> vec(genn.model(x)), val_matrix)[1]
     # jac_normalized has shape (n_outputs, n_inputs) in normalized space
-    
+
     # Convert Jacobian from normalized space to original space
     # d(normalized_y)/d(normalized_x) = (dy/dx) * (x_std / y_std)
     # Therefore: dy/dx = d(normalized_y)/d(normalized_x) * (y_std / x_std)
@@ -469,7 +479,7 @@ function Surrogates.predict_derivative(genn::GENNSurrogate, val)
             jac_normalized[out_idx, :] = jac_normalized[out_idx, :] .* (genn.y_std[out_idx] ./ x_scale)
         end
     end
-    
+
     if n_outputs == 1
         return vec(jac_normalized)  # Return as vector for single output
     else
@@ -481,7 +491,7 @@ function SurrogatesBase.update!(genn::GENNSurrogate, x_new, y_new; dydx_new = no
     # Normalize new data to match stored format
     x_new_mat = _normalize_x(x_new)
     y_new_mat = _normalize_y(y_new)
-    
+
     # Ensure dimensions match
     if size(x_new_mat, 1) != size(genn.x, 1)
         throw(ArgumentError("Input dimension mismatch: expected $(size(genn.x, 1)), got $(size(x_new_mat, 1))"))
@@ -489,34 +499,34 @@ function SurrogatesBase.update!(genn::GENNSurrogate, x_new, y_new; dydx_new = no
     if size(y_new_mat, 1) != size(genn.y, 1)
         throw(ArgumentError("Output dimension mismatch: expected $(size(genn.y, 1)), got $(size(y_new_mat, 1))"))
     end
-    
+
     # Process new gradients
     n_inputs = size(genn.x, 1)
     n_outputs = size(genn.y, 1)
     n_new_samples = size(x_new_mat, 2)
     dydx_new_processed = _normalize_dydx(dydx_new, n_inputs, n_outputs, n_new_samples)
-    
+
     # Combine with existing data
     if genn.dydx === nothing && dydx_new_processed !== nothing
         genn.dydx = dydx_new_processed
     elseif genn.dydx !== nothing && dydx_new_processed !== nothing
-        genn.dydx = cat(genn.dydx, dydx_new_processed; dims=3)
+        genn.dydx = cat(genn.dydx, dydx_new_processed; dims = 3)
     end
-    
+
     x_combined = hcat(genn.x, x_new_mat)
     y_combined = hcat(genn.y, y_new_mat)
     total_samples = size(x_combined, 2)
     if genn.dydx !== nothing && size(genn.dydx, 3) != total_samples
         throw(ArgumentError("Gradient sample count $(size(genn.dydx, 3)) does not match combined samples $total_samples"))
     end
-    
+
     # Normalize data if normalization was used during initial training
     if genn.is_normalize && genn.x_mean !== nothing
         # Recompute normalization parameters from combined data
-        x_mean_new = mean(x_combined, dims=2)
-        x_std_new = std(x_combined, dims=2) .+ 1e-8
-        y_mean_new = mean(y_combined, dims=2)
-        y_std_new = std(y_combined, dims=2) .+ 1e-8
+        x_mean_new = mean(x_combined, dims = 2)
+        x_std_new = std(x_combined, dims = 2) .+ 1.0e-8
+        y_mean_new = mean(y_combined, dims = 2)
+        y_std_new = std(y_combined, dims = 2) .+ 1.0e-8
         x_normalized = (x_combined .- x_mean_new) ./ x_std_new
         y_normalized = (y_combined .- y_mean_new) ./ y_std_new
         # Update stored normalization parameters
@@ -528,18 +538,20 @@ function SurrogatesBase.update!(genn::GENNSurrogate, x_new, y_new; dydx_new = no
         x_normalized = x_combined
         y_normalized = y_combined
     end
-    
+
     x_std_for_training = genn.is_normalize && genn.x_std !== nothing ? genn.x_std : ones(size(x_combined, 1), 1)
     y_std_for_training = genn.is_normalize && genn.y_std !== nothing ? genn.y_std : ones(size(y_combined, 1), 1)
-    
+
     # Retrain on combined data
-    genn.ps = _train_genn!(genn.model, x_normalized, y_normalized, genn.dydx, genn.opt, 
-                          genn.n_epochs, genn.gamma, n_inputs, n_outputs, genn.is_normalize, x_std_for_training, y_std_for_training)
-    
+    genn.ps = _train_genn!(
+        genn.model, x_normalized, y_normalized, genn.dydx, genn.opt,
+        genn.n_epochs, genn.gamma, n_inputs, n_outputs, genn.is_normalize, x_std_for_training, y_std_for_training
+    )
+
     # Update stored data
     genn.x = x_combined
     genn.y = y_combined
-    nothing
+    return nothing
 end
 
 end # module

@@ -73,8 +73,10 @@ end
 
 #GENN structure
 function GENNStructure(; model, opt, n_epochs, gamma)
-    return (name = "GENNSurrogate", model = model, opt = opt,
-        n_epochs = n_epochs, gamma = gamma)
+    return (
+        name = "GENNSurrogate", model = model, opt = opt,
+        n_epochs = n_epochs, gamma = gamma,
+    )
 end
 
 #XGBoost structure

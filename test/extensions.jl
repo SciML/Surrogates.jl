@@ -325,7 +325,7 @@ end
         val = genn(5.0)
         @test val isa Number
         @test isapprox(val, f(5.0), atol = 2.0)
-        
+
         # Test derivative prediction
         grad_pred = predict_derivative(genn, [5.0])
         @test grad_pred isa Vector
@@ -384,7 +384,7 @@ end
         val = genn([3.4, 1.4])
         @test val isa Number
         @test isapprox(val, f([3.4, 1.4]), atol = 2.0)
-        
+
         # Test derivative prediction
         grad_pred = predict_derivative(genn, [3.4, 1.4])
         @test grad_pred isa Vector
@@ -443,7 +443,7 @@ end
         x = sample(5, lb, ub, SobolSample())
         y = f.(x)
         genn = GENNSurrogate(x, y, lb, ub, n_epochs = 50)
-        
+
         # Test different input formats
         @test genn(5.0) isa Number
         @test genn([5.0]) isa Number
@@ -482,11 +482,11 @@ end
         x = sample(10, lb, ub, SobolSample())
         y = f.(x)
         dydx = reshape(df.(x), :, 1)
-        
+
         # Test with different gamma values
         genn_low_gamma = GENNSurrogate(x, y, lb, ub, dydx = dydx, gamma = 0.1, n_epochs = 100)
         genn_high_gamma = GENNSurrogate(x, y, lb, ub, dydx = dydx, gamma = 10.0, n_epochs = 100)
-        
+
         val_low = genn_low_gamma(5.0)
         val_high = genn_high_gamma(5.0)
         @test val_low isa Number
@@ -501,12 +501,12 @@ end
         x = sample(20, lb, ub, SobolSample())
         y = f.(x)
         dydx = reshape(df.(x), :, 1)
-        
+
         genn = GENNSurrogate(x, y, lb, ub, dydx = dydx, is_normalize = true, n_epochs = 500)
         val = genn(5.0)
         @test val isa Number
         @test isapprox(val, f(5.0), atol = 2.0)
-        
+
         # Test derivative prediction with normalization
         grad_pred = predict_derivative(genn, [5.0])
         @test grad_pred isa Vector
@@ -520,23 +520,23 @@ end
         f = x -> [x[1] + 2x[2], 3x[1] - x[2]]
         x = [[0.0, 0.0], [1.0, 0.0], [0.0, 1.0]]
         y = hcat(f.(x)...)
-        
+
         grad_template = [1.0 2.0; 3.0 -1.0]
         dydx = Array{Float64, 3}(undef, 2, 2, length(x))
         for (i, _) in enumerate(x)
             dydx[:, :, i] = grad_template
         end
-        
+
         genn = GENNSurrogate(x, y, lb, ub; dydx = dydx, n_epochs = 200, lambda = 0.0)
-        
+
         x_new = [[1.0, 1.0], [0.5, 0.5]]
         y_new = hcat(f.(x_new)...)
         dydx_new = Array{Float64, 3}(undef, 2, 2, 2)
         dydx_new[:, :, 1] = grad_template
         dydx_new[:, :, 2] = grad_template
-        
+
         update!(genn, x_new, y_new, dydx_new = dydx_new)
-        
+
         val = genn([0.5, 0.25])
         @test val isa AbstractMatrix
         @test length(val) == 2
@@ -550,7 +550,7 @@ end
         y = [1.0, 4.0]
         genn = GENNSurrogate(x, y, lb, ub, n_epochs = 10)
         @test genn(1.5) isa Number
-        
+
         # Test with lambda = 0 (no regularization)
         x = sample(5, lb, ub, SobolSample())
         y = (x -> x^2).(x)
