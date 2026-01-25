@@ -284,39 +284,6 @@ Gradient-Enhanced Neural Network (GENN) surrogate model.
   - `gamma`: Gradient-enhancement coefficient (default: 1.0). Higher values weight gradient errors more.
   - `lambda`: L2 regularization coefficient (default: 0.01)
   - `is_normalize`: Whether to normalize inputs/outputs (default: false)
-
-# Examples
-
-## Single output with gradients
-
-```julia
-using Surrogates
-using Flux
-
-x = [[1.0], [2.0], [3.0]]
-y = [1.0, 4.0, 9.0]
-# dydx must be (n_samples, n_inputs) = (3, 1) for single output
-dydx = reshape([2.0, 4.0, 6.0], :, 1)  # gradients of y = x^2
-
-genn = GENNSurrogate(x, y, 0.0, 10.0, dydx = dydx)
-pred = genn(2.5)
-grad_pred = predict_derivative(genn, [2.5])
-```
-
-## Multi-output with gradients
-
-```julia
-x = [[0.0, 0.0], [1.0, 0.0], [0.0, 1.0]]
-y = hcat([[0.0, 0.0], [1.0, 0.0], [0.0, 1.0]]...)  # 2 outputs, 3 samples
-# dydx must be (n_outputs, n_inputs, n_samples) = (2, 2, 3) for multi-output
-# dydx[out_idx, input_idx, sample_idx] = gradient of output out_idx w.r.t. input input_idx for sample sample_idx
-dydx = Array{Float64, 3}(undef, 2, 2, 3)
-dydx[:, :, 1] = [1.0 0.0; 0.0 1.0]  # gradients for sample 1
-dydx[:, :, 2] = [1.0 0.0; 0.0 1.0]  # gradients for sample 2
-dydx[:, :, 3] = [1.0 0.0; 0.0 1.0]  # gradients for sample 3
-
-genn = GENNSurrogate(x, y, [0.0, 0.0], [1.0, 1.0], dydx = dydx)
-```
 """
 function GENNSurrogate(
         x, y, lb, ub;
