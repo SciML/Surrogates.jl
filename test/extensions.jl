@@ -515,9 +515,9 @@ end
         y = f.(x)
         dydx = reshape(df.(x), :, 1)
         model = Chain(
-            Dense(1, 12, relu),
-            Dense(12, 12, relu),
-            Dense(12, 1)
+            Dense(1, 20, relu),
+            Dense(20, 20, relu),
+            Dense(20, 1)
         ) |> Flux.f64
         genn = GENNSurrogate(x, y, lb, ub, dydx = dydx, model = model, is_normalize = true, n_epochs = 500)
         val = genn(5.0)
