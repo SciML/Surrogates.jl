@@ -5,6 +5,9 @@ using ForwardDiff
 using Test
 using GaussianMixtures
 using Flux
+using Random
+
+Random.seed!(42)
 
 @testset "ForwardDiff" begin
     @testset "1D" begin
