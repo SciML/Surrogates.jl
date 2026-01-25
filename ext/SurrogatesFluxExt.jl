@@ -103,7 +103,7 @@ end
 
 # Helper functions for data normalization
 function _normalize_x(x)
-    """Convert various input formats to matrix (n_features × n_samples)"""
+    """Convert various input formats to matrix (n_features x n_samples)"""
     if x isa Tuple
         return reduce(hcat, x)'
     elseif x isa Vector{<:Tuple}
@@ -123,42 +123,42 @@ end
 
 function _normalize_y(y)
     """
-    Convert y to matrix (n_outputs × n_samples).
+    Convert y to matrix (n_outputs x n_samples).
 
     Required input formats:
     - Single output: vector of scalars [y1, y2, ...] or matrix of shape (1, n_samples) or (n_samples, 1)
     - Multi-output: matrix of shape (n_outputs, n_samples) where n_outputs > 1
 
-    For single output, vectors and column vectors are converted to row vector (1 × n_samples).
-    For multi-output, the matrix must already be in (n_outputs × n_samples) format and is kept as-is.
+    For single output, vectors and column vectors are converted to row vector (1 x n_samples).
+    For multi-output, the matrix must already be in (n_outputs x n_samples) format and is kept as-is.
     Note: For multi-output with 1 sample, provide as (n_outputs, 1) matrix, not as a column vector.
     """
     if y isa Vector
-        # Vector of scalars: create row vector (1 × n_samples)
+        # Vector of scalars: create row vector (1 x n_samples)
         return reshape(y, 1, length(y))
     elseif y isa Matrix
         n_rows, n_cols = size(y)
         if n_rows == 1
-            # Already (1 × n_samples) - correct format for single output
+            # Already (1 x n_samples) - correct format for single output
             return y
         elseif n_cols == 1 && n_rows > 1
             # Column vector: assume single output (n_samples, 1) - transpose to (1, n_samples)
             # For multi-output with 1 sample, user must provide (n_outputs, n_samples) with n_samples > 1
             # or reshape to avoid this ambiguity
-            return y'
+            return transpose(y)
         else
-            # (n_rows × n_cols) where n_rows > 1 and n_cols > 1
-            # Assume (n_outputs × n_samples) format - keep as-is
+            # (n_rows x n_cols) where n_rows > 1 and n_cols > 1
+            # Assume (n_outputs x n_samples) format - keep as-is
             return y
         end
     else
-        throw(ArgumentError("y must be a Vector (for single output) or Matrix. For multi-output, matrix must be (n_outputs × n_samples) with n_samples > 1 to avoid ambiguity with column vectors."))
+        throw(ArgumentError("y must be a Vector (for single output) or Matrix. For multi-output, matrix must be (n_outputs x n_samples) with n_samples > 1 to avoid ambiguity with column vectors."))
     end
 end
 
 function _normalize_dydx(dydx, n_inputs, n_outputs, n_samples)
     """
-    Convert dydx to internal format (n_outputs × n_inputs × n_samples).
+    Convert dydx to internal format (n_outputs x n_inputs x n_samples).
 
     Required input shapes:
     - Single output: matrix of shape (n_samples, n_inputs)
@@ -418,7 +418,7 @@ function Surrogates.predict_derivative(genn::GENNSurrogate, val)
         val = [val]
     end
 
-    expected_dim = size(genn.x, 1)  # Fixed: x is (n_features × n_samples)
+    expected_dim = size(genn.x, 1)  # Fixed: x is (n_features x n_samples)
     input_dim = length(val)
     if input_dim != expected_dim
         throw(ArgumentError("Expected $expected_dim-dimensional input, got $input_dim-dimensional input."))
@@ -431,7 +431,7 @@ function Surrogates.predict_derivative(genn::GENNSurrogate, val)
     end
 
     n_inputs = size(val_matrix, 1)
-    n_outputs = size(genn.y, 1)  # Fixed: y is (n_outputs × n_samples)
+    n_outputs = size(genn.y, 1)  # Fixed: y is (n_outputs x n_samples)
 
     # Compute Jacobian: dy/dx for each output (on normalized space)
     jac_normalized = Zygote.jacobian(x -> vec(genn.model(x)), val_matrix)[1]
