@@ -303,24 +303,7 @@ end
     using Random
     Random.seed!(42)
 
-    @testset "1D without gradients" begin
-        model = Chain(
-            Dense(1, 12, relu),
-            Dense(12, 12, relu),
-            Dense(12, 1)
-        ) |> Flux.f64
-        lb = 0.0
-        ub = 10.0
-        f = x -> 2 * x + 3
-        x = sample(10, lb, ub, SobolSample())
-        y = f.(x)
-        genn = GENNSurrogate(x, y, lb, ub, model = model, n_epochs = 100)
-        val = genn(5.0)
-        @test val isa Number
-        @test isapprox(val, f(5.0), atol = 1.0)
-    end
-
-    @testset "1D with gradients" begin
+    @testset "1D" begin
         model = Chain(
             Dense(1, 12, relu),
             Dense(12, 12, relu),
@@ -333,7 +316,7 @@ end
         x = sample(50, lb, ub, SobolSample())
         y = f.(x)
         dydx = reshape(df.(x), :, 1)
-        genn = GENNSurrogate(x, y, lb, ub, dydx = dydx, model = model, n_epochs = 500)
+        genn = GENNSurrogate(x, y, lb, ub, dydx, model = model, n_epochs = 500)
         val = genn(5.0)
         @test val isa Number
         @test isapprox(val, f(5.0), atol = 2.0)
@@ -347,47 +330,17 @@ end
         lb = 0.0
         ub = 10.0
         f = x -> x^2
-        x = sample(5, lb, ub, SobolSample())
-        y = f.(x)
-        genn = GENNSurrogate(x, y, lb, ub, n_epochs = 50)
-        update!(genn, [8.5], [72.25])
-        update!(genn, [3.2, 3.5], [10.24, 12.25])
-        val = genn(5.0)
-        @test val isa Number
-    end
-
-    @testset "1D update with gradients" begin
-        lb = 0.0
-        ub = 10.0
-        f = x -> x^2
         df = x -> 2 * x
         x = sample(5, lb, ub, SobolSample())
         y = f.(x)
         dydx = reshape(df.(x), :, 1)
-        genn = GENNSurrogate(x, y, lb, ub, dydx = dydx, n_epochs = 50)
+        genn = GENNSurrogate(x, y, lb, ub, dydx, n_epochs = 50)
         update!(genn, [8.5], [72.25], dydx_new = reshape([17.0], 1, 1))
         val = genn(5.0)
         @test val isa Number
     end
 
-    @testset "ND without gradients" begin
-        model = Chain(
-            Dense(2, 12, relu),
-            Dense(12, 12, relu),
-            Dense(12, 1)
-        ) |> Flux.f64
-        lb = [0.0, 0.0]
-        ub = [5.0, 5.0]
-        f = x -> x[1] * x[2]
-        x = sample(50, lb, ub, SobolSample())
-        y = f.(x)
-        genn = GENNSurrogate(x, y, lb, ub, model = model, n_epochs = 500)
-        val = genn([3.4, 1.4])
-        @test val isa Number
-        @test isapprox(val, f([3.4, 1.4]), atol = 1.0)
-    end
-
-    @testset "ND with gradients" begin
+    @testset "ND" begin
         model = Chain(
             Dense(2, 12, relu),
             Dense(12, 12, relu),
@@ -400,7 +353,7 @@ end
         x = sample(50, lb, ub, SobolSample())
         y = f.(x)
         dydx = reduce(hcat, ([xi[2], xi[1]] for xi in x))'
-        genn = GENNSurrogate(x, y, lb, ub, dydx = dydx, model = model, n_epochs = 500)
+        genn = GENNSurrogate(x, y, lb, ub, dydx, model = model, n_epochs = 500)
         val = genn([3.4, 1.4])
         @test val isa Number
         @test isapprox(val, f([3.4, 1.4]), atol = 2.0)
@@ -411,7 +364,7 @@ end
         @test isapprox(grad_pred[2], 3.4, atol = 2.0)
     end
 
-    @testset "Multi-output with gradients" begin
+    @testset "Multi-output" begin
         model = Chain(
             Dense(2, 12, relu),
             Dense(12, 12, relu),
@@ -427,7 +380,7 @@ end
         for (i, _) in enumerate(x)
             dydx[:, :, i] = grad_template
         end
-        genn = GENNSurrogate(x, y, lb, ub; dydx = dydx, model = model, n_epochs = 500, lambda = 0.0)
+        genn = GENNSurrogate(x, y, lb, ub, dydx, model = model, n_epochs = 500, lambda = 0.0)
         val_vec = vec(genn([0.5, 0.25]))
         y_true = f([0.5, 0.25])
         @test length(val_vec) == 2
@@ -447,9 +400,10 @@ end
         f = x -> x[1] * x[2]
         x = sample(5, lb, ub, SobolSample())
         y = f.(x)
-        genn = GENNSurrogate(x, y, lb, ub, n_epochs = 50)
-        update!(genn, [[3.5, 1.4]], [4.9])
-        update!(genn, [[3.5, 1.4], [1.5, 1.4]], [4.9, 2.1])
+        dydx = reduce(hcat, ([xi[2], xi[1]] for xi in x))'
+        genn = GENNSurrogate(x, y, lb, ub, dydx, n_epochs = 50)
+        update!(genn, [[3.5, 1.4]], [4.9], dydx_new = [1.4 3.5])  # one sample: gradient at (3.5,1.4) is [1.4, 3.5]
+        update!(genn, [[3.5, 1.4], [1.5, 1.4]], [4.9, 2.1], dydx_new = [1.4 3.5; 1.4 1.5])
         val = genn([3.4, 1.4])
         @test val isa Number
     end
@@ -458,9 +412,11 @@ end
         lb = 0.0
         ub = 10.0
         f = x -> x^2
+        df = x -> 2 * x
         x = sample(5, lb, ub, SobolSample())
         y = f.(x)
-        genn = GENNSurrogate(x, y, lb, ub, n_epochs = 50)
+        dydx = reshape(df.(x), :, 1)
+        genn = GENNSurrogate(x, y, lb, ub, dydx, n_epochs = 50)
         @test genn(5.0) isa Number
         @test genn([5.0]) isa Number
         @test genn((5.0,)) isa Number
@@ -470,11 +426,13 @@ end
         lb = 0.0
         ub = 10.0
         f = x -> x^2
+        df = x -> 2 * x
         x = sample(10, lb, ub, SobolSample())
         y = f.(x)
+        dydx = reshape(df.(x), :, 1)
         model = Chain(Dense(1, 8, relu), Dense(8, 1)) |> Flux.f64
         opt = Optimisers.Adam(0.01)
-        genn = GENNSurrogate(x, y, lb, ub, model = model, opt = opt, n_epochs = 50)
+        genn = GENNSurrogate(x, y, lb, ub, dydx, model = model, opt = opt, n_epochs = 50)
         val = genn(5.0)
         @test val isa Number
     end
@@ -483,10 +441,12 @@ end
         lb = 0.0
         ub = 10.0
         f = x -> x^2
+        df = x -> 2 * x
         x = sample(10, lb, ub, SobolSample())
         y = f.(x)
+        dydx = reshape(df.(x), :, 1)
         model = Chain(Dense(1, 1)) |> Flux.f64
-        genn = GENNSurrogate(x, y, lb, ub, model = model, is_normalize = true, n_epochs = 50)
+        genn = GENNSurrogate(x, y, lb, ub, dydx, model = model, is_normalize = true, n_epochs = 50)
         val = genn(5.0)
         @test val isa Number
     end
@@ -500,15 +460,15 @@ end
         y = f.(x)
         dydx = reshape(df.(x), :, 1)
         model = Chain(Dense(1, 1)) |> Flux.f64
-        genn_low_gamma = GENNSurrogate(x, y, lb, ub, dydx = dydx, model = model, gamma = 0.1, n_epochs = 100)
-        genn_high_gamma = GENNSurrogate(x, y, lb, ub, dydx = dydx, model = model, gamma = 10.0, n_epochs = 100)
+        genn_low_gamma = GENNSurrogate(x, y, lb, ub, dydx, model = model, gamma = 0.1, n_epochs = 100)
+        genn_high_gamma = GENNSurrogate(x, y, lb, ub, dydx, model = model, gamma = 10.0, n_epochs = 100)
         val_low = genn_low_gamma(5.0)
         val_high = genn_high_gamma(5.0)
         @test val_low isa Number
         @test val_high isa Number
     end
 
-    @testset "Normalization with gradients" begin
+    @testset "Normalization" begin
         lb = 0.0
         ub = 10.0
         f = x -> x^2
@@ -521,7 +481,7 @@ end
             Dense(12, 12, relu),
             Dense(12, 1)
         ) |> Flux.f64
-        genn = GENNSurrogate(x, y, lb, ub, dydx = dydx, model = model, is_normalize = true, n_epochs = 100)
+        genn = GENNSurrogate(x, y, lb, ub, dydx, model = model, is_normalize = true, n_epochs = 100)
         val = genn(5.0)
         @test val isa Number
         @test isapprox(val, f(5.0), atol = 2.0)
@@ -531,7 +491,7 @@ end
         @test isapprox(grad_pred[1], df(5.0), atol = 2.0)
     end
 
-    @testset "Multi-output update with gradients" begin
+    @testset "Multi-output update" begin
         lb = [0.0, 0.0]
         ub = [1.0, 1.0]
         f = x -> [x[1] + 2x[2], 3x[1] - x[2]]
@@ -547,7 +507,7 @@ end
             Dense(12, 12, relu),
             Dense(12, 2)
         ) |> Flux.f64
-        genn = GENNSurrogate(x, y, lb, ub; dydx = dydx, model = model, n_epochs = 200, lambda = 0.0)
+        genn = GENNSurrogate(x, y, lb, ub, dydx, model = model, n_epochs = 200, lambda = 0.0)
         x_new = [[1.0, 1.0], [0.5, 0.5]]
         y_new = hcat(f.(x_new)...)
         dydx_new = Array{Float64, 3}(undef, 2, 2, 2)
@@ -564,11 +524,13 @@ end
         ub = 10.0
         x = [[1.0], [2.0]]
         y = [1.0, 4.0]
-        genn = GENNSurrogate(x, y, lb, ub, n_epochs = 10)
+        dydx = reshape([2.0, 4.0], 2, 1)  # df/dx = 2x at x=1,2
+        genn = GENNSurrogate(x, y, lb, ub, dydx, n_epochs = 10)
         @test genn(1.5) isa Number
         x = sample(5, lb, ub, SobolSample())
         y = (x -> x^2).(x)
-        genn = GENNSurrogate(x, y, lb, ub, lambda = 0.0, n_epochs = 50)
+        dydx = reshape(2 .* x, 5, 1)
+        genn = GENNSurrogate(x, y, lb, ub, dydx, lambda = 0.0, n_epochs = 50)
         @test genn(5.0) isa Number
     end
 end

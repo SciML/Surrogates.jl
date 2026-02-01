@@ -66,7 +66,7 @@ end
 mutable struct GENNSurrogate{X, Y, D, M, O, P, N, A, U, G, XM, XS, YM, YS, IN} <: AbstractDeterministicSurrogate
     x::X
     y::Y
-    dydx::D  # gradients (can be nothing if not provided)
+    dydx::D  # gradients (n_outputs x n_inputs x n_samples)
     model::M
     opt::O
     ps::P

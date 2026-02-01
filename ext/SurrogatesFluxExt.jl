@@ -164,9 +164,6 @@ function _normalize_dydx(dydx, n_inputs, n_outputs, n_samples)
     - Single output: matrix of shape (n_samples, n_inputs)
     - Multi-output: 3D array of shape (n_outputs, n_inputs, n_samples)
     """
-    if dydx === nothing
-        return nothing
-    end
 
     if n_outputs == 1
         # Single output: expect (n_samples, n_inputs) matrix
@@ -199,26 +196,30 @@ function _compute_gradient_loss(model, x_normalized, dydx_true, n_inputs, n_outp
     ndims(dydx_true) == 3 || throw(ArgumentError("dydx must have dimensions (n_outputs, n_inputs, n_samples)"))
     size(dydx_true, 3) == n_samples || throw(ArgumentError("Gradient sample count $(size(dydx_true, 3)) does not match input sample count $n_samples"))
     gradient_loss = 0.0
-    x_scale = vec(x_std)
+    σx_in = vec(x_std)
+    σy_out = is_normalize ? vec(y_std) : nothing
 
     for i in 1:n_samples
         x_i = x_normalized[:, i]
 
         for out_idx in 1:n_outputs
             grad_true = view(dydx_true, out_idx, :, i)
-            # Scale gradients if normalization is used: d(normalized_y)/d(normalized_x) = (dy/dx) * (x_std / y_std)
+            # Scale gradients if normalization is used: ∂y_norm/∂x_norm = (∂y/∂x) * (σx/σy)
             if is_normalize
-                grad_true_scaled = grad_true .* (x_scale ./ y_std[out_idx])
+                σyk = σy_out[out_idx]
+                grad_true_scaled = grad_true .* (σx_in ./ σyk)
             else
                 grad_true_scaled = grad_true
             end
 
+            # Predicted gradient in (normalized or physical) space via AD; model maps x -> y for same space
             dydx_pred_i = Zygote.gradient(x -> model(reshape(x, n_inputs, 1))[out_idx], x_i)[1]
             gradient_loss += sum((dydx_pred_i .- grad_true_scaled) .^ 2)
         end
     end
 
-    return gradient_loss / (n_samples * n_outputs)
+    # Mean over (samples × outputs × inputs) to keep loss dimension-invariant
+    return gradient_loss / (n_samples * n_outputs * n_inputs)
 end
 
 function _train_genn!(
@@ -254,13 +255,13 @@ function _train_genn!(
 end
 
 """
-    GENNSurrogate(x, y, lb, ub; dydx = nothing,
-                                  model = Chain(Dense(length(x[1]), 12, relu), Dense(12, 12, relu), Dense(12, 1)),
-                                  opt = Optimisers.Adam(0.05),
-                                  n_epochs = 1000,
-                                  gamma = 1.0,
-                                  lambda = 0.01,
-                                  is_normalize = false)
+    GENNSurrogate(x, y, lb, ub, dydx;
+                    model = Chain(Dense(length(x[1]), 12, relu), Dense(12, 12, relu), Dense(12, 1)),
+                    opt = Optimisers.Adam(0.05),
+                    n_epochs = 1000,
+                    gamma = 1.0,
+                    lambda = 0.01,
+                    is_normalize = false)
 
 Gradient-Enhanced Neural Network (GENN) surrogate model.
 
@@ -270,14 +271,14 @@ Gradient-Enhanced Neural Network (GENN) surrogate model.
   - `y`: Output data points. 
     - **Single output**: vector of scalars `[y1, y2, ...]` or matrix of shape `(1, n_samples)` or `(n_samples, 1)`.
     - **Multi-output**: matrix of shape `(n_outputs, n_samples)` where each column is one sample's output vector.
+  - `dydx`: Gradients of y with respect to x (required). 
+    - **Single output**: matrix of shape `(n_samples, n_inputs)` where each row is the gradient for one sample.
+    - **Multi-output**: 3D array of shape `(n_outputs, n_inputs, n_samples)` where `dydx[out_idx, :, sample_idx]` is the gradient of output `out_idx` with respect to inputs for sample `sample_idx`.
   - `lb`: Lower bound of input data points.
   - `ub`: Upper bound of input data points.
 
 # Keyword Arguments
 
-  - `dydx`: Optional gradients of y with respect to x. 
-    - **Single output**: matrix of shape `(n_samples, n_inputs)` where each row is the gradient for one sample.
-    - **Multi-output**: 3D array of shape `(n_outputs, n_inputs, n_samples)` where `dydx[out_idx, :, sample_idx]` is the gradient of output `out_idx` with respect to inputs for sample `sample_idx`.
   - `model`: Flux Chain model (default: 2 hidden layers with 12 neurons each)
   - `opt`: Optimiser defined using Optimisers.jl (default: Adam with learning rate 0.05)
   - `n_epochs`: Number of epochs for training (default: 1000)
@@ -286,8 +287,7 @@ Gradient-Enhanced Neural Network (GENN) surrogate model.
   - `is_normalize`: Whether to normalize inputs/outputs (default: false)
 """
 function GENNSurrogate(
-        x, y, lb, ub;
-        dydx = nothing,
+        x, y, lb, ub, dydx;
         model = nothing,
         opt = Optimisers.Adam(0.05),
         n_epochs::Int = 1000,
