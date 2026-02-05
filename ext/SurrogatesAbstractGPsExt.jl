@@ -4,7 +4,7 @@ using Surrogates: AbstractGPSurrogate, logpdf_surrogate, std_error_at_point, Sur
 using SurrogatesBase, AbstractGPs
 
 # constructor
-function AbstractGPSurrogate(x, y; gp = GP(Matern52Kernel()), Σy = 0.1)
+function Surrogates.AbstractGPSurrogate(x, y; gp = GP(Matern52Kernel()), Σy = 0.1)
     return AbstractGPSurrogate(x, y, gp, posterior(gp(x, Σy), y), Σy)
 end
 
