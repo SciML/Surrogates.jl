@@ -1,6 +1,6 @@
 module SurrogatesSVMExt
 
-using Surrogates: SVMSurrogate
+import Surrogates: SVMSurrogate
 using SurrogatesBase
 using LIBSVM
 
