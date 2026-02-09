@@ -1,6 +1,6 @@
 module SurrogatesPolyChaosExt
 
-using Surrogates: PolynomialChaosSurrogate
+import Surrogates: PolynomialChaosSurrogate
 using SurrogatesBase
 using PolyChaos
 

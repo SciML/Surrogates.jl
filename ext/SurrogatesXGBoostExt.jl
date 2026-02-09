@@ -1,6 +1,6 @@
 module SurrogatesXGBoostExt
 
-using Surrogates: XGBoostSurrogate
+import Surrogates: XGBoostSurrogate
 using SurrogatesBase
 using XGBoost: xgboost, predict
 

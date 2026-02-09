@@ -1,6 +1,6 @@
 module SurrogatesAbstractGPsExt
 
-using Surrogates: AbstractGPSurrogate, logpdf_surrogate, std_error_at_point, Surrogates
+import Surrogates: AbstractGPSurrogate, logpdf_surrogate, std_error_at_point, Surrogates
 using SurrogatesBase, AbstractGPs
 
 # constructor
