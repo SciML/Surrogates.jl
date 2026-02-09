@@ -1,6 +1,6 @@
 module SurrogatesSVMExt
 
-import Surrogates: SVMSurrogate
+using Surrogates: SVMSurrogate, Surrogates
 using SurrogatesBase
 using LIBSVM
 
@@ -16,7 +16,7 @@ Builds a SVM Surrogate using [LIBSVM](https://github.com/JuliaML/LIBSVM.jl).
   - `lb`: Lower bound of input data points.
   - `ub`: Upper bound of output data points.
 """
-function SVMSurrogate(x, y, lb, ub)
+function Surrogates.SVMSurrogate(x, y, lb, ub)
     X = Array{Float64, 2}(undef, length(x), length(first(x)))
     if length(lb) == 1
         for j in eachindex(x)

@@ -1,10 +1,10 @@
 module SurrogatesPolyChaosExt
 
-import Surrogates: PolynomialChaosSurrogate
+using Surrogates: PolynomialChaosSurrogate, Surrogates
 using SurrogatesBase
 using PolyChaos
 
-function PolynomialChaosSurrogate(
+function Surrogates.PolynomialChaosSurrogate(
         x, y, lb::Number, ub::Number;
         orthopolys::AbstractCanonicalOrthoPoly = GaussOrthoPoly(2)
     )
@@ -18,7 +18,7 @@ function PolynomialChaosSurrogate(
     return PolynomialChaosSurrogate(x, y, lb, ub, coeff, orthopolys, num_of_multi_indexes)
 end
 
-function PolynomialChaosSurrogate(
+function Surrogates.PolynomialChaosSurrogate(
         x, y, lb, ub;
         orthopolys = MultiOrthoPoly([GaussOrthoPoly(2) for j in 1:length(lb)], 2)
     )
