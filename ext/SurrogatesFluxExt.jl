@@ -1,6 +1,6 @@
 module SurrogatesFluxExt
 
-import Surrogates: NeuralSurrogate
+using Surrogates: NeuralSurrogate, Surrogates
 using SurrogatesBase
 using Flux: Flux.Optimisers
 using Flux
@@ -25,7 +25,7 @@ using Flux
   - `opt`: Optimiser defined using Optimisers.jl
   - `n_epochs`: number of epochs for training
 """
-function NeuralSurrogate(
+function Surrogates.NeuralSurrogate(
         x, y, lb, ub; model = Chain(Dense(length(x[1]), 1)),
         loss = Flux.mse, opt = Optimisers.Adam(1.0e-3),
         n_epochs::Int = 10

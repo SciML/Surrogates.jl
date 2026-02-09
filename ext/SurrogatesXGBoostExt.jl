@@ -1,6 +1,6 @@
 module SurrogatesXGBoostExt
 
-import Surrogates: XGBoostSurrogate
+using Surrogates: Surrogates, XGBoostSurrogate
 using SurrogatesBase
 using XGBoost: xgboost, predict
 
@@ -20,7 +20,7 @@ Build Random forest surrogate. num_round is the number of trees.
 
   - `num_round`: number of rounds of training.
 """
-function XGBoostSurrogate(x, y, lb, ub; num_round::Int = 1)
+function Surrogates.XGBoostSurrogate(x, y, lb, ub; num_round::Int = 1)
     X = Array{Float64, 2}(undef, length(x), length(x[1]))
     if length(lb) == 1
         for j in eachindex(x)
