@@ -62,3 +62,23 @@ mutable struct MOE{X, Y, C, D, M, E, ND, NC} <: AbstractDeterministicSurrogate
     nd::ND #number of dimensions
     nc::NC #number of clusters
 end
+
+mutable struct GENNSurrogate{X, Y, D, M, O, P, N, A, U, G, XM, XS, YM, YS, IN} <: AbstractDeterministicSurrogate
+    x::X
+    y::Y
+    dydx::D  # gradients (n_outputs x n_inputs x n_samples)
+    model::M
+    opt::O
+    ps::P
+    n_epochs::N
+    lb::A
+    ub::U
+    gamma::G  # gradient-enhancement coefficient
+    x_mean::XM  # normalization parameters (nothing if not normalized)
+    x_std::XS
+    y_mean::YM
+    y_std::YS
+    is_normalize::IN  # whether normalization is enabled
+end
+
+function predict_derivative end

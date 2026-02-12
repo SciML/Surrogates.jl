@@ -51,7 +51,6 @@ if GROUP == "All" || GROUP == "Core"
             @time @safetestset "SecondOrderPolynomialSurrogate" begin
                 include("secondOrderPolynomialSurrogate.jl")
             end
-            # @time @safetestset  "AD_Compatibility" begin include("AD_compatibility.jl") end
             @time @safetestset "Wendland" begin
                 include("Wendland.jl")
             end

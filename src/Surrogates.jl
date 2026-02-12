@@ -26,7 +26,7 @@ include("VirtualStrategy.jl")
 
 current_surrogates = [
     "Kriging", "LinearSurrogate", "LobachevskySurrogate",
-    "NeuralSurrogate",
+    "NeuralSurrogate", "GENNSurrogate",
     "RadialBasis", "XGBoostSurrogate", "SecondOrderPolynomialSurrogate",
     "Wendland", "GEK", "PolynomialChaosSurrogate",
 ]
@@ -71,6 +71,14 @@ function NeuralStructure(; model, loss, opt, n_epochs)
     )
 end
 
+#GENN structure
+function GENNStructure(; model, opt, n_epochs, gamma)
+    return (
+        name = "GENNSurrogate", model = model, opt = opt,
+        n_epochs = n_epochs, gamma = gamma,
+    )
+end
+
 #XGBoost structure
 function XGBoostStructure(; num_round)
     return (name = "XGBoostSurrogate", num_round = num_round)
@@ -97,7 +105,7 @@ export current_surrogates
 export GEKPLS
 export RadialBasisStructure, KrigingStructure, LinearStructure, InverseDistanceStructure
 export LobachevskyStructure,
-    NeuralStructure, XGBoostStructure,
+    NeuralStructure, GENNStructure, XGBoostStructure,
     SecondOrderPolynomialStructure
 export WendlandStructure
 export SamplingAlgorithm
@@ -123,11 +131,6 @@ export LinearSurrogate
 export InverseDistanceSurrogate
 export SecondOrderPolynomialSurrogate
 export Wendland
-export RadialBasisStructure, KrigingStructure, LinearStructure, InverseDistanceStructure
-export LobachevskyStructure,
-    NeuralStructure, XGBoostStructure,
-    SecondOrderPolynomialStructure
-export WendlandStructure
 #export MOE
 export VariableFidelitySurrogate
 export EarthSurrogate
@@ -138,6 +141,7 @@ export AbstractSurrogate
 include("extensions.jl")
 export AbstractGPSurrogate, logpdf_surrogate, std_error_at_point
 export NeuralSurrogate
+export GENNSurrogate, predict_derivative
 export PolynomialChaosSurrogate
 export XGBoostSurrogate
 export SVMSurrogate
