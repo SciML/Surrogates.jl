@@ -34,18 +34,18 @@ value = my_lobachevsky(5.0)
 surrogate_optimize!(f, SRBF(), lb, ub, my_lobachevsky, RandomSample())
 
 #New approximation
-value = my_lobachevsky(5.0)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">135.03840191240215</code></pre><h2 id="Reproducibility"><a class="docs-heading-anchor" href="#Reproducibility">Reproducibility</a><a id="Reproducibility-1"></a><a class="docs-heading-anchor-permalink" href="#Reproducibility" title="Permalink"></a></h2><details><summary>The documentation of this SciML package was built using these direct dependencies,</summary><pre class="documenter-example-output"><code class="nohighlight hljs ansi">Status `~/work/Surrogates.jl/Surrogates.jl/docs/Project.toml`
+value = my_lobachevsky(5.0)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">135.03840571088196</code></pre><h2 id="Reproducibility"><a class="docs-heading-anchor" href="#Reproducibility">Reproducibility</a><a id="Reproducibility-1"></a><a class="docs-heading-anchor-permalink" href="#Reproducibility" title="Permalink"></a></h2><details><summary>The documentation of this SciML package was built using these direct dependencies,</summary><pre class="documenter-example-output"><code class="nohighlight hljs ansi">Status `~/work/Surrogates.jl/Surrogates.jl/docs/Project.toml`
   [99985d1d] AbstractGPs v0.5.24
   [e30172f5] Documenter v1.16.1
   [587475ba] Flux v0.16.9
   [cc18c42c] GaussianMixtures v0.3.14
   [91a5bcdd] Plots v1.41.5
-  [8d666b04] PolyChaos v1.0.0
+  [8d666b04] PolyChaos v1.1.0
   [1fd47b50] QuadGK v2.11.2
   [6fc51010] Surrogates v7.4.0 `~/work/Surrogates.jl/Surrogates.jl`
   [009559a3] XGBoost v2.5.2
-  [e88e6eb3] Zygote v0.7.10</code></pre></details><details><summary>and using this machine and Julia version.</summary><pre class="documenter-example-output"><code class="nohighlight hljs ansi">Julia Version 1.12.4
-Commit 01a2eadb047 (2026-01-06 16:56 UTC)
+  [e88e6eb3] Zygote v0.7.10</code></pre></details><details><summary>and using this machine and Julia version.</summary><pre class="documenter-example-output"><code class="nohighlight hljs ansi">Julia Version 1.12.5
+Commit 5fe89b8ddc1 (2026-02-09 16:05 UTC)
 Build Info:
   Official https://julialang.org release
 Platform Info:
@@ -73,7 +73,7 @@ Environment:
   [9718e550] Baselet v0.1.1
   [d1d4a3ce] BitFlags v0.1.9
   [fa961155] CEnum v0.5.0
-  [082447d4] ChainRules v1.72.6
+  [082447d4] ChainRules v1.73.0
   [d360d2e6] ChainRulesCore v1.26.0
   [aaaa29a8] Clustering v0.15.8
   [944b1d66] CodecZlib v0.7.8
@@ -138,7 +138,7 @@ Environment:
   [682c06a0] JSON v1.4.0
   [0f8b85d8] JSON3 v1.14.3
   [b14d175d] JuliaVariables v0.2.4
-  [63c18a36] KernelAbstractions v0.9.39
+  [63c18a36] KernelAbstractions v0.9.40
   [ec8451be] KernelFunctions v0.10.67
   [b964fa9f] LaTeXStrings v1.4.0
   [23fbe1c1] Latexify v0.16.10
@@ -170,7 +170,7 @@ Environment:
   [ccf2f8ad] PlotThemes v3.3.0
   [995b91a9] PlotUtils v1.4.4
   [91a5bcdd] Plots v1.41.5
-  [8d666b04] PolyChaos v1.0.0
+  [8d666b04] PolyChaos v1.1.0
   [aea7be01] PrecompileTools v1.3.3
   [21216c6a] Preferences v1.5.1
   [8162dcfd] PrettyPrint v0.2.0
@@ -202,7 +202,7 @@ Environment:
   [dc90abb0] SparseInverseSubset v0.1.2
   [a0a7dd2c] SparseMatricesCSR v0.6.9
   [e56a9233] Sparspak v0.3.14
-  [276daf66] SpecialFunctions v2.6.1
+  [276daf66] SpecialFunctions v2.7.1
   [171d559e] SplittablesBase v0.1.15
   [860ef19b] StableRNGs v1.0.4
   [90137ffa] StaticArrays v1.9.16
@@ -368,4 +368,4 @@ Environment:
   [8e850b90] libblastrampoline_jll v5.15.0+0
   [8e850ede] nghttp2_jll v1.64.0+1
   [3f19e933] p7zip_jll v17.7.0+0
-Info Packages marked with ⌃ and ⌅ have new versions available. Those with ⌃ may be upgradable, but those with ⌅ are restricted by compatibility constraints from upgrading. To see why use `status --outdated -m`</code></pre></details><p>You can also download the <a href="https://github.com/SciML/Surrogates.jl/tree/gh-pages/v7.4.0/assets/Manifest.toml">manifest</a> file and the <a href="https://github.com/SciML/Surrogates.jl/tree/gh-pages/v7.4.0/assets/Project.toml">project</a> file.</p></article><nav class="docs-footer"><a class="docs-footer-nextpage" href="tutorials/">Basics »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.16.1 on <span class="colophon-date" title="Monday 9 February 2026 11:28">Monday 9 February 2026</span>. Using Julia version 1.12.4.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+Info Packages marked with ⌃ and ⌅ have new versions available. Those with ⌃ may be upgradable, but those with ⌅ are restricted by compatibility constraints from upgrading. To see why use `status --outdated -m`</code></pre></details><p>You can also download the <a href="https://github.com/SciML/Surrogates.jl/tree/gh-pages/v7.4.0/assets/Manifest.toml">manifest</a> file and the <a href="https://github.com/SciML/Surrogates.jl/tree/gh-pages/v7.4.0/assets/Project.toml">project</a> file.</p></article><nav class="docs-footer"><a class="docs-footer-nextpage" href="tutorials/">Basics »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.16.1 on <span class="colophon-date" title="Thursday 12 February 2026 11:33">Thursday 12 February 2026</span>. Using Julia version 1.12.5.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
