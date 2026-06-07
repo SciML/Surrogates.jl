@@ -522,9 +522,9 @@ version = "2.8.1+0"
 
 [[deps.ExtendableSparse]]
 deps = ["DocStringExtensions", "ILUZero", "LinearAlgebra", "Printf", "SciMLPublic", "SparseArrays", "Sparspak", "StaticArrays"]
-git-tree-sha1 = "12c2828feda63cd95a5e876dc0dd486bdfaa72ab"
+git-tree-sha1 = "93d1f3f33bd7e577ed33435849cb59e7865aa67d"
 uuid = "95c220a8-a1cf-11e9-0c77-dbfce5f500b3"
-version = "2.0.1"
+version = "2.1.0"
 
     [deps.ExtendableSparse.extensions]
     ExtendableSparseIncompleteLUExt = "IncompleteLU"
@@ -677,9 +677,9 @@ version = "1.9.5"
 
 [[deps.GPUArrays]]
 deps = ["Adapt", "GPUArraysCore", "KernelAbstractions", "LLVM", "LinearAlgebra", "Printf", "Random", "Reexport", "ScopedValues", "Serialization", "SparseArrays", "Statistics"]
-git-tree-sha1 = "cf230532c7871ce9bfa5812dd699cb68da888364"
+git-tree-sha1 = "62ad1fd3c217acaf6d39615866e16a529b406aeb"
 uuid = "0c68f7d7-f131-5f86-a1c3-88cf8149b2d7"
-version = "11.5.4"
+version = "11.5.5"
 
     [deps.GPUArrays.extensions]
     JLD2Ext = "JLD2"
@@ -695,9 +695,9 @@ version = "0.2.0"
 
 [[deps.GR]]
 deps = ["Artifacts", "Base64", "DelimitedFiles", "Downloads", "GR_jll", "HTTP", "JSON", "Libdl", "LinearAlgebra", "Preferences", "Printf", "Qt6Wayland_jll", "Random", "Serialization", "Sockets", "TOML", "Tar", "Test", "p7zip_jll"]
-git-tree-sha1 = "44716a1a667cb867ee0e9ec8edc31c3e4aa5afdc"
+git-tree-sha1 = "b66084e7246be1a381363a2b75c03fc5d815f599"
 uuid = "28b8d3ca-fb5f-59d9-8090-bfdbd6d07a71"
-version = "0.73.24"
+version = "0.73.25"
 
     [deps.GR.extensions]
     IJuliaExt = "IJulia"
@@ -707,9 +707,9 @@ version = "0.73.24"
 
 [[deps.GR_jll]]
 deps = ["Artifacts", "Bzip2_jll", "Cairo_jll", "FFMPEG_jll", "Fontconfig_jll", "FreeType2_jll", "GLFW_jll", "JLLWrappers", "JpegTurbo_jll", "Libdl", "Libtiff_jll", "Pixman_jll", "Qt6Base_jll", "Zlib_jll", "libpng_jll"]
-git-tree-sha1 = "be8a1b8065959e24fdc1b51402f39f3b6f0f6653"
+git-tree-sha1 = "c45a7c5b40346c21e66343dded33312e1bab98b6"
 uuid = "d2c73de3-f751-5644-a686-071e5b155ba9"
-version = "0.73.24+0"
+version = "0.73.25+0"
 
 [[deps.GaussQuadrature]]
 deps = ["SpecialFunctions"]
@@ -1385,9 +1385,9 @@ version = "1.57.1+0"
 
 [[deps.Parsers]]
 deps = ["Dates", "PrecompileTools", "UUIDs"]
-git-tree-sha1 = "5d5e0a78e971354b1c7bff0655d11fdc1b0e12c8"
+git-tree-sha1 = "468dbe2b510c876dc091b2c74ed52c7c34f48b9b"
 uuid = "69de0a69-1ddd-5017-9359-2bf0b02dc9f0"
-version = "2.8.4"
+version = "2.8.5"
 
 [[deps.Pixman_jll]]
 deps = ["Artifacts", "CompilerSupportLibraries_jll", "JLLWrappers", "LLVMOpenMP_jll", "Libdl"]
