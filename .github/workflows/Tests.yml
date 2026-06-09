@@ -19,24 +19,5 @@ concurrency:
 
 jobs:
   tests:
-    name: "Tests"
-    strategy:
-      fail-fast: false
-      matrix:
-        version:
-          - "1"
-          - "lts"
-          - "pre"
-        group:
-          - Core
-          - NoPre
-        exclude:
-          # Don't run NoPre group on prerelease Julia (JET compatibility issues)
-          - group: NoPre
-            version: "pre"
-    uses: "SciML/.github/.github/workflows/tests.yml@v1"
-    with:
-      julia-version: "${{ matrix.version }}"
-      group: "${{ matrix.group }}"
-      coverage-directories: "src,ext"
+    uses: "SciML/.github/.github/workflows/grouped-tests.yml@v1"
     secrets: "inherit"

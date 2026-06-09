@@ -5,21 +5,17 @@ using Pkg
 
 const GROUP = get(ENV, "GROUP", "All")
 
-# Don't run JET tests on prerelease Julia versions
-if GROUP == "NoPre" && isempty(VERSION.prerelease)
-    Pkg.activate("nopre")
+if GROUP == "QA"
+    Pkg.activate(joinpath(@__DIR__, "qa"))
     Pkg.develop(PackageSpec(path = dirname(@__DIR__)))
     Pkg.instantiate()
-    @safetestset "JET Static Analysis" begin
-        include("nopre/jet.jl")
+    @safetestset "Quality Assurance" begin
+        include("qa/qa.jl")
     end
 end
 
 if GROUP == "All" || GROUP == "Core"
     @testset "Surrogates" begin
-        @safetestset "Quality Assurance" begin
-            include("qa.jl")
-        end
         @testset "Extensions" begin
             include("extensions.jl")
         end
