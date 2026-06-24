@@ -34,15 +34,15 @@ value = my_lobachevsky(5.0)
 surrogate_optimize!(f, SRBF(), lb, ub, my_lobachevsky, RandomSample())
 
 #New approximation
-value = my_lobachevsky(5.0)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">135.03840478193757</code></pre><h2 id="Reproducibility"><a class="docs-heading-anchor" href="#Reproducibility">Reproducibility</a><a id="Reproducibility-1"></a><a class="docs-heading-anchor-permalink" href="#Reproducibility" title="Permalink"></a></h2><details><summary>The documentation of this SciML package was built using these direct dependencies,</summary><pre class="documenter-example-output"><code class="nohighlight hljs ansi"><span class="sgr32"><span class="sgr1">Status</span></span> `~/github-runners/demeter4-11/_work/Surrogates.jl/Surrogates.jl/docs/Project.toml`
+value = my_lobachevsky(5.0)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">135.03840001311346</code></pre><h2 id="Reproducibility"><a class="docs-heading-anchor" href="#Reproducibility">Reproducibility</a><a id="Reproducibility-1"></a><a class="docs-heading-anchor-permalink" href="#Reproducibility" title="Permalink"></a></h2><details><summary>The documentation of this SciML package was built using these direct dependencies,</summary><pre class="documenter-example-output"><code class="nohighlight hljs ansi"><span class="sgr32"><span class="sgr1">Status</span></span> `~/work/Surrogates.jl/Surrogates.jl/docs/Project.toml`
   <span class="sgr90">[99985d1d] </span>AbstractGPs v0.5.24
   <span class="sgr90">[e30172f5] </span>Documenter v1.17.0
   <span class="sgr90">[587475ba] </span>Flux v0.16.10
   <span class="sgr90">[cc18c42c] </span>GaussianMixtures v0.3.14
   <span class="sgr90">[91a5bcdd] </span>Plots v1.41.6
-  <span class="sgr90">[8d666b04] </span>PolyChaos v1.1.0
+  <span class="sgr90">[8d666b04] </span>PolyChaos v1.2.0
   <span class="sgr90">[1fd47b50] </span>QuadGK v2.11.3
-  <span class="sgr90">[6fc51010] </span>Surrogates v7.5.0 `~/github-runners/demeter4-11/_work/Surrogates.jl/Surrogates.jl`
+  <span class="sgr90">[6fc51010] </span>Surrogates v7.5.1 `~/work/Surrogates.jl/Surrogates.jl`
   <span class="sgr90">[009559a3] </span>XGBoost v2.5.4
   <span class="sgr90">[e88e6eb3] </span>Zygote v0.7.11</code></pre></details><details><summary>and using this machine and Julia version.</summary><pre class="documenter-example-output"><code class="nohighlight hljs ansi">Julia Version 1.12.6
 Commit 15346901f00 (2026-04-09 19:20 UTC)
@@ -50,22 +50,21 @@ Build Info:
   Official https://julialang.org release
 Platform Info:
   OS: Linux (x86_64-linux-gnu)
-  CPU: 64 × AMD EPYC 9354 32-Core Processor
+  CPU: 4 × Intel(R) Xeon(R) Platinum 8370C CPU @ 2.80GHz
   WORD_SIZE: 64
-  LLVM: libLLVM-18.1.7 (ORCJIT, znver4)
+  LLVM: libLLVM-18.1.7 (ORCJIT, icelake-server)
   GC: Built with stock GC
-Threads: 1 default, 1 interactive, 1 GC (on 64 virtual cores)
+Threads: 1 default, 1 interactive, 1 GC (on 4 virtual cores)
 Environment:
-  JULIA_DEPOT_PATH = /home/chrisrackauckas/github-runners/demeter4-11/.julia
-  JULIA_DEBUG = Documenter</code></pre></details><details><summary>A more complete overview of all dependencies and their versions is also provided.</summary><pre class="documenter-example-output"><code class="nohighlight hljs ansi"><span class="sgr32"><span class="sgr1">Status</span></span> `~/github-runners/demeter4-11/_work/Surrogates.jl/Surrogates.jl/docs/Manifest.toml`
-  <span class="sgr90">[47edcb42] </span>ADTypes v1.22.0
+  JULIA_DEBUG = Documenter</code></pre></details><details><summary>A more complete overview of all dependencies and their versions is also provided.</summary><pre class="documenter-example-output"><code class="nohighlight hljs ansi"><span class="sgr32"><span class="sgr1">Status</span></span> `~/work/Surrogates.jl/Surrogates.jl/docs/Manifest.toml`
+  <span class="sgr90">[47edcb42] </span>ADTypes v1.22.1
   <span class="sgr90">[a4c015fc] </span>ANSIColoredPrinters v0.0.1
   <span class="sgr90">[621f4979] </span>AbstractFFTs v1.5.0
   <span class="sgr90">[99985d1d] </span>AbstractGPs v0.5.24
   <span class="sgr90">[1520ce14] </span>AbstractTrees v0.4.5
   <span class="sgr90">[7d9f7c33] </span>Accessors v0.1.44
   <span class="sgr90">[79e6a3ab] </span>Adapt v4.6.1
-<span class="sgr33">⌅</span> <span class="sgr90">[c75e803d] </span>AdaptiveRejectionSampling v0.1.2
+  <span class="sgr90">[c75e803d] </span>AdaptiveRejectionSampling v0.2.1
   <span class="sgr90">[66dad0bd] </span>AliasTables v1.1.3
   <span class="sgr90">[7d9fca2a] </span>Arpack v0.5.4
   <span class="sgr90">[4fba245c] </span>ArrayInterface v7.25.0
@@ -139,7 +138,7 @@ Environment:
   <span class="sgr90">[682c06a0] </span>JSON v1.6.1
   <span class="sgr90">[63c18a36] </span>KernelAbstractions v0.9.41
 <span class="sgr33">⌅</span> <span class="sgr90">[ec8451be] </span>KernelFunctions v0.10.67
-  <span class="sgr90">[929cbde3] </span>LLVM v9.9.0
+  <span class="sgr90">[929cbde3] </span>LLVM v9.10.0
   <span class="sgr90">[b964fa9f] </span>LaTeXStrings v1.4.0
   <span class="sgr90">[23fbe1c1] </span>Latexify v0.16.10
   <span class="sgr90">[73f95e8e] </span>LatticeRules v0.0.1
@@ -169,7 +168,7 @@ Environment:
   <span class="sgr90">[ccf2f8ad] </span>PlotThemes v3.3.0
   <span class="sgr90">[995b91a9] </span>PlotUtils v1.4.4
   <span class="sgr90">[91a5bcdd] </span>Plots v1.41.6
-  <span class="sgr90">[8d666b04] </span>PolyChaos v1.1.0
+  <span class="sgr90">[8d666b04] </span>PolyChaos v1.2.0
   <span class="sgr90">[f517fe37] </span>Polyester v0.7.19
   <span class="sgr90">[1d0040c9] </span>PolyesterWeave v0.2.2
   <span class="sgr90">[aea7be01] </span>PrecompileTools v1.3.4
@@ -178,7 +177,7 @@ Environment:
   <span class="sgr90">[33c8b6b6] </span>ProgressLogging v0.1.6
   <span class="sgr90">[43287f4e] </span>PtrArrays v1.4.0
   <span class="sgr90">[1fd47b50] </span>QuadGK v2.11.3
-  <span class="sgr90">[8a4e6c94] </span>QuasiMonteCarlo v0.3.5
+  <span class="sgr90">[8a4e6c94] </span>QuasiMonteCarlo v0.3.6
   <span class="sgr90">[c1ae055f] </span>RealDot v0.1.0
   <span class="sgr90">[3cdcf5f2] </span>RecipesBase v1.3.4
   <span class="sgr90">[01d81517] </span>RecipesPipeline v0.6.12
@@ -188,7 +187,7 @@ Environment:
   <span class="sgr90">[ae029012] </span>Requires v1.3.1
   <span class="sgr90">[79098fc4] </span>Rmath v0.9.0
   <span class="sgr90">[94e857df] </span>SIMDTypes v0.1.0
-  <span class="sgr90">[431bcebd] </span>SciMLPublic v1.0.1
+  <span class="sgr90">[431bcebd] </span>SciMLPublic v1.1.0
   <span class="sgr90">[6e75b9c4] </span>ScikitLearnBase v0.5.0
   <span class="sgr90">[7e506255] </span>ScopedValues v1.6.2
   <span class="sgr90">[6c6a2e73] </span>Scratch v1.3.0
@@ -205,7 +204,7 @@ Environment:
   <span class="sgr90">[e56a9233] </span>Sparspak v0.3.15
   <span class="sgr90">[276daf66] </span>SpecialFunctions v2.8.0
   <span class="sgr90">[860ef19b] </span>StableRNGs v1.0.4
-  <span class="sgr90">[aedffcd0] </span>Static v1.4.0
+  <span class="sgr90">[aedffcd0] </span>Static v1.4.1
   <span class="sgr90">[0d7ed370] </span>StaticArrayInterface v1.10.0
   <span class="sgr90">[90137ffa] </span>StaticArrays v1.9.18
   <span class="sgr90">[1e83bf80] </span>StaticArraysCore v1.4.4
@@ -217,8 +216,8 @@ Environment:
   <span class="sgr90">[7792a7ef] </span>StrideArraysCore v0.5.9
   <span class="sgr90">[09ab397b] </span>StructArrays v0.7.3
   <span class="sgr90">[ec057cc2] </span>StructUtils v2.8.2
-  <span class="sgr90">[6fc51010] </span>Surrogates v7.5.0 `~/github-runners/demeter4-11/_work/Surrogates.jl/Surrogates.jl`
-  <span class="sgr90">[89f642e6] </span>SurrogatesBase v1.1.0
+  <span class="sgr90">[6fc51010] </span>Surrogates v7.5.1 `~/work/Surrogates.jl/Surrogates.jl`
+  <span class="sgr90">[89f642e6] </span>SurrogatesBase v1.1.1
   <span class="sgr90">[3783bdb8] </span>TableTraits v1.0.1
   <span class="sgr90">[bd369af6] </span>Tables v1.12.1
   <span class="sgr90">[62fd8b95] </span>TensorCore v0.1.1
@@ -374,4 +373,4 @@ Environment:
   <span class="sgr90">[8e850b90] </span>libblastrampoline_jll v5.15.0+0
   <span class="sgr90">[8e850ede] </span>nghttp2_jll v1.64.0+1
   <span class="sgr90">[3f19e933] </span>p7zip_jll v17.7.0+0
-<span class="sgr36"><span class="sgr1">Info</span></span> Packages marked with <span class="sgr32">⌃</span> and <span class="sgr33">⌅</span> have new versions available. Those with <span class="sgr32">⌃</span> may be upgradable, but those with <span class="sgr33">⌅</span> are restricted by compatibility constraints from upgrading. To see why use `status --outdated -m`</code></pre></details><p>You can also download the <a href="https://github.com/SciML/Surrogates.jl/tree/gh-pages/v7.5.0/assets/Manifest.toml">manifest</a> file and the <a href="https://github.com/SciML/Surrogates.jl/tree/gh-pages/v7.5.0/assets/Project.toml">project</a> file.</p></article><nav class="docs-footer"><a class="docs-footer-nextpage" href="tutorials/">Basics »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.17.0 on <span class="colophon-date" title="Tuesday 23 June 2026 02:16">Tuesday 23 June 2026</span>. Using Julia version 1.12.6.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+<span class="sgr36"><span class="sgr1">Info</span></span> Packages marked with <span class="sgr32">⌃</span> and <span class="sgr33">⌅</span> have new versions available. Those with <span class="sgr32">⌃</span> may be upgradable, but those with <span class="sgr33">⌅</span> are restricted by compatibility constraints from upgrading. To see why use `status --outdated -m`</code></pre></details><p>You can also download the <a href="https://github.com/SciML/Surrogates.jl/tree/gh-pages/v7.5.1/assets/Manifest.toml">manifest</a> file and the <a href="https://github.com/SciML/Surrogates.jl/tree/gh-pages/v7.5.1/assets/Project.toml">project</a> file.</p></article><nav class="docs-footer"><a class="docs-footer-nextpage" href="tutorials/">Basics »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.17.0 on <span class="colophon-date" title="Wednesday 24 June 2026 12:13">Wednesday 24 June 2026</span>. Using Julia version 1.12.6.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>

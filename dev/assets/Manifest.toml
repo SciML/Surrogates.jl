@@ -5,9 +5,9 @@ manifest_format = "2.0"
 project_hash = "b9a8f15a9cc54af21a36604c2266a7d177316eb6"
 
 [[deps.ADTypes]]
-git-tree-sha1 = "bbc22a9a08a0ef6460041086d8a7b27940ed4ffd"
+git-tree-sha1 = "d9aaef7c63466eee4de23b4d9dad03629df54bea"
 uuid = "47edcb42-4c32-4615-8424-f2b9edc5f35b"
-version = "1.22.0"
+version = "1.22.1"
 weakdeps = ["ChainRulesCore", "ConstructionBase", "EnzymeCore"]
 
     [deps.ADTypes.extensions]
@@ -79,9 +79,9 @@ weakdeps = ["SparseArrays", "StaticArrays"]
 
 [[deps.AdaptiveRejectionSampling]]
 deps = ["ForwardDiff", "Random", "StatsBase"]
-git-tree-sha1 = "e1091232287e17c47369c3564ccd127ad2cabd6d"
+git-tree-sha1 = "db34657b1a7ddede70d46ad2d285e0fc21f7cfd3"
 uuid = "c75e803d-635f-53bd-ab7d-544e482d8c75"
-version = "0.1.2"
+version = "0.2.1"
 
 [[deps.AliasTables]]
 deps = ["PtrArrays", "Random"]
@@ -879,9 +879,9 @@ version = "4.1.0+0"
 
 [[deps.LLVM]]
 deps = ["CEnum", "LLVMExtra_jll", "Libdl", "PrecompileTools", "Preferences", "Printf", "Unicode"]
-git-tree-sha1 = "57639f07d4670fc6537e97d2686c4c99c13fdd67"
+git-tree-sha1 = "f74a9668f02e33399baa5ed3a092b3f7a93f192e"
 uuid = "929cbde3-209d-540e-8aea-75f648917ca0"
-version = "9.9.0"
+version = "9.10.0"
 
     [deps.LLVM.extensions]
     BFloat16sExt = "BFloat16s"
@@ -1357,9 +1357,9 @@ version = "1.41.6"
 
 [[deps.PolyChaos]]
 deps = ["AdaptiveRejectionSampling", "Combinatorics", "Distributions", "FFTW", "GaussQuadrature", "LinearAlgebra", "QuadGK", "SparseArrays", "SpecialFunctions", "Statistics"]
-git-tree-sha1 = "b0bce03530e2d18986475ee8ba63544f18b9e63d"
+git-tree-sha1 = "7e6e600b3cd3d1075491499d9a06fe21c95fec14"
 uuid = "8d666b04-775d-5f6e-b778-5ac7c70f65a3"
-version = "1.1.0"
+version = "1.2.0"
 
 [[deps.Polyester]]
 deps = ["ArrayInterface", "BitTwiddlingConvenienceFunctions", "CPUSummary", "IfElse", "ManualMemory", "PolyesterWeave", "Static", "StaticArrayInterface", "StrideArraysCore", "ThreadingUtilities"]
@@ -1451,9 +1451,9 @@ version = "2.11.3"
 
 [[deps.QuasiMonteCarlo]]
 deps = ["Accessors", "ConcreteStructs", "LatticeRules", "LinearAlgebra", "PrecompileTools", "Primes", "Random", "Sobol"]
-git-tree-sha1 = "017a6731a1754173013b98f458adb631e368a9d2"
+git-tree-sha1 = "6db54dd9d11f4aa27555e250d6b454bdde6f5dd1"
 uuid = "8a4e6c94-4038-4cdc-81c3-7e6ffdb2a71b"
-version = "0.3.5"
+version = "0.3.6"
 weakdeps = ["Distributions"]
 
     [deps.QuasiMonteCarlo.extensions]
@@ -1532,9 +1532,9 @@ uuid = "94e857df-77ce-4151-89e5-788b33177be4"
 version = "0.1.0"
 
 [[deps.SciMLPublic]]
-git-tree-sha1 = "0ba076dbdce87ba230fff48ca9bca62e1f345c9b"
+git-tree-sha1 = "6e8180583826020626d8933e7a862e5ee6802e4e"
 uuid = "431bcebd-1456-4ced-9d72-93c2757fff0b"
-version = "1.0.1"
+version = "1.1.0"
 
 [[deps.ScikitLearnBase]]
 deps = ["LinearAlgebra", "Random", "Statistics"]
@@ -1648,9 +1648,9 @@ version = "1.0.4"
 
 [[deps.Static]]
 deps = ["CommonWorldInvalidations", "IfElse", "PrecompileTools", "SciMLPublic"]
-git-tree-sha1 = "bb072715f158b59ad8819ff80da5ffa90cce6ceb"
+git-tree-sha1 = "cbc2fed5b692d12e199397471ba6c5988f69b629"
 uuid = "aedffcd0-7271-4cad-89d0-dc628f76c6d3"
-version = "1.4.0"
+version = "1.4.1"
 
 [[deps.StaticArrayInterface]]
 deps = ["ArrayInterface", "Compat", "IfElse", "LinearAlgebra", "PrecompileTools", "SciMLPublic", "Static"]
@@ -1769,9 +1769,9 @@ version = "7.8.3+2"
 
 [[deps.Surrogates]]
 deps = ["ChainRulesCore", "Distributions", "ExtendableSparse", "GLM", "IterativeSolvers", "LinearAlgebra", "PrecompileTools", "QuasiMonteCarlo", "Random", "SparseArrays", "Statistics", "SurrogatesBase", "Zygote"]
-path = "/home/chrisrackauckas/github-runners/demeter4-11/_work/Surrogates.jl/Surrogates.jl"
+path = "/home/runner/work/Surrogates.jl/Surrogates.jl"
 uuid = "6fc51010-71bc-11e9-0e15-a3fcc6593c49"
-version = "7.5.0"
+version = "7.5.1"
 
     [deps.Surrogates.extensions]
     SurrogatesAbstractGPsExt = "AbstractGPs"
@@ -1791,9 +1791,9 @@ version = "7.5.0"
     XGBoost = "009559a3-9522-5dbb-924b-0b6ed2b22bb9"
 
 [[deps.SurrogatesBase]]
-git-tree-sha1 = "4668cf550bcc834e5645229d2d6106e0d02f8263"
+git-tree-sha1 = "2328a7f132ea817c6cb64898a1040af4e3303f74"
 uuid = "89f642e6-4179-4274-8202-c11f4bd9a72c"
-version = "1.1.0"
+version = "1.1.1"
 
 [[deps.TOML]]
 deps = ["Dates"]
