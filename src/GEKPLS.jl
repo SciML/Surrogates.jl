@@ -559,6 +559,8 @@ function _reduced_likelihood_function(theta, kernel_type, d, nt, ij, y_norma, no
     nugget = 1000000.0 * eps() #a jitter for numerical stability; reducing the multiple from 1000000.0 results in positive definite error for Cholesky decomposition;
     if kernel_type == "squar_exp" #todo - add other kernel type abs_exp etc.
         r = squar_exp(theta, d)
+    else
+        throw(ArgumentError("unsupported kernel_type $(kernel_type); only \"squar_exp\" is implemented"))
     end
     R = (I + zeros(nt, nt)) .* (1.0 + nugget + noise)
 
