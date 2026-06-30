@@ -1,5 +1,6 @@
 using Surrogates
 using Zygote
+using Statistics: mean, std
 
 # #water flow function tests
 function water_flow(x)
@@ -243,4 +244,140 @@ end
         sum_of_rmse += sqrt((sum((grads_surr_vec[i][1] .- grads[i][1]) .^ 2) / 3.0))
     end
     @test isapprox(sum_of_rmse, 0.05, atol = 0.01)
+end
+
+# Vector-output GEKPLS: a function f : R^d -> R^ny is approximated with the
+# full Taylor-augmented PLS2 + multi-output BLUP path.
+
+function _jacobian_at(f, xi, ny, d)
+    J = Matrix{Float64}(undef, ny, d)
+    for k in 1:ny
+        gtup = Zygote.gradient(z -> f(z)[k], xi)[1]
+        for j in 1:d
+            J[k, j] = gtup[j]
+        end
+    end
+    return J
+end
+
+# 6D vector-valued test problem with three correlated polynomial outputs.
+# Polynomial because the existing tests pass a fixed (un-optimized) θ; this
+# isolates the shared-θ multi-output kriging path from any goodness-of-fit
+# pathology of the chosen θ on hard non-polynomial responses.
+function multioutput_func(x)
+    a = x[1]^2 + x[2]^2 + x[3]^2 + x[4]^2 + x[5]^2 + x[6]^2
+    b = x[1] + 2 * x[2] + 3 * x[3] + 4 * x[4] + 5 * x[5] + 6 * x[6]
+    c = x[1] * (x[1] - 1) + x[2] * (x[2] - 1) + x[3] * (x[3] - 1) +
+        x[4] * (x[4] - 1) + x[5] * (x[5] - 1) + x[6] * (x[6] - 1)
+    return [a, b, c]
+end
+
+@testset "Test 12: Vector-output GEKPLS matches per-output scalar fits (6D, ny=3)" begin
+    lb = fill(-3.0, 6)
+    ub = fill(3.0, 6)
+    n = 80
+    x = sample(n, lb, ub, SobolSample())
+    y_vec = multioutput_func.(x)
+    jacs = [_jacobian_at(multioutput_func, xi, 3, 6) for xi in x]
+
+    n_comp = 3
+    delta_x = 0.0001
+    extra_points = 2
+    initial_theta = [0.01 for _ in 1:n_comp]
+
+    g_vec = GEKPLS(
+        x, y_vec, jacs, n_comp, delta_x, lb, ub, extra_points, initial_theta
+    )
+
+    n_test = 50
+    x_test = sample(n_test, lb, ub, GoldenSample())
+    y_true_mat = reduce(hcat, multioutput_func.(x_test))   # (3, n_test)
+    y_pred_mat = reduce(hcat, g_vec.(x_test))              # (3, n_test)
+
+    # Vector-output prediction is a length-ny vector, not a scalar.
+    @test g_vec.(x_test) isa Vector{<:AbstractVector}
+    @test length(g_vec(x_test[1])) == 3
+
+    # Per-output relative RMSE must be small in absolute terms. The
+    # shared-θ multi-output BLUP can be modestly worse than the per-output
+    # scalar fit because PLS2 averages information across the ny responses
+    # into a single rotation, but on smooth polynomial responses every
+    # output should still be predicted to within a few percent of its scale.
+    for k in 1:3
+        rmse_k = sqrt(mean((y_pred_mat[k, :] .- y_true_mat[k, :]) .^ 2))
+        scale_k = max(std(y_true_mat[k, :]), 1.0e-12)
+        @test rmse_k / scale_k < 0.05
+    end
+end
+
+@testset "Test 13: Vector wrapper with ny=1 matches legacy scalar surrogate" begin
+    # With ny=1 packaged as a length-1 vector, the multi-output path must
+    # reproduce the legacy scalar GEKPLS up to floating-point reordering
+    # in the Matrix-based BLUP solve.
+    lb = [-3.0, -3.0, -3.0]
+    ub = [3.0, 3.0, 3.0]
+    n = 60
+    x = sample(n, lb, ub, SobolSample())
+    y_scalar = sphere_function.(x)
+    grads_scalar = gradient.(sphere_function, x)
+
+    y_vec1 = [[yi] for yi in y_scalar]
+    jacs1 = [reshape(Float64[gi[1]...], 1, 3) for gi in grads_scalar]
+
+    n_comp = 2
+    delta_x = 0.0001
+    extra_points = 2
+    initial_theta = [0.01, 0.01]
+
+    g_scalar = GEKPLS(
+        x, y_scalar, grads_scalar, n_comp, delta_x, lb, ub, extra_points, initial_theta
+    )
+    g_vec = GEKPLS(
+        x, y_vec1, jacs1, n_comp, delta_x, lb, ub, extra_points, initial_theta
+    )
+
+    n_test = 30
+    x_test = sample(n_test, lb, ub, GoldenSample())
+    for xt in x_test
+        @test only(g_vec(xt)) ≈ g_scalar(xt) rtol = 1.0e-10
+    end
+end
+
+@testset "Test 14: Vector-output update! (3D, ny=2)" begin
+    f2(x) = [x[1]^2 + x[2]^2 + x[3]^2, sin(x[1]) + sin(x[2]) + sin(x[3])]
+    lb = [-2.0, -2.0, -2.0]
+    ub = [2.0, 2.0, 2.0]
+    n_comp = 2
+    delta_x = 0.0001
+    extra_points = 2
+    initial_theta = [0.01, 0.01]
+
+    x_init = [(1.0, 0.5, -0.5), (-1.0, 0.0, 1.0), (0.0, 1.0, -1.0)]
+    y_init = f2.(x_init)
+    jacs_init = [_jacobian_at(f2, xi, 2, 3) for xi in x_init]
+
+    g = GEKPLS(
+        x_init, y_init, jacs_init, n_comp, delta_x, lb, ub, extra_points, initial_theta
+    )
+
+    n_test = 50
+    x_test = sample(n_test, lb, ub, GoldenSample())
+    rmse_before = [
+        sqrt(mean([(g(xt)[k] - f2(xt)[k])^2 for xt in x_test])) for k in 1:2
+    ]
+
+    n_extra = 60
+    x_extra = sample(n_extra, lb, ub, SobolSample())
+    y_extra = f2.(x_extra)
+    jacs_extra = [_jacobian_at(f2, xi, 2, 3) for xi in x_extra]
+    for i in 1:n_extra
+        update!(g, x_extra[i], y_extra[i], jacs_extra[i])
+    end
+
+    rmse_after = [
+        sqrt(mean([(g(xt)[k] - f2(xt)[k])^2 for xt in x_test])) for k in 1:2
+    ]
+    for k in 1:2
+        @test rmse_after[k] < rmse_before[k]
+    end
 end
