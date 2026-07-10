@@ -34,15 +34,15 @@ value = my_lobachevsky(5.0)
 surrogate_optimize!(f, SRBF(), lb, ub, my_lobachevsky, RandomSample())
 
 #New approximation
-value = my_lobachevsky(5.0)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">135.03840001311346</code></pre><h2 id="Reproducibility"><a class="docs-heading-anchor" href="#Reproducibility">Reproducibility</a><a id="Reproducibility-1"></a><a class="docs-heading-anchor-permalink" href="#Reproducibility" title="Permalink"></a></h2><details><summary>The documentation of this SciML package was built using these direct dependencies,</summary><pre class="documenter-example-output"><code class="nohighlight hljs ansi"><span class="sgr32"><span class="sgr1">Status</span></span> `~/work/Surrogates.jl/Surrogates.jl/docs/Project.toml`
+value = my_lobachevsky(5.0)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">135.03840056557968</code></pre><h2 id="Reproducibility"><a class="docs-heading-anchor" href="#Reproducibility">Reproducibility</a><a id="Reproducibility-1"></a><a class="docs-heading-anchor-permalink" href="#Reproducibility" title="Permalink"></a></h2><details><summary>The documentation of this SciML package was built using these direct dependencies,</summary><pre class="documenter-example-output"><code class="nohighlight hljs ansi"><span class="sgr32"><span class="sgr1">Status</span></span> `~/_work/Surrogates.jl/Surrogates.jl/docs/Project.toml`
   <span class="sgr90">[99985d1d] </span>AbstractGPs v0.5.24
   <span class="sgr90">[e30172f5] </span>Documenter v1.17.0
   <span class="sgr90">[587475ba] </span>Flux v0.16.10
   <span class="sgr90">[cc18c42c] </span>GaussianMixtures v0.3.14
   <span class="sgr90">[91a5bcdd] </span>Plots v1.41.6
-  <span class="sgr90">[8d666b04] </span>PolyChaos v1.2.0
+  <span class="sgr90">[8d666b04] </span>PolyChaos v1.2.1
   <span class="sgr90">[1fd47b50] </span>QuadGK v2.11.3
-  <span class="sgr90">[6fc51010] </span>Surrogates v7.5.1 `~/work/Surrogates.jl/Surrogates.jl`
+  <span class="sgr90">[6fc51010] </span>Surrogates v7.5.2 `~/_work/Surrogates.jl/Surrogates.jl`
   <span class="sgr90">[009559a3] </span>XGBoost v2.5.4
   <span class="sgr90">[e88e6eb3] </span>Zygote v0.7.11</code></pre></details><details><summary>and using this machine and Julia version.</summary><pre class="documenter-example-output"><code class="nohighlight hljs ansi">Julia Version 1.12.6
 Commit 15346901f00 (2026-04-09 19:20 UTC)
@@ -50,24 +50,26 @@ Build Info:
   Official https://julialang.org release
 Platform Info:
   OS: Linux (x86_64-linux-gnu)
-  CPU: 4 × Intel(R) Xeon(R) Platinum 8370C CPU @ 2.80GHz
+  CPU: 112 × AMD EPYC 7663 56-Core Processor
   WORD_SIZE: 64
-  LLVM: libLLVM-18.1.7 (ORCJIT, icelake-server)
+  LLVM: libLLVM-18.1.7 (ORCJIT, znver3)
   GC: Built with stock GC
 Threads: 1 default, 1 interactive, 1 GC (on 4 virtual cores)
 Environment:
-  JULIA_DEBUG = Documenter</code></pre></details><details><summary>A more complete overview of all dependencies and their versions is also provided.</summary><pre class="documenter-example-output"><code class="nohighlight hljs ansi"><span class="sgr32"><span class="sgr1">Status</span></span> `~/work/Surrogates.jl/Surrogates.jl/docs/Manifest.toml`
+  JULIA_CPU_THREADS = 4
+  JULIA_NUM_PRECOMPILE_TASKS = 4
+  JULIA_DEBUG = Documenter</code></pre></details><details><summary>A more complete overview of all dependencies and their versions is also provided.</summary><pre class="documenter-example-output"><code class="nohighlight hljs ansi"><span class="sgr32"><span class="sgr1">Status</span></span> `~/_work/Surrogates.jl/Surrogates.jl/docs/Manifest.toml`
   <span class="sgr90">[47edcb42] </span>ADTypes v1.22.1
   <span class="sgr90">[a4c015fc] </span>ANSIColoredPrinters v0.0.1
   <span class="sgr90">[621f4979] </span>AbstractFFTs v1.5.0
   <span class="sgr90">[99985d1d] </span>AbstractGPs v0.5.24
   <span class="sgr90">[1520ce14] </span>AbstractTrees v0.4.5
-  <span class="sgr90">[7d9f7c33] </span>Accessors v0.1.44
-  <span class="sgr90">[79e6a3ab] </span>Adapt v4.6.1
+  <span class="sgr90">[7d9f7c33] </span>Accessors v0.1.45
+  <span class="sgr90">[79e6a3ab] </span>Adapt v4.7.0
   <span class="sgr90">[c75e803d] </span>AdaptiveRejectionSampling v0.2.1
   <span class="sgr90">[66dad0bd] </span>AliasTables v1.1.3
   <span class="sgr90">[7d9fca2a] </span>Arpack v0.5.4
-  <span class="sgr90">[4fba245c] </span>ArrayInterface v7.25.0
+  <span class="sgr90">[4fba245c] </span>ArrayInterface v7.27.0
   <span class="sgr90">[a9b6321e] </span>Atomix v1.1.3
   <span class="sgr90">[d1d4a3ce] </span>BitFlags v0.1.10
   <span class="sgr90">[62783981] </span>BitTwiddlingConvenienceFunctions v0.1.6
@@ -77,12 +79,14 @@ Environment:
   <span class="sgr90">[d360d2e6] </span>ChainRulesCore v1.26.1
   <span class="sgr90">[fb6a15b2] </span>CloseOpenIntervals v0.1.13
   <span class="sgr90">[aaaa29a8] </span>Clustering v0.15.8
+  <span class="sgr90">[da1fd8a2] </span>CodeTracking v3.0.2
   <span class="sgr90">[944b1d66] </span>CodecZlib v0.7.8
   <span class="sgr90">[35d6a980] </span>ColorSchemes v3.31.0
   <span class="sgr90">[3da002f7] </span>ColorTypes v0.12.1
   <span class="sgr90">[c3611d14] </span>ColorVectorSpace v0.11.0
   <span class="sgr90">[5ae59095] </span>Colors v0.13.1
   <span class="sgr90">[861a8166] </span>Combinatorics v1.1.0
+  <span class="sgr90">[38540f10] </span>CommonSolve v0.2.9
   <span class="sgr90">[bbf7d656] </span>CommonSubexpressions v0.3.1
   <span class="sgr90">[f70d9fcc] </span>CommonWorldInvalidations v1.1.0
   <span class="sgr90">[34da2185] </span>Compat v4.18.1
@@ -99,12 +103,12 @@ Environment:
   <span class="sgr90">[163ba53b] </span>DiffResults v1.1.0
   <span class="sgr90">[b552c78f] </span>DiffRules v1.16.0
   <span class="sgr90">[b4f34e82] </span>Distances v0.10.12
-  <span class="sgr90">[31c24e10] </span>Distributions v0.25.127
+  <span class="sgr90">[31c24e10] </span>Distributions v0.25.129
   <span class="sgr90">[ffbed154] </span>DocStringExtensions v0.9.5
   <span class="sgr90">[e30172f5] </span>Documenter v1.17.0
-  <span class="sgr90">[f151be2c] </span>EnzymeCore v0.8.20
+  <span class="sgr90">[f151be2c] </span>EnzymeCore v0.8.21
   <span class="sgr90">[460bff9d] </span>ExceptionUnwrapping v0.1.11
-  <span class="sgr90">[95c220a8] </span>ExtendableSparse v2.3.0
+  <span class="sgr90">[95c220a8] </span>ExtendableSparse v2.3.1
   <span class="sgr90">[c87230d0] </span>FFMPEG v0.4.5
   <span class="sgr90">[7a1cc6ca] </span>FFTW v1.10.0
   <span class="sgr90">[1a297f60] </span>FillArrays v1.16.0
@@ -117,13 +121,14 @@ Environment:
   <span class="sgr90">[0c68f7d7] </span>GPUArrays v11.5.8
   <span class="sgr90">[46192b85] </span>GPUArraysCore v0.2.0
   <span class="sgr90">[28b8d3ca] </span>GR v0.73.26
+  <span class="sgr90">[a0844989] </span>Gamma v1.1.0
   <span class="sgr90">[d54b0c1a] </span>GaussQuadrature v0.5.8
   <span class="sgr90">[cc18c42c] </span>GaussianMixtures v0.3.14
   <span class="sgr90">[d7ba0133] </span>Git v1.5.0
   <span class="sgr90">[42e2da0e] </span>Grisu v1.0.2
 <span class="sgr33">⌅</span> <span class="sgr90">[cd3eb016] </span>HTTP v1.11.0
   <span class="sgr90">[076d061b] </span>HashArrayMappedTries v0.2.0
-  <span class="sgr90">[34004b35] </span>HypergeometricFunctions v0.3.28
+  <span class="sgr90">[34004b35] </span>HypergeometricFunctions v0.3.29
   <span class="sgr90">[88f59080] </span>ILUZero v0.2.0
   <span class="sgr90">[b5f81e59] </span>IOCapture v1.0.0
   <span class="sgr90">[7869d1d1] </span>IRTools v0.4.17
@@ -136,7 +141,7 @@ Environment:
   <span class="sgr90">[1019f520] </span>JLFzf v0.1.11
   <span class="sgr90">[692b3bcd] </span>JLLWrappers v1.8.0
   <span class="sgr90">[682c06a0] </span>JSON v1.6.1
-  <span class="sgr90">[63c18a36] </span>KernelAbstractions v0.9.41
+  <span class="sgr90">[63c18a36] </span>KernelAbstractions v0.9.42
 <span class="sgr33">⌅</span> <span class="sgr90">[ec8451be] </span>KernelFunctions v0.10.67
   <span class="sgr90">[929cbde3] </span>LLVM v9.10.0
   <span class="sgr90">[b964fa9f] </span>LaTeXStrings v1.4.0
@@ -146,9 +151,9 @@ Environment:
   <span class="sgr90">[0e77f7df] </span>LazilyInitializedFields v1.3.0
 <span class="sgr33">⌅</span> <span class="sgr90">[2ab3a3ac] </span>LogExpFunctions v0.3.29
   <span class="sgr90">[e6f89c97] </span>LoggingExtras v1.2.0
-  <span class="sgr90">[c2834f40] </span>MLCore v1.0.2
+  <span class="sgr90">[c2834f40] </span>MLCore v1.1.0
   <span class="sgr90">[7e8f7934] </span>MLDataDevices v1.17.10
-  <span class="sgr90">[f1d291b0] </span>MLUtils v0.4.9
+  <span class="sgr90">[f1d291b0] </span>MLUtils v0.4.12
   <span class="sgr90">[1914dd2f] </span>MacroTools v0.5.16
   <span class="sgr90">[d125e4d3] </span>ManualMemory v0.1.8
   <span class="sgr90">[d0879d2d] </span>MarkdownAST v0.1.3
@@ -157,18 +162,18 @@ Environment:
   <span class="sgr90">[e1d29d7a] </span>Missings v1.2.0
 <span class="sgr32">⌃</span> <span class="sgr90">[872c559c] </span>NNlib v0.9.31
   <span class="sgr90">[77ba4419] </span>NaNMath v1.1.4
-  <span class="sgr90">[b8a86587] </span>NearestNeighbors v0.4.27
+  <span class="sgr90">[b8a86587] </span>NearestNeighbors v0.4.28
   <span class="sgr90">[6fe1bfb0] </span>OffsetArrays v1.17.0
   <span class="sgr90">[0b1bfda6] </span>OneHotArrays v0.2.11
   <span class="sgr90">[4d8831e6] </span>OpenSSL v1.6.1
   <span class="sgr90">[3bd65402] </span>Optimisers v0.4.7
 <span class="sgr33">⌅</span> <span class="sgr90">[bac558e1] </span>OrderedCollections v1.8.2
-  <span class="sgr90">[90014a1f] </span>PDMats v0.11.37
+  <span class="sgr90">[90014a1f] </span>PDMats v0.11.40
   <span class="sgr90">[69de0a69] </span>Parsers v2.8.6
   <span class="sgr90">[ccf2f8ad] </span>PlotThemes v3.3.0
   <span class="sgr90">[995b91a9] </span>PlotUtils v1.4.4
   <span class="sgr90">[91a5bcdd] </span>Plots v1.41.6
-  <span class="sgr90">[8d666b04] </span>PolyChaos v1.2.0
+  <span class="sgr90">[8d666b04] </span>PolyChaos v1.2.1
   <span class="sgr90">[f517fe37] </span>Polyester v0.7.19
   <span class="sgr90">[1d0040c9] </span>PolyesterWeave v0.2.2
   <span class="sgr90">[aea7be01] </span>PrecompileTools v1.3.4
@@ -186,8 +191,9 @@ Environment:
   <span class="sgr90">[05181044] </span>RelocatableFolders v1.0.1
   <span class="sgr90">[ae029012] </span>Requires v1.3.1
   <span class="sgr90">[79098fc4] </span>Rmath v0.9.0
+  <span class="sgr90">[f2b01f46] </span>Roots v3.0.2
   <span class="sgr90">[94e857df] </span>SIMDTypes v0.1.0
-  <span class="sgr90">[431bcebd] </span>SciMLPublic v1.1.0
+  <span class="sgr90">[431bcebd] </span>SciMLPublic v1.2.1
   <span class="sgr90">[6e75b9c4] </span>ScikitLearnBase v0.5.0
   <span class="sgr90">[7e506255] </span>ScopedValues v1.6.2
   <span class="sgr90">[6c6a2e73] </span>Scratch v1.3.0
@@ -204,7 +210,7 @@ Environment:
   <span class="sgr90">[e56a9233] </span>Sparspak v0.3.15
   <span class="sgr90">[276daf66] </span>SpecialFunctions v2.8.0
   <span class="sgr90">[860ef19b] </span>StableRNGs v1.0.4
-  <span class="sgr90">[aedffcd0] </span>Static v1.4.1
+  <span class="sgr90">[aedffcd0] </span>Static v1.4.2
   <span class="sgr90">[0d7ed370] </span>StaticArrayInterface v1.10.0
   <span class="sgr90">[90137ffa] </span>StaticArrays v1.9.18
   <span class="sgr90">[1e83bf80] </span>StaticArraysCore v1.4.4
@@ -216,10 +222,10 @@ Environment:
   <span class="sgr90">[7792a7ef] </span>StrideArraysCore v0.5.9
   <span class="sgr90">[09ab397b] </span>StructArrays v0.7.3
   <span class="sgr90">[ec057cc2] </span>StructUtils v2.8.2
-  <span class="sgr90">[6fc51010] </span>Surrogates v7.5.1 `~/work/Surrogates.jl/Surrogates.jl`
-  <span class="sgr90">[89f642e6] </span>SurrogatesBase v1.1.1
+  <span class="sgr90">[6fc51010] </span>Surrogates v7.5.2 `~/_work/Surrogates.jl/Surrogates.jl`
+  <span class="sgr90">[89f642e6] </span>SurrogatesBase v1.1.2
   <span class="sgr90">[3783bdb8] </span>TableTraits v1.0.1
-  <span class="sgr90">[bd369af6] </span>Tables v1.12.1
+  <span class="sgr90">[bd369af6] </span>Tables v1.13.0
   <span class="sgr90">[62fd8b95] </span>TensorCore v0.1.1
   <span class="sgr90">[8290d209] </span>ThreadingUtilities v0.5.6
   <span class="sgr90">[3bb67fe8] </span>TranscodingStreams v0.11.3
@@ -232,13 +238,13 @@ Environment:
   <span class="sgr90">[700de1a5] </span>ZygoteRules v0.2.7
 <span class="sgr33">⌅</span> <span class="sgr90">[68821587] </span>Arpack_jll v3.5.2+0
   <span class="sgr90">[6e34b625] </span>Bzip2_jll v1.0.9+0
-  <span class="sgr90">[4ee394cb] </span>CUDA_Driver_jll v13.3.0+0
-  <span class="sgr90">[76a88914] </span>CUDA_Runtime_jll v0.23.0+0
+  <span class="sgr90">[4ee394cb] </span>CUDA_Driver_jll v13.3.0+1
+  <span class="sgr90">[76a88914] </span>CUDA_Runtime_jll v0.23.0+1
   <span class="sgr90">[83423d85] </span>Cairo_jll v1.18.7+0
   <span class="sgr90">[ee1fde0b] </span>Dbus_jll v1.16.2+0
   <span class="sgr90">[2702e6a9] </span>EpollShim_jll v0.0.20230411+1
-  <span class="sgr90">[2e619515] </span>Expat_jll v2.8.1+0
-  <span class="sgr90">[b22a6f82] </span>FFMPEG_jll v8.1.0+0
+  <span class="sgr90">[2e619515] </span>Expat_jll v2.8.2+0
+  <span class="sgr90">[b22a6f82] </span>FFMPEG_jll v8.1.2+0
   <span class="sgr90">[f5851436] </span>FFTW_jll v3.3.12+0
   <span class="sgr90">[a3f928ae] </span>Fontconfig_jll v2.17.1+0
   <span class="sgr90">[d7e528f0] </span>FreeType2_jll v2.14.3+1
@@ -251,23 +257,23 @@ Environment:
   <span class="sgr90">[f8c6e375] </span>Git_jll v2.54.0+0
   <span class="sgr90">[7746bdde] </span>Glib_jll v2.86.3+0
   <span class="sgr90">[3b182d85] </span>Graphite2_jll v1.3.16+0
-  <span class="sgr90">[2e76f6c2] </span>HarfBuzz_jll v8.5.1+0
+<span class="sgr33">⌅</span> <span class="sgr90">[2e76f6c2] </span>HarfBuzz_jll v8.5.1+0
   <span class="sgr90">[1d5cc7b8] </span>IntelOpenMP_jll v2025.2.0+0
-  <span class="sgr90">[aacddb02] </span>JpegTurbo_jll v3.1.5+0
+  <span class="sgr90">[aacddb02] </span>JpegTurbo_jll v3.2.0+0
   <span class="sgr90">[c1c5ebd0] </span>LAME_jll v3.100.3+0
   <span class="sgr90">[88015f11] </span>LERC_jll v4.1.0+0
   <span class="sgr90">[dad2f222] </span>LLVMExtra_jll v0.0.43+1
-  <span class="sgr90">[1d63c593] </span>LLVMOpenMP_jll v18.1.8+0
+  <span class="sgr90">[1d63c593] </span>LLVMOpenMP_jll v21.1.8+0
 <span class="sgr33">⌅</span> <span class="sgr90">[e9f186c6] </span>Libffi_jll v3.4.7+0
   <span class="sgr90">[7e76a0d4] </span>Libglvnd_jll v1.7.1+1
   <span class="sgr90">[94ce4f54] </span>Libiconv_jll v1.18.0+0
   <span class="sgr90">[4b2f31a3] </span>Libmount_jll v2.42.0+0
-  <span class="sgr90">[89763e89] </span>Libtiff_jll v4.7.2+0
+  <span class="sgr90">[89763e89] </span>Libtiff_jll v4.7.3+0
   <span class="sgr90">[38a345b3] </span>Libuuid_jll v2.42.0+0
   <span class="sgr90">[856f044c] </span>MKL_jll v2025.2.0+0
   <span class="sgr90">[c8ffd9c3] </span>MbedTLS_jll v2.28.1010+0
   <span class="sgr90">[e7412a2a] </span>Ogg_jll v1.3.6+0
-  <span class="sgr90">[9bd350c2] </span>OpenSSH_jll v10.3.1+0
+  <span class="sgr90">[9bd350c2] </span>OpenSSH_jll v10.4.1+0
   <span class="sgr90">[efe28fd5] </span>OpenSpecFun_jll v0.5.6+0
   <span class="sgr90">[91d4177d] </span>Opus_jll v1.6.1+0
   <span class="sgr90">[36c8627f] </span>Pango_jll v1.57.1+0
@@ -373,4 +379,4 @@ Environment:
   <span class="sgr90">[8e850b90] </span>libblastrampoline_jll v5.15.0+0
   <span class="sgr90">[8e850ede] </span>nghttp2_jll v1.64.0+1
   <span class="sgr90">[3f19e933] </span>p7zip_jll v17.7.0+0
-<span class="sgr36"><span class="sgr1">Info</span></span> Packages marked with <span class="sgr32">⌃</span> and <span class="sgr33">⌅</span> have new versions available. Those with <span class="sgr32">⌃</span> may be upgradable, but those with <span class="sgr33">⌅</span> are restricted by compatibility constraints from upgrading. To see why use `status --outdated -m`</code></pre></details><p>You can also download the <a href="https://github.com/SciML/Surrogates.jl/tree/gh-pages/v7.5.1/assets/Manifest.toml">manifest</a> file and the <a href="https://github.com/SciML/Surrogates.jl/tree/gh-pages/v7.5.1/assets/Project.toml">project</a> file.</p></article><nav class="docs-footer"><a class="docs-footer-nextpage" href="tutorials/">Basics »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.17.0 on <span class="colophon-date" title="Wednesday 24 June 2026 12:13">Wednesday 24 June 2026</span>. Using Julia version 1.12.6.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+<span class="sgr36"><span class="sgr1">Info</span></span> Packages marked with <span class="sgr32">⌃</span> and <span class="sgr33">⌅</span> have new versions available. Those with <span class="sgr32">⌃</span> may be upgradable, but those with <span class="sgr33">⌅</span> are restricted by compatibility constraints from upgrading. To see why use `status --outdated -m`</code></pre></details><p>You can also download the <a href="https://github.com/SciML/Surrogates.jl/tree/gh-pages/v7.5.2/assets/Manifest.toml">manifest</a> file and the <a href="https://github.com/SciML/Surrogates.jl/tree/gh-pages/v7.5.2/assets/Project.toml">project</a> file.</p></article><nav class="docs-footer"><a class="docs-footer-nextpage" href="tutorials/">Basics »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.17.0 on <span class="colophon-date" title="Friday 10 July 2026 07:34">Friday 10 July 2026</span>. Using Julia version 1.12.6.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
