@@ -2,6 +2,10 @@
 
 Random forests is a supervised learning algorithm that randomly creates and merges multiple decision trees into one forest.
 
+```@docs
+XGBoostSurrogate
+```
+
 We are going to use a xgboost surrogate to optimize $f(x)=sin(x)+sin(10/3 * x)$.
 
 First of all import `Surrogates`, `XGBoost` and `Plots`.

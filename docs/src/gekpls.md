@@ -2,6 +2,10 @@
 
 Gradient Enhanced Kriging with Partial Least Squares Method (GEKPLS) is a surrogate modeling technique that brings down computation time and returns improved accuracy for high-dimensional problems. The Julia implementation of GEKPLS is adapted from the Python version by [SMT](https://github.com/SMTorg) which is based on this [paper](https://arxiv.org/pdf/1708.02663.pdf).
 
+```@docs
+GEKPLS
+```
+
 The following are the inputs when building a GEKPLS surrogate:
 
  1. x - The vector containing the training points

@@ -2,6 +2,19 @@
 
 Sampling methods are provided by the [QuasiMonteCarlo package](https://docs.sciml.ai/QuasiMonteCarlo/stable/).
 
+```@docs
+SamplingAlgorithm
+sample
+GridSample
+RandomSample
+SobolSample
+LatinHypercubeSample
+HaltonSample
+KroneckerSample
+GoldenSample
+SectionSample
+```
+
 The syntax for sampling in an interval or region is the following:
 
 ```julia

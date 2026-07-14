@@ -2,6 +2,10 @@
 
 Gradient-enhanced Kriging is an extension of kriging which supports gradient information. GEK is usually more accurate than kriging. However, it is not computationally efficient when the number of inputs, the number of sampling points, or both, are high. This is mainly due to the size of the corresponding correlation matrix, which increases proportionally with both the number of inputs and the number of sampling points.
 
+```@docs
+GEK
+```
+
 Let's have a look at the following function to use Gradient Enhanced Surrogate:
 ``f(x) = x^3 - 6x^2 + 4x + 12``
 

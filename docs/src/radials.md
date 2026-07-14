@@ -2,6 +2,13 @@
 
 The Radial Basis Surrogate model represents the interpolating function as a linear combination of basis functions, one for each training point. Let's say we are building a surrogate for:
 
+```@docs
+linearRadial
+cubicRadial
+multiquadricRadial
+thinplateRadial
+```
+
 ```math
 f(x) = \log(x) \cdot x^2+x^3
 ```

@@ -2,6 +2,10 @@
 
 The square polynomial model can be expressed by:
 
+```@docs
+SecondOrderPolynomialSurrogate
+```
+
 ``y = Xβ + ϵ``
 
 Where X is the matrix of the linear model augmented by adding 2d columns,

@@ -1,5 +1,15 @@
 # Optimization techniques
 
+```@docs
+SRBF
+LCBS
+EI
+DYCORS
+SOP
+SMB
+RTEA
+```
+
   - SRBF
 
 ```@docs

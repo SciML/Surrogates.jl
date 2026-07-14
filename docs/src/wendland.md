@@ -3,6 +3,10 @@
 The Wendland surrogate is a compact surrogate: it allocates much less memory than other surrogates.
 The coefficients are found using an iterative solver.
 
+```@docs
+Wendland
+```
+
 ``f = x -> exp(-x^2)``
 
 ```@example wendland
