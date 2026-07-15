@@ -23,6 +23,7 @@ pages = [
         "Samples" => "samples.md",
         "Surrogates" => "surrogate.md",
         "Optimization" => "optimizations.md",
+        "Public API" => "api.md",
     ]
     "Benchmarks" => [
         "Sphere function" => "sphere_function.md",

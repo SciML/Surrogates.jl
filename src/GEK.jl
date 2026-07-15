@@ -1,3 +1,42 @@
+"""
+    GEK(x, y, lb, ub; p = 1.0, theta = 1.0)
+
+Gradient-enhanced Kriging surrogate.
+
+`GEK` augments the Kriging covariance system with derivative observations. The
+surrogate is callable as `gek(x_new)`, exposes uncertainty through
+[`std_error_at_point`](@ref), and supports `update!(gek, x_new, y_new)`.
+
+# Fields
+
+  - `x`: training inputs.
+  - `y`: observed values and derivative data in the GEK covariance layout.
+  - `lb`: lower bound of the input domain.
+  - `ub`: upper bound of the input domain.
+  - `p`: correlation exponent.
+  - `theta`: correlation scale parameter.
+  - `mu`: fitted process mean.
+  - `b`: fitted covariance weights.
+  - `sigma`: fitted process variance.
+  - `inverse_of_R`: inverse of the fitted GEK correlation matrix.
+
+# Arguments
+
+  - `x`: sample locations.
+  - `y`: response vector containing function and derivative observations in the
+    layout expected by the GEK constructor.
+  - `lb`: lower bound of the input domain.
+  - `ub`: upper bound of the input domain.
+
+# Keywords
+
+  - `p`: scalar or per-dimension correlation exponent.
+  - `theta`: scalar or per-dimension correlation scale parameter.
+
+# Returns
+
+A `GEK` surrogate satisfying the generic surrogate interface.
+"""
 mutable struct GEK{X, Y, L, U, P, T, M, B, S, R} <: AbstractDeterministicSurrogate
     x::X
     y::Y

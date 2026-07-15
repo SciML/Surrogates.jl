@@ -24,6 +24,15 @@ include("GEK.jl")
 include("GEKPLS.jl")
 include("VirtualStrategy.jl")
 
+"""
+    current_surrogates
+
+Names of surrogate model families currently listed by Surrogates.jl.
+
+This vector is informational. Use the exported constructor names, such as
+[`RadialBasis`](@ref), [`Kriging`](@ref), or [`Wendland`](@ref), to build
+surrogates programmatically.
+"""
 current_surrogates = [
     "Kriging", "LinearSurrogate", "LobachevskySurrogate",
     "NeuralSurrogate", "GENNSurrogate",
@@ -31,7 +40,24 @@ current_surrogates = [
     "Wendland", "GEK", "PolynomialChaosSurrogate",
 ]
 
-#Radial structure:
+"""
+    RadialBasisStructure(; radial_function, scale_factor, sparse)
+
+Create a named-tuple configuration for a [`RadialBasis`](@ref) surrogate.
+
+# Keywords
+
+  - `radial_function`: radial basis function object, for example
+    [`linearRadial()`](@ref) or [`cubicRadial()`](@ref).
+  - `scale_factor`: scale factor passed to the `RadialBasis` constructor.
+  - `sparse`: whether to use the sparse interpolation matrix path.
+
+# Returns
+
+A named tuple with fields `name`, `radial_function`, `scale_factor`, and
+`sparse`. Composite constructors such as [`VariableFidelitySurrogate`](@ref)
+consume this value to build the requested surrogate internally.
+"""
 function RadialBasisStructure(; radial_function, scale_factor, sparse)
     return (
         name = "RadialBasis", radial_function = radial_function,
@@ -39,7 +65,20 @@ function RadialBasisStructure(; radial_function, scale_factor, sparse)
     )
 end
 
-#Kriging structure:
+"""
+    KrigingStructure(; p, theta)
+
+Create a named-tuple configuration for a [`Kriging`](@ref) surrogate.
+
+# Keywords
+
+  - `p`: Kriging correlation exponent.
+  - `theta`: Kriging correlation scale parameter.
+
+# Returns
+
+A named tuple with fields `name`, `p`, and `theta`.
+"""
 function KrigingStructure(; p, theta)
     return (name = "Kriging", p = p, theta = theta)
 end
@@ -48,22 +87,72 @@ function GEKStructure(; p, theta)
     return (name = "GEK", p = p, theta = theta)
 end
 
-#Linear structure
+"""
+    LinearStructure()
+
+Create a named-tuple configuration for a [`LinearSurrogate`](@ref).
+
+# Returns
+
+A named tuple with the field `name = "LinearSurrogate"`.
+"""
 function LinearStructure()
     return (name = "LinearSurrogate")
 end
 
-#InverseDistance structure
+"""
+    InverseDistanceStructure(; p)
+
+Create a named-tuple configuration for an
+[`InverseDistanceSurrogate`](@ref).
+
+# Keywords
+
+  - `p`: inverse-distance power parameter.
+
+# Returns
+
+A named tuple with fields `name` and `p`.
+"""
 function InverseDistanceStructure(; p)
     return (name = "InverseDistanceSurrogate", p = p)
 end
 
-#Lobachevsky structure
+"""
+    LobachevskyStructure(; alpha, n, sparse)
+
+Create a named-tuple configuration for a [`LobachevskySurrogate`](@ref).
+
+# Keywords
+
+  - `alpha`: Lobachevsky basis scale parameter.
+  - `n::Int`: Lobachevsky basis order.
+  - `sparse`: whether to use the sparse coefficient path.
+
+# Returns
+
+A named tuple with fields `name`, `alpha`, `n`, and `sparse`.
+"""
 function LobachevskyStructure(; alpha, n, sparse)
     return (name = "LobachevskySurrogate", alpha = alpha, n = n, sparse = sparse)
 end
 
-#Neural structure
+"""
+    NeuralStructure(; model, loss, opt, n_epochs)
+
+Create a named-tuple configuration for a [`NeuralSurrogate`](@ref).
+
+# Keywords
+
+  - `model`: Flux model used by the neural surrogate.
+  - `loss`: training loss.
+  - `opt`: optimizer state or optimizer object accepted by the extension.
+  - `n_epochs`: number of training epochs.
+
+# Returns
+
+A named tuple with fields `name`, `model`, `loss`, `opt`, and `n_epochs`.
+"""
 function NeuralStructure(; model, loss, opt, n_epochs)
     return (
         name = "NeuralSurrogate", model = model, loss = loss, opt = opt,
@@ -71,7 +160,22 @@ function NeuralStructure(; model, loss, opt, n_epochs)
     )
 end
 
-#GENN structure
+"""
+    GENNStructure(; model, opt, n_epochs, gamma)
+
+Create a named-tuple configuration for a [`GENNSurrogate`](@ref).
+
+# Keywords
+
+  - `model`: Flux model used by the gradient-enhanced neural surrogate.
+  - `opt`: optimizer state or optimizer object accepted by the extension.
+  - `n_epochs`: number of training epochs.
+  - `gamma`: weight applied to derivative information during training.
+
+# Returns
+
+A named tuple with fields `name`, `model`, `opt`, `n_epochs`, and `gamma`.
+"""
 function GENNStructure(; model, opt, n_epochs, gamma)
     return (
         name = "GENNSurrogate", model = model, opt = opt,
@@ -79,17 +183,52 @@ function GENNStructure(; model, opt, n_epochs, gamma)
     )
 end
 
-#XGBoost structure
+"""
+    XGBoostStructure(; num_round)
+
+Create a named-tuple configuration for an [`XGBoostSurrogate`](@ref).
+
+# Keywords
+
+  - `num_round::Integer`: number of boosting rounds.
+
+# Returns
+
+A named tuple with fields `name` and `num_round`.
+"""
 function XGBoostStructure(; num_round)
     return (name = "XGBoostSurrogate", num_round = num_round)
 end
 
-#Second order poly structure
+"""
+    SecondOrderPolynomialStructure()
+
+Create a named-tuple configuration for a
+[`SecondOrderPolynomialSurrogate`](@ref).
+
+# Returns
+
+A named tuple with the field `name = "SecondOrderPolynomialSurrogate"`.
+"""
 function SecondOrderPolynomialStructure()
     return (name = "SecondOrderPolynomialSurrogate")
 end
 
-#Wendland structure
+"""
+    WendlandStructure(; eps, maxiters, tol)
+
+Create a named-tuple configuration for a [`Wendland`](@ref) surrogate.
+
+# Keywords
+
+  - `eps`: compact-support scaling parameter.
+  - `maxiters::Integer`: maximum number of conjugate-gradient iterations.
+  - `tol`: relative tolerance for the coefficient solve.
+
+# Returns
+
+A named tuple with fields `name`, `eps`, `maxiters`, and `tol`.
+"""
 function WendlandStructure(; eps, maxiters, tol)
     return (name = "Wendland", eps = eps, maxiters = maxiters, tol = tol)
 end

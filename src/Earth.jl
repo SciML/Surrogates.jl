@@ -1,3 +1,54 @@
+"""
+    EarthSurrogate(x, y, lb, ub; penalty = 2.0, n_min_terms = 2,
+        n_max_terms = 10, rel_res_error = 1.0e-2, rel_GCV = 1.0e-2,
+        maxiters = 100)
+
+Multivariate adaptive regression splines surrogate.
+
+`EarthSurrogate` fits hinge-function basis terms with a forward pass followed
+by backward pruning. The fitted surrogate is callable as `earth(x_new)` and can
+be updated with `update!(earth, x_new, y_new)`.
+
+# Fields
+
+  - `x`: training inputs.
+  - `y`: training responses.
+  - `lb`: lower bound of the input domain.
+  - `ub`: upper bound of the input domain.
+  - `basis`: selected hinge basis terms.
+  - `coeff`: fitted basis coefficients.
+  - `penalty`: generalized cross-validation penalty.
+  - `n_min_terms`: minimum number of retained basis terms.
+  - `n_max_terms`: maximum number of basis terms considered during the forward
+    pass.
+  - `rel_res_error`: relative residual-error threshold for adding terms.
+  - `rel_GCV`: relative generalized-cross-validation threshold for pruning.
+  - `intercept`: fitted intercept term.
+  - `maxiters`: maximum number of forward-pass iterations.
+
+# Arguments
+
+  - `x`: sample locations. Use scalars for one-dimensional inputs or tuples for
+    multidimensional inputs.
+  - `y`: observed values at `x`.
+  - `lb`: lower bound of the input domain.
+  - `ub`: upper bound of the input domain.
+
+# Keywords
+
+  - `penalty`: complexity penalty used during pruning.
+  - `n_min_terms`: minimum number of basis terms to keep.
+  - `n_max_terms`: maximum number of basis terms to fit.
+  - `rel_res_error`: stopping threshold for forward selection.
+  - `rel_GCV`: stopping threshold for backward pruning.
+  - `maxiters`: maximum forward-selection iterations.
+
+# Returns
+
+An `EarthSurrogate` that satisfies the generic surrogate interface:
+`surrogate(x)` evaluates the approximation and `update!(surrogate, x, y)`
+refits after adding a sample.
+"""
 mutable struct EarthSurrogate{X, Y, L, U, B, C, P, M, N, R, G, I, T} <:
     AbstractDeterministicSurrogate
     x::X

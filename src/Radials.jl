@@ -22,10 +22,57 @@ mutable struct RadialFunction{Q, P}
     phi::P
 end
 
+"""
+    linearRadial() -> RadialFunction
+
+Construct the linear radial basis function used by [`RadialBasis`](@ref).
+
+# Returns
+
+A `RadialFunction` with polynomial degree `0` and basis
+`z -> norm(z)`.
+"""
 linearRadial() = RadialFunction(0, z -> norm(z))
+
+"""
+    cubicRadial() -> RadialFunction
+
+Construct the cubic radial basis function used by [`RadialBasis`](@ref).
+
+# Returns
+
+A `RadialFunction` with polynomial degree `1` and basis
+`z -> norm(z)^3`.
+"""
 cubicRadial() = RadialFunction(1, z -> norm(z)^3)
+
+"""
+    multiquadricRadial(c = 1.0) -> RadialFunction
+
+Construct the multiquadric radial basis function used by
+[`RadialBasis`](@ref).
+
+# Arguments
+
+  - `c::Real`: scale parameter inside the multiquadric basis.
+
+# Returns
+
+A `RadialFunction` with polynomial degree `1` and basis
+`z -> sqrt((c * norm(z))^2 + 1)`.
+"""
 multiquadricRadial(c = 1.0) = RadialFunction(1, z -> sqrt((c * norm(z))^2 + 1))
 
+"""
+    thinplateRadial() -> RadialFunction
+
+Construct the thin-plate radial basis function used by [`RadialBasis`](@ref).
+
+# Returns
+
+A `RadialFunction` with polynomial degree `2` and basis
+`z -> norm(z)^2 * log(norm(z))`, with the origin handled by returning zero.
+"""
 thinplateRadial() = RadialFunction(
     2, z -> begin
         result = norm(z)^2 * log(norm(z))
