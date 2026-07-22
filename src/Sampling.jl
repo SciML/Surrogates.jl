@@ -1,6 +1,43 @@
 using QuasiMonteCarlo
 using QuasiMonteCarlo: SamplingAlgorithm
 
+"""
+    sample(n, lb, ub, sampler::SamplingAlgorithm; kwargs...)
+
+Generate sample points for a surrogate model using a QuasiMonteCarlo sampling algorithm.
+Surrogates.jl wraps `QuasiMonteCarlo.sample` and converts its matrix output to the
+historical Surrogates.jl representation: a vector for one-dimensional samples and a
+vector of tuples for multidimensional samples.
+
+# Arguments
+
+- `n::Integer`: Number of sample points to generate.
+- `lb`: Lower bound for the sampled domain. Use a number for one-dimensional domains
+    or a vector/tuple for multidimensional domains.
+- `ub`: Upper bound for the sampled domain. It must have the same dimensionality as
+    `lb`.
+- `sampler::SamplingAlgorithm`: Sampling strategy such as `SobolSample()`,
+    `RandomSample()`, or `HaltonSample()`.
+
+# Keywords
+
+- `kwargs...`: Additional keyword arguments forwarded to `QuasiMonteCarlo.sample`.
+
+# Returns
+
+- For one-dimensional bounds, a vector of sampled values.
+- For multidimensional bounds, a vector of tuples whose entries are sample
+    coordinates.
+
+# Examples
+
+```julia
+using Surrogates
+
+x = sample(5, 0.0, 1.0, SobolSample())
+xy = sample(5, [0.0, 0.0], [1.0, 1.0], SobolSample())
+```
+"""
 # We need to convert the matrix that QuasiMonteCarlo produces into a vector of Tuples like Surrogates expects
 # This will eventually be removed once we refactor the rest of the code to work with d x n matrices instead
 # of vectors of Tuples
@@ -17,9 +54,33 @@ end
 
 #### SectionSample ####
 """
-    SectionSample{T}(x0, sa)
+    SectionSample(x0::AbstractVector, sampler::SamplingAlgorithm)
 
-`SectionSample(x0, sampler)` where `sampler` is any sampler above and `x0` is a vector of either `NaN` for a free dimension or some scalar for a constrained dimension.
+Sampling algorithm that keeps selected dimensions fixed while sampling the remaining
+dimensions. In `x0`, entries equal to `NaN` are free dimensions, and numeric entries
+are fixed coordinates.
+
+# Arguments
+
+- `x0::AbstractVector`: Section definition. Use `NaN` for coordinates that should be
+    sampled and finite numbers for coordinates that should remain fixed.
+- `sampler::SamplingAlgorithm`: Sampling strategy to use on the free dimensions.
+
+# Fields
+
+- `x0`: Section definition supplied to the constructor.
+- `sa`: Sampling algorithm used for the free dimensions.
+- `fixed_dims`: Indices cached by the constructor for `sample(n, section)`. For the
+    default constructor, these are the coordinates where `x0` is `NaN`.
+
+# Examples
+
+```julia
+using Surrogates
+
+section = SectionSample([NaN, 0.5], SobolSample())
+sample(4, [0.0, 0.0], [1.0, 1.0], section)
+```
 """
 struct SectionSample{
         R <: Real,

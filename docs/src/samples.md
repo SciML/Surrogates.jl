@@ -2,6 +2,11 @@
 
 Sampling methods are provided by the [QuasiMonteCarlo package](https://docs.sciml.ai/QuasiMonteCarlo/stable/).
 
+```@docs
+Surrogates.sample
+Surrogates.SectionSample
+```
+
 The syntax for sampling in an interval or region is the following:
 
 ```julia

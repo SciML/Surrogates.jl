@@ -2,6 +2,10 @@
 
 The **Inverse Distance Surrogate** is an interpolating method, and in this method, the unknown points are calculated with a weighted average of the sampling points. This model uses the inverse distance between the unknown and training points to predict the unknown point. We do not need to fit this model because the response of an unknown point x is computed with respect to the distance between x and the training points.
 
+```@docs
+InverseDistanceSurrogate
+```
+
 Let's optimize the following function to use Inverse Distance Surrogate:
 
 $f(x) = sin(x) + sin(x)^2 + sin(x)^3$.

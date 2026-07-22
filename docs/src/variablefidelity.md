@@ -2,6 +2,10 @@
 
 With the variable fidelity surrogate, we can specify two different surrogates: one for high-fidelity data and one for low-fidelity data. By default, the first half of the samples are considered high-fidelity and the second half low-fidelity.
 
+```@docs
+VariableFidelitySurrogate
+```
+
 ```@example variablefid
 using Surrogates
 using Plots

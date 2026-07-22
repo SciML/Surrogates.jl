@@ -2,6 +2,10 @@
 
 Lobachevsky splines function is a function that is used for univariate and multivariate scattered interpolation. Introduced by Lobachevsky in 1842 to investigate errors in astronomical measurements.
 
+```@docs
+lobachevsky_integrate_dimension
+```
+
 We are going to use a Lobachevsky surrogate to optimize $f(x)=sin(x)+sin(10/3 * x)$.
 
 First of all import `Surrogates` and `Plots`.

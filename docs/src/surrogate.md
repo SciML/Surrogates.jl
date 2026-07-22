@@ -7,6 +7,13 @@ Every surrogate has a different definition depending on the parameters needed. I
 
 The first function adds a sample point to the surrogate, thus changing the internal coefficients. The second one calculates the approximation at value.
 
+```@docs
+AbstractSurrogate
+current_surrogates
+std_error_at_point
+update!
+```
+
   - Linear surrogate
 
 ```@docs
@@ -48,6 +55,26 @@ XGBoostSurrogate(x,y,lb,ub;num_round::Int = 1)
 
 ```
 NeuralSurrogate(x,y,lb,ub; model = Chain(Dense(length(x[1]),1), first), loss = (x,y) -> Flux.mse(model(x), y),opt = Descent(0.01),n_echos::Int = 1)
+```
+
+```@docs
+EarthSurrogate
+SVMSurrogate
+```
+
+## Structure Descriptors
+
+```@docs
+RadialBasisStructure
+KrigingStructure
+LinearStructure
+InverseDistanceStructure
+LobachevskyStructure
+NeuralStructure
+GENNStructure
+XGBoostStructure
+SecondOrderPolynomialStructure
+WendlandStructure
 ```
 
 # Creating another surrogate

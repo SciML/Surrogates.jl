@@ -3,6 +3,12 @@
 It's possible to define a neural network as a surrogate, using Flux.
 This is useful because we can call optimization methods on it.
 
+```@docs
+NeuralSurrogate
+GENNSurrogate
+predict_derivative
+```
+
 First of all we will define the `Schaffer` function we are going to build a surrogate for.
 
 ```@example Neural_surrogate
