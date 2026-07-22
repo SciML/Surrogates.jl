@@ -11,5 +11,5 @@ Surrogates = {path = "../.."}
 [compat]
 Aqua = "0.8"
 JET = "0.9, 0.10"
-SciMLTesting = "1.6"
+SciMLTesting = "2.1"
 julia = "1.10"

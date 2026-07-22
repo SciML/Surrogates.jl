@@ -1,3 +1,44 @@
+"""
+    VariableFidelitySurrogate(x, y, lb, ub; num_high_fidel = floor(Int, length(x) / 2),
+        low_fid_structure = RadialBasisStructure(...),
+        high_fid_structure = RadialBasisStructure(...))
+
+Surrogate that combines low-fidelity observations with a correction surrogate
+fit to the high-fidelity residuals.
+
+The first `num_high_fidel` samples are treated as high-fidelity data. The
+remaining samples are treated as low-fidelity data. Evaluation returns the sum
+of the fitted low-fidelity surrogate and the high-fidelity residual surrogate.
+
+# Fields
+
+  - `x`: all training inputs.
+  - `y`: all training responses.
+  - `lb`: lower bound of the input domain.
+  - `ub`: upper bound of the input domain.
+  - `num_high_fidel`: number of leading samples treated as high fidelity.
+  - `low_fid_surr`: surrogate fitted to low-fidelity data.
+  - `eps_surr`: surrogate fitted to high-fidelity residuals.
+
+# Arguments
+
+  - `x`: sample locations, ordered with high-fidelity samples first.
+  - `y`: observed values corresponding to `x`.
+  - `lb`: lower bound of the input domain.
+  - `ub`: upper bound of the input domain.
+
+# Keywords
+
+  - `num_high_fidel`: number of leading samples treated as high fidelity.
+  - `low_fid_structure`: named-tuple surrogate configuration for low-fidelity
+    data.
+  - `high_fid_structure`: named-tuple surrogate configuration for the residual
+    model.
+
+# Returns
+
+A `VariableFidelitySurrogate` satisfying the generic surrogate interface.
+"""
 mutable struct VariableFidelitySurrogate{X, Y, L, U, N, F, E} <:
     AbstractDeterministicSurrogate
     x::X

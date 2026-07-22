@@ -2,29 +2,284 @@ using LinearAlgebra
 using Distributions
 using Zygote
 
+"""
+    SurrogateOptimizationAlgorithm
+
+Abstract interface for surrogate optimization strategies used by
+[`surrogate_optimize!`](@ref).
+
+Concrete subtypes select how new candidate points are generated and evaluated
+against an existing surrogate. A subtype is used as a dispatch token:
+
+```julia
+surrogate_optimize!(objective, SRBF(), lb, ub, surrogate, sample_type)
+```
+
+# Interface
+
+A concrete `alg <: SurrogateOptimizationAlgorithm` is valid when
+`surrogate_optimize!(objective, alg, lb, ub, surrogate, sample_type; kwargs...)`
+is implemented for the surrogate and sampling types it supports. Implementations
+may mutate `surrogate` by calling `update!` with newly evaluated points.
+
+# Arguments
+
+  - `objective::Function`: expensive objective function to minimize.
+  - `lb`: lower bound of the search domain.
+  - `ub`: upper bound of the search domain.
+  - `surrogate`: fitted surrogate satisfying the [`AbstractSurrogate`](@ref)
+    evaluation and `update!` interface.
+  - `sample_type::SamplingAlgorithm`: sampling strategy used to generate
+    candidate points.
+"""
 abstract type SurrogateOptimizationAlgorithm end
+
+"""
+    ParallelStrategy
+
+Abstract interface for virtual-point strategies used by
+[`potential_optimal_points`](@ref).
+
+Concrete subtypes define how a temporary surrogate is updated while selecting a
+batch of parallel candidate points. A strategy is used only through
+`potential_optimal_points(alg, strategy, lb, ub, surrogate, sample_type, n)`.
+
+# Interface
+
+A subtype `strategy <: ParallelStrategy` must be supported by a
+`calculate_liars(strategy, tmp_surrogate, surrogate, x_new)` method. The method
+updates `tmp_surrogate` with a virtual objective value at `x_new` without
+evaluating the true objective.
+"""
 abstract type ParallelStrategy end
 
+"""
+    AbstractSurrogate
+
+Union alias for deterministic and stochastic surrogate models accepted by the
+generic Surrogates.jl interfaces.
+
+Concrete surrogates are expected to satisfy the SurrogatesBase interface:
+
+  - `surrogate(x)` evaluates the fitted approximation at `x`.
+  - `update!(surrogate, x_new, y_new)` incorporates one or more new observations.
+  - sample storage is available through `surrogate.x` and `surrogate.y` for the
+    optimization routines in this package.
+
+This alias is a convenience type for method signatures. New surrogate
+implementations should subtype `SurrogatesBase.AbstractDeterministicSurrogate`
+or `SurrogatesBase.AbstractStochasticSurrogate`, not this union alias.
+"""
 const AbstractSurrogate = Union{AbstractDeterministicSurrogate, AbstractStochasticSurrogate}
 
+"""
+    KrigingBeliever()
+
+Virtual-point strategy that uses the Kriging surrogate prediction as the
+temporary objective value for each selected parallel point.
+
+# Interface
+
+`KrigingBeliever` is passed to [`potential_optimal_points`](@ref). It requires a
+Kriging surrogate with callable prediction and `update!` support.
+"""
 struct KrigingBeliever <: ParallelStrategy end
+
+"""
+    KrigingBelieverUpperBound()
+
+Virtual-point strategy that updates the temporary Kriging surrogate with an
+upper-confidence value at each selected parallel point.
+
+# Interface
+
+Use this strategy with [`potential_optimal_points`](@ref) when optimistic
+batching should account for Kriging uncertainty through
+`prediction + std_error_at_point(...)`.
+"""
 struct KrigingBelieverUpperBound <: ParallelStrategy end
+
+"""
+    KrigingBelieverLowerBound()
+
+Virtual-point strategy that updates the temporary Kriging surrogate with a
+lower-confidence value at each selected parallel point.
+
+# Interface
+
+Use this strategy with [`potential_optimal_points`](@ref) when batching should
+favor exploitation through `prediction - std_error_at_point(...)`.
+"""
 struct KrigingBelieverLowerBound <: ParallelStrategy end
+
+"""
+    MinimumConstantLiar()
+
+Virtual-point strategy that inserts the current minimum observed surrogate value
+for each selected parallel point.
+
+# Interface
+
+`MinimumConstantLiar` is used with [`potential_optimal_points`](@ref) and
+requires the surrogate to expose observed responses through `surrogate.y`.
+"""
 struct MinimumConstantLiar <: ParallelStrategy end
+
+"""
+    MaximumConstantLiar()
+
+Virtual-point strategy that inserts the current maximum observed surrogate value
+for each selected parallel point.
+
+# Interface
+
+`MaximumConstantLiar` is used with [`potential_optimal_points`](@ref) and
+requires the surrogate to expose observed responses through `surrogate.y`.
+"""
 struct MaximumConstantLiar <: ParallelStrategy end
+
+"""
+    MeanConstantLiar()
+
+Virtual-point strategy that inserts the mean observed surrogate value for each
+selected parallel point.
+
+# Interface
+
+`MeanConstantLiar` is used with [`potential_optimal_points`](@ref) and requires
+the surrogate to expose observed responses through `surrogate.y`.
+"""
 struct MeanConstantLiar <: ParallelStrategy end
 
 #single objective optimization
+"""
+    SRBF()
+
+Surrogate optimization marker for the stochastic radial-basis-function search
+strategy.
+
+# Usage
+
+```julia
+surrogate_optimize!(objective, SRBF(), lb, ub, surrogate, sample_type)
+```
+
+# Interface
+
+The surrogate must implement `surrogate(x)` and `update!(surrogate, x, y)`, and
+must store existing samples in `surrogate.x` and `surrogate.y`.
+"""
 struct SRBF <: SurrogateOptimizationAlgorithm end
+
+"""
+    LCBS()
+
+Surrogate optimization marker for lower-confidence-bound search.
+
+# Usage
+
+```julia
+surrogate_optimize!(objective, LCBS(), lb, ub, kriging_surrogate, sample_type)
+```
+
+# Interface
+
+The surrogate must provide `std_error_at_point(surrogate, x)` in addition to the
+generic surrogate evaluation and `update!` interface.
+"""
 struct LCBS <: SurrogateOptimizationAlgorithm end
+
+"""
+    EI()
+
+Surrogate optimization marker for expected-improvement search.
+
+# Usage
+
+```julia
+surrogate_optimize!(objective, EI(), lb, ub, kriging_surrogate, sample_type)
+```
+
+# Interface
+
+The surrogate must provide `std_error_at_point(surrogate, x)` and the generic
+surrogate evaluation and `update!` interface.
+"""
 struct EI <: SurrogateOptimizationAlgorithm end
+
+"""
+    DYCORS()
+
+Surrogate optimization marker for dynamic coordinate search.
+
+# Usage
+
+```julia
+surrogate_optimize!(objective, DYCORS(), lb, ub, surrogate, sample_type)
+```
+
+# Interface
+
+The surrogate must implement `surrogate(x)`, `update!(surrogate, x, y)`, and
+sample storage through `surrogate.x` and `surrogate.y`.
+"""
 struct DYCORS <: SurrogateOptimizationAlgorithm end
+
+"""
+    SOP(p)
+
+Surrogate optimization marker for the candidate-ranking strategy used by the
+second-order polynomial optimizer.
+
+# Fields
+
+  - `p`: candidate-pool parameter used by the SOP selection logic.
+
+# Usage
+
+```julia
+surrogate_optimize!(objective, SOP(2), lb, ub, surrogate, sample_type)
+```
+"""
 struct SOP{P} <: SurrogateOptimizationAlgorithm
     p::P
 end
 
 #multi objective optimization
+"""
+    SMB()
+
+Surrogate optimization marker for the surrogate-model-based multi-objective
+optimizer.
+
+# Usage
+
+```julia
+surrogate_optimize!(objective, SMB(), lb, ub, surrogate, sample_type)
+```
+"""
 struct SMB <: SurrogateOptimizationAlgorithm end
+
+"""
+    RTEA(k, z, p, n_c, sigma)
+
+Surrogate optimization marker for the radial basis trust-region evolutionary
+algorithm.
+
+# Fields
+
+  - `k`: trust-region or candidate-count parameter used by the RTEA method.
+  - `z`: target or reference value used by the method.
+  - `p`: polynomial or distance parameter used by the method.
+  - `n_c`: candidate count or population size.
+  - `sigma`: perturbation scale.
+
+# Usage
+
+```julia
+surrogate_optimize!(objective, RTEA(k, z, p, n_c, sigma), lb, ub, surrogate, sample_type)
+```
+"""
 struct RTEA{K, Z, P, N, S} <: SurrogateOptimizationAlgorithm
     k::K
     z::Z
@@ -390,7 +645,41 @@ function surrogate_optimize!(
     return
 end
 
-# Ask SRBF ND
+"""
+    potential_optimal_points(alg, strategy, lb, ub, surrogate, sample_type, n_parallel;
+        num_new_samples = 500)
+
+Return a batch of candidate points selected from the current surrogate without
+evaluating the true objective.
+
+This is the generic interface used for parallel surrogate optimization. The
+method deep-copies the surrogate, selects one candidate at a time, and calls the
+virtual-point strategy to update the temporary surrogate between selections.
+
+# Arguments
+
+  - `alg::SurrogateOptimizationAlgorithm`: optimization strategy, currently
+    implemented for [`SRBF`](@ref).
+  - `strategy::ParallelStrategy`: virtual-point update strategy such as
+    [`MinimumConstantLiar`](@ref) or [`KrigingBeliever`](@ref).
+  - `lb`: lower bound of the search domain.
+  - `ub`: upper bound of the search domain.
+  - `surrogate`: fitted surrogate satisfying the [`AbstractSurrogate`](@ref)
+    evaluation and `update!` interface.
+  - `sample_type::SamplingAlgorithm`: sampling strategy used to generate the
+    candidate pool.
+  - `n_parallel::Integer`: number of candidate points to return.
+
+# Keywords
+
+  - `num_new_samples`: number of sampled candidate points considered before
+    selecting the batch.
+
+# Returns
+
+A tuple `(points, merits)`, where `points` contains the selected candidate
+locations and `merits` contains their merit-function values.
+"""
 function potential_optimal_points(
         ::SRBF, strategy, lb, ub, surr::AbstractSurrogate,
         sample_type::SamplingAlgorithm, n_parallel;

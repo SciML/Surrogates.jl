@@ -2,6 +2,43 @@ using IterativeSolvers
 using ExtendableSparse
 using LinearAlgebra
 
+"""
+    Wendland(x, y, lb, ub; eps = 1.0, maxiters = 300, tol = 1.0e-6)
+
+Compactly supported Wendland radial basis surrogate.
+
+`Wendland` solves a sparse interpolation system with conjugate gradients. The
+fitted surrogate is callable as `wendland(x_new)` and can be updated with
+`update!(wendland, x_new, y_new)`.
+
+# Fields
+
+  - `x`: training inputs.
+  - `y`: training responses.
+  - `lb`: lower bound of the input domain.
+  - `ub`: upper bound of the input domain.
+  - `coeff`: fitted interpolation coefficients.
+  - `maxiters`: maximum number of conjugate-gradient iterations.
+  - `tol`: relative tolerance used by conjugate gradients.
+  - `eps`: compact-support scaling parameter.
+
+# Arguments
+
+  - `x`: sample locations.
+  - `y`: observed values at `x`.
+  - `lb`: lower bound of the input domain.
+  - `ub`: upper bound of the input domain.
+
+# Keywords
+
+  - `eps`: radial support scaling parameter.
+  - `maxiters`: maximum iterations for the coefficient solve.
+  - `tol`: relative tolerance for the coefficient solve.
+
+# Returns
+
+A `Wendland` surrogate satisfying the generic surrogate interface.
+"""
 mutable struct Wendland{X, Y, L, U, C, I, T, E} <: AbstractDeterministicSurrogate
     x::X
     y::Y

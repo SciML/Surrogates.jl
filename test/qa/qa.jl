@@ -21,6 +21,16 @@ run_qa(
             ),
         ),
     ),
+    api_docs_kwargs = (;
+        rendered = true,
+        # Sampling names are re-exported from QuasiMonteCarlo; `update!` is
+        # re-exported from SurrogatesBase. Their source docs live upstream.
+        rendered_ignore = (
+            :GoldenSample, :GridSample, :HaltonSample, :KroneckerSample,
+            :LatinHypercubeSample, :RandomSample, :SamplingAlgorithm,
+            :SectionSample, :SobolSample, :sample, :update!,
+        ),
+    ),
     # no_implicit_imports tracked in SciML/Surrogates.jl#564 (heavy `using X`
     # whole-module imports; resolving needs a focused per-file refactor).
     ei_broken = (:no_implicit_imports,),
