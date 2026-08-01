@@ -1,9 +1,7 @@
 module SurrogatesMOEExt
 
-import Surrogates: linearRadial, cubicRadial, multiquadricRadial,
-    thinplateRadial, RadialBasisStructure, RadialBasis,
+import Surrogates: RadialBasis,
     InverseDistanceSurrogate, Kriging, LobachevskyStructure,
-    LobachevskySurrogate, NeuralStructure, PolyChaosStructure,
     LinearSurrogate, MOE,
     NeuralSurrogate, XGBoostSurrogate, PolynomialChaosSurrogate
 using SurrogatesBase
