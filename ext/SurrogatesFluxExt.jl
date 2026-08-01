@@ -1,6 +1,6 @@
 module SurrogatesFluxExt
 
-using Surrogates: NeuralSurrogate, Surrogates, GENNSurrogate, predict_derivative
+using Surrogates: NeuralSurrogate, Surrogates, GENNSurrogate
 using SurrogatesBase
 using Flux: Flux.Optimisers
 using Flux
