@@ -199,23 +199,19 @@ function _compute_gradient_loss(model, x_normalized, dydx_true, n_inputs, n_outp
     σx_in = vec(x_std)
     σy_out = is_normalize ? vec(y_std) : nothing
 
-    for i in 1:n_samples
-        x_i = x_normalized[:, i]
-
-        for out_idx in 1:n_outputs
-            grad_true = view(dydx_true, out_idx, :, i)
-            # Scale gradients if normalization is used: ∂y_norm/∂x_norm = (∂y/∂x) * (σx/σy)
-            if is_normalize
-                σyk = σy_out[out_idx]
-                grad_true_scaled = grad_true .* (σx_in ./ σyk)
-            else
-                grad_true_scaled = grad_true
-            end
-
-            # Predicted gradient in (normalized or physical) space via AD; model maps x -> y for same space
-            dydx_pred_i = Zygote.gradient(x -> model(reshape(x, n_inputs, 1))[out_idx], x_i)[1]
-            gradient_loss += sum((dydx_pred_i .- grad_true_scaled) .^ 2)
+    # Samples are independent under the model, so ∂/∂x of the summed output over the
+    # whole batch yields every per-sample input gradient in one reverse pass. Doing this
+    # per-sample instead costs n_samples nested Zygote calls per epoch.
+    for out_idx in 1:n_outputs
+        grad_true = @view dydx_true[out_idx, :, :]        # (n_inputs, n_samples)
+        if is_normalize
+            grad_true_scaled = grad_true .* (σx_in ./ σy_out[out_idx])
+        else
+            grad_true_scaled = grad_true
         end
+
+        dydx_pred = Zygote.gradient(z -> sum(model(z)[out_idx, :]), x_normalized)[1]
+        gradient_loss += sum((dydx_pred .- grad_true_scaled) .^ 2)
     end
 
     # Mean over (samples × outputs × inputs) to keep loss dimension-invariant
@@ -229,10 +225,7 @@ function _train_genn!(
     """Shared training function for GENN"""
     opt_state = Flux.setup(opt, model)
 
-    for i in 1:n_epochs
-        if i % 100 == 0
-            @info "Epoch $i"
-        end
+    for _ in 1:n_epochs
         grads = Flux.gradient(model) do m
             y_pred = m(x_normalized)
             value_loss = Flux.mse(y_pred, y_normalized)
