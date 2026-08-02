@@ -1,6 +1,6 @@
 using Surrogates
 using LinearAlgebra
-using QuasiMonteCarlo
+import QuasiMonteCarlo
 using LIBSVM
 #######SRBF############
 ##### 1D #####

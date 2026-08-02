@@ -1,6 +1,6 @@
 using Surrogates
 using Test
-using QuasiMonteCarlo
+import QuasiMonteCarlo
 #1D
 obj = x -> sin(x) + sin(x)^2 + sin(x)^3
 lb = 0.0
