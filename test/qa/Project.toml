@@ -12,6 +12,9 @@ Surrogates = "6fc51010-71bc-11e9-0e15-a3fcc6593c49"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 XGBoost = "009559a3-9522-5dbb-924b-0b6ed2b22bb9"
 
+[sources]
+Surrogates = {path = "../.."}
+
 [compat]
 AbstractGPs = "0.5.18"
 Aqua = "0.8"
