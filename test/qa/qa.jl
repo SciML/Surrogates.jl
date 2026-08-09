@@ -24,35 +24,22 @@ end
 
 run_qa(
     Surrogates;
-    explicit_imports = true,
+    # These dependency APIs are public, but current releases do not yet attach Julia public metadata.
     ei_kwargs = (;
-        all_explicit_imports_are_public = (;
-            ignore = (
-                :Buffer,  # Zygote (not public)
-            ),
-        ),
+        all_explicit_imports_are_public = (; ignore = (:Buffer,)),
         all_qualified_accesses_are_public = (;
             ignore = (
-                Symbol("@deprecate_binding"),  # Base (not public)
-                :AbstractVecOrTuple,           # Base (not public)
-                :ProductIterator,              # Base.Iterators (not public)
-                :RefValue,                     # Base (not public)
-                :_check_sequence,              # QuasiMonteCarlo (not public)
-                :sample,                       # QuasiMonteCarlo (not public)
+                Symbol("@deprecate_binding"),
+                :AbstractVecOrTuple,
+                :ProductIterator,
+                :RefValue,
+                :_check_sequence,
             ),
         ),
     ),
-    api_docs_kwargs = (;
-        rendered = true,
-        # Sampling names are re-exported from QuasiMonteCarlo; `update!` is
-        # re-exported from SurrogatesBase. Their source docs live upstream.
-        rendered_ignore = (
-            :GoldenSample, :GridSample, :HaltonSample, :KroneckerSample,
-            :LatinHypercubeSample, :RandomSample, :SamplingAlgorithm,
-            :SectionSample, :SobolSample, :sample, :update!,
-        ),
+    reexports_allow = (
+        :GoldenSample, :GridSample, :HaltonSample, :KroneckerSample,
+        :LatinHypercubeSample, :RandomSample, :SamplingAlgorithm,
+        :SobolSample, :update!,
     ),
-    # no_implicit_imports tracked in SciML/Surrogates.jl#564 (heavy `using X`
-    # whole-module imports; resolving needs a focused per-file refactor).
-    ei_broken = (:no_implicit_imports,),
 )

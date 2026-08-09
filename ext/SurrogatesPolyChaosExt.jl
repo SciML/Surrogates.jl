@@ -1,8 +1,10 @@
 module SurrogatesPolyChaosExt
 
 using Surrogates: PolynomialChaosSurrogate, Surrogates
-using SurrogatesBase
-using PolyChaos
+using PolyChaos: AbstractCanonicalOrthoPoly, GaussOrthoPoly, MultiOrthoPoly
+
+import PolyChaos
+import SurrogatesBase
 
 function Surrogates.PolynomialChaosSurrogate(
         x, y, lb::Number, ub::Number;

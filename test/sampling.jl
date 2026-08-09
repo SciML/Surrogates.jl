@@ -62,6 +62,15 @@ s = Surrogates.sample(n, lb, ub, SectionSample([NaN64], RandomSample()))
 s = Surrogates.sample(n, lb, ub, SectionSample([constrained_val], RandomSample()))
 @test s isa Vector{Float64} && length(s) == n && all(x -> lb ≤ x ≤ ub, s)
 @test all(==(constrained_val), s)
+@test_throws AssertionError Surrogates.sample(
+    0, lb, ub, SectionSample([NaN64], RandomSample())
+)
+@test_throws AssertionError Surrogates.sample(
+    n, ub, lb, SectionSample([NaN64], RandomSample())
+)
+@test_throws AssertionError Surrogates.sample(
+    n, Float64[], Float64[], SectionSample(Float64[], RandomSample())
+)
 
 # ND
 # Now that we use QuasiMonteCarlo.jl, these tests are to make sure that we transform the output

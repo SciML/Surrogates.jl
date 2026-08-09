@@ -1,12 +1,55 @@
 module Surrogates
 
-using LinearAlgebra
-using Distributions
-using GLM
-using Random
-using ExtendableSparse
-using SurrogatesBase: SurrogatesBase, update!, AbstractDeterministicSurrogate,
+using Distributions: Normal, cdf, pdf, truncated
+using ExtendableSparse: ExtendableSparseMatrix
+using GLM: lm
+using IterativeSolvers: cg
+using LinearAlgebra: Diagonal, I, Symmetric, cholesky, cond, diag, dot, eigvals, norm,
+    pinv, qr, ⋅
+using PrecompileTools: @compile_workload, @setup_workload
+using QuasiMonteCarlo: GoldenSample, GridSample, HaltonSample, KroneckerSample,
+    LatinHypercubeSample, RandomSample, SamplingAlgorithm, SobolSample
+using Statistics: mean, std
+using StatsAPI: coef
+using SurrogatesBase: update!, AbstractDeterministicSurrogate,
     AbstractStochasticSurrogate
+
+import QuasiMonteCarlo
+import SurrogatesBase
+import Zygote
+
+"""
+    std_error_at_point(surrogate, point)
+
+Return the predictive standard error of `surrogate` at `point`.
+
+Surrogate implementations that expose uncertainty should add a method to this
+generic. The method must accept every point representation supported by the
+surrogate's call overload, must not mutate the surrogate, and must return a
+nonnegative scalar in the same response units as `surrogate(point)`.
+
+# Arguments
+
+  - `surrogate`: fitted surrogate with a predictive uncertainty model.
+  - `point`: scalar or multidimensional query point accepted by `surrogate`.
+
+# Returns
+
+A nonnegative scalar predictive standard error. Implementations should throw an
+`ArgumentError` for a point with incompatible dimensionality.
+
+# Example
+
+```julia
+using Surrogates
+
+x = [0.0, 0.5, 1.0]
+y = sin.(x)
+surrogate = Kriging(x, y, 0.0, 1.0)
+std_error_at_point(surrogate, 0.25)
+```
+"""
+function std_error_at_point end
 
 include("utils.jl")
 include("Radials.jl")

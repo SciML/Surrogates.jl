@@ -4,11 +4,13 @@ import Surrogates: RadialBasis,
     InverseDistanceSurrogate, Kriging, LobachevskyStructure,
     LinearSurrogate, MOE,
     NeuralSurrogate, XGBoostSurrogate, PolynomialChaosSurrogate
-using SurrogatesBase
-using GaussianMixtures
-using Random
-using Distributions
-using LinearAlgebra
+using Distributions: MvNormal
+using GaussianMixtures: GMM, covars, llpg
+using LinearAlgebra: norm
+
+import Distributions
+import GaussianMixtures
+import SurrogatesBase
 
 """
     MOE(x, y, expert_types;  ndim=1, n_clusters=2)

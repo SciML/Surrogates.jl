@@ -1,8 +1,9 @@
 module SurrogatesXGBoostExt
 
 using Surrogates: Surrogates, XGBoostSurrogate
-using SurrogatesBase
 using XGBoost: xgboost, predict
+
+import SurrogatesBase
 
 """
     XGBoostSurrogate(x, y, lb, ub, num_round)

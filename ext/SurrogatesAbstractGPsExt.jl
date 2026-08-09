@@ -1,7 +1,12 @@
 module SurrogatesAbstractGPsExt
 
+using AbstractGPs: GP, posterior
+using Distributions: logpdf
+using KernelFunctions: Matern52Kernel
+using Statistics: mean, var
 using Surrogates: AbstractGPSurrogate, Surrogates
-using SurrogatesBase, AbstractGPs
+
+import SurrogatesBase
 
 # constructor
 function Surrogates.AbstractGPSurrogate(x, y; gp = GP(Matern52Kernel()), Σy = 0.1)

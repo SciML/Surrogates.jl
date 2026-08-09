@@ -4,6 +4,66 @@ One-dimensional Kriging method, following these papers:
 "A Taxonomy of Global Optimization Methods Based on Response Surfaces"
 both by DONALD R. JONES
 =#
+"""
+    Kriging(x, y, lb::Number, ub::Number; p = 2.0,
+            theta = 0.5 / max(1.0e-6 * abs(ub - lb), std(x))^p)
+    Kriging(x, y, lb, ub;
+            p = 2.0 .* collect(one.(x[1])),
+            theta = [0.5 / max(1.0e-6 * norm(ub .- lb),
+                               std(x_i[i] for x_i in x))^p[i]
+                     for i in eachindex(x[1])])
+
+Fit a Kriging interpolant with a power-exponential correlation model. The
+surrogate is callable for mean predictions, while [`std_error_at_point`](@ref)
+evaluates predictive uncertainty.
+
+# Fields
+
+  - `x`: sampled scalar points or multidimensional points.
+  - `y`: scalar responses corresponding to `x`.
+  - `lb`: lower bound of the modeled domain.
+  - `ub`: upper bound of the modeled domain.
+  - `p`: scalar or per-dimension correlation smoothness exponent.
+  - `theta`: scalar or per-dimension correlation scale.
+  - `mu`: estimated constant process mean.
+  - `b`: fitted correlation weights.
+  - `sigma`: estimated process variance.
+  - `inverse_of_R`: inverse regularized correlation matrix.
+
+# Arguments
+
+  - `x`: training inputs with no repeated points.
+  - `y`: scalar training responses, with one response per input.
+  - `lb`: scalar or vector lower domain bound.
+  - `ub`: scalar or vector upper domain bound matching `lb`.
+
+# Keywords
+
+  - `p`: correlation smoothness in the closed interval `[0, 2]`. The default is
+    `2.0` in one dimension and a vector filled with `2.0` otherwise.
+  - `theta`: positive correlation scale. In one dimension the default is based
+    on the sampled and bounded domain width. In multiple dimensions, each
+    coordinate receives a scale based on that coordinate's sample spread and
+    the norm of the domain width.
+
+# Returns
+
+A callable `Kriging` supporting `update!(surrogate, x_new, y_new)` and
+[`std_error_at_point`](@ref). If `x` contains duplicate points, construction
+prints a diagnostic and returns `nothing`.
+
+# Example
+
+```julia
+using Surrogates
+
+x = [0.0, 0.5, 1.0]
+y = sin.(x)
+surrogate = Kriging(x, y, 0.0, 1.0)
+surrogate(0.25)
+std_error_at_point(surrogate, 0.25)
+```
+"""
 mutable struct Kriging{X, Y, L, U, P, T, M, B, S, R} <: AbstractDeterministicSurrogate
     x::X
     y::Y
@@ -36,9 +96,6 @@ function (k::Kriging)(val)
     )
 end
 
-"""
-    Returns sqrt of expected mean_squared_error error at the point.
-"""
 function std_error_at_point(k::Kriging, val)
 
     # Check to make sure dimensions of input matches expected dimension of surrogate
@@ -77,9 +134,6 @@ function (k::Kriging)(val::Number)
     return k.mu + sum(k.b[i] * exp(-sum(k.theta * abs(val - k.x[i])^k.p)) for i in 1:n)
 end
 
-"""
-    Returns sqrt of expected mean_squared_error error at the point.
-"""
 function std_error_at_point(k::Kriging, val::Number)
     # Check to make sure dimensions of input matches expected dimension of surrogate
     _check_dimension(k, val)
@@ -94,18 +148,6 @@ function std_error_at_point(k::Kriging, val::Number)
     return sqrt(abs(mean_squared_error))
 end
 
-"""
-    Kriging(x, y, lb::Number, ub::Number; p::Number=2.0, theta::Number = 0.5/var(x))
-
-Constructor for type Kriging.
-
-#Arguments:
--(x,y): sampled points
--p: value between 0 and 2 modelling the
-smoothness of the function being approximated, 0-> rough  2-> C^infinity
-
-  - theta: value > 0 modeling how much the function is changing in the i-th variable.
-"""
 function Kriging(
         x, y, lb::Number, ub::Number; p = 2.0,
         theta = 0.5 / max(1.0e-6 * abs(ub - lb), std(x))^p
@@ -163,18 +205,6 @@ function _calc_kriging_coeffs(x, y, p::Number, theta::Number)
     return mu[1], b, sigma[1], inverse_of_R
 end
 
-"""
-    Kriging(x,y,lb,ub;p=collect(one.(x[1])),theta=collect(one.(x[1])))
-
-Constructor for Kriging surrogate.
-
-  - (x,y): sampled points
-  - p: array of values 0<=p<2 modeling the
-    smoothness of the function being approximated in the i-th variable.
-    low p -> rough, high p -> smooth
-  - theta: array of values > 0 modeling how much the function is
-    changing in the i-th variable.
-"""
 function Kriging(
         x, y, lb, ub; p = 2.0 .* collect(one.(x[1])),
         theta = [

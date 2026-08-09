@@ -1,10 +1,45 @@
 """
-mutable struct InverseDistanceSurrogate{X,Y,P,C,L,U} <: AbstractSurrogate
+    InverseDistanceSurrogate(x, y, lb, ub; p = 1.0)
 
-The inverse distance weighting model is an interpolating method and the
-unknown points are calculated with a weighted average of the sampling points.
-p is a positive real number called the power parameter.
-p > 1 is needed for the derivative to be continuous.
+Construct an inverse-distance-weighted interpolating surrogate. At an existing
+sample point it returns the recorded response; elsewhere it returns the response
+average weighted by inverse distance raised to `p`.
+
+# Fields
+
+  - `x`: sampled scalar points or multidimensional points.
+  - `y`: responses corresponding to `x`.
+  - `lb`: lower bound of the modeled domain.
+  - `ub`: upper bound of the modeled domain.
+  - `p`: positive inverse-distance power. Values greater than one provide a
+    differentiable interpolant away from coincident points.
+
+# Arguments
+
+  - `x`: training inputs.
+  - `y`: training responses, with one response per input.
+  - `lb`: scalar or vector lower domain bound.
+  - `ub`: scalar or vector upper domain bound matching `lb`.
+
+# Keywords
+
+  - `p::Number = 1.0`: exponent applied to inverse distances.
+
+# Returns
+
+A callable `InverseDistanceSurrogate` supporting
+`update!(surrogate, x_new, y_new)`.
+
+# Example
+
+```julia
+using Surrogates
+
+x = [0.0, 1.0, 2.0]
+y = x .^ 2
+surrogate = InverseDistanceSurrogate(x, y, 0.0, 2.0; p = 2.0)
+surrogate(0.5)
+```
 """
 mutable struct InverseDistanceSurrogate{X, Y, L, U, P} <: AbstractDeterministicSurrogate
     x::X

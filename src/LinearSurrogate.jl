@@ -1,3 +1,43 @@
+"""
+    LinearSurrogate(x, y, lb, ub)
+
+Fit a linear least-squares surrogate to sampled inputs `x` and responses `y`.
+The returned object is callable at new points and implements the SurrogatesBase
+deterministic-surrogate interface, including `update!`.
+
+# Fields
+
+  - `x`: sampled scalar points or multidimensional points.
+  - `y`: responses corresponding to `x`.
+  - `coeff`: fitted linear coefficients.
+  - `lb`: lower bound of the modeled domain.
+  - `ub`: upper bound of the modeled domain.
+
+# Arguments
+
+  - `x`: training inputs. Use a vector of numbers for one dimension or a vector of
+    equal-length point containers for multiple dimensions.
+  - `y`: training responses, with one response per element of `x`.
+  - `lb`: scalar or vector lower domain bound.
+  - `ub`: scalar or vector upper domain bound matching `lb`.
+
+# Returns
+
+A callable `LinearSurrogate`. Calling `surrogate(point)` evaluates the fitted
+linear model, while `update!(surrogate, x_new, y_new)` appends observations and
+refits its coefficients.
+
+# Example
+
+```julia
+using Surrogates
+
+x = [0.0, 1.0, 2.0]
+y = 2 .* x
+surrogate = LinearSurrogate(x, y, 0.0, 2.0)
+surrogate(1.5)
+```
+"""
 mutable struct LinearSurrogate{X, Y, C, L, U} <: AbstractDeterministicSurrogate
     x::X
     y::Y
@@ -59,11 +99,6 @@ function (lin::LinearSurrogate)(val)
     return lin.coeff' * [val...]
 end
 
-"""
-LinearSurrogate(x,y,lb,ub)
-
-Builds a linear surrogate using GLM.jl
-"""
 function LinearSurrogate(x, y, lb, ub)
     #X = Array{eltype(x[1]),2}(undef,length(x),length(x[1]))
     #=

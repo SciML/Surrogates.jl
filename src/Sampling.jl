@@ -1,5 +1,4 @@
-using QuasiMonteCarlo
-using QuasiMonteCarlo: SamplingAlgorithm
+const ZERO_SAMPLES_MESSAGE = "Number of samples must be greater than zero"
 
 """
     sample(n, lb, ub, sampler::SamplingAlgorithm; kwargs...)

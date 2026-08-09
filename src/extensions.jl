@@ -1,5 +1,3 @@
-using SurrogatesBase
-
 """
     AbstractGPSurrogate(x, y; gp = GP(Matern52Kernel()), Σy = 0.1)
 
@@ -55,7 +53,6 @@ A scalar log-density value. Methods are supplied by extensions that can compute
 the value for their backing model.
 """
 function logpdf_surrogate end
-function std_error_at_point end
 
 """
     NeuralSurrogate(x, y, lb, ub; model, loss, opt, n_epochs)
@@ -73,7 +70,8 @@ with appended observations.
   - `model`: Flux model.
   - `loss`: training loss.
   - `opt`: optimizer state or optimizer object.
-  - `ps`: trainable model parameters.
+  - `ps`: vector of trainable model parameter arrays returned by
+    `Optimisers.trainables(model)`.
   - `n_epochs`: number of training epochs.
   - `lb`: lower bound of the input domain.
   - `ub`: upper bound of the input domain.
@@ -293,7 +291,8 @@ be updated with new samples.
     `(n_outputs, n_inputs, n_samples)`.
   - `model`: Flux model.
   - `opt`: optimizer state or optimizer object.
-  - `ps`: trainable model parameters.
+  - `ps`: vector of trainable model parameter arrays returned by
+    `Optimisers.trainables(model)`.
   - `n_epochs`: number of training epochs.
   - `lb`: lower bound of the input domain.
   - `ub`: upper bound of the input domain.

@@ -1,9 +1,58 @@
-using LinearAlgebra
-using ExtendableSparse
-
 _copy(t::Tuple) = t
 _copy(t) = copy(t)
 
+"""
+    RadialBasis(x, y, lb, ub; rad = linearRadial(), scale_factor = 0.5,
+                sparse = false, regularization = 0.0)
+
+Fit a radial-basis interpolant, optionally augmented by the polynomial term
+required by the selected `RadialFunction`. The result is callable at new
+points and implements the SurrogatesBase deterministic-surrogate interface.
+
+# Fields
+
+  - `phi`: radial basis function applied to scaled distances.
+  - `dim_poly`: degree of the accompanying polynomial basis.
+  - `x`: sampled scalar points or multidimensional points.
+  - `y`: scalar or vector responses corresponding to `x`.
+  - `lb`: lower bound of the modeled domain.
+  - `ub`: upper bound of the modeled domain.
+  - `coeff`: fitted interpolation coefficients.
+  - `scale_factor`: divisor applied to distances before evaluating `phi`.
+  - `sparse`: whether coefficient construction uses a sparse matrix.
+  - `regularization`: diagonal regularization added to the interpolation matrix.
+
+# Arguments
+
+  - `x`: training inputs.
+  - `y`: training responses, with one response per input.
+  - `lb`: scalar or vector lower domain bound.
+  - `ub`: scalar or vector upper domain bound matching `lb`.
+
+# Keywords
+
+  - `rad::RadialFunction = linearRadial()`: radial basis descriptor. See also
+    [`cubicRadial`](@ref), [`multiquadricRadial`](@ref), and
+    [`thinplateRadial`](@ref).
+  - `scale_factor::Real = 0.5`: distance scale used by the radial function.
+  - `sparse::Bool = false`: use sparse coefficient construction.
+  - `regularization::Real = 0.0`: diagonal stabilization term.
+
+# Returns
+
+A callable `RadialBasis` supporting `update!(surrogate, x_new, y_new)`.
+
+# Example
+
+```julia
+using Surrogates
+
+x = [0.0, 1.0, 2.0]
+y = x .^ 2
+surrogate = RadialBasis(x, y, 0.0, 2.0; rad = cubicRadial())
+surrogate(1.5)
+```
+"""
 mutable struct RadialBasis{F, Q, X, Y, L, U, C, S, D, R} <: AbstractDeterministicSurrogate
     phi::F
     dim_poly::Q
@@ -80,21 +129,6 @@ thinplateRadial() = RadialFunction(
     end
 )
 
-"""
-RadialBasis(x,y,lb,ub,rad::RadialFunction, scale_factor::Float = 1.0, regularization::Real = 0.0)
-
-Constructor for RadialBasis surrogate, of the form
-
-``f(x) = \\sum_{i=1}^{N} w_i \\phi(|x - \\bold{c}_i|) \\bold{v}^{T} + \\bold{v}^{\\mathrm{T}} [ 0; \\bold{x} ]``
-
-where ``w_i`` are the weights of polyharmonic splines ``\\phi(x)`` and ``\\bold{v}`` are coefficients
-of a polynomial term.
-
-`regularization` is a regularization term added to the diagonal of the interpolation matrix to avoid SingularException.
-
-References:
-https://en.wikipedia.org/wiki/Polyharmonic_spline
-"""
 function RadialBasis(
         x, y, lb, ub; rad::RadialFunction = linearRadial(),
         scale_factor::Real = 0.5, sparse = false, regularization::Real = 0.0
@@ -246,7 +280,6 @@ function _add_tmp_to_approx!(approx, i, tmp, rad::RadialBasis; f = identity)
         approx[j] += rad.coeff[j, i] * f(tmp)
     end
 end
-# specialise when only single output dimension
 function _make_approx(
         val,
         ::RadialBasis{F, Q, X, <:AbstractArray{<:Number}}
@@ -269,7 +302,6 @@ _ret_copy(v) = copy(v)
 function _approx_rbf(val, rad::RadialBasis)
     n = length(rad.x)
 
-    # make sure @inbounds is safe
     if n > size(rad.coeff, 2)
         throw("Length of model's x vector exceeds number of calculated coefficients ($n != $(size(rad.coeff, 2))).")
     end
