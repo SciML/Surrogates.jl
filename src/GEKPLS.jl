@@ -388,7 +388,11 @@ function boxbehnken(matrix_size::Int, center::Int)
 end
 
 function explicit_fullfactorial(factors::Tuple)
-    return hcat(vcat.(collect(fullfactorial(factors))...)...)
+    return explicit_fullfactorial(fullfactorial(factors))
+end
+
+function explicit_fullfactorial(iterator::Base.Iterators.ProductIterator)
+    return hcat(vcat.(collect(iterator)...)...)
 end
 
 function fullfactorial(factors::Tuple)

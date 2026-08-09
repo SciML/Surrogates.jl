@@ -24,6 +24,19 @@ end
 
 run_qa(
     Surrogates;
+    # These dependency APIs are public, but current releases do not yet attach Julia public metadata.
+    ei_kwargs = (;
+        all_explicit_imports_are_public = (; ignore = (:Buffer,)),
+        all_qualified_accesses_are_public = (;
+            ignore = (
+                Symbol("@deprecate_binding"),
+                :AbstractVecOrTuple,
+                :ProductIterator,
+                :RefValue,
+                :_check_sequence,
+            ),
+        ),
+    ),
     reexports_allow = (
         :GoldenSample, :GridSample, :HaltonSample, :KroneckerSample,
         :LatinHypercubeSample, :RandomSample, :SamplingAlgorithm,
