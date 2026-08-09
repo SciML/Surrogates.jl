@@ -11,31 +11,30 @@ The first function adds a sample point to the surrogate, thus changing the inter
 AbstractSurrogate
 current_surrogates
 std_error_at_point
-update!
 ```
 
   - Linear surrogate
 
 ```@docs
-LinearSurrogate(x,y,lb,ub)
+LinearSurrogate
 ```
 
   - Radial basis function surrogate
 
 ```@docs
-RadialBasis(x, y, lb, ub; rad::RadialFunction = linearRadial, scale_factor::Real=1.0, sparse = false)
+RadialBasis
 ```
 
   - Kriging surrogate
 
 ```@docs
-Kriging(x,y,p,theta)
+Kriging
 ```
 
   - Lobachevsky surrogate
 
 ```@docs
-LobachevskySurrogate(x,y,lb,ub; alpha = collect(one.(x[1])),n::Int = 4, sparse = false)
+LobachevskySurrogate
 lobachevsky_integral(loba::LobachevskySurrogate,lb,ub)
 ```
 

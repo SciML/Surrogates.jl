@@ -1,7 +1,3 @@
-using IterativeSolvers
-using ExtendableSparse
-using LinearAlgebra
-
 """
     Wendland(x, y, lb, ub; eps = 1.0, maxiters = 300, tol = 1.0e-6)
 

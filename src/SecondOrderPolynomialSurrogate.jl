@@ -1,7 +1,41 @@
 """
-mutable struct InverseDistanceSurrogate{X,Y,P,L,U} <: AbstractSurrogate
+    SecondOrderPolynomialSurrogate(x, y, lb, ub)
 
-The square polynomial model can be expressed by 𝐲 = 𝐗β + ϵ, with β = 𝐗ᵗ𝐗⁻¹𝐗ᵗ𝐲
+Fit a full second-order polynomial surrogate by least squares. The design matrix
+contains an intercept, each coordinate, every pairwise coordinate product, and
+every squared coordinate.
+
+# Fields
+
+  - `x`: sampled input points.
+  - `y`: scalar or vector responses corresponding to `x`.
+  - `β`: fitted polynomial coefficient matrix.
+  - `lb`: lower bound of the modeled domain.
+  - `ub`: upper bound of the modeled domain.
+
+# Arguments
+
+  - `x`: training points represented by equal-length containers.
+  - `y`: training responses, with one response per point.
+  - `lb`: lower domain bound.
+  - `ub`: upper domain bound matching `lb`.
+
+# Returns
+
+A callable `SecondOrderPolynomialSurrogate` supporting
+`update!(surrogate, x_new, y_new)`, which refits the coefficient matrix after
+adding observations.
+
+# Example
+
+```julia
+using Surrogates
+
+x = [(0.0,), (1.0,), (2.0,)]
+y = [0.0, 1.0, 4.0]
+surrogate = SecondOrderPolynomialSurrogate(x, y, [0.0], [2.0])
+surrogate((1.5,))
+```
 """
 mutable struct SecondOrderPolynomialSurrogate{X, Y, B, L, U} <:
     AbstractDeterministicSurrogate

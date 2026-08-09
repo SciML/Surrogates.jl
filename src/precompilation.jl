@@ -1,5 +1,3 @@
-using PrecompileTools
-
 @setup_workload begin
     # Setup minimal test data for 1D surrogates
     x_1d = [1.0, 2.0, 3.0, 4.0, 5.0]

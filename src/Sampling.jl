@@ -1,5 +1,15 @@
-using QuasiMonteCarlo
-using QuasiMonteCarlo: SamplingAlgorithm
+const ZERO_SAMPLES_MESSAGE = "Number of samples must be greater than zero"
+const INVALID_BOUNDS_MESSAGE = "Lower bound exceeds upper bound (lb > ub)"
+const DIMENSION_MISMATCH_MESSAGE = "Dimensionality of lb and ub must match"
+
+function _check_sample_bounds(lb, ub, n::Integer)
+    @assert !isempty(lb) ZERO_SAMPLES_MESSAGE
+    @assert length(lb) == length(ub) DIMENSION_MISMATCH_MESSAGE
+    @assert all(x -> x[1] <= x[2], zip(lb, ub)) INVALID_BOUNDS_MESSAGE
+    return @assert n > 0 ZERO_SAMPLES_MESSAGE
+end
+
+_check_sample_count(n::Integer) = @assert n > 0 ZERO_SAMPLES_MESSAGE
 
 """
     sample(n, lb, ub, sampler::SamplingAlgorithm; kwargs...)
@@ -116,10 +126,9 @@ function sample(
         ub::T,
         section_sampler::SectionSample
     ) where {
-        T <: Union{Base.AbstractVecOrTuple, Number},
+        T <: Union{AbstractVector, Tuple, Number},
     }
-    @assert n > 0 ZERO_SAMPLES_MESSAGE
-    QuasiMonteCarlo._check_sequence(lb, ub, length(lb))
+    _check_sample_bounds(lb, ub, n)
     if lb isa Number
         if isnan(section_sampler.x0[1])
             return vec(sample(n, lb, ub, section_sampler.sa))
@@ -167,7 +176,7 @@ function sample(
         section_sampler::SectionSample,
         T = eltype(section_sampler.x0)
     )
-    QuasiMonteCarlo._check_sequence(n)
+    _check_sample_count(n)
     @assert eltype(section_sampler.x0) == T
     @assert length(section_sampler.fixed_dims) == d
     return sample(n, section_sampler)

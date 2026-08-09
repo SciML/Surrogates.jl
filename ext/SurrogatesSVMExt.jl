@@ -1,8 +1,10 @@
 module SurrogatesSVMExt
 
 using Surrogates: SVMSurrogate, Surrogates
-using SurrogatesBase
-using LIBSVM
+using LIBSVM: SVC
+using ScikitLearnBase: fit!, predict
+
+import SurrogatesBase
 
 """
     SVMSurrogate(x, y, lb, ub)
@@ -27,7 +29,7 @@ function Surrogates.SVMSurrogate(x, y, lb, ub)
             X[j, :] .= x[j]
         end
     end
-    model = LIBSVM.fit!(SVC(), X, y)
+    model = fit!(SVC(), X, y)
     return SVMSurrogate(x, y, model, lb, ub)
 end
 
@@ -37,7 +39,7 @@ end
 
 function (svmsurr::SVMSurrogate)(val)
     n = length(val)
-    return LIBSVM.predict(svmsurr.model, reshape(collect(val), 1, n))[1]
+    return predict(svmsurr.model, reshape(collect(val), 1, n))[1]
 end
 
 """
@@ -53,11 +55,11 @@ function SurrogatesBase.update!(svmsurr::SVMSurrogate, x_new, y_new)
     svmsurr.x = vcat(svmsurr.x, x_new)
     svmsurr.y = vcat(svmsurr.y, y_new)
     return if length(svmsurr.lb) == 1
-        svmsurr.model = LIBSVM.fit!(
+        svmsurr.model = fit!(
             SVC(), reshape(svmsurr.x, length(svmsurr.x), 1), svmsurr.y
         )
     else
-        svmsurr.model = LIBSVM.fit!(
+        svmsurr.model = fit!(
             SVC(), transpose(reduce(hcat, collect.(svmsurr.x))), svmsurr.y
         )
     end

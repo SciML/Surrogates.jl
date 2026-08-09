@@ -1,35 +1,87 @@
 """
-GEKPLS(x, y, x_matrix, y_matrix, grads, xlimits, delta_x, extra_points, n_comp, beta, gamma, theta,
-reduced_likelihood_function_value,
-X_offset, X_scale, X_after_std, pls_mean_reshaped, y_mean, y_std)
+    GEKPLS(x, y, grads, n_comp, delta_x, lb, ub, extra_points, theta)
+
+Fit a gradient-enhanced Kriging model after projecting the input dimensions
+with partial least squares (PLS). This model is intended for problems where
+function values and input gradients are available at every training point.
+
+# Fields
+
+  - `x`: training points in their caller-provided representation.
+  - `y`: training responses.
+  - `x_matrix`: matrix form of the training points.
+  - `y_matrix`: column-matrix form of the responses.
+  - `grads`: gradient matrix associated with `x_matrix`.
+  - `xl`: two-column matrix of lower and upper bounds.
+  - `delta`: Taylor-expansion step used to create gradient-enhanced points.
+  - `extra_points`: number of additional Taylor points per training point.
+  - `num_components`: number of retained PLS components.
+  - `beta`: generalized least-squares trend coefficients.
+  - `gamma`: correlation residual coefficients.
+  - `theta`: correlation scales in the reduced PLS space.
+  - `reduced_likelihood_function_value`: fitted reduced likelihood value.
+  - `X_offset`: input centering values.
+  - `X_scale`: input scaling values.
+  - `X_after_std`: standardized gradient-enhanced training matrix.
+  - `pls_mean`: mean PLS projection matrix.
+  - `y_mean`: response centering value.
+  - `y_std`: response scaling value.
+
+# Arguments
+
+  - `x`: vector of training points.
+  - `y`: scalar response at each point in `x`.
+  - `grads`: gradient at each point in `x`, in the same input-coordinate order.
+  - `n_comp::Integer`: number of PLS components to retain.
+  - `delta_x`: first-order Taylor-expansion step.
+  - `lb`: lower bound for each input coordinate.
+  - `ub`: upper bound for each input coordinate.
+  - `extra_points::Integer`: number of gradient-enhanced points used by PLS.
+  - `theta`: initial correlation scales, with one value per PLS component.
+
+# Returns
+
+A callable `GEKPLS`. Calling it with one point returns a scalar prediction. If
+any training point lies outside `[lb, ub]`, construction prints a diagnostic and
+returns `nothing`.
+
+# Example
+
+```julia
+using Surrogates, Zygote
+
+f(x) = sum(abs2, x)
+lb = [-1.0, -1.0]
+ub = [1.0, 1.0]
+x = sample(20, lb, ub, SobolSample())
+y = f.(x)
+grads = Zygote.gradient.(f, x)
+surrogate = GEKPLS(x, y, grads, 1, 1.0e-4, lb, ub, 1, [0.01])
+surrogate((0.25, 0.5))
+```
 """
 mutable struct GEKPLS{T, X, Y} <: AbstractDeterministicSurrogate
     x::X
     y::Y
-    x_matrix::Matrix{T} #1
-    y_matrix::Matrix{T} #2
-    grads::Matrix{T} #3
-    xl::Matrix{T} #xlimits #4
-    delta::T #5
-    extra_points::Int #6
-    num_components::Int #7
-    beta::Vector{T} #8
-    gamma::Matrix{T} #9
-    theta::Vector{T} #10
-    reduced_likelihood_function_value::T #11
-    X_offset::Matrix{T} #12
-    X_scale::Matrix{T} #13
-    X_after_std::Matrix{T} #14 - X after standardization
-    pls_mean::Matrix{T} #15
-    y_mean::T #16
-    y_std::T #17
+    x_matrix::Matrix{T}
+    y_matrix::Matrix{T}
+    grads::Matrix{T}
+    xl::Matrix{T}
+    delta::T
+    extra_points::Int
+    num_components::Int
+    beta::Vector{T}
+    gamma::Matrix{T}
+    theta::Vector{T}
+    reduced_likelihood_function_value::T
+    X_offset::Matrix{T}
+    X_scale::Matrix{T}
+    X_after_std::Matrix{T}
+    pls_mean::Matrix{T}
+    y_mean::T
+    y_std::T
 end
 
-"""
-    bounds_error(x, xl)
-
-Checks if input x values are within range of upper and lower bounds
-"""
 function bounds_error(x, xl)
     num_x_rows = size(x, 1)
     num_dim = size(xl, 1)
@@ -43,21 +95,6 @@ function bounds_error(x, xl)
     return false
 end
 
-"""
-    GEKPLS(X, y, grads, n_comp, delta_x, lb, ub, extra_points, theta)
-
-Constructor for GEKPLS Struct
-
-  - x_vec: vector of tuples with x values
-  - y_vec: vector of floats with outputs
-  - grads_vec: gradients associated with each of the X points
-  - n_comp: number of components
-  - lb: lower bounds
-  - ub: upper bounds
-  - delta_x: step size while doing Taylor approximation
-  - extra_points: number of points to consider
-  - theta: initial expected variance of PLS regression components
-"""
 function GEKPLS(x_vec, y_vec, grads_vec, n_comp, delta_x, lb, ub, extra_points, theta)
     xlimits = hcat(lb, ub)
     X = vector_of_tuples_to_matrix(x_vec)
@@ -99,11 +136,6 @@ function GEKPLS(x_vec, y_vec, grads_vec, n_comp, delta_x, lb, ub, extra_points, 
     )
 end
 
-"""
-    (g::GEKPLS)(X_test)
-
-    Take in a set of one or more points and provide predicted approximate outputs (predictor).
-"""
 function (g::GEKPLS)(x_vec::Number)
     # Check to make sure dimensions of input matches expected dimension of surrogate
     _check_dimension(g, x_vec)
@@ -138,9 +170,22 @@ function (g::GEKPLS)(x_vec)
 end
 
 """
-    update!(g::GEKPLS, new_x, new_y, new_grads)
+    update!(surrogate::GEKPLS, x_new, y_new, grad_new)
 
-add a new point to the dataset.
+Add one observation and its gradient to a fitted [`GEKPLS`](@ref), then refit
+the PLS projection and Kriging coefficients in place.
+
+# Arguments
+
+  - `surrogate`: model to update.
+  - `x_new`: new input point in the same representation used for training.
+  - `y_new`: scalar response at `x_new`.
+  - `grad_new`: gradient at `x_new`, ordered like its input coordinates.
+
+# Returns
+
+Returns `nothing`. If `x_new` duplicates a training point or lies outside the
+model bounds, the model is unchanged and a diagnostic is printed.
 """
 function SurrogatesBase.update!(g::GEKPLS, x_tup, y_val, grad_tup)
     new_x = prep_data_for_pred(x_tup)
@@ -343,11 +388,7 @@ function boxbehnken(matrix_size::Int, center::Int)
 end
 
 function explicit_fullfactorial(factors::Tuple)
-    return explicit_fullfactorial(fullfactorial(factors))
-end
-
-function explicit_fullfactorial(iterator::Base.Iterators.ProductIterator)
-    return hcat(vcat.(collect(iterator)...)...)
+    return hcat(vcat.(collect(fullfactorial(factors))...)...)
 end
 
 function fullfactorial(factors::Tuple)

@@ -1,3 +1,53 @@
+"""
+    LobachevskySurrogate(x, y, lb, ub; alpha = 1.0, n = 4, sparse = false)
+
+Construct a univariate or multivariate Lobachevsky-spline interpolant. The
+kernel order `n` must be even; multidimensional models use one `alpha` scale per
+input dimension.
+
+# Fields
+
+  - `x`: sampled scalar points or multidimensional points.
+  - `y`: responses corresponding to `x`.
+  - `alpha`: scalar or per-dimension kernel scale.
+  - `n`: even Lobachevsky kernel order.
+  - `lb`: lower bound of the modeled domain.
+  - `ub`: upper bound of the modeled domain.
+  - `coeff`: fitted interpolation coefficients.
+  - `sparse`: whether coefficient construction uses a sparse matrix.
+
+# Arguments
+
+  - `x`: training inputs.
+  - `y`: training responses, with one response per input.
+  - `lb`: scalar or vector lower domain bound.
+  - `ub`: scalar or vector upper domain bound matching `lb`.
+
+# Keywords
+
+  - `alpha = 1.0`: kernel scale. The one-dimensional scalar must lie in `[0, 4]`.
+    For multidimensional inputs, supply one scale per input dimension; the
+    default is a vector of ones matching one training point.
+  - `n::Int = 4`: even kernel order.
+  - `sparse::Bool = false`: use sparse coefficient construction.
+
+# Returns
+
+A callable `LobachevskySurrogate` supporting
+`update!(surrogate, x_new, y_new)` and the closed-form integration helpers
+[`lobachevsky_integral`](@ref) and [`lobachevsky_integrate_dimension`](@ref).
+
+# Example
+
+```julia
+using Surrogates
+
+x = [0.0, 1.0, 2.0]
+y = sin.(x)
+surrogate = LobachevskySurrogate(x, y, 0.0, 2.0; alpha = 1.0, n = 4)
+surrogate(0.5)
+```
+"""
 mutable struct LobachevskySurrogate{X, Y, A, N, L, U, C, S} <:
     AbstractDeterministicSurrogate
     x::X
@@ -41,9 +91,6 @@ function _calc_loba_coeff1D(x, y, alpha, n, sparse)
     Sym = Symmetric(D, :U)
     return Sym \ y
 end
-"""
-Lobachevsky interpolation, suggested parameters: 0 <= alpha <= 4, n must be even.
-"""
 function LobachevskySurrogate(
         x, y, lb::Number, ub::Number; alpha::Number = 1.0, n::Int = 4,
         sparse = false
@@ -87,11 +134,6 @@ function _calc_loba_coeffND(x, y, alpha, n, sparse)
     Sym = Symmetric(D, :U)
     return Sym \ y
 end
-"""
-LobachevskySurrogate(x,y,alpha,n::Int,lb,ub,sparse = false)
-
-Build the Lobachevsky surrogate with parameters alpha and n.
-"""
 function LobachevskySurrogate(
         x, y, lb, ub; alpha = collect(one.(x[1])), n::Int = 4,
         sparse = false

@@ -79,7 +79,7 @@ Pkg.add("Surrogates")
 ## Contributing
 
   - Please refer to the
-    [SciML ColPrac: Contributor's Guide on Collaborative Practices for Community Packages](https://github.com/SciML/ColPrac/blob/master/README.md)
+    [SciML ColPrac: Contributor's Guide on Collaborative Practices for Community Packages](https://docs.sciml.ai/ColPrac/stable/)
     for guidance on PRs, issues, and other matters relating to contributing to SciML.
 
   - See the [SciML Style Guide](https://github.com/SciML/SciMLStyle) for common coding practices and other style decisions.

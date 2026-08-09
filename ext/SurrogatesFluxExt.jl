@@ -1,12 +1,15 @@
 module SurrogatesFluxExt
 
-using Surrogates: NeuralSurrogate, Surrogates, GENNSurrogate
-using SurrogatesBase
-using Flux: Flux.Optimisers
-using Flux
-using Zygote
-using LinearAlgebra
-using Statistics
+using Flux: Chain, Dense
+using NNlib: relu
+using Statistics: mean, std
+using Surrogates: NeuralSurrogate, Surrogates
+
+import Flux
+import Optimisers
+import Surrogates: GENNSurrogate
+import SurrogatesBase
+import Zygote
 
 """
     NeuralSurrogate(x, y, lb, ub; model = Chain(Dense(length(x[1]), 1), first), 
@@ -51,9 +54,9 @@ function Surrogates.NeuralSurrogate(
             result = m(x)
             loss(result, y)
         end
-        Flux.update!(opt_state, model, grads[1])
+        Optimisers.update!(opt_state, model, grads[1])
     end
-    ps = Flux.trainable(model)
+    ps = Optimisers.trainables(model)
     return NeuralSurrogate(x, y, model, loss, opt, ps, n_epochs, lb, ub)
 end
 
@@ -93,9 +96,9 @@ function SurrogatesBase.update!(my_n::NeuralSurrogate, x_new, y_new)
             result = m(x_new)
             my_n.loss(result, y_new)
         end
-        Flux.update!(opt_state, my_n.model, grads[1])
+        Optimisers.update!(opt_state, my_n.model, grads[1])
     end
-    my_n.ps = Flux.trainable(my_n.model)
+    my_n.ps = Optimisers.trainables(my_n.model)
     my_n.x = hcat(my_n.x, x_new)
     my_n.y = hcat(my_n.y, y_new)
     return nothing
@@ -241,10 +244,10 @@ function _train_genn!(
             return value_loss + gamma * gradient_loss
         end
 
-        Flux.update!(opt_state, model, grads[1])
+        Optimisers.update!(opt_state, model, grads[1])
     end
 
-    return Flux.trainable(model)
+    return Optimisers.trainables(model)
 end
 
 """

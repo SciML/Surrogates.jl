@@ -131,6 +131,7 @@ end
     using Surrogates
     using Flux
     using LinearAlgebra
+    using Optimisers
     using Zygote
 
     @testset "1D" begin
@@ -141,9 +142,20 @@ end
         y = obj_1D.(x)
         my_model = Chain(Dense(1, 1))
         my_neural_kwargs = NeuralSurrogate(x, y, a, b, model = my_model)
+        @test all(
+            p === q for
+                (p, q) in zip(
+                    my_neural_kwargs.ps,
+                    Optimisers.trainables(my_neural_kwargs.model)
+                )
+        )
         my_neural = NeuralSurrogate(x, y, a, b)
         update!(my_neural, [8.5], [20.0])
         update!(my_neural, [3.2, 3.5], [7.4, 8.0])
+        @test all(
+            p === q for
+                (p, q) in zip(my_neural.ps, Optimisers.trainables(my_neural.model))
+        )
         val = my_neural(5.0)
     end
 

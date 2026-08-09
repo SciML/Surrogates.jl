@@ -1,7 +1,3 @@
-using LinearAlgebra
-using Distributions
-using Zygote
-
 """
     SurrogateOptimizationAlgorithm
 

@@ -13,7 +13,8 @@ include("pages.jl")
 makedocs(
     sitename = "Surrogates.jl",
     linkcheck = true,
-    warnonly = [:missing_docs],
+    doctest = true,
+    checkdocs = :exports,
     format = Documenter.HTML(
         analytics = "UA-90474609-3",
         assets = ["assets/favicon.ico"],

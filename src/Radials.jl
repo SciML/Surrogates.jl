@@ -1,9 +1,58 @@
-using LinearAlgebra
-using ExtendableSparse
-
 _copy(t::Tuple) = t
 _copy(t) = copy(t)
 
+"""
+    RadialBasis(x, y, lb, ub; rad = linearRadial(), scale_factor = 0.5,
+                sparse = false, regularization = 0.0)
+
+Fit a radial-basis interpolant, optionally augmented by the polynomial term
+required by the selected `RadialFunction`. The result is callable at new
+points and implements the SurrogatesBase deterministic-surrogate interface.
+
+# Fields
+
+  - `phi`: radial basis function applied to scaled distances.
+  - `dim_poly`: degree of the accompanying polynomial basis.
+  - `x`: sampled scalar points or multidimensional points.
+  - `y`: scalar or vector responses corresponding to `x`.
+  - `lb`: lower bound of the modeled domain.
+  - `ub`: upper bound of the modeled domain.
+  - `coeff`: fitted interpolation coefficients.
+  - `scale_factor`: divisor applied to distances before evaluating `phi`.
+  - `sparse`: whether coefficient construction uses a sparse matrix.
+  - `regularization`: diagonal regularization added to the interpolation matrix.
+
+# Arguments
+
+  - `x`: training inputs.
+  - `y`: training responses, with one response per input.
+  - `lb`: scalar or vector lower domain bound.
+  - `ub`: scalar or vector upper domain bound matching `lb`.
+
+# Keywords
+
+  - `rad::RadialFunction = linearRadial()`: radial basis descriptor. See also
+    [`cubicRadial`](@ref), [`multiquadricRadial`](@ref), and
+    [`thinplateRadial`](@ref).
+  - `scale_factor::Real = 0.5`: distance scale used by the radial function.
+  - `sparse::Bool = false`: use sparse coefficient construction.
+  - `regularization::Real = 0.0`: diagonal stabilization term.
+
+# Returns
+
+A callable `RadialBasis` supporting `update!(surrogate, x_new, y_new)`.
+
+# Example
+
+```julia
+using Surrogates
+
+x = [0.0, 1.0, 2.0]
+y = x .^ 2
+surrogate = RadialBasis(x, y, 0.0, 2.0; rad = cubicRadial())
+surrogate(1.5)
+```
+"""
 mutable struct RadialBasis{F, Q, X, Y, L, U, C, S, D, R} <: AbstractDeterministicSurrogate
     phi::F
     dim_poly::Q
@@ -80,21 +129,6 @@ thinplateRadial() = RadialFunction(
     end
 )
 
-"""
-RadialBasis(x,y,lb,ub,rad::RadialFunction, scale_factor::Float = 1.0, regularization::Real = 0.0)
-
-Constructor for RadialBasis surrogate, of the form
-
-``f(x) = \\sum_{i=1}^{N} w_i \\phi(|x - \\bold{c}_i|) \\bold{v}^{T} + \\bold{v}^{\\mathrm{T}} [ 0; \\bold{x} ]``
-
-where ``w_i`` are the weights of polyharmonic splines ``\\phi(x)`` and ``\\bold{v}`` are coefficients
-of a polynomial term.
-
-`regularization` is a regularization term added to the diagonal of the interpolation matrix to avoid SingularException.
-
-References:
-https://en.wikipedia.org/wiki/Polyharmonic_spline
-"""
 function RadialBasis(
         x, y, lb, ub; rad::RadialFunction = linearRadial(),
         scale_factor::Real = 0.5, sparse = false, regularization::Real = 0.0
@@ -159,7 +193,6 @@ function _construct_rbf_y_matrix(y, y_el, m)
     return [i <= length(y) ? y[i][j] : zero(first(y_el)) for i in 1:m, j in 1:length(y_el)]
 end
 
-using Zygote: Buffer
 using ChainRulesCore: @non_differentiable
 
 function _make_combination(n, d, ix)
@@ -237,63 +270,48 @@ function _approx_rbf(val::Number, rad::RadialBasis)
     return approx
 end
 
-function _make_approx(val, rad::RadialBasis)
-    l = size(rad.coeff, 1)
-    return Buffer(zeros(eltype(val), l), false)
-end
-function _add_tmp_to_approx!(approx, i, tmp, rad::RadialBasis; f = identity)
-    return @inbounds @simd ivdep for j in 1:size(rad.coeff, 1)
-        approx[j] += rad.coeff[j, i] * f(tmp)
-    end
-end
-# specialise when only single output dimension
-function _make_approx(
-        val,
-        ::RadialBasis{F, Q, X, <:AbstractArray{<:Number}}
+function _approx_rbf(
+        val::Number,
+        rad::RadialBasis{F, Q, X, <:AbstractArray{<:Number}}
     ) where {F, Q, X}
-    return Ref(zero(eltype(val)))
-end
-function _add_tmp_to_approx!(
-        approx::Base.RefValue, i, tmp,
-        rad::RadialBasis{F, Q, X, <:AbstractArray{<:Number}};
-        f = identity
-    ) where {F, Q, X}
-    return @inbounds @simd ivdep for j in 1:size(rad.coeff, 1)
-        approx[] += rad.coeff[j, i] * f(tmp)
+    n = length(rad.x)
+    approx = zero(rad.coeff[:, 1])
+    for i in 1:n
+        approx += rad.coeff[:, i] * rad.phi((val .- rad.x[i]) / rad.scale_factor)
     end
+    return approx
 end
 
-_ret_copy(v::Base.RefValue) = v[]
-_ret_copy(v) = copy(v)
+function _radial_value(val, rad::RadialBasis, i)
+    if rad.phi === linearRadial().phi
+        return sqrt(
+            sum(
+                ((val[j] - rad.x[i][j]) / rad.scale_factor)^2
+                    for j in eachindex(val)
+            )
+        )
+    end
+    return rad.phi((val .- rad.x[i]) ./ rad.scale_factor)
+end
+
+function _check_rbf_coefficients(rad::RadialBasis)
+    n = length(rad.x)
+    n <= size(rad.coeff, 2) ||
+        throw("Length of model's x vector exceeds number of calculated coefficients ($n != $(size(rad.coeff, 2))).")
+    return n
+end
+
+function _approx_rbf(
+        val,
+        rad::RadialBasis{F, Q, X, <:AbstractArray{<:Number}}
+    ) where {F, Q, X}
+    n = _check_rbf_coefficients(rad)
+    return sum(rad.coeff[i] * _radial_value(val, rad, i) for i in 1:n)
+end
 
 function _approx_rbf(val, rad::RadialBasis)
-    n = length(rad.x)
-
-    # make sure @inbounds is safe
-    if n > size(rad.coeff, 2)
-        throw("Length of model's x vector exceeds number of calculated coefficients ($n != $(size(rad.coeff, 2))).")
-    end
-
-    approx = _make_approx(val, rad)
-
-    if rad.phi === linearRadial().phi
-        for i in 1:n
-            tmp = zero(eltype(val))
-            @inbounds @simd ivdep for j in 1:length(val)
-                tmp += ((val[j] - rad.x[i][j]) / rad.scale_factor)^2
-            end
-            tmp = sqrt(tmp)
-            _add_tmp_to_approx!(approx, i, tmp, rad)
-        end
-    else
-        tmp = collect(val)
-        @inbounds for i in 1:n
-            tmp = (val .- rad.x[i]) ./ rad.scale_factor
-            _add_tmp_to_approx!(approx, i, tmp, rad; f = rad.phi)
-        end
-    end
-
-    return _ret_copy(approx)
+    n = _check_rbf_coefficients(rad)
+    return sum(rad.coeff[:, i] * _radial_value(val, rad, i) for i in 1:n)
 end
 
 _scaled_chebyshev(x, k, lb, ub) = cos(k * acos(-1 + 2 * (x - lb) / (ub - lb)))
