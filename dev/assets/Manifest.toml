@@ -2,7 +2,7 @@
 
 julia_version = "1.12.6"
 manifest_format = "2.0"
-project_hash = "b9a8f15a9cc54af21a36604c2266a7d177316eb6"
+project_hash = "1589a196e3138f8df271dcf481d8cc37fff8b334"
 
 [[deps.ADTypes]]
 git-tree-sha1 = "9b38b82a9fe131f3d331a53b7203d9d1a2a4602c"
@@ -1383,9 +1383,9 @@ version = "1.41.6"
 
 [[deps.PolyChaos]]
 deps = ["AdaptiveRejectionSampling", "Combinatorics", "Distributions", "FFTW", "GaussQuadrature", "LinearAlgebra", "QuadGK", "SparseArrays", "SpecialFunctions", "Statistics"]
-git-tree-sha1 = "d4e3792b52a0a945992d3a2363a498e49e7503ea"
+git-tree-sha1 = "365f5fcf15c52a5e321dc6cc0f871741615b040e"
 uuid = "8d666b04-775d-5f6e-b778-5ac7c70f65a3"
-version = "1.2.2"
+version = "2.0.0"
 
 [[deps.Polyester]]
 deps = ["ArrayInterface", "BitTwiddlingConvenienceFunctions", "CPUSummary", "IfElse", "ManualMemory", "PolyesterWeave", "Static", "StaticArrayInterface", "StrideArraysCore", "ThreadingUtilities"]
@@ -1817,7 +1817,7 @@ version = "7.8.3+2"
 
 [[deps.Surrogates]]
 deps = ["ChainRulesCore", "Distributions", "ExtendableSparse", "GLM", "IterativeSolvers", "LinearAlgebra", "PrecompileTools", "QuasiMonteCarlo", "Random", "SparseArrays", "Statistics", "StatsAPI", "SurrogatesBase", "Zygote"]
-path = "/home/runner/_work/Surrogates.jl/Surrogates.jl"
+path = "/home/runner/work/Surrogates.jl/Surrogates.jl"
 uuid = "6fc51010-71bc-11e9-0e15-a3fcc6593c49"
 version = "7.5.4"
 
