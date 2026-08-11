@@ -10,6 +10,7 @@ Package-owned interfaces are documented with their corresponding topics:
 - [Gaussian process surrogates](abstractgps.md)
 - [Gradient-enhanced Kriging](gek.md)
 - [Gradient-enhanced Kriging with partial least squares](gekpls.md)
+- [Kriging with partial least squares (KPLS/KPLSK)](kpls.md)
 - [Neural surrogates](neural.md)
 - [Mixture-of-experts surrogates](moe.md)
 - [Polynomial chaos surrogates](polychaos.md)

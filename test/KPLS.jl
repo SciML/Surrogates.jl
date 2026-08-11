@@ -23,7 +23,7 @@ let
         k = KPLS(x, y, n_comp, lb, ub, theta)
         y_pred = k.(x_test)
         rmse = sqrt(sum((y_pred .- y_true) .^ 2) / n_test)
-        @test rmse < 6e-3
+        @test rmse < 6.0e-3
     end
 
     @testset "KPLS: 3D sphere, n_comp=1" begin
@@ -32,7 +32,7 @@ let
         k = KPLS(x, y, n_comp, lb, ub, theta)
         y_pred = k.(x_test)
         rmse = sqrt(sum((y_pred .- y_true) .^ 2) / n_test)
-        @test rmse < 6e-3
+        @test rmse < 6.0e-3
     end
 end
 
@@ -73,8 +73,10 @@ end
     theta = [0.01, 0.01]
 
     # Small initial dataset
-    x_init = [(1.0, 2.0, 3.0), (4.0, 4.0, 4.0), (-1.0, -2.0, -3.0),
-              (2.0, -1.0, 1.0), (-3.0, 3.0, -1.0)]
+    x_init = [
+        (1.0, 2.0, 3.0), (4.0, 4.0, 4.0), (-1.0, -2.0, -3.0),
+        (2.0, -1.0, 1.0), (-3.0, 3.0, -1.0),
+    ]
     y_init = sphere_function.(x_init)
     k = KPLS(x_init, y_init, n_comp, lb, ub, theta)
 
@@ -96,5 +98,5 @@ end
 
     # More data should generally improve accuracy
     @test rmse2 < rmse1
-    @test rmse2 < 8e-3
+    @test rmse2 < 8.0e-3
 end

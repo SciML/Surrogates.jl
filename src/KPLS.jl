@@ -1,4 +1,5 @@
-using Optimization
+using CommonSolve: solve
+using SciMLBase: OptimizationProblem
 using OptimizationOptimJL: NelderMead
 
 """
@@ -60,7 +61,8 @@ local refinement when `theta_init` is already known to be a good guess (e.g. the
 KPLSK full-dimensional refinement stage).
 """
 function _optimize_theta(
-        theta_init, kernel_type, d, nt, ij, y_norma; multistart = true, n_start = 10)
+        theta_init, kernel_type, d, nt, ij, y_norma; multistart = true, n_start = 10
+    )
     n_comp = length(theta_init)
     log10_lb = fill(-20.0, n_comp)
     log10_ub = fill(20.0, n_comp)
@@ -83,8 +85,10 @@ function _optimize_theta(
         lhs_pts = sample(n_start, log10_lb, log10_ub, LatinHypercubeSample())
         # `sample` returns a Vector{Float64} of scalars for n_comp == 1 (1D bounds) and
         # a Vector{NTuple{n_comp, Float64}} otherwise; normalize both to Vector{Float64}.
-        lhs_starts = n_comp == 1 ? [[p] for p in lhs_pts] : [collect(Float64, p)
-                                                              for p in lhs_pts]
+        lhs_starts = n_comp == 1 ? [[p] for p in lhs_pts] : [
+                collect(Float64, p)
+                for p in lhs_pts
+            ]
         vcat([clamp.(log10.(theta_init), -20.0, 20.0)], lhs_starts)
     else
         [clamp.(log10.(theta_init), -20.0, 20.0)]
@@ -134,7 +138,8 @@ function KPLS(x_vec, y_vec, n_comp, lb, ub, theta)
 
     pls_mean, X_after_PLS, y_after_PLS = _compute_pls(X, y, n_comp)
     X_after_std, y_after_std, X_offset, y_mean, X_scale, y_std = standardization(
-        copy(X_after_PLS), copy(y_after_PLS))
+        copy(X_after_PLS), copy(y_after_PLS)
+    )
     D, ij = cross_distances(X_after_std)
     d = componentwise_distance_PLS(D, "squar_exp", n_comp, pls_mean)
     nt = size(X_after_PLS, 1)
@@ -143,7 +148,8 @@ function KPLS(x_vec, y_vec, n_comp, lb, ub, theta)
     theta_opt = _optimize_theta(theta, "squar_exp", d, nt, ij, y_after_std)
 
     beta, gamma, reduced_likelihood_function_value = _reduced_likelihood_function(
-        theta_opt, "squar_exp", d, nt, ij, y_after_std)
+        theta_opt, "squar_exp", d, nt, ij, y_after_std
+    )
 
     return KPLS(
         x_vec, y_vec, X, y, xlimits, n_comp, beta, gamma, theta_opt,
@@ -206,13 +212,15 @@ function SurrogatesBase.update!(k::KPLS, new_x, new_y)
 
     pls_mean, X_after_PLS, y_after_PLS = _compute_pls(k.x_matrix, k.y_matrix, k.n_comp)
     k.X_after_std, y_after_std, k.X_offset, k.y_mean, k.X_scale, k.y_std = standardization(
-        copy(X_after_PLS), copy(y_after_PLS))
+        copy(X_after_PLS), copy(y_after_PLS)
+    )
     D, ij = cross_distances(k.X_after_std)
     k.pls_mean = pls_mean
     d = componentwise_distance_PLS(D, "squar_exp", k.n_comp, k.pls_mean)
     nt = size(X_after_PLS, 1)
     k.theta = _optimize_theta(k.theta, "squar_exp", d, nt, ij, y_after_std)
     k.beta, k.gamma, k.reduced_likelihood_function_value = _reduced_likelihood_function(
-        k.theta, "squar_exp", d, nt, ij, y_after_std)
+        k.theta, "squar_exp", d, nt, ij, y_after_std
+    )
     return nothing
 end

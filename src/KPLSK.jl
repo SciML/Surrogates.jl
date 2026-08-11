@@ -76,7 +76,8 @@ function KPLSK(x_vec, y_vec, n_comp, lb, ub, theta)
     # Stage 1: KPLS, to get a reduced-dimension theta and the PLS rotation coefficients.
     pls_mean, X_after_PLS, y_after_PLS = _compute_pls(X, y, n_comp)
     X_after_std, y_after_std, X_offset, y_mean, X_scale, y_std = standardization(
-        copy(X_after_PLS), copy(y_after_PLS))
+        copy(X_after_PLS), copy(y_after_PLS)
+    )
     D, ij = cross_distances(X_after_std)
     d_pls = componentwise_distance_PLS(D, "squar_exp", n_comp, pls_mean)
     nt = size(X_after_PLS, 1)
@@ -87,10 +88,12 @@ function KPLSK(x_vec, y_vec, n_comp, lb, ub, theta)
     theta0 = _expand_kpls_theta(theta_pls, pls_mean)
     d_full = D .^ 2
     theta_opt = _optimize_theta(
-        theta0, "squar_exp", d_full, nt, ij, y_after_std; multistart = false)
+        theta0, "squar_exp", d_full, nt, ij, y_after_std; multistart = false
+    )
 
     beta, gamma, reduced_likelihood_function_value = _reduced_likelihood_function(
-        theta_opt, "squar_exp", d_full, nt, ij, y_after_std)
+        theta_opt, "squar_exp", d_full, nt, ij, y_after_std
+    )
 
     return KPLSK(
         x_vec, y_vec, X, y, xlimits, n_comp, beta, gamma, theta_opt, theta_pls,
@@ -153,7 +156,8 @@ function SurrogatesBase.update!(k::KPLSK, new_x, new_y)
 
     pls_mean, X_after_PLS, y_after_PLS = _compute_pls(k.x_matrix, k.y_matrix, k.n_comp)
     k.X_after_std, y_after_std, k.X_offset, k.y_mean, k.X_scale, k.y_std = standardization(
-        copy(X_after_PLS), copy(y_after_PLS))
+        copy(X_after_PLS), copy(y_after_PLS)
+    )
     D, ij = cross_distances(k.X_after_std)
     d_pls = componentwise_distance_PLS(D, "squar_exp", k.n_comp, pls_mean)
     nt = size(X_after_PLS, 1)
@@ -162,8 +166,10 @@ function SurrogatesBase.update!(k::KPLSK, new_x, new_y)
     theta0 = _expand_kpls_theta(k.theta_pls, pls_mean)
     d_full = D .^ 2
     k.theta = _optimize_theta(
-        theta0, "squar_exp", d_full, nt, ij, y_after_std; multistart = false)
+        theta0, "squar_exp", d_full, nt, ij, y_after_std; multistart = false
+    )
     k.beta, k.gamma, k.reduced_likelihood_function_value = _reduced_likelihood_function(
-        k.theta, "squar_exp", d_full, nt, ij, y_after_std)
+        k.theta, "squar_exp", d_full, nt, ij, y_after_std
+    )
     return nothing
 end
