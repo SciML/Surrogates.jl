@@ -46,15 +46,21 @@ function _compute_pls(X, y, n_comp)
 end
 
 """
-    _optimize_theta(theta_init, kernel_type, d, nt, ij, y_norma)
+    _optimize_theta(theta_init, kernel_type, d, nt, ij, y_norma; multistart = true, n_start = 10)
 
 Optimize KPLS hyperparameters `theta` by maximizing the reduced log-likelihood.
 
-Uses multi-start Nelder-Mead (via Optimization.jl + OptimizationOptimJL) in
-log₁₀(theta) space (bounds [-20, 20]). `theta_init` is used as one starting point;
-additional fixed starts at log₁₀(theta) ∈ {-2, 0, 2} improve robustness across scales.
+Uses Nelder-Mead (via Optimization.jl + OptimizationOptimJL) in log₁₀(theta) space
+(bounds [-20, 20]). `theta_init` is always used as a starting point. When
+`multistart` is `true` (the default), `n_start` additional Latin Hypercube starts
+spread across the log₁₀(theta) bounds are also tried, following the multistart
+strategy used by SMT's Kriging-based optimizer, to improve robustness against the
+reduced likelihood surface's local optima. Set `multistart = false` for a cheap
+local refinement when `theta_init` is already known to be a good guess (e.g. the
+KPLSK full-dimensional refinement stage).
 """
-function _optimize_theta(theta_init, kernel_type, d, nt, ij, y_norma)
+function _optimize_theta(
+        theta_init, kernel_type, d, nt, ij, y_norma; multistart = true, n_start = 10)
     n_comp = length(theta_init)
     log10_lb = fill(-20.0, n_comp)
     log10_ub = fill(20.0, n_comp)
@@ -71,13 +77,18 @@ function _optimize_theta(theta_init, kernel_type, d, nt, ij, y_norma)
         end
     end
 
-    # Multi-start: user-provided theta + fixed log10 levels covering common scales
-    starts = [
-        clamp.(log10.(theta_init), -20.0, 20.0),
-        fill(-2.0, n_comp),
-        fill(0.0, n_comp),
-        fill(2.0, n_comp),
-    ]
+    # Multi-start: user-provided theta + n_start Latin Hypercube samples across the
+    # log10(theta) bounds, covering the space more evenly than a handful of fixed points.
+    starts = if multistart
+        lhs_pts = sample(n_start, log10_lb, log10_ub, LatinHypercubeSample())
+        # `sample` returns a Vector{Float64} of scalars for n_comp == 1 (1D bounds) and
+        # a Vector{NTuple{n_comp, Float64}} otherwise; normalize both to Vector{Float64}.
+        lhs_starts = n_comp == 1 ? [[p] for p in lhs_pts] : [collect(Float64, p)
+                                                              for p in lhs_pts]
+        vcat([clamp.(log10.(theta_init), -20.0, 20.0)], lhs_starts)
+    else
+        [clamp.(log10.(theta_init), -20.0, 20.0)]
+    end
 
     best_val = Inf
     best_log10_theta = starts[1]
