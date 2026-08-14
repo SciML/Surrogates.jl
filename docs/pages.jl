@@ -16,6 +16,7 @@ pages = [
         "Variable Fidelity" => "variablefidelity.md",
         "Gradient Enhanced Kriging" => "gek.md",
         "GEKPLS" => "gekpls.md",
+        "KPLS and KPLSK" => "kpls.md",
         "MOE" => "moe.md",
         "Parallel Optimization" => "parallel.md",
     ]

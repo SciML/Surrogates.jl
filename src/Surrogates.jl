@@ -65,6 +65,8 @@ include("VariableFidelity.jl")
 include("Earth.jl")
 include("GEK.jl")
 include("GEKPLS.jl")
+include("KPLS.jl")
+include("KPLSK.jl")
 include("VirtualStrategy.jl")
 
 """
@@ -317,6 +319,8 @@ export Wendland
 export VariableFidelitySurrogate
 export EarthSurrogate
 export GEK
+export KPLS
+export KPLSK
 export AbstractSurrogate
 
 # Extensions
