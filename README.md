@@ -24,22 +24,31 @@ Sampling can be done through [QuasiMonteCarlo.jl](https://github.com/SciML/Quasi
 
 ## ALL the currently available surrogate models:
 
+These ship with the package and need no extra dependency:
+
   - Kriging
-  - Kriging using Stheno
+  - Gradient Enhanced Kriging (`GEK`)
+  - Kriging with Partial Least Squares (`KPLS`, `KPLSK`) and `GEKPLS`
   - Radial Basis
   - Wendland
   - Linear
   - Second Order Polynomial
-  - Support Vector Machines (Wait for LIBSVM resolution)
-  - Neural Networks
-  - Random Forests
   - Lobachevsky
   - Inverse-distance
-  - Polynomial expansions
+  - Earth (multivariate adaptive regression splines)
   - Variable fidelity
-  - Mixture of experts (Waiting GaussianMixtures package to work on v1.5)
-  - Earth
-  - Gradient Enhanced Kriging
+
+These are loaded as package extensions, so they become available once you also
+install the package they are built on:
+
+| Surrogate | Install |
+| --- | --- |
+| `AbstractGPSurrogate` (Gaussian processes) | `AbstractGPs`, `KernelFunctions` |
+| `NeuralSurrogate`, `GENNSurrogate` (gradient-enhanced) | `Flux` |
+| `PolynomialChaosSurrogate` (polynomial chaos expansions) | `PolyChaos` |
+| `XGBoostSurrogate` (gradient-boosted trees) | `XGBoost` |
+| `SVMSurrogate` (support vector machines) | `LIBSVM`, `ScikitLearnBase` |
+| `MOE` (mixture of experts) | `GaussianMixtures` |
 
 ## ALL the currently available optimization methods:
 

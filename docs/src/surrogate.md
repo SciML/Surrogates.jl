@@ -44,7 +44,7 @@ lobachevsky_integral(loba::LobachevskySurrogate,lb,ub)
 SVMSurrogate(x,y,lb::Number,ub::Number)
 ```
 
-  - Random forest surrogate, requires `using XGBoost`.
+  - Gradient-boosted tree surrogate, requires `using XGBoost`.
 
 ```
 XGBoostSurrogate(x,y,lb,ub;num_round::Int = 1)
@@ -74,6 +74,7 @@ GENNStructure
 XGBoostStructure
 SecondOrderPolynomialStructure
 WendlandStructure
+PolyChaosStructure
 ```
 
 # Creating another surrogate
