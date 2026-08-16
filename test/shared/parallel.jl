@@ -1,6 +1,5 @@
 using Surrogates
 using Test
-using Revise
 
 #1D
 lb = 0.0

@@ -37,20 +37,25 @@ using Surrogates
             @test result isa BigFloat
         end
 
+        @testset "LinearSurrogate 1D" begin
+            lin = LinearSurrogate(x_bf, y_bf, lb_bf, ub_bf)
+            result = lin(test_point)
+            @test result isa BigFloat
+            # No Float64 contamination in the fitted coefficients
+            @test lin.coeff isa Vector{BigFloat}
+        end
+
         @testset "Wendland 1D" begin
             wen = Wendland(x_bf, y_bf, lb_bf, ub_bf)
             result = wen(test_point)
             @test result isa BigFloat
         end
 
-        # Note: Kriging with BigFloat fails because eigvals() doesn't support
-        # arbitrary precision types (requires LAPACK). This is a known limitation.
-        @testset "Kriging 1D (known limitation)" begin
-            @test_broken begin
-                k = Kriging(x_bf, y_bf, lb_bf, ub_bf)
-                result = k(test_point)
-                result isa BigFloat
-            end
+        @testset "Kriging 1D" begin
+            k = Kriging(x_bf, y_bf, lb_bf, ub_bf)
+            result = k(test_point)
+            @test result isa BigFloat
+            @test std_error_at_point(k, test_point) isa BigFloat
         end
     end
 
@@ -59,9 +64,9 @@ using Surrogates
         x_bf = [
             (BigFloat(1.0), BigFloat(2.0)), (BigFloat(2.0), BigFloat(3.0)),
             (BigFloat(3.0), BigFloat(1.0)), (BigFloat(4.0), BigFloat(4.0)),
-            (BigFloat(5.0), BigFloat(2.0)),
+            (BigFloat(5.0), BigFloat(2.0)), (BigFloat(2.5), BigFloat(4.5)),
         ]
-        y_bf = BigFloat[0.5, 1.2, 2.1, 2.8, 3.5]
+        y_bf = BigFloat[0.5, 1.2, 2.1, 2.8, 3.5, 1.9]
         lb_bf = (BigFloat(0.0), BigFloat(0.0))
         ub_bf = (BigFloat(6.0), BigFloat(5.0))
         test_point = (BigFloat(2.5), BigFloat(2.5))
@@ -84,14 +89,19 @@ using Surrogates
             @test result isa BigFloat
         end
 
-        # Note: Kriging with BigFloat fails because eigvals() doesn't support
-        # arbitrary precision types (requires LAPACK). This is a known limitation.
-        @testset "Kriging ND (known limitation)" begin
-            @test_broken begin
-                k = Kriging(x_bf, y_bf, lb_bf, ub_bf)
-                result = k(test_point)
-                result isa BigFloat
-            end
+        @testset "LinearSurrogate ND" begin
+            lin = LinearSurrogate(x_bf, y_bf, lb_bf, ub_bf)
+            result = lin(test_point)
+            @test result isa BigFloat
+            # No Float64 contamination in the fitted coefficients
+            @test lin.coeff isa Vector{BigFloat}
+        end
+
+        @testset "Kriging ND" begin
+            k = Kriging(x_bf, y_bf, lb_bf, ub_bf)
+            result = k(test_point)
+            @test result isa BigFloat
+            @test std_error_at_point(k, test_point) isa BigFloat
         end
     end
 end

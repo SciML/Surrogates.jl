@@ -278,7 +278,7 @@ end
 
     lb = [0.0, 0.0]
     ub = [10.0, 2.0]
-    n = 5
+    n = 6
     x = sample(n, lb, ub, SobolSample())
     f = x -> [x[1]^2, x[2]]
     y = f.(x)
@@ -697,6 +697,27 @@ end
     using StableRNGs, Random
     SEED = 42
     Random.seed!(StableRNG(SEED), SEED)
+
+    @safetestset "every local-expert constructor is imported" begin
+        using Surrogates, GaussianMixtures, Test
+        # The extension dispatches on `local_kind[i].name` and calls the
+        # matching constructor unqualified, so any constructor missing from its
+        # import list is an UndefVarError only on that branch. `LobachevskyStructure`
+        # (a configuration descriptor) had been imported in place of
+        # `LobachevskySurrogate`, leaving four expert kinds undefined.
+        ext = Base.get_extension(Surrogates, :SurrogatesMOEExt)
+        @test ext !== nothing
+        for name in (
+                :RadialBasis, :Kriging, :GEK, :LinearSurrogate,
+                :InverseDistanceSurrogate, :LobachevskySurrogate,
+                :NeuralSurrogate, :XGBoostSurrogate,
+                :SecondOrderPolynomialSurrogate, :Wendland,
+                :PolynomialChaosSurrogate,
+            )
+            @test isdefined(ext, name)
+        end
+    end
+
     @safetestset "1D" begin
         using Surrogates, GaussianMixtures, Flux, PolyChaos, XGBoost
 
