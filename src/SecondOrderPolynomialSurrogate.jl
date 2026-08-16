@@ -15,7 +15,13 @@ every squared coordinate.
 
 # Arguments
 
-  - `x`: training points represented by equal-length containers.
+  - `x`: training points represented by equal-length containers. At least
+    `1 + 2d + d(d - 1) ÷ 2` points are required for `d`-dimensional inputs (the
+    number of coefficients of a full quadratic); fewer throws an `ArgumentError`.
+    The count is necessary but not sufficient: a degenerate sample (for example
+    points that are collinear in two dimensions) still leaves the design matrix
+    rank deficient, and the least-squares solve then returns a minimum-norm fit
+    without raising.
   - `y`: training responses, with one response per point.
   - `lb`: lower domain bound.
   - `ub`: upper domain bound matching `lb`.
@@ -47,6 +53,14 @@ mutable struct SecondOrderPolynomialSurrogate{X, Y, B, L, U} <:
 end
 
 function SecondOrderPolynomialSurrogate(x, y, lb, ub)
+    n = length(x)
+    d = length(first(x))
+    num_coeffs = 1 + 2 * d + d * (d - 1) ÷ 2
+    if n < num_coeffs
+        throw(ArgumentError("SecondOrderPolynomialSurrogate requires at least \
+            $num_coeffs samples to determine a full quadratic in $d dimension(s), \
+            but got $n samples."))
+    end
     X = _construct_2nd_order_interp_matrix(x, first(x))
     Y = _construct_y_matrix(y, first(y))
     β = X \ Y
@@ -59,19 +73,16 @@ function _construct_2nd_order_interp_matrix(x, x_el)
     D = 1 + 2 * d + d * (d - 1) ÷ 2
     X = ones(eltype(x_el), n, D)
     for i in 1:n, j in 1:d
-
         X[i, j + 1] = x[i][j]
     end
     idx = d + 1
     for j in 1:d, k in (j + 1):d
-
         idx += 1
         for i in 1:n
             X[i, idx] = x[i][j] * x[i][k]
         end
     end
     for i in 1:n, j in 1:d
-
         X[i, j + 1 + d + d * (d - 1) ÷ 2] = x[i][j]^2
     end
     return X
@@ -94,7 +105,6 @@ function (my_second_ord::SecondOrderPolynomialSurrogate)(val)
     end
     idx = d + 1
     for j in 1:d, k in (j + 1):d
-
         idx += 1
         y += val[j] * val[k] * my_second_ord.β[idx, :]
     end

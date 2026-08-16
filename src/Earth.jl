@@ -21,9 +21,11 @@ be updated with `update!(earth, x_new, y_new)`.
   - `n_min_terms`: minimum number of retained basis terms.
   - `n_max_terms`: maximum number of basis terms considered during the forward
     pass.
-  - `rel_res_error`: relative residual-error threshold for adding terms.
-  - `rel_GCV`: relative generalized-cross-validation threshold for pruning.
-  - `intercept`: fitted intercept term.
+  - `rel_res_error`: relative sum-of-squared-error improvement required to keep
+    adding terms in the forward pass.
+  - `rel_GCV`: relative generalized-cross-validation improvement required to
+    keep pruning terms in the backward pass.
+  - `intercept`: intercept fitted jointly with `coeff` by least squares.
   - `maxiters`: maximum number of forward-pass iterations.
 
 # Arguments
@@ -84,97 +86,95 @@ end
     end
 end
 
-function _coeff_1d(x, y, basis)
+# Least-squares design matrix with a leading intercept column, so the constant
+# term is fitted jointly with the basis coefficients rather than pinned to the
+# response mean (the hinge columns are not orthogonal to the constant vector,
+# so pinning it would not give the least-squares fit).
+function _design_1d(x, basis)
     n = length(x)
     d = length(basis)
-    X = zeros(eltype(x[1]), n, d)
+    X = ones(eltype(x[1]), n, d + 1)
     @inbounds for i in 1:n
         for j in 1:d
-            X[i, j] = _eval_basis_term_1d(basis[j], x[i])
+            X[i, j + 1] = _eval_basis_term_1d(basis[j], x[i])
         end
     end
-    return (X' * X) \ (X' * y)
+    return X
+end
+
+# Residual sum of squares of the least-squares fit of `y` on the columns of `X`.
+function _lsq_sse(X, y)
+    return sum(abs2, y .- X * (X \ y))
+end
+
+# Split a fitted parameter vector into its intercept and basis coefficients.
+_split_beta(β) = (β[1], β[2:end])
+
+function _coeff_1d(x, y, basis)
+    return _split_beta(_design_1d(x, basis) \ y)
 end
 
 function _forward_pass_1d(x, y, n_max_terms, rel_res_error, maxiters)
-    n = length(x)
     basis = BasisTerm1D[]
     current_sse = +Inf
-    intercept = sum(y) / length(y)
     num_terms = 0
-    pos_of_knot = 0
     iters = 0
     while num_terms < n_max_terms && iters < maxiters
-        #Look for best addition:
-        new_addition = false
+        # Select the knot that minimizes SSE over all candidates, then accept
+        # it only if it improves on this sweep's starting SSE by at least
+        # rel_res_error. Selection and acceptance must stay separate: folding
+        # the threshold into the candidate comparison would make the winner
+        # depend on candidate ordering rather than on SSE alone.
+        pos_of_knot = 0
+        best_sse = +Inf
         for i in 1:length(x)
-            #Add or not add the knot var_i?
+            # Candidate: the hinge/mirror pair knotted at x[i]
             var_i = x[i]
             new_basis = copy(basis)
-            #select best new pair
             push!(new_basis, BasisTerm1D(var_i, false))  # hinge
             push!(new_basis, BasisTerm1D(var_i, true))   # hinge_mirror
-            #find coefficients
-            d = length(new_basis)
-            X = zeros(eltype(x[1]), n, d)
-            @inbounds for k in 1:n
-                for j in 1:d
-                    X[k, j] = _eval_basis_term_1d(new_basis[j], x[k])
-                end
+            X = _design_1d(x, new_basis)
+            # Skip knots that make the augmented design ill conditioned
+            if cond(X' * X) > 1.0e8
+                continue
             end
-            if (cond(X' * X) > 1.0e8)
-                condition_number = false
-                new_sse = +Inf
-            else
-                condition_number = true
-                coeff = (X' * X) \ (X' * y)
-                new_sse = zero(y[1])
-                for k in 1:n
-                    val_k = sum(
-                        coeff[j] * _eval_basis_term_1d(new_basis[j], x[k])
-                            for j in 1:d
-                    ) + intercept
-                    new_sse = new_sse + (y[k] - val_k)^2
-                end
-            end
-            #is the i-esim the best?
-            if (
-                    (new_sse < current_sse) && (abs(current_sse - new_sse) >= rel_res_error) &&
-                        condition_number
-                )
-                #Add the hinge function to the basis
+            new_sse = _lsq_sse(X, y)
+            if new_sse < best_sse
                 pos_of_knot = i
-                current_sse = new_sse
-                new_addition = true
+                best_sse = new_sse
             end
         end
         iters = iters + 1
-        if new_addition
+        if pos_of_knot != 0 && best_sse < current_sse * (1 - rel_res_error)
             push!(basis, BasisTerm1D(x[pos_of_knot], false))  # hinge
             push!(basis, BasisTerm1D(x[pos_of_knot], true))   # hinge_mirror
+            current_sse = best_sse
             num_terms = num_terms + 1
         else
             break
         end
     end
     if length(basis) == 0
-        throw("Earth surrogate did not add any term, just the intercept. It is advised to double check the parameters.")
+        error("Earth surrogate did not add any term beyond the intercept; loosen rel_res_error or n_max_terms, or check the data scale.")
     end
     return basis
+end
+
+# Generalized cross-validation score with the standard MARS effective-parameter
+# count. When the effective parameter count reaches the sample count the GCV
+# denominator vanishes; return Inf so such models are never selected.
+function _gcv(sse, num_terms, penalty, n)
+    effect_num_params = num_terms + penalty * (num_terms - 1) / 2
+    effect_num_params >= n && return oftype(sse / n, Inf)
+    return sse / (n * (1 - effect_num_params / n)^2)
 end
 
 function _backward_pass_1d(x, y, n_min_terms, basis, penalty, rel_GCV)
     n = length(x)
     d = length(basis)
-    intercept = sum(y) / length(y)
-    coeff = _coeff_1d(x, y, basis)
-    sse = zero(y[1])
-    for i in 1:n
-        val_i = sum(coeff[j] * _eval_basis_term_1d(basis[j], x[i]) for j in 1:d) + intercept
-        sse = sse + (y[i] - val_i)^2
-    end
-    effect_num_params = d + penalty * (d - 1) / 2
-    current_gcv = sse / (n * (1 - effect_num_params / n)^2)
+    X = _design_1d(x, basis)
+    sse = _lsq_sse(X, y)
+    current_gcv = _gcv(sse, d, penalty, n)
     num_terms = d
     while (num_terms > n_min_terms)
         #Basis-> select worst performing element-> eliminate it
@@ -186,18 +186,10 @@ function _backward_pass_1d(x, y, n_min_terms, basis, penalty, rel_GCV)
         best_new_gcv = +Inf
         for i in 1:num_terms
             current_basis = [basis[j] for j in 1:num_terms if j != i]
-            coef = _coeff_1d(x, y, current_basis)
-            new_sse = zero(y[1])
             current_base_len = num_terms - 1
-            for a in 1:n
-                val_a = sum(
-                    coef[j] * _eval_basis_term_1d(current_basis[j], x[a])
-                        for j in 1:current_base_len
-                ) + intercept
-                new_sse = new_sse + (y[a] - val_a)^2
-            end
-            effect_num_params = current_base_len + penalty * (current_base_len - 1) / 2
-            i_gcv = new_sse / (n * (1 - effect_num_params / n)^2)
+            Xi = _design_1d(x, current_basis)
+            new_sse = _lsq_sse(Xi, y)
+            i_gcv = _gcv(new_sse, current_base_len, penalty, n)
             if i_gcv < best_new_gcv
                 best_removal_idx = i
                 best_new_gcv = i_gcv
@@ -207,7 +199,8 @@ function _backward_pass_1d(x, y, n_min_terms, basis, penalty, rel_GCV)
         if !found_new_to_eliminate || best_new_gcv >= current_gcv
             break
         end
-        if abs(current_gcv - best_new_gcv) < rel_GCV
+        # Stop when the GCV improvement is below the relative threshold
+        if current_gcv - best_new_gcv < rel_GCV * abs(current_gcv)
             break
         else
             num_terms = num_terms - 1
@@ -224,10 +217,9 @@ function EarthSurrogate(
         rel_res_error::Number = 1.0e-2, rel_GCV::Number = 1.0e-2,
         maxiters = 100
     )
-    intercept = sum(y) / length(y)
     basis_after_forward = _forward_pass_1d(x, y, n_max_terms, rel_res_error, maxiters)
     basis = _backward_pass_1d(x, y, n_min_terms, basis_after_forward, penalty, rel_GCV)
-    coeff = _coeff_1d(x, y, basis)
+    intercept, coeff = _coeff_1d(x, y, basis)
     return EarthSurrogate(
         x, y, lb, ub, basis, coeff, penalty, n_min_terms, n_max_terms,
         rel_res_error, rel_GCV, intercept, maxiters
@@ -266,31 +258,38 @@ end
     return result
 end
 
-function _coeff_nd(x, y, basis)
+# See `_design_1d`: the intercept is a fitted column, not the response mean.
+function _design_nd(x, basis)
     n = length(x)
     base_len = length(basis)
-    X = zeros(eltype(x[1]), n, base_len)
+    X = ones(eltype(x[1]), n, base_len + 1)
     @inbounds for a in 1:n
         for b in 1:base_len
-            X[a, b] = _eval_basis_term_nd(basis[b], x[a])
+            X[a, b + 1] = _eval_basis_term_nd(basis[b], x[a])
         end
     end
-    return (X' * X) \ (X' * y)
+    return X
+end
+
+function _coeff_nd(x, y, basis)
+    return _split_beta(_design_nd(x, basis) \ y)
 end
 
 function _forward_pass_nd(x, y, n_max_terms, rel_res_error, maxiters)
     n = length(x)
     basis = BasisTermND[]
     current_sse = +Inf
-    intercept = sum(y) / length(y)
     num_terms = 0
     d = length(x[1])
     iters = 0
 
     while num_terms < n_max_terms && iters < maxiters
-        new_addition = false
+        # As in the 1D pass: pick the SSE-minimizing candidate pair first, then
+        # apply the relative acceptance threshold once against the sweep's
+        # starting SSE.
         best_term1 = nothing
         best_term2 = nothing
+        best_sse = +Inf
 
         for i in 1:n
             for j in 1:d
@@ -301,39 +300,17 @@ function _forward_pass_nd(x, y, n_max_terms, rel_res_error, maxiters)
                         term2 = BasisTermND([l], [x[k][l]], [true])  # hinge_mirror
 
                         new_basis = vcat(basis, [term1, term2])
-                        bas_len = length(new_basis)
-
-                        # Build design matrix
-                        X = zeros(eltype(x[1]), n, bas_len)
-                        @inbounds for a in 1:n
-                            for b in 1:bas_len
-                                X[a, b] = _eval_basis_term_nd(new_basis[b], x[a])
-                            end
-                        end
-
-                        # Check condition number
-                        XtX = X' * X
-                        if cond(XtX) > 1.0e8
+                        X = _design_nd(x, new_basis)
+                        # Skip pairs that make the augmented design ill conditioned
+                        if cond(X' * X) > 1.0e8
                             continue
                         end
+                        new_sse = _lsq_sse(X, y)
 
-                        # Solve for coefficients
-                        coeff = XtX \ (X' * y)
-
-                        # Compute SSE
-                        new_sse = zero(y[1])
-                        @inbounds for a in 1:n
-                            val_a = sum(coeff[b] * X[a, b] for b in 1:bas_len) + intercept
-                            new_sse = new_sse + (y[a] - val_a)^2
-                        end
-
-                        # Check if this is the best so far
-                        if (new_sse < current_sse) &&
-                                (abs(current_sse - new_sse) >= rel_res_error)
+                        if new_sse < best_sse
                             best_term1 = term1
                             best_term2 = term2
-                            current_sse = new_sse
-                            new_addition = true
+                            best_sse = new_sse
                         end
                     end
                 end
@@ -341,9 +318,10 @@ function _forward_pass_nd(x, y, n_max_terms, rel_res_error, maxiters)
         end
 
         iters = iters + 1
-        if new_addition
+        if best_term1 !== nothing && best_sse < current_sse * (1 - rel_res_error)
             push!(basis, best_term1)
             push!(basis, best_term2)
+            current_sse = best_sse
             num_terms = num_terms + 1
         else
             break
@@ -351,28 +329,17 @@ function _forward_pass_nd(x, y, n_max_terms, rel_res_error, maxiters)
     end
 
     if length(basis) == 0
-        throw("Earth surrogate did not add any term, just the intercept. It is advised to double check the parameters.")
+        error("Earth surrogate did not add any term beyond the intercept; loosen rel_res_error or n_max_terms, or check the data scale.")
     end
     return basis
 end
 
 function _backward_pass_nd(x, y, n_min_terms, basis, penalty, rel_GCV)
     n = length(x)
-    d = length(x[1])
     base_len = length(basis)
-    intercept = sum(y) / length(y)
-    coeff = _coeff_nd(x, y, basis)
-
-    # Compute initial SSE
-    sse = zero(y[1])
-    @inbounds for a in 1:n
-        val_a = sum(coeff[b] * _eval_basis_term_nd(basis[b], x[a]) for b in 1:base_len) +
-            intercept
-        sse = sse + (y[a] - val_a)^2
-    end
-
-    effect_num_params = base_len + penalty * (base_len - 1) / 2
-    current_gcv = sse / (n * (1 - effect_num_params / n)^2)
+    X = _design_nd(x, basis)
+    sse = _lsq_sse(X, y)
+    current_gcv = _gcv(sse, base_len, penalty, n)
     num_terms = base_len
 
     while num_terms > n_min_terms
@@ -386,20 +353,10 @@ function _backward_pass_nd(x, y, n_min_terms, basis, penalty, rel_GCV)
 
         for i in 1:num_terms
             current_basis = [basis[j] for j in 1:num_terms if j != i]
-            coef = _coeff_nd(x, y, current_basis)
-
-            new_sse = zero(y[1])
             current_base_len = num_terms - 1
-            @inbounds for a in 1:n
-                val_a = sum(
-                    coef[b] * _eval_basis_term_nd(current_basis[b], x[a])
-                        for b in 1:current_base_len
-                ) + intercept
-                new_sse = new_sse + (y[a] - val_a)^2
-            end
-
-            curr_effect_num_params = current_base_len + penalty * (current_base_len - 1) / 2
-            i_gcv = new_sse / (n * (1 - curr_effect_num_params / n)^2)
+            Xi = _design_nd(x, current_basis)
+            new_sse = _lsq_sse(Xi, y)
+            i_gcv = _gcv(new_sse, current_base_len, penalty, n)
 
             if i_gcv < best_new_gcv
                 best_removal_idx = i
@@ -412,7 +369,8 @@ function _backward_pass_nd(x, y, n_min_terms, basis, penalty, rel_GCV)
             break
         end
 
-        if abs(current_gcv - best_new_gcv) < rel_GCV
+        # Stop when the GCV improvement is below the relative threshold
+        if current_gcv - best_new_gcv < rel_GCV * abs(current_gcv)
             break
         end
 
@@ -430,10 +388,9 @@ function EarthSurrogate(
         n_max_terms::Int = 10, rel_res_error::Number = 1.0e-2,
         rel_GCV::Number = 1.0e-2, maxiters = 100
     )
-    intercept = sum(y) / length(y)
     basis_after_forward = _forward_pass_nd(x, y, n_max_terms, rel_res_error, maxiters)
     basis = _backward_pass_nd(x, y, n_min_terms, basis_after_forward, penalty, rel_GCV)
-    coeff = _coeff_nd(x, y, basis)
+    intercept, coeff = _coeff_nd(x, y, basis)
     return EarthSurrogate(
         x, y, lb, ub, basis, coeff, penalty, n_min_terms, n_max_terms,
         rel_res_error, rel_GCV, intercept, maxiters
@@ -455,7 +412,6 @@ function SurrogatesBase.update!(earth::EarthSurrogate, x_new, y_new)
         #1D
         earth.x = vcat(earth.x, x_new)
         earth.y = vcat(earth.y, y_new)
-        earth.intercept = sum(earth.y) / length(earth.y)
         basis_after_forward = _forward_pass_1d(
             earth.x, earth.y, earth.n_max_terms,
             earth.rel_res_error, earth.maxiters
@@ -464,13 +420,12 @@ function SurrogatesBase.update!(earth::EarthSurrogate, x_new, y_new)
             earth.x, earth.y, earth.n_min_terms,
             basis_after_forward, earth.penalty, earth.rel_GCV
         )
-        earth.coeff = _coeff_1d(earth.x, earth.y, earth.basis)
+        earth.intercept, earth.coeff = _coeff_1d(earth.x, earth.y, earth.basis)
         nothing
     else
         #ND
         earth.x = vcat(earth.x, x_new)
         earth.y = vcat(earth.y, y_new)
-        earth.intercept = sum(earth.y) / length(earth.y)
         basis_after_forward = _forward_pass_nd(
             earth.x, earth.y, earth.n_max_terms,
             earth.rel_res_error, earth.maxiters
@@ -479,7 +434,7 @@ function SurrogatesBase.update!(earth::EarthSurrogate, x_new, y_new)
             earth.x, earth.y, earth.n_min_terms,
             basis_after_forward, earth.penalty, earth.rel_GCV
         )
-        earth.coeff = _coeff_nd(earth.x, earth.y, earth.basis)
+        earth.intercept, earth.coeff = _coeff_nd(earth.x, earth.y, earth.basis)
         nothing
     end
 end
