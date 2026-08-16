@@ -112,19 +112,61 @@ function _optimize_theta(
 end
 
 """
-    KPLS(x_vec, y_vec, n_comp, lb, ub, theta)
+    KPLS(x_vec, y_vec, n_comp, lb, ub, theta) -> KPLS
 
-Constructor for KPLS surrogate.
+Construct a Kriging-with-partial-least-squares (KPLS) surrogate.
+
+KPLS projects the input coordinates onto `n_comp` partial-least-squares
+components, then fits a Kriging model in that reduced space. It is intended for
+high-dimensional inputs where a full anisotropic Kriging fit would require too
+many correlation parameters.
+
+# Fields
+
+  - `x`: training points in the caller-provided representation.
+  - `y`: training responses.
+  - `x_matrix`: matrix representation of the training points.
+  - `y_matrix`: column-matrix representation of the responses.
+  - `xl`: lower and upper bounds stored as a two-column matrix.
+  - `n_comp`: number of retained PLS components.
+  - `beta`: generalized-least-squares trend coefficients.
+  - `gamma`: Kriging residual coefficients.
+  - `theta`: optimized correlation scales in the PLS space.
+  - `reduced_likelihood_function_value`: fitted reduced likelihood value.
+  - `X_offset`: input centering values.
+  - `X_scale`: input scaling values.
+  - `X_after_std`: standardized projected training inputs.
+  - `pls_mean`: PLS projection coefficients.
+  - `y_mean`: response centering value.
+  - `y_std`: response scaling value.
 
 # Arguments
-- `x_vec`: vector of tuples containing input points
-- `y_vec`: vector of output values
-- `n_comp`: number of PLS components (h), typically 1–4; must be ≤ input dimension
-- `lb`: lower bounds (vector)
-- `ub`: upper bounds (vector)
-- `theta`: initial hyperparameter vector of length n_comp (values > 0), used as
-  the starting point for likelihood-based optimization. The stored `theta` field
-  will contain the optimized values.
+
+  - `x_vec`: vector of tuples containing the training points.
+  - `y_vec`: vector of responses, with one value for each point in `x_vec`.
+  - `n_comp::Integer`: number of PLS components. It must not exceed the input
+    dimension.
+  - `lb`: lower bounds for the input coordinates.
+  - `ub`: upper bounds for the input coordinates, matching `lb`.
+  - `theta`: positive initial correlation scales, with one value per component.
+
+# Returns
+
+A callable `KPLS` surrogate supporting the generic call and `update!` interface.
+The stored `theta` contains the optimized correlation scales.
+
+# Example
+
+```julia
+using Surrogates
+
+objective(x) = sum(abs2, x)
+lb, ub = [-1.0, -1.0], [1.0, 1.0]
+x = sample(12, lb, ub, SobolSample())
+y = objective.(x)
+surrogate = KPLS(x, y, 1, lb, ub, [1.0])
+surrogate((0.2, -0.1))
+```
 """
 function KPLS(x_vec, y_vec, n_comp, lb, ub, theta)
     xlimits = hcat(collect(Float64, lb), collect(Float64, ub))

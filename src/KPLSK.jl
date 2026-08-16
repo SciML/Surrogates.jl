@@ -49,19 +49,60 @@ function _expand_kpls_theta(theta_pls, coeff_pls)
 end
 
 """
-    KPLSK(x_vec, y_vec, n_comp, lb, ub, theta)
+    KPLSK(x_vec, y_vec, n_comp, lb, ub, theta) -> KPLSK
 
-Constructor for KPLSK surrogate.
+Construct a KPLSK surrogate.
+
+KPLSK first obtains a reduced-dimensional KPLS fit and uses its learned
+correlation scales to initialize a full-dimensional anisotropic Kriging fit.
+This combines the initialization advantages of KPLS with the predictive model
+of full-dimensional Kriging.
+
+# Fields
+
+  - `x`: training points in the caller-provided representation.
+  - `y`: training responses.
+  - `x_matrix`: matrix representation of the training points.
+  - `y_matrix`: column-matrix representation of the responses.
+  - `xl`: lower and upper bounds stored as a two-column matrix.
+  - `n_comp`: number of PLS components used to initialize the fit.
+  - `beta`: generalized-least-squares trend coefficients.
+  - `gamma`: Kriging residual coefficients.
+  - `theta`: optimized full-dimensional correlation scales.
+  - `theta_pls`: optimized reduced-dimensional correlation scales.
+  - `reduced_likelihood_function_value`: fitted reduced likelihood value.
+  - `X_offset`: input centering values.
+  - `X_scale`: input scaling values.
+  - `X_after_std`: standardized training inputs.
+  - `y_mean`: response centering value.
+  - `y_std`: response scaling value.
 
 # Arguments
-- `x_vec`: vector of tuples containing input points
-- `y_vec`: vector of output values
-- `n_comp`: number of PLS components (h) used to seed the full-dimensional Kriging
-  hyperparameters, typically 1–4; must be ≤ input dimension
-- `lb`: lower bounds (vector)
-- `ub`: upper bounds (vector)
-- `theta`: initial hyperparameter vector of length n_comp (values > 0), used as the
-  starting point of the intermediate KPLS optimization.
+
+  - `x_vec`: vector of tuples containing the training points.
+  - `y_vec`: vector of responses, with one value for each point in `x_vec`.
+  - `n_comp::Integer`: number of PLS components used to initialize the fit. It
+    must not exceed the input dimension.
+  - `lb`: lower bounds for the input coordinates.
+  - `ub`: upper bounds for the input coordinates, matching `lb`.
+  - `theta`: positive initial correlation scales for the intermediate KPLS fit.
+
+# Returns
+
+A callable `KPLSK` surrogate supporting the generic call and `update!` interface.
+
+# Example
+
+```julia
+using Surrogates
+
+objective(x) = sum(abs2, x)
+lb, ub = [-1.0, -1.0], [1.0, 1.0]
+x = sample(12, lb, ub, SobolSample())
+y = objective.(x)
+surrogate = KPLSK(x, y, 1, lb, ub, [1.0])
+surrogate((0.2, -0.1))
+```
 """
 function KPLSK(x_vec, y_vec, n_comp, lb, ub, theta)
     xlimits = hcat(collect(Float64, lb), collect(Float64, ub))

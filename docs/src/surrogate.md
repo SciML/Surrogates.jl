@@ -1,11 +1,56 @@
 # Surrogate
 
-Every surrogate has a different definition depending on the parameters needed. It uses the interface defined in [SurrogatesBase.jl](https://github.com/SciML/SurrogatesBase.jl). In a nutshell, they use:
+Surrogates.jl models are callable objects that fit observations and evaluate an
+approximation at new points. The abstract type hierarchy comes from
+[SurrogatesBase.jl](https://github.com/SciML/SurrogatesBase.jl); the package
+provides deterministic and extension-backed stochastic implementations.
 
- 1. `update!(::AbstractDeterministicSurrogate, x_new, y_new)`
- 2. `AbstractDeterministicSurrogate(value)`
+## Generic interface
 
-The first function adds a sample point to the surrogate, thus changing the internal coefficients. The second one calculates the approximation at value.
+An implementation of [`AbstractSurrogate`](@ref) must provide the following
+operations:
+
+  1. `surrogate(point)`: evaluate the fitted approximation at one point. The
+     point representation must be the same representation accepted by the
+     constructor and should be documented by the implementation.
+  2. `update!(surrogate, x_new, y_new)`: incorporate one observation or a batch
+     of observations and update the fitted state in place. A batch must contain
+     one response for each new point. Implementations may additionally accept
+     algorithm-specific keyword arguments, such as gradient observations.
+  3. `surrogate.x` and `surrogate.y`: retain the training points and responses
+     when the surrogate is used with [`surrogate_optimize!`](@ref) or
+     [`potential_optimal_points`](@ref). The optimization routines use these
+     fields to identify the current best observation and to avoid duplicate
+     candidate points.
+
+Stochastic surrogates additionally implement [`std_error_at_point`](@ref) when
+they expose predictive uncertainty and [`logpdf_surrogate`](@ref) when they
+expose a log density or marginal likelihood. Implementations should document
+the response shape and units returned by these methods.
+
+The interface is deliberately expressed in terms of the generic call syntax
+and `update!`; optimization code should not depend on a concrete surrogate
+type. A minimal implementation is:
+
+```julia
+using SurrogatesBase
+
+mutable struct MySurrogate{T} <: SurrogatesBase.AbstractDeterministicSurrogate
+    x::Vector{T}
+    y::Vector{T}
+end
+
+(s::MySurrogate)(point) = point^2
+
+function SurrogatesBase.update!(s::MySurrogate, x_new, y_new)
+    push!(s.x, x_new)
+    push!(s.y, y_new)
+    return nothing
+end
+```
+
+The generic contract is tested with a local implementation in the test suite;
+concrete surrogate tests then cover each model's fitting and numerical behavior.
 
 ```@docs
 AbstractSurrogate

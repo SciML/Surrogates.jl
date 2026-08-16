@@ -1,6 +1,10 @@
 # Sampling
 
 Sampling methods are provided by the [QuasiMonteCarlo package](https://docs.sciml.ai/QuasiMonteCarlo/stable/).
+The `SamplingAlgorithm` interface and the `GridSample`, `RandomSample`, `SobolSample`,
+`LatinHypercubeSample`, `HaltonSample`, `KroneckerSample`, and `GoldenSample`
+types are defined and documented there. Surrogates.jl re-exports these names
+so they can be used directly with [`sample`](@ref).
 
 ```@docs
 Surrogates.sample
