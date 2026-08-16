@@ -1,9 +1,12 @@
 module SurrogatesMOEExt
 
-import Surrogates: RadialBasis,
-    InverseDistanceSurrogate, Kriging, LobachevskyStructure,
-    LinearSurrogate, MOE,
-    NeuralSurrogate, XGBoostSurrogate, PolynomialChaosSurrogate
+# Every surrogate constructor reachable from the `local_kind` dispatch below
+# must be imported; `LobachevskyStructure` (a configuration descriptor, not a
+# constructor) was imported in place of `LobachevskySurrogate`, leaving the
+# Lobachevsky, GEK, SecondOrderPolynomial and Wendland experts undefined.
+import Surrogates: GEK, InverseDistanceSurrogate, Kriging, LinearSurrogate,
+    LobachevskySurrogate, MOE, NeuralSurrogate, PolynomialChaosSurrogate,
+    RadialBasis, SecondOrderPolynomialSurrogate, Wendland, XGBoostSurrogate
 using Distributions: MvNormal
 using GaussianMixtures: GMM, covars, llpg
 using LinearAlgebra: norm
@@ -270,7 +273,7 @@ an array of surrogate objects
 function _surrogate_builder(local_kind, k, x, y, lb, ub)
     local_surr = []
     for i in 1:k
-        if local_kind[i][1] == "RadialBasis"
+        if local_kind[i].name == "RadialBasis"
             #fit and append to local_surr
             my_local_i = RadialBasis(
                 x, y, lb, ub,
@@ -280,7 +283,7 @@ function _surrogate_builder(local_kind, k, x, y, lb, ub)
             )
             push!(local_surr, my_local_i)
 
-        elseif local_kind[i][1] == "Kriging"
+        elseif local_kind[i].name == "Kriging"
             #because Kriging takes abs of two vectors
             if (length(lb) == 1)
                 x = [a[1] for a in x]
@@ -292,23 +295,23 @@ function _surrogate_builder(local_kind, k, x, y, lb, ub)
             )
             push!(local_surr, my_local_i)
 
-        elseif local_kind[i][1] == "GEK"
+        elseif local_kind[i].name == "GEK"
             my_local_i = GEK(
                 x, y, lb, ub, p = local_kind[i].p,
                 theta = local_kind[i].theta
             )
             push!(local_surr, my_local_i)
 
-        elseif local_kind[i] == "LinearSurrogate"
+        elseif local_kind[i].name == "LinearSurrogate"
             my_local_i = LinearSurrogate(x, y, lb, ub)
             push!(local_surr, my_local_i)
 
-        elseif local_kind[i][1] == "InverseDistanceSurrogate"
-            my_local_i = InverseDistanceSurrogate(x, y, lb, ub, local_kind[i].p)
+        elseif local_kind[i].name == "InverseDistanceSurrogate"
+            my_local_i = InverseDistanceSurrogate(x, y, lb, ub, p = local_kind[i].p)
             push!(local_surr, my_local_i)
 
-        elseif local_kind[i][1] == "LobachevskySurrogate"
-            my_local_i = LobachevskyStructure(
+        elseif local_kind[i].name == "LobachevskySurrogate"
+            my_local_i = LobachevskySurrogate(
                 x, y, lb, ub,
                 alpha = local_kind[i].alpha,
                 n = local_kind[i].n,
@@ -316,7 +319,7 @@ function _surrogate_builder(local_kind, k, x, y, lb, ub)
             )
             push!(local_surr, my_local_i)
 
-        elseif local_kind[i][1] == "NeuralSurrogate"
+        elseif local_kind[i].name == "NeuralSurrogate"
             my_local_i = NeuralSurrogate(
                 x, y, lb, ub,
                 model = local_kind[i].model,
@@ -325,29 +328,29 @@ function _surrogate_builder(local_kind, k, x, y, lb, ub)
             )
             push!(local_surr, my_local_i)
 
-        elseif local_kind[i][1] == "XGBoostSurrogate"
+        elseif local_kind[i].name == "XGBoostSurrogate"
             my_local_i = XGBoostSurrogate(
                 x, y, lb, ub,
                 num_round = local_kind[i].num_round
             )
             push!(local_surr, my_local_i)
 
-        elseif local_kind[i] == "SecondOrderPolynomialSurrogate"
+        elseif local_kind[i].name == "SecondOrderPolynomialSurrogate"
             my_local_i = SecondOrderPolynomialSurrogate(x, y, lb, ub)
             push!(local_surr, my_local_i)
 
-        elseif local_kind[i][1] == "Wendland"
-            my_local_i = Wendand(
+        elseif local_kind[i].name == "Wendland"
+            my_local_i = Wendland(
                 x, y, lb, ub, eps = local_kind[i].eps,
                 maxiters = local_kind[i].maxiters, tol = local_kind[i].tol
             )
             push!(local_surr, my_local_i)
 
-        elseif local_kind[i][1] == "PolynomialChaosSurrogate"
+        elseif local_kind[i].name == "PolynomialChaosSurrogate"
             my_local_i = PolynomialChaosSurrogate(x, y, lb, ub, op = local_kind[i].op)
             push!(local_surr, my_local_i)
         else
-            throw("A surrogate with name provided does not exist or is not currently supported with MOE.")
+            throw(ArgumentError("A surrogate named \"$(local_kind[i].name)\" does not exist or is not currently supported with MOE."))
         end
     end
     return local_surr
