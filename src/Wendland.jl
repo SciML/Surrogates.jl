@@ -25,7 +25,7 @@ updated with `update!(wendland, x_new, y_new)`.
 # Arguments
 
   - `x`: sample locations.
-  - `y`: observed values at `x`.
+  - `y`: observed values at `x`. Responses must be scalars; vector-valued responses are not supported.
   - `lb`: lower bound of the input domain.
   - `ub`: upper bound of the input domain.
 
@@ -79,10 +79,14 @@ function _calc_coeffs_wend(x, y, eps, maxiters, tol)
         end
     end
     U = Symmetric(W, :U)
-    coeff, hist = cg(U, y, maxiter = maxiters, reltol = tol, log = true)
+    # `cg` builds a `CGIterable` whose numeric parameters must share one type, so
+    # a Float64 `tol` against a Float32 system is a MethodError rather than a
+    # promotion.
+    reltol = convert(real(eltype(U)), tol)
+    coeff, hist = cg(U, y, maxiter = maxiters, reltol = reltol, log = true)
     if !hist.isconverged
-        # Deliberately not `maxlog`-limited: `maxlog` state is process-wide, so
-        # it would make the warning depend on what ran earlier in the session.
+        # Not `maxlog`-limited: that state is process-wide, which would make the
+        # warning depend on what ran earlier in the session.
         @warn "Wendland conjugate-gradient solve did not converge within $maxiters iterations (relative tolerance $tol); the surrogate may be inaccurate. Consider increasing maxiters or decreasing eps."
     end
     return coeff
@@ -94,7 +98,6 @@ function Wendland(x, y, lb, ub; eps = 1.0, maxiters = 300, tol = 1.0e-6)
 end
 
 function (wend::Wendland)(val)
-    # Check to make sure dimensions of input matches expected dimension of surrogate
     _check_dimension(wend, val)
 
     return sum(
@@ -104,12 +107,7 @@ function (wend::Wendland)(val)
 end
 
 function SurrogatesBase.update!(wend::Wendland, new_x, new_y)
-    # `vcat` appends a single sample (a scalar in 1-D, a tuple in N-D) as one
-    # element and a collection of samples elementwise, matching the other
-    # surrogates. The previous length-based branch mis-classified a single 1-D
-    # sample passed as a one-element vector and tried to push the vector itself.
-    wend.x = vcat(wend.x, new_x)
-    wend.y = vcat(wend.y, new_y)
+    wend.x, wend.y = _append_samples(wend.x, wend.y, new_x, new_y)
     wend.coeff = _calc_coeffs_wend(wend.x, wend.y, wend.eps, wend.maxiters, wend.tol)
     return nothing
 end

@@ -77,14 +77,6 @@ function (inverSurr::InverseDistanceSurrogate)(val)
 end
 
 function SurrogatesBase.update!(inverSurr::InverseDistanceSurrogate, x_new, y_new)
-    if eltype(x_new) == eltype(inverSurr.x)
-        #1D
-        append!(inverSurr.x, x_new)
-        append!(inverSurr.y, y_new)
-    else
-        #ND
-        push!(inverSurr.x, x_new)
-        push!(inverSurr.y, y_new)
-    end
+    inverSurr.x, inverSurr.y = _append_samples(inverSurr.x, inverSurr.y, x_new, y_new)
     return nothing
 end

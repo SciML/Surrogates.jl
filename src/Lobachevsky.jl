@@ -19,7 +19,7 @@ input dimension.
 # Arguments
 
   - `x`: training inputs.
-  - `y`: training responses, with one response per input.
+  - `y`: training responses, with one response per input. Responses must be scalars; vector-valued responses are not supported.
   - `lb`: scalar or vector lower domain bound.
   - `ub`: scalar or vector upper domain bound matching `lb`.
 
@@ -117,7 +117,6 @@ function LobachevskySurrogate(
 end
 
 function (loba::LobachevskySurrogate)(val::Number)
-    # Check to make sure dimensions of input matches expected dimension of surrogate
     _check_dimension(loba, val)
 
     return sum(
@@ -158,7 +157,6 @@ function LobachevskySurrogate(
 end
 
 function (loba::LobachevskySurrogate)(val)
-    # Check to make sure dimensions of input matches expected dimension of surrogate
     _check_dimension(loba, val)
     return sum(
         loba.coeff[j] * phi_njND(val, loba.x[j], loba.alpha, loba.n)
@@ -167,16 +165,11 @@ function (loba::LobachevskySurrogate)(val)
 end
 
 function SurrogatesBase.update!(loba::LobachevskySurrogate, x_new, y_new)
-    if length(loba.x[1]) == 1
-        #1D
-        append!(loba.x, x_new)
-        append!(loba.y, y_new)
-        loba.coeff = _calc_loba_coeff1D(loba.x, loba.y, loba.alpha, loba.n, loba.sparse)
+    loba.x, loba.y = _append_samples(loba.x, loba.y, x_new, y_new)
+    loba.coeff = if first(loba.x) isa Number
+        _calc_loba_coeff1D(loba.x, loba.y, loba.alpha, loba.n, loba.sparse)
     else
-        #ND
-        loba.x = vcat(loba.x, x_new)
-        loba.y = vcat(loba.y, y_new)
-        loba.coeff = _calc_loba_coeffND(loba.x, loba.y, loba.alpha, loba.n, loba.sparse)
+        _calc_loba_coeffND(loba.x, loba.y, loba.alpha, loba.n, loba.sparse)
     end
     return nothing
 end

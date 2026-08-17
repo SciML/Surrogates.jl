@@ -93,7 +93,6 @@ _construct_y_matrix(y, y_el) = [y[i][j] for i in 1:length(y), j in 1:length(y_el
 
 function (my_second_ord::SecondOrderPolynomialSurrogate)(val)
 
-    # Check to make sure dimensions of input matches expected dimension of surrogate
     _check_dimension(my_second_ord, val)
 
     #just create the val vector as X and multiply
@@ -115,16 +114,9 @@ function (my_second_ord::SecondOrderPolynomialSurrogate)(val)
 end
 
 function SurrogatesBase.update!(my_second::SecondOrderPolynomialSurrogate, x_new, y_new)
-    if eltype(x_new) == eltype(my_second.x)
-        append!(my_second.x, x_new)
-        append!(my_second.y, y_new)
-    else
-        push!(my_second.x, x_new)
-        push!(my_second.y, y_new)
-    end
+    my_second.x, my_second.y = _append_samples(my_second.x, my_second.y, x_new, y_new)
     X = _construct_2nd_order_interp_matrix(my_second.x, first(my_second.x))
     Y = _construct_y_matrix(my_second.y, first(my_second.y))
-    β = X \ Y
-    my_second.β = β
+    my_second.β = X \ Y
     return nothing
 end

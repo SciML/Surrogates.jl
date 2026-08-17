@@ -144,7 +144,7 @@ function KPLS(x_vec, y_vec, n_comp, lb, ub, theta)
     d = componentwise_distance_PLS(D, "squar_exp", n_comp, pls_mean)
     nt = size(X_after_PLS, 1)
 
-    # Optimize theta by maximizing the reduced log-likelihood (matches SMT behaviour)
+    # Optimize theta by maximizing the reduced log-likelihood
     theta_opt = _optimize_theta(theta, "squar_exp", d, nt, ij, y_after_std)
 
     beta, gamma, reduced_likelihood_function_value = _reduced_likelihood_function(

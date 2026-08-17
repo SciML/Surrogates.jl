@@ -19,7 +19,8 @@ deterministic-surrogate interface, including `update!`.
 
   - `x`: training inputs. Use a vector of numbers for one dimension or a vector of
     equal-length point containers for multiple dimensions.
-  - `y`: training responses, with one response per element of `x`.
+  - `y`: training responses, with one response per element of `x`. Responses
+    must be scalars; vector-valued responses are not supported.
   - `lb`: scalar or vector lower domain bound.
   - `ub`: scalar or vector upper domain bound matching `lb`.
 
@@ -82,8 +83,7 @@ function (lin::LinearSurrogate)(val)
 end
 
 function SurrogatesBase.update!(my_linear::LinearSurrogate, new_x, new_y)
-    my_linear.x = vcat(my_linear.x, new_x)
-    my_linear.y = vcat(my_linear.y, new_y)
+    my_linear.x, my_linear.y = _append_samples(my_linear.x, my_linear.y, new_x, new_y)
     my_linear.coeff = _linear_coeff(my_linear.x, my_linear.y)
     return nothing
 end

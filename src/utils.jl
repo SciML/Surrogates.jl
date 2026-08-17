@@ -12,3 +12,53 @@ function _check_dimension(surr, input)
     end
     return nothing
 end
+
+"""
+    _is_single_sample(new_x, x_el) -> Bool
+
+Whether `new_x` is one sample rather than a collection of them, judged against
+`x_el`, an existing sample.
+
+For one-dimensional inputs a sample is a number, so anything else is a
+collection. For `d`-dimensional inputs a sample is a `d`-element container of
+numbers; a collection of samples either has a different length or holds
+containers rather than numbers, which is what distinguishes `(1.0, 2.0)` from
+`[(1.0, 2.0), (3.0, 4.0)]` when `d == 2`.
+"""
+_is_single_sample(new_x, x_el::Number) = new_x isa Number
+function _is_single_sample(new_x, x_el)
+    return length(new_x) == length(x_el) && first(new_x) isa Number
+end
+
+"""
+    _append_samples(x, y, new_x, new_y) -> (x, y)
+
+Append new observations to a surrogate's sample containers and return the
+extended pair.
+
+Plain `vcat` will not do: for multi-output responses a *single* `new_y` is
+itself a vector, and `vcat` would splat it into the response list.
+
+The caller's arrays are not mutated, so a surrogate built from a user's vector
+will not grow that vector behind their back.
+"""
+function _append_samples(x, y, new_x, new_y)
+    if _is_single_sample(new_x, first(x))
+        return vcat(x, [new_x]), vcat(y, [new_y])
+    end
+    return vcat(x, new_x), vcat(y, new_y)
+end
+
+"""
+    _as_point(val)
+
+Flatten an array-shaped query point.
+
+A point may arrive as a tuple, a vector, or — when derived from bounds written
+as row matrices, e.g. `(lb .+ ub) ./ 2` — as a 1×d matrix. The matrix form has
+to be flattened before use: it carries a second dimension that leaks into
+broadcasts (`Matrix(1×d) .- Tuple(d)` gives a d×d outer difference) and into
+comprehensions. `vec` is a no-op view for an ordinary vector.
+"""
+_as_point(val::AbstractArray) = vec(val)
+_as_point(val) = val

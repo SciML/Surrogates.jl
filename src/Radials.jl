@@ -5,22 +5,38 @@ _copy(t) = copy(t)
     RadialBasis(x, y, lb, ub; rad = linearRadial(), scale_factor = 0.5,
                 sparse = false, regularization = 0.0)
 
-Fit a radial-basis interpolant, optionally augmented by the polynomial term
-required by the selected `RadialFunction`. The result is callable at new
-points and implements the SurrogatesBase deterministic-surrogate interface.
+Fit a radial-basis interpolant augmented by the polynomial term required by the
+selected `RadialFunction`. The result is callable at new points and implements
+the SurrogatesBase deterministic-surrogate interface.
+
+The fitted model is
+
+```
+s(x) = Σ_j coeff_j φ(‖x - x_j‖ / scale_factor) + Σ_k d_k p_k(x)
+```
+
+where `p_k` runs over the multivariate monomials of degree at most
+`rad.q`. Coefficients solve the augmented system `[Φ P; Pᵀ 0] [c; d] = [y; 0]`.
+The kernels offered here are only *conditionally* positive definite, so the
+polynomial block is what makes the system uniquely solvable; it also makes the
+surrogate reproduce polynomials of degree at most `dim_poly` exactly.
 
 # Fields
 
   - `phi`: radial basis function applied to scaled distances.
-  - `dim_poly`: degree of the accompanying polynomial basis.
+  - `dim_poly`: degree of the accompanying polynomial basis. The surrogate
+    reproduces polynomials up to this degree exactly.
   - `x`: sampled scalar points or multidimensional points.
   - `y`: scalar or vector responses corresponding to `x`.
   - `lb`: lower bound of the modeled domain.
   - `ub`: upper bound of the modeled domain.
-  - `coeff`: fitted interpolation coefficients.
+  - `coeff`: fitted coefficients, `[radial weights; polynomial weights]`, with
+    one row per output.
   - `scale_factor`: divisor applied to distances before evaluating `phi`.
   - `sparse`: whether coefficient construction uses a sparse matrix.
-  - `regularization`: diagonal regularization added to the interpolation matrix.
+  - `regularization`: diagonal regularization added to the radial block of the
+    interpolation matrix. The polynomial rows are left untouched, so the side
+    conditions still hold exactly.
 
 # Arguments
 
@@ -124,8 +140,13 @@ A `RadialFunction` with polynomial degree `2` and basis
 """
 thinplateRadial() = RadialFunction(
     2, z -> begin
-        result = norm(z)^2 * log(norm(z))
-        ifelse(iszero(z), zero(result), result)
+        # Branch on the radius, not on `z`: in N dimensions `z` is a tuple, and
+        # `iszero(::Tuple)` needs `zero(::Tuple)`, which does not exist. The
+        # branch also short-circuits, so `log(0)` is never evaluated — an
+        # `ifelse` would compute `0 * -Inf = NaN` and poison forward-mode
+        # derivatives.
+        r = norm(z)
+        iszero(r) ? zero(r) : r^2 * log(r)
     end
 )
 
@@ -139,51 +160,62 @@ function RadialBasis(
     return RadialBasis(phi, q, x, y, lb, ub, coeff, scale_factor, sparse, regularization)
 end
 
+# Number of terms in the multivariate polynomial basis of degree ≤ `q` in `nd`
+# variables. This is the width of the polynomial tail block `P`.
+_num_poly_terms(q, nd) = binomial(q + nd, q)
+
 function _calc_coeffs(x, y, lb, ub, phi, q, scale_factor, sparse, regularization)
     nd = length(first(x))
-    num_poly_terms = binomial(q + nd, q)
-    D = _construct_rbf_interp_matrix(x, first(x), lb, ub, phi, q, scale_factor, sparse)
-    D += regularization * I # Add regularization to the diagonal
-    Y = _construct_rbf_y_matrix(y, first(y), length(y) + num_poly_terms)
-    if (typeof(y) == Vector{Float64}) #single output case
-        coeff = _copy(transpose(D \ y))
-    else
-        coeff = _copy(transpose(D \ Y[1:size(D)[1], :])) #if y is multi output;
-    end
-    return coeff
+    m = _num_poly_terms(q, nd)
+    D = _construct_rbf_interp_matrix(
+        x, first(x), lb, ub, phi, q, scale_factor, sparse, regularization
+    )
+    # The right-hand side is `[y; 0]`: the trailing zeros are the side conditions
+    # `Σ_j c_j p_k(x_j) = 0` that make the augmented system square and pin down
+    # the polynomial tail.
+    Y = _construct_rbf_y_matrix(y, first(y), length(y) + m)
+    return _copy(transpose(D \ Y))
 end
 
-function _construct_rbf_interp_matrix(x, x_el::Number, lb, ub, phi, q, scale_factor, sparse)
-    n = length(x)
-    if sparse
-        D = ExtendableSparseMatrix{eltype(x_el), Int}(n, n)
-    else
-        D = zeros(eltype(x_el), n, n)
-    end
-    @inbounds for i in 1:n
-        for j in i:n
-            D[i, j] = phi((x[i] .- x[j]) ./ scale_factor)
-        end
-    end
-    D_sym = Symmetric(D, :U)
-    return D_sym
-end
-
-function _construct_rbf_interp_matrix(x, x_el, lb, ub, phi, q, scale_factor, sparse)
+# Augmented interpolation matrix
+#
+#     [ Φ  P ]      Φ_ij = φ(‖x_i - x_j‖ / scale_factor)
+#     [ Pᵀ 0 ]      P_ik = p_k(x_i)
+#
+# The radial kernels used here (linear, cubic, multiquadric, thin plate) are only
+# *conditionally* positive definite, so Φ alone is not guaranteed invertible. The
+# polynomial block restores unique solvability and lets the surrogate reproduce
+# polynomials of degree ≤ q exactly.
+function _construct_rbf_interp_matrix(
+        x, x_el, lb, ub, phi, q, scale_factor, sparse, regularization
+    )
     n = length(x)
     nd = length(x_el)
+    m = _num_poly_terms(q, nd)
+    T = eltype(x_el)
     if sparse
-        D = ExtendableSparseMatrix{eltype(x_el), Int}(n, n)
+        D = ExtendableSparseMatrix{T, Int}(n + m, n + m)
     else
-        D = zeros(eltype(x_el), n, n)
+        D = zeros(T, n + m, n + m)
     end
     @inbounds for i in 1:n
         for j in i:n
             D[i, j] = phi((x[i] .- x[j]) ./ scale_factor)
         end
+        # Polynomial tail; the lower-left Pᵀ follows from the `Symmetric` wrapper,
+        # and the trailing m×m block stays zero.
+        for k in 1:m
+            D[i, n + k] = multivar_poly_basis(x[i], k - 1, nd, q)
+        end
     end
-    D_sym = Symmetric(D, :U)
-    return D_sym
+    if !iszero(regularization)
+        # Only the radial block is regularized: perturbing the tail rows would
+        # relax the side conditions rather than stabilize the fit.
+        @inbounds for i in 1:n
+            D[i, i] += regularization
+        end
+    end
+    return Symmetric(D, :U)
 end
 
 function _construct_rbf_y_matrix(y, y_el::Number, m)
@@ -214,8 +246,8 @@ function _make_combination(n, d, ix)
 
     return exponents_combinations[ix + 1]
 end
-# TODO: Is this correct? Do we ever want to differentiate w.r.t n, d, or ix?
-# By using @non_differentiable we force the gradient to be 1 for n, d, ix
+# `n`, `d` and `ix` are integer basis indices, never differentiation variables,
+# so the rule below simply keeps AD from trying to trace through them.
 @non_differentiable _make_combination(n, d, ix)
 
 """
@@ -255,7 +287,6 @@ end
 Calculates current estimate of value 'val' with respect to the RadialBasis object.
 """
 function (rad::RadialBasis)(val)
-    # Check to make sure dimensions of input matches expected dimension of surrogate
     _check_dimension(rad, val)
 
     approx = _approx_rbf(val, rad)
@@ -264,9 +295,13 @@ end
 
 function _approx_rbf(val::Number, rad::RadialBasis)
     n = length(rad.x)
+    q = rad.dim_poly
     approx = zero(rad.coeff[:, 1])
     for i in 1:n
         approx += rad.coeff[:, i] * rad.phi((val .- rad.x[i]) / rad.scale_factor)
+    end
+    for k in 1:_num_poly_terms(q, 1)
+        approx += rad.coeff[:, n + k] * multivar_poly_basis(val, k - 1, 1, q)
     end
     return approx
 end
@@ -299,11 +334,18 @@ end
 _ret_copy(v::Base.RefValue) = v[]
 _ret_copy(v) = copy(v)
 
-function _approx_rbf(val, rad::RadialBasis)
+function _approx_rbf(val_raw, rad::RadialBasis)
+    val = _as_point(val_raw)
     n = length(rad.x)
+    nd = length(val)
+    m = _num_poly_terms(rad.dim_poly, nd)
 
-    if n > size(rad.coeff, 2)
-        throw("Length of model's x vector exceeds number of calculated coefficients ($n != $(size(rad.coeff, 2))).")
+    if n + m > size(rad.coeff, 2)
+        throw(
+            ArgumentError(
+                "Length of model's x vector exceeds number of calculated coefficients ($(n + m) != $(size(rad.coeff, 2)))."
+            )
+        )
     end
 
     approx = _make_approx(val, rad)
@@ -325,27 +367,29 @@ function _approx_rbf(val, rad::RadialBasis)
         end
     end
 
+    # Polynomial tail, evaluated in the original coordinates so that the side
+    # conditions imposed during the fit hold exactly.
+    for k in 1:m
+        _add_tmp_to_approx!(
+            approx, n + k, multivar_poly_basis(val, k - 1, nd, rad.dim_poly), rad
+        )
+    end
+
     return _ret_copy(approx)
 end
-
-_scaled_chebyshev(x, k, lb, ub) = cos(k * acos(-1 + 2 * (x - lb) / (ub - lb)))
-_center_bounds(x::Tuple, lb, ub) = ntuple(i -> (ub[i] - lb[i]) / 2, length(x))
-_center_bounds(x, lb, ub) = (ub .- lb) ./ 2
 
 """
     update!(rad::RadialBasis,new_x,new_y)
 
 Add new samples x and y and update the coefficients. Return the new object radial.
+
+Every call refits the surrogate from scratch on the full sample set, which
+costs O(n^3) for the kernel models. Adding points one at a time in a loop is
+therefore quadratic in the number of additions.
+
 """
 function SurrogatesBase.update!(rad::RadialBasis, new_x, new_y)
-    if (length(new_x) == 1 && length(new_x[1]) == 1) ||
-            (length(new_x) > 1 && length(new_x[1]) == 1 && length(rad.lb) > 1)
-        push!(rad.x, new_x)
-        push!(rad.y, new_y)
-    else
-        append!(rad.x, new_x)
-        append!(rad.y, new_y)
-    end
+    rad.x, rad.y = _append_samples(rad.x, rad.y, new_x, new_y)
     rad.coeff = _calc_coeffs(
         rad.x, rad.y, rad.lb, rad.ub, rad.phi, rad.dim_poly,
         rad.scale_factor, rad.sparse, rad.regularization

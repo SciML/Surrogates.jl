@@ -2219,7 +2219,7 @@ function surrogate_optimize!(
 
             #sample randomly from (estimated) pareto v and u
             if length(pareto_set) < 2
-                throw("Starting pareto set is too small, increase number of sampling point of the surrogate")
+                throw(ArgumentError("Starting pareto set is too small, increase the number of sampling points of the surrogate."))
             end
             u = pareto_set[rand(1:length(pareto_set))]
             v = pareto_set[rand(1:length(pareto_set))]
@@ -2326,7 +2326,7 @@ function surrogate_optimize!(
 
             #sample pareto_set
             if length(pareto_set) < 2
-                throw("Starting pareto set is too small, increase number of sampling point of the surrogate")
+                throw(ArgumentError("Starting pareto set is too small, increase the number of sampling points of the surrogate."))
             end
             u = pareto_set[rand(1:length(pareto_set))]
             v = pareto_set[rand(1:length(pareto_set))]

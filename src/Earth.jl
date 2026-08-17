@@ -32,7 +32,7 @@ be updated with `update!(earth, x_new, y_new)`.
 
   - `x`: sample locations. Use scalars for one-dimensional inputs or tuples for
     multidimensional inputs.
-  - `y`: observed values at `x`.
+  - `y`: observed values at `x`. Responses must be scalars; vector-valued responses are not supported.
   - `lb`: lower bound of the input domain.
   - `ub`: upper bound of the input domain.
 
@@ -227,7 +227,6 @@ function EarthSurrogate(
 end
 
 function (earth::EarthSurrogate)(val::Number)
-    # Check to make sure dimensions of input matches expected dimension of surrogate
     _check_dimension(earth, val)
     return sum(
         earth.coeff[i] * _eval_basis_term_1d(earth.basis[i], val)
@@ -291,28 +290,27 @@ function _forward_pass_nd(x, y, n_max_terms, rel_res_error, maxiters)
         best_term2 = nothing
         best_sse = +Inf
 
+        # Candidates are the reflected hinge pair at a single knot (i, j), as in
+        # classic MARS: `max(0, x_j - t)` and `max(0, t - x_j)` share the knot
+        # `t = x[i][j]`. This is O(n d) least-squares solves per added term.
         for i in 1:n
             for j in 1:d
-                for k in 1:n
-                    for l in 1:d
-                        # Create two new basis terms
-                        term1 = BasisTermND([j], [x[i][j]], [false])  # hinge
-                        term2 = BasisTermND([l], [x[k][l]], [true])  # hinge_mirror
+                knot = x[i][j]
+                term1 = BasisTermND([j], [knot], [false])  # hinge
+                term2 = BasisTermND([j], [knot], [true])   # hinge_mirror
 
-                        new_basis = vcat(basis, [term1, term2])
-                        X = _design_nd(x, new_basis)
-                        # Skip pairs that make the augmented design ill conditioned
-                        if cond(X' * X) > 1.0e8
-                            continue
-                        end
-                        new_sse = _lsq_sse(X, y)
+                new_basis = vcat(basis, [term1, term2])
+                X = _design_nd(x, new_basis)
+                # Skip pairs that make the augmented design ill conditioned
+                if cond(X' * X) > 1.0e8
+                    continue
+                end
+                new_sse = _lsq_sse(X, y)
 
-                        if new_sse < best_sse
-                            best_term1 = term1
-                            best_term2 = term2
-                            best_sse = new_sse
-                        end
-                    end
+                if new_sse < best_sse
+                    best_term1 = term1
+                    best_term2 = term2
+                    best_sse = new_sse
                 end
             end
         end
@@ -398,7 +396,6 @@ function EarthSurrogate(
 end
 
 function (earth::EarthSurrogate)(val)
-    # Check to make sure dimensions of input matches expected dimension of surrogate
     _check_dimension(earth, val)
     return sum(
         earth.coeff[i] * _eval_basis_term_nd(earth.basis[i], val)
@@ -408,10 +405,8 @@ function (earth::EarthSurrogate)(val)
 end
 
 function SurrogatesBase.update!(earth::EarthSurrogate, x_new, y_new)
-    return if length(earth.x[1]) == 1
-        #1D
-        earth.x = vcat(earth.x, x_new)
-        earth.y = vcat(earth.y, y_new)
+    earth.x, earth.y = _append_samples(earth.x, earth.y, x_new, y_new)
+    if first(earth.x) isa Number
         basis_after_forward = _forward_pass_1d(
             earth.x, earth.y, earth.n_max_terms,
             earth.rel_res_error, earth.maxiters
@@ -421,11 +416,7 @@ function SurrogatesBase.update!(earth::EarthSurrogate, x_new, y_new)
             basis_after_forward, earth.penalty, earth.rel_GCV
         )
         earth.intercept, earth.coeff = _coeff_1d(earth.x, earth.y, earth.basis)
-        nothing
     else
-        #ND
-        earth.x = vcat(earth.x, x_new)
-        earth.y = vcat(earth.y, y_new)
         basis_after_forward = _forward_pass_nd(
             earth.x, earth.y, earth.n_max_terms,
             earth.rel_res_error, earth.maxiters
@@ -435,6 +426,6 @@ function SurrogatesBase.update!(earth::EarthSurrogate, x_new, y_new)
             basis_after_forward, earth.penalty, earth.rel_GCV
         )
         earth.intercept, earth.coeff = _coeff_nd(earth.x, earth.y, earth.basis)
-        nothing
     end
+    return nothing
 end
