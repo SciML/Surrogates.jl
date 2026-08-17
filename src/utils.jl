@@ -62,3 +62,16 @@ comprehensions. `vec` is a no-op view for an ordinary vector.
 """
 _as_point(val::AbstractArray) = vec(val)
 _as_point(val) = val
+
+"""
+    _matrix_rank(A)
+
+Rank of `A`, or `nothing` when it cannot be computed.
+
+`rank` needs an SVD, which is only available for BLAS element types. Callers use
+this to give a clear error on a rank-deficient design; for generic element types
+the check is skipped and the deficiency surfaces as a singular factorization
+instead.
+"""
+_matrix_rank(A::AbstractMatrix{<:Union{Float32, Float64}}) = rank(A)
+_matrix_rank(A) = nothing

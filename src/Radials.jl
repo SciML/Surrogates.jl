@@ -170,16 +170,10 @@ _num_poly_terms(q, nd) = binomial(q + nd, q)
 # samples fail it however many there are. Without this check the solve either
 # throws deep inside LAPACK or, worse, returns a fit that silently ignores the
 # data.
-# `rank` needs an SVD, which is only available for BLAS element types. For
-# generic ones the check is skipped and a rank-deficient system surfaces as a
-# singular factorization instead of this message.
-_poly_rank(P::AbstractMatrix{<:Union{Float32, Float64}}) = rank(P)
-_poly_rank(P) = nothing
-
 function _check_poly_unisolvency(x, nd, q, m)
     n = length(x)
     P = [multivar_poly_basis(x[i], k - 1, nd, q) for i in 1:n, k in 1:m]
-    r = _poly_rank(P)
+    r = _matrix_rank(P)
     if r !== nothing && r < m
         throw(
             ArgumentError(

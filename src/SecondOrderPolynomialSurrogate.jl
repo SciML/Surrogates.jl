@@ -19,9 +19,8 @@ every squared coordinate.
     `1 + 2d + d(d - 1) ÷ 2` points are required for `d`-dimensional inputs (the
     number of coefficients of a full quadratic); fewer throws an `ArgumentError`.
     The count is necessary but not sufficient: a degenerate sample (for example
-    points that are collinear in two dimensions) still leaves the design matrix
-    rank deficient, and the least-squares solve then returns a minimum-norm fit
-    without raising.
+    points that are collinear in two dimensions) leaves the quadratic
+    unidentifiable, and is rejected with an `ArgumentError` as well.
   - `y`: training responses, with one response per point.
   - `lb`: lower domain bound.
   - `ub`: upper domain bound matching `lb`.
@@ -62,9 +61,30 @@ function SecondOrderPolynomialSurrogate(x, y, lb, ub)
             but got $n samples."))
     end
     X = _construct_2nd_order_interp_matrix(x, first(x))
+    _check_2nd_order_rank(X, num_coeffs, n, d)
     Y = _construct_y_matrix(y, first(y))
     β = X \ Y
     return SecondOrderPolynomialSurrogate(x, y, β, lb, ub)
+end
+
+# Enough samples is necessary but not sufficient: a degenerate design (points
+# collinear in two dimensions, say) leaves the quadratic unidentifiable. Whether
+# that surfaces depends on the shape of the design matrix — a square one goes
+# through LU and throws, a tall one through QR and quietly returns a minimum-norm
+# fit — so it is checked here instead.
+function _check_2nd_order_rank(X, num_coeffs, n, d)
+    r = _matrix_rank(X)
+    if r !== nothing && r < num_coeffs
+        throw(
+            ArgumentError(
+                "SecondOrderPolynomialSurrogate needs samples that determine a full " *
+                    "quadratic in $d dimension(s): the design matrix has $num_coeffs " *
+                    "columns but rank $r from $n samples. The samples are degenerate " *
+                    "(for example collinear); spread them across the domain."
+            )
+        )
+    end
+    return nothing
 end
 
 function _construct_2nd_order_interp_matrix(x, x_el)

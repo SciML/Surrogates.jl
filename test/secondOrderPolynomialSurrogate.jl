@@ -14,16 +14,18 @@ using Test
             x_few, y_few, [0.0, 0.0], [5.0, 5.0]
         )
 
-        # The count is necessary but not sufficient: a degenerate sample with
-        # enough points still leaves the design rank deficient, and the
-        # least-squares solve returns a minimum-norm fit without raising.
-        # Documented behaviour, asserted so a future change is deliberate.
+        # Enough points but degenerate: collinear samples cannot determine a
+        # full quadratic, whatever the count.
         x_collinear = [(t, 2t) for t in 1.0:6.0]
         y_collinear = [p[1]^2 for p in x_collinear]
-        s = SecondOrderPolynomialSurrogate(
+        @test_throws ArgumentError SecondOrderPolynomialSurrogate(
             x_collinear, y_collinear, [0.0, 0.0], [10.0, 20.0]
         )
-        @test s((3.0, 6.0)) isa Number
+        # More points, still collinear: still rejected.
+        x_more = [(t, 2t) for t in 1.0:20.0]
+        @test_throws ArgumentError SecondOrderPolynomialSurrogate(
+            x_more, [p[1]^2 for p in x_more], [0.0, 0.0], [10.0, 40.0]
+        )
     end
 
     @testset "1D quadratic recovery" begin
