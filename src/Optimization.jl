@@ -312,31 +312,60 @@ function merit_function(
 end
 
 """
-The main idea is to pick the new evaluations from a set of candidate points, where each candidate point is generated as an N(0, sigma^2)
-distributed perturbation from the current best solution.
-The value of sigma is modified based on progress and follows the same logic as
-in many trust region methods: we increase sigma if we make a lot of progress
-(the surrogate is accurate) and decrease sigma when we aren’t able to make progress
-(the surrogate model is inaccurate).
-More details about how sigma is updated are given in the original papers.
+    surrogate_optimize!(objective, algorithm, lb, ub, surrogate, sample_type;
+        maxiters = 100, num_new_samples = 100, needs_gradient = false)
 
-After generating the candidate points, we predict their objective function value
-and compute the minimum distance to the previously evaluated point.
-Let the candidate points be denoted by C and let the function value predictions
-be s(x\\_i) and the distance values be d(x\\_i), both rescaled through a
-linear transformation to the interval [0,1]. This is done to put the values on
-the same scale.
-The next point selected for evaluation is the candidate point x that minimizes
-the weighted-distance merit function:
+Minimize `objective` with a surrogate-assisted optimization algorithm.
 
-``merit(x) = ws(x) + (1-w)(1-d(x))``
+The algorithm generates candidate points with `sample`, scores them using the
+surrogate, evaluates the selected point with `objective`, and updates the
+surrogate with the new observation. The available methods differ in their
+algorithm token and in the surrogate capabilities they require; the common
+call/update contract is described under [`AbstractSurrogate`](@ref).
 
-where ``0 \\leq w \\leq 1``.
-That is, we want a small function value prediction and a large minimum distance
-from the previously evaluated points.
-The weight w is commonly cycled between
-a few values to achieve both exploitation and exploration.
-When w is close to zero, we do pure exploration, while w close to 1 corresponds to exploitation.
+# Arguments
+
+  - `objective::Function`: objective function to minimize. It must accept one
+    point in the representation used by `surrogate` and return a scalar or
+    objective vector supported by `algorithm`.
+  - `algorithm::SurrogateOptimizationAlgorithm`: optimization strategy, such as
+    [`SRBF`](@ref), [`LCBS`](@ref), [`EI`](@ref), or [`DYCORS`](@ref).
+  - `lb`: lower bound of the search domain.
+  - `ub`: upper bound of the search domain, with the same dimensionality as
+    `lb`.
+  - `surrogate::AbstractSurrogate`: fitted surrogate whose call overload
+    predicts an objective value and whose `update!` method accepts new data.
+  - `sample_type::SamplingAlgorithm`: sampling strategy used to generate
+    candidate points.
+
+# Keywords
+
+  - `maxiters::Integer = 100`: maximum number of optimization iterations.
+  - `num_new_samples::Integer = 100`: number of candidate points considered at
+    each iteration.
+  - `needs_gradient::Bool = false`: whether the selected method should evaluate
+    an objective gradient and pass it to a gradient-aware `update!` method.
+    This keyword is supported by the multidimensional `SRBF` method.
+
+# Returns
+
+The best point and objective value found by the selected single-objective
+method. Multi-objective methods return their algorithm-specific Pareto set and
+front.
+
+# Example
+
+```julia
+using Surrogates
+
+objective(x) = (x - 0.25)^2
+x = [0.0, 0.5, 1.0]
+y = objective.(x)
+surrogate = Kriging(x, y, 0.0, 1.0)
+best_point, best_value = surrogate_optimize!(
+    objective, SRBF(), 0.0, 1.0, surrogate, RandomSample();
+    maxiters = 2, num_new_samples = 8)
+```
 """
 function surrogate_optimize!(
         obj::Function, ::SRBF, lb, ub, surr::AbstractSurrogate,

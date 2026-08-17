@@ -1,6 +1,13 @@
 # Optimization techniques
 
+Surrogate optimization methods share the call/update contract documented under
+[`AbstractSurrogate`](@ref). The algorithm markers below select the search
+strategy; the algorithm-specific methods use the same `surrogate_optimize!`
+entry point.
+
 ```@docs
+Surrogates.SurrogateOptimizationAlgorithm
+Surrogates.ParallelStrategy
 SRBF
 LCBS
 EI
@@ -9,6 +16,16 @@ SOP
 SMB
 RTEA
 ```
+
+```@docs
+surrogate_optimize!
+```
+
+`SurrogateOptimizationAlgorithm` and `ParallelStrategy` are developer
+interfaces. A new optimization algorithm should subtype the appropriate marker
+and implement the corresponding `surrogate_optimize!` or
+`potential_optimal_points` method while using only the generic surrogate
+operations described in [`AbstractSurrogate`](@ref).
 
   - SRBF
 

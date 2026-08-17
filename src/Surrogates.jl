@@ -77,6 +77,19 @@ Names of surrogate model families currently listed by Surrogates.jl.
 This vector is informational. Use the exported constructor names, such as
 [`RadialBasis`](@ref), [`Kriging`](@ref), or [`Wendland`](@ref), to build
 surrogates programmatically.
+
+# Returns
+
+A mutable vector of strings. The list is intended for display and discovery;
+its contents are not a dispatch contract.
+
+# Example
+
+```julia
+using Surrogates
+
+filter(contains("Kriging"), current_surrogates)
+```
 """
 current_surrogates = [
     "Kriging", "LinearSurrogate", "LobachevskySurrogate",

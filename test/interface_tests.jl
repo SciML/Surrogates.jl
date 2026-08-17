@@ -3,6 +3,59 @@
 
 using Test
 using Surrogates
+using SurrogatesBase
+
+mutable struct InterfaceContractDeterministic{T} <: SurrogatesBase.AbstractDeterministicSurrogate
+    x::Vector{T}
+    y::Vector{T}
+end
+
+mutable struct InterfaceContractStochastic{T} <: SurrogatesBase.AbstractStochasticSurrogate
+    x::Vector{T}
+    y::Vector{T}
+end
+
+(s::InterfaceContractDeterministic)(point) = point^2
+(s::InterfaceContractStochastic)(point) = point^2
+
+function SurrogatesBase.update!(
+        s::Union{
+            InterfaceContractDeterministic, InterfaceContractStochastic,
+        }, x_new, y_new
+    )
+    if x_new isa AbstractVector && y_new isa AbstractVector
+        append!(s.x, x_new)
+        append!(s.y, y_new)
+    else
+        push!(s.x, x_new)
+        push!(s.y, y_new)
+    end
+    return nothing
+end
+
+Surrogates.std_error_at_point(::InterfaceContractStochastic, point) = abs(point)
+Surrogates.logpdf_surrogate(::InterfaceContractStochastic) = -0.5
+
+@testset "Generic surrogate contracts" begin
+    @test SRBF() isa Surrogates.SurrogateOptimizationAlgorithm
+    @test MeanConstantLiar() isa Surrogates.ParallelStrategy
+
+    deterministic = InterfaceContractDeterministic([0.0], [0.0])
+    @test deterministic isa Surrogates.AbstractSurrogate
+    @test deterministic(2.0) == 4.0
+    @test update!(deterministic, 2.0, 4.0) === nothing
+    @test deterministic.x == [0.0, 2.0]
+    @test deterministic.y == [0.0, 4.0]
+
+    stochastic = InterfaceContractStochastic([0.0], [0.0])
+    @test stochastic isa Surrogates.AbstractSurrogate
+    @test stochastic(2.0) == 4.0
+    @test std_error_at_point(stochastic, 2.0) == 2.0
+    @test logpdf_surrogate(stochastic) == -0.5
+    @test update!(stochastic, [1.0, 2.0], [1.0, 4.0]) === nothing
+    @test stochastic.x == [0.0, 1.0, 2.0]
+    @test stochastic.y == [0.0, 1.0, 4.0]
+end
 
 @testset "Interface Compatibility" begin
     @testset "BigFloat Support - 1D Surrogates" begin
