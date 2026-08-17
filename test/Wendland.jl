@@ -43,9 +43,8 @@ using Test
     end
 
     @testset "update! accepts every argument shape" begin
-        # A single 1D sample passed as a one-element vector used to throw a
-        # MethodError, because the length-based branch classified it as a point
-        # rather than as a collection and pushed the vector itself.
+        # A single sample may be given bare or wrapped in a one-element vector;
+        # both must append one point, not a nested container.
         x = [0.0, 0.5, 1.0, 1.5, 2.0]
         y = sin.(x)
         mk() = Wendland(x, y, 0.0, 3.0, eps = 0.5)

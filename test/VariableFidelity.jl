@@ -103,9 +103,8 @@ using Test
     end
 
     @testset "update! keeps the high-fidelity agreement" begin
-        # eps_surr is fitted to y_high - low_fid_surr(x_high). Refitting the
-        # low-fidelity model without rebuilding eps_surr used to leave it stale
-        # and silently break this invariant.
+        # eps_surr is fitted to y_high - low_fid_surr(x_high), so refitting the
+        # low-fidelity model must rebuild it or this invariant breaks.
         lb = 0.0
         ub = 10.0
         x = sample(16, lb, ub, SobolSample())

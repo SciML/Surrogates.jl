@@ -1,5 +1,7 @@
 using Surrogates
 using Zygote
+using Test
+using Statistics
 
 # #water flow function tests
 function water_flow(x)
@@ -34,7 +36,7 @@ y_true = water_flow.(x_test)
     g = GEKPLS(x, y, grads, n_comp, delta_x, lb, ub, extra_points, initial_theta)
     y_pred = g.(x_test)
     rmse = sqrt(sum(((y_pred - y_true) .^ 2) / n_test))
-    @test isapprox(rmse, 0.03, atol = 0.02) #rmse: 0.039
+    @test rmse < 0.05
 end
 
 @testset "Test 2: Water Flow Function Test (dimensions = 8; n_comp = 3; extra_points = 2)" begin
@@ -45,7 +47,7 @@ end
     g = GEKPLS(x, y, grads, n_comp, delta_x, lb, ub, extra_points, initial_theta)
     y_pred = g.(x_test)
     rmse = sqrt(sum(((y_pred - y_true) .^ 2) / n_test))
-    @test isapprox(rmse, 0.02, atol = 0.01) #rmse: 0.027
+    @test rmse < 0.03
 end
 
 @testset "Test 3: Water Flow Function Test (dimensions = 8; n_comp = 3; extra_points = 3)" begin
@@ -56,7 +58,7 @@ end
     g = GEKPLS(x, y, grads, n_comp, delta_x, lb, ub, extra_points, initial_theta)
     y_pred = g.(x_test)
     rmse = sqrt(sum(((y_pred - y_true) .^ 2) / n_test))
-    @test isapprox(rmse, 0.02, atol = 0.01) #rmse: 0.027
+    @test rmse < 0.03
 end
 
 # ## welded beam tests
@@ -88,7 +90,11 @@ y_true = welded_beam.(x_test)
     g = GEKPLS(x, y, grads, n_comp, delta_x, lb, ub, extra_points, initial_theta)
     y_pred = g.(x_test)
     rmse = sqrt(sum(((y_pred - y_true) .^ 2) / n_test))
-    @test isapprox(rmse, 50.0, atol = 0.5) #rmse: 38.988
+    # A property, not a golden value: the response has std ~1920 here, so
+    # predicting its mean already gives RMSE ~1911. The 2% bound is
+    # discriminating (a poorly regularized fit lands near RMSE 50) and does not
+    # drift with BLAS or package versions.
+    @test rmse < 0.02 * std(y_true)
 end
 
 @testset "Test 5: Welded Beam Function Test (dimensions = 3; n_comp = 2; extra_points = 2)" begin
@@ -99,7 +105,7 @@ end
     g = GEKPLS(x, y, grads, n_comp, delta_x, lb, ub, extra_points, initial_theta)
     y_pred = g.(x_test)
     rmse = sqrt(sum(((y_pred - y_true) .^ 2) / n_test))
-    @test isapprox(rmse, 51.0, atol = 0.5) #rmse: 39.481
+    @test rmse < 0.02 * std(y_true)
 end
 
 ## increasing extra points increases accuracy
@@ -111,7 +117,7 @@ end
     g = GEKPLS(x, y, grads, n_comp, delta_x, lb, ub, extra_points, initial_theta)
     y_pred = g.(x_test)
     rmse = sqrt(sum(((y_pred - y_true) .^ 2) / n_test))
-    @test isapprox(rmse, 49.0, atol = 0.5) #rmse: 37.87
+    @test rmse < 0.02 * std(y_true)
 end
 
 ## sphere function tests
@@ -138,7 +144,7 @@ y_true = sphere_function.(x_test)
     g = GEKPLS(x, y, grads, n_comp, delta_x, lb, ub, extra_points, initial_theta)
     y_pred = g.(x_test)
     rmse = sqrt(sum(((y_pred - y_true) .^ 2) / n_test))
-    @test isapprox(rmse, 0.001, atol = 0.05) #rmse: 0.00083
+    @test rmse < 0.05
 end
 
 ## 2D
@@ -160,7 +166,7 @@ y_true = sphere_function.(x_test)
     g = GEKPLS(x, y, grads, n_comp, delta_x, lb, ub, extra_points, initial_theta)
     y_pred = g.(x_test)
     rmse = sqrt(sum(((y_pred - y_true) .^ 2) / n_test))
-    @test isapprox(rmse, 0.1, atol = 0.5) #rmse: 0.0022
+    @test rmse < 0.05
 end
 
 @testset "Test 9: Add Point Test (dimensions = 3; n_comp = 2; extra_points = 2)" begin
@@ -242,5 +248,63 @@ end
     for i in eachindex(grads_surr_vec)
         sum_of_rmse += sqrt((sum((grads_surr_vec[i][1] .- grads[i][1]) .^ 2) / 3.0))
     end
-    @test isapprox(sum_of_rmse, 0.05, atol = 0.01)
+    # An upper bound, not a pinned value: a model that gets more accurate must
+    # not fail its own test.
+    @test sum_of_rmse < 0.03
+end
+
+@testset "keyword front-end and hyperparameter exposure" begin
+    f(x) = sum(abs2, x)
+    lb = [-1.0, -1.0]
+    ub = [1.0, 1.0]
+    x = sample(20, lb, ub, SobolSample())
+    y = f.(x)
+    grads = gradient.(f, x)
+
+    @testset "keyword form matches the positional form" begin
+        kw = GEKPLS(x, y, grads, lb, ub; n_comp = 1, delta_x = 1.0e-4,
+            extra_points = 1, theta = [0.01])
+        pos = GEKPLS(x, y, grads, 1, 1.0e-4, lb, ub, 1, [0.01])
+        for p in ((0.25, 0.5), (-0.3, 0.8), (0.0, 0.0))
+            @test kw(p) ≈ pos(p)
+        end
+    end
+
+    @testset "defaults are usable without tuning" begin
+        g = GEKPLS(x, y, grads, lb, ub)
+        @test g.num_components == 2
+        @test g.extra_points == 2
+        @test length(g.theta) == 2
+        @test isfinite(g((0.25, 0.5)))
+    end
+
+    @testset "nugget and noise are exposed" begin
+        g = GEKPLS(x, y, grads, lb, ub)
+        # The starting jitter; it is escalated internally only as far as the
+        # Cholesky factorization requires.
+        @test g.nugget ≈ 10.0 * eps()
+        @test g.noise == 0.0
+        # Raising the noise changes the fit, and is recorded on the surrogate.
+        noisy = GEKPLS(x, y, grads, lb, ub; noise = 1.0e-3)
+        @test noisy.noise == 1.0e-3
+        @test noisy.reduced_likelihood_function_value !=
+            g.reduced_likelihood_function_value
+    end
+
+    @testset "out-of-bounds and duplicate samples throw" begin
+        @test_throws ArgumentError GEKPLS(x, y, grads, [0.5, 0.5], ub)
+        g = GEKPLS(x, y, grads, lb, ub)
+        @test_logs (:warn, r"already exists") update!(g, x[1], y[1], grads[1])
+        @test_throws ArgumentError update!(g, (5.0, 5.0), 50.0, (10.0, 10.0))
+    end
+
+    @testset "update! returns nothing and refits" begin
+        g = GEKPLS(x, y, grads, lb, ub)
+        before = g((0.25, 0.5))
+        x_new = (0.31, -0.42)
+        @test update!(g, x_new, f(x_new), gradient(f, x_new)) === nothing
+        @test length(g.x) == 21
+        @test size(g.x_matrix, 1) == 21
+        @test g((0.25, 0.5)) != before
+    end
 end

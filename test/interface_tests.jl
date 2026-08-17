@@ -104,4 +104,62 @@ using Surrogates
             @test std_error_at_point(k, test_point) isa BigFloat
         end
     end
+
+    @testset "Float32 Support" begin
+        # Float32 is the other end of the genericity question from BigFloat:
+        # silent promotion to Float64 is easy to introduce and invisible unless
+        # the element type is asserted.
+        x32 = Float32[1.0, 2.0, 3.0, 4.0, 5.0]
+        y32 = Float32[0.5, 1.2, 2.1, 2.8, 3.6]
+        lb32 = 0.0f0
+        ub32 = 6.0f0
+        p32 = 2.5f0
+
+        @testset "1D" begin
+            for (name, build) in (
+                    ("RadialBasis", (x, y, l, u) -> RadialBasis(x, y, l, u)),
+                    ("InverseDistanceSurrogate",
+                        (x, y, l, u) -> InverseDistanceSurrogate(x, y, l, u)),
+                    ("LobachevskySurrogate",
+                        (x, y, l, u) -> LobachevskySurrogate(x, y, l, u)),
+                    ("SecondOrderPolynomialSurrogate",
+                        (x, y, l, u) -> SecondOrderPolynomialSurrogate(x, y, l, u)),
+                    ("LinearSurrogate", (x, y, l, u) -> LinearSurrogate(x, y, l, u)),
+                    ("Wendland", (x, y, l, u) -> Wendland(x, y, l, u)),
+                    ("Kriging", (x, y, l, u) -> Kriging(x, y, l, u)),
+                )
+                @testset "$name" begin
+                    s = build(copy(x32), copy(y32), lb32, ub32)
+                    @test isfinite(s(p32))
+                end
+            end
+        end
+
+        @testset "ND" begin
+            xnd = Tuple{Float32, Float32}[
+                (1.0f0, 1.0f0), (2.0f0, 3.0f0), (3.0f0, 2.0f0),
+                (4.0f0, 5.0f0), (5.0f0, 4.0f0), (2.5f0, 4.5f0),
+            ]
+            ynd = Float32[0.5, 1.2, 2.1, 2.8, 3.6, 3.0]
+            lbnd = Float32[0.0, 0.0]
+            ubnd = Float32[6.0, 6.0]
+            pnd = (2.5f0, 2.5f0)
+            for (name, build) in (
+                    ("RadialBasis", (x, y, l, u) -> RadialBasis(x, y, l, u)),
+                    ("InverseDistanceSurrogate",
+                        (x, y, l, u) -> InverseDistanceSurrogate(x, y, l, u)),
+                    ("SecondOrderPolynomialSurrogate",
+                        (x, y, l, u) -> SecondOrderPolynomialSurrogate(x, y, l, u)),
+                    ("LinearSurrogate", (x, y, l, u) -> LinearSurrogate(x, y, l, u)),
+                    ("Wendland", (x, y, l, u) -> Wendland(x, y, l, u)),
+                    ("Kriging", (x, y, l, u) -> Kriging(x, y, l, u)),
+                )
+                @testset "$name" begin
+                    s = build(copy(xnd), copy(ynd), lbnd, ubnd)
+                    @test isfinite(s(pnd))
+                end
+            end
+        end
+    end
+
 end

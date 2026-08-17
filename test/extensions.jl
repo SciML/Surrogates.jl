@@ -700,11 +700,10 @@ end
 
     @safetestset "every local-expert constructor is imported" begin
         using Surrogates, GaussianMixtures, Test
-        # The extension dispatches on `local_kind[i].name` and calls the
-        # matching constructor unqualified, so any constructor missing from its
-        # import list is an UndefVarError only on that branch. `LobachevskyStructure`
-        # (a configuration descriptor) had been imported in place of
-        # `LobachevskySurrogate`, leaving four expert kinds undefined.
+        # The extension dispatches on `local_kind[i].name` and calls the matching
+        # constructor unqualified, so a constructor missing from its import list
+        # is an UndefVarError on that branch alone — invisible until that expert
+        # kind is used.
         ext = Base.get_extension(Surrogates, :SurrogatesMOEExt)
         @test ext !== nothing
         for name in (
