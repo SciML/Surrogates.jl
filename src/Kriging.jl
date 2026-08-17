@@ -151,11 +151,6 @@ function std_error_at_point(k::Kriging, val::Number)
 end
 
 
-
-
-
-
-
 # The default correlation scale, derived from the sample spread and the domain
 # width. Kept as a function so `update!` can re-derive it.
 _kriging_default_theta(x, lb::Number, ub::Number, p) =

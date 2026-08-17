@@ -118,12 +118,18 @@ using Surrogates
         @testset "1D" begin
             for (name, build) in (
                     ("RadialBasis", (x, y, l, u) -> RadialBasis(x, y, l, u)),
-                    ("InverseDistanceSurrogate",
-                        (x, y, l, u) -> InverseDistanceSurrogate(x, y, l, u)),
-                    ("LobachevskySurrogate",
-                        (x, y, l, u) -> LobachevskySurrogate(x, y, l, u)),
-                    ("SecondOrderPolynomialSurrogate",
-                        (x, y, l, u) -> SecondOrderPolynomialSurrogate(x, y, l, u)),
+                    (
+                        "InverseDistanceSurrogate",
+                        (x, y, l, u) -> InverseDistanceSurrogate(x, y, l, u),
+                    ),
+                    (
+                        "LobachevskySurrogate",
+                        (x, y, l, u) -> LobachevskySurrogate(x, y, l, u),
+                    ),
+                    (
+                        "SecondOrderPolynomialSurrogate",
+                        (x, y, l, u) -> SecondOrderPolynomialSurrogate(x, y, l, u),
+                    ),
                     ("LinearSurrogate", (x, y, l, u) -> LinearSurrogate(x, y, l, u)),
                     ("Wendland", (x, y, l, u) -> Wendland(x, y, l, u)),
                     ("Kriging", (x, y, l, u) -> Kriging(x, y, l, u)),
@@ -146,10 +152,14 @@ using Surrogates
             pnd = (2.5f0, 2.5f0)
             for (name, build) in (
                     ("RadialBasis", (x, y, l, u) -> RadialBasis(x, y, l, u)),
-                    ("InverseDistanceSurrogate",
-                        (x, y, l, u) -> InverseDistanceSurrogate(x, y, l, u)),
-                    ("SecondOrderPolynomialSurrogate",
-                        (x, y, l, u) -> SecondOrderPolynomialSurrogate(x, y, l, u)),
+                    (
+                        "InverseDistanceSurrogate",
+                        (x, y, l, u) -> InverseDistanceSurrogate(x, y, l, u),
+                    ),
+                    (
+                        "SecondOrderPolynomialSurrogate",
+                        (x, y, l, u) -> SecondOrderPolynomialSurrogate(x, y, l, u),
+                    ),
                     ("LinearSurrogate", (x, y, l, u) -> LinearSurrogate(x, y, l, u)),
                     ("Wendland", (x, y, l, u) -> Wendland(x, y, l, u)),
                     ("Kriging", (x, y, l, u) -> Kriging(x, y, l, u)),

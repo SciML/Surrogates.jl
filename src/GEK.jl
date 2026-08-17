@@ -178,7 +178,7 @@ function _gek_r(k::GEK, val)
     return [
         idx <= n ? r_val[idx] :
             let i = div(idx - n - 1, d) + 1, l = mod(idx - n - 1, d) + 1
-            2 * k.theta[l] * (val[l] - k.x[i][l]) * r_val[i]
+                2 * k.theta[l] * (val[l] - k.x[i][l]) * r_val[i]
         end
             for idx in 1:(n * (1 + d))
     ]

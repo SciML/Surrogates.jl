@@ -61,7 +61,7 @@ using Test
         @test rmse_out < 0.15 * spread
 
         rmse = sqrt(sum(abs2, my_earnd.(x) .- y) / n)
-        @test rmse < 0.10 * spread
+        @test rmse < 0.1 * spread
         @test isfinite(my_earnd((2.0, 2.0)))
 
         update!(my_earnd, (2.0, 2.0), f((2.0, 2.0)))

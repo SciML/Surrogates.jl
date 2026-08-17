@@ -262,8 +262,10 @@ end
     grads = gradient.(f, x)
 
     @testset "keyword form matches the positional form" begin
-        kw = GEKPLS(x, y, grads, lb, ub; n_comp = 1, delta_x = 1.0e-4,
-            extra_points = 1, theta = [0.01])
+        kw = GEKPLS(
+            x, y, grads, lb, ub; n_comp = 1, delta_x = 1.0e-4,
+            extra_points = 1, theta = [0.01]
+        )
         pos = GEKPLS(x, y, grads, 1, 1.0e-4, lb, ub, 1, [0.01])
         for p in ((0.25, 0.5), (-0.3, 0.8), (0.0, 0.0))
             @test kw(p) ≈ pos(p)

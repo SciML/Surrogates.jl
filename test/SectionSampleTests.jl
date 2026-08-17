@@ -1,5 +1,3 @@
-
-
 @testset "SectionSample" begin
     """
         Sobel-sample x+y in [0,10]x[0,10],
