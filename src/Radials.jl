@@ -164,9 +164,40 @@ end
 # variables. This is the width of the polynomial tail block `P`.
 _num_poly_terms(q, nd) = binomial(q + nd, q)
 
+# The augmented system is nonsingular only when the samples are unisolvent for
+# polynomials of degree <= q, i.e. the tail block P has full column rank. That
+# needs at least `m` samples, and needs them in general position: collinear
+# samples fail it however many there are. Without this check the solve either
+# throws deep inside LAPACK or, worse, returns a fit that silently ignores the
+# data.
+# `rank` needs an SVD, which is only available for BLAS element types. For
+# generic ones the check is skipped and a rank-deficient system surfaces as a
+# singular factorization instead of this message.
+_poly_rank(P::AbstractMatrix{<:Union{Float32, Float64}}) = rank(P)
+_poly_rank(P) = nothing
+
+function _check_poly_unisolvency(x, nd, q, m)
+    n = length(x)
+    P = [multivar_poly_basis(x[i], k - 1, nd, q) for i in 1:n, k in 1:m]
+    r = _poly_rank(P)
+    if r !== nothing && r < m
+        throw(
+            ArgumentError(
+                "RadialBasis needs samples unisolvent for polynomials of degree $q in " *
+                    "$nd dimension(s): the polynomial block has $m columns but rank $r " *
+                    "from $n sample(s). Supply at least $m samples in general position, " *
+                    "or use a kernel with a lower polynomial degree (linearRadial has " *
+                    "degree 0)."
+            )
+        )
+    end
+    return nothing
+end
+
 function _calc_coeffs(x, y, lb, ub, phi, q, scale_factor, sparse, regularization)
     nd = length(first(x))
     m = _num_poly_terms(q, nd)
+    _check_poly_unisolvency(x, nd, q, m)
     D = _construct_rbf_interp_matrix(
         x, first(x), lb, ub, phi, q, scale_factor, sparse, regularization
     )

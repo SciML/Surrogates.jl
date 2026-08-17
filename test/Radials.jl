@@ -58,9 +58,31 @@ using Surrogates
             update!(my_rad_ND, [(3.2, 1.2, 6.7), (3.4, 9.5, 7.4)], [25.72, 239.0])
             @test my_rad_ND isa RadialBasis
 
-            @test RadialBasis(x, y, lb2, ub2, rad = cubicRadial()) isa RadialBasis
-            my_rad_ND = RadialBasis(x, y, lb2, ub2, rad = multiquadricRadial())
+            # Degree-1 kernels need at least 4 unisolvent samples in 3D, so they
+            # get their own well-spread sample rather than the three collinear
+            # points above.
+            xs = sample(12, lb2, ub2, SobolSample())
+            ys = (v -> v[1] + v[2] * v[3]).(xs)
+            @test RadialBasis(xs, ys, lb2, ub2, rad = cubicRadial()) isa RadialBasis
+            my_rad_ND = RadialBasis(xs, ys, lb2, ub2, rad = multiquadricRadial())
             @test isfinite(my_rad_ND((1.0, 1.0, 1.0)))
+        end
+
+        @testset "samples must be unisolvent for the polynomial tail" begin
+            lb2 = [0.0, 0.0, 0.0]
+            ub2 = [10.0, 10.0, 10.0]
+            # Three collinear points: the [1 x y z] block has rank 2, so a
+            # degree-1 tail (4 columns) cannot be determined. Degree 0 needs one
+            # column and is fine.
+            @test RadialBasis(x, y, lb2, ub2, rad = linearRadial()) isa RadialBasis
+            for kern in (cubicRadial(), multiquadricRadial(), thinplateRadial())
+                @test_throws ArgumentError RadialBasis(x, y, lb2, ub2, rad = kern)
+            end
+            # Enough samples but still degenerate: 12 collinear points in 3D.
+            collinear = [(t, 2t, 3t) for t in 1.0:12.0]
+            @test_throws ArgumentError RadialBasis(
+                collinear, first.(collinear), lb2, ub2, rad = cubicRadial()
+            )
         end
 
         @testset "exact at a sample, many and few points" begin
