@@ -40,7 +40,7 @@ plot!(f, label = "True function", xlims = (lower_bound, upper_bound), legend = :
 With our sampled points, we can build the Gradient Enhanced Kriging surrogate using the `GEK` function.
 
 ```@example GEK1D
-my_gek = GEK(x, y, lower_bound, upper_bound, p = 0.03, theta = 0.3)
+my_gek = GEK(x, y, lower_bound, upper_bound)
 
 scatter(x, y1, label = "Sampled points", xlims = (lower_bound, upper_bound), legend = :top)
 plot!(f, label = "True function", xlims = (lower_bound, upper_bound), legend = :top)
