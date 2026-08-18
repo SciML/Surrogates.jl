@@ -270,7 +270,7 @@ an array of surrogate objects
 function _surrogate_builder(local_kind, k, x, y, lb, ub)
     local_surr = []
     for i in 1:k
-        if local_kind[i][1] == "RadialBasis"
+        if local_kind[i].name == "RadialBasis"
             #fit and append to local_surr
             my_local_i = RadialBasis(
                 x, y, lb, ub,
@@ -280,7 +280,7 @@ function _surrogate_builder(local_kind, k, x, y, lb, ub)
             )
             push!(local_surr, my_local_i)
 
-        elseif local_kind[i][1] == "Kriging"
+        elseif local_kind[i].name == "Kriging"
             #because Kriging takes abs of two vectors
             if (length(lb) == 1)
                 x = [a[1] for a in x]
@@ -292,22 +292,22 @@ function _surrogate_builder(local_kind, k, x, y, lb, ub)
             )
             push!(local_surr, my_local_i)
 
-        elseif local_kind[i][1] == "GEK"
+        elseif local_kind[i].name == "GEK"
             my_local_i = GEK(
                 x, y, lb, ub, p = local_kind[i].p,
                 theta = local_kind[i].theta
             )
             push!(local_surr, my_local_i)
 
-        elseif local_kind[i] == "LinearSurrogate"
+        elseif local_kind[i].name == "LinearSurrogate"
             my_local_i = LinearSurrogate(x, y, lb, ub)
             push!(local_surr, my_local_i)
 
-        elseif local_kind[i][1] == "InverseDistanceSurrogate"
+        elseif local_kind[i].name == "InverseDistanceSurrogate"
             my_local_i = InverseDistanceSurrogate(x, y, lb, ub, local_kind[i].p)
             push!(local_surr, my_local_i)
 
-        elseif local_kind[i][1] == "LobachevskySurrogate"
+        elseif local_kind[i].name == "LobachevskySurrogate"
             my_local_i = LobachevskyStructure(
                 x, y, lb, ub,
                 alpha = local_kind[i].alpha,
@@ -316,7 +316,7 @@ function _surrogate_builder(local_kind, k, x, y, lb, ub)
             )
             push!(local_surr, my_local_i)
 
-        elseif local_kind[i][1] == "NeuralSurrogate"
+        elseif local_kind[i].name == "NeuralSurrogate"
             my_local_i = NeuralSurrogate(
                 x, y, lb, ub,
                 model = local_kind[i].model,
@@ -325,25 +325,25 @@ function _surrogate_builder(local_kind, k, x, y, lb, ub)
             )
             push!(local_surr, my_local_i)
 
-        elseif local_kind[i][1] == "XGBoostSurrogate"
+        elseif local_kind[i].name == "XGBoostSurrogate"
             my_local_i = XGBoostSurrogate(
                 x, y, lb, ub,
                 num_round = local_kind[i].num_round
             )
             push!(local_surr, my_local_i)
 
-        elseif local_kind[i] == "SecondOrderPolynomialSurrogate"
+        elseif local_kind[i].name == "SecondOrderPolynomialSurrogate"
             my_local_i = SecondOrderPolynomialSurrogate(x, y, lb, ub)
             push!(local_surr, my_local_i)
 
-        elseif local_kind[i][1] == "Wendland"
+        elseif local_kind[i].name == "Wendland"
             my_local_i = Wendand(
                 x, y, lb, ub, eps = local_kind[i].eps,
                 maxiters = local_kind[i].maxiters, tol = local_kind[i].tol
             )
             push!(local_surr, my_local_i)
 
-        elseif local_kind[i][1] == "PolynomialChaosSurrogate"
+        elseif local_kind[i].name == "PolynomialChaosSurrogate"
             my_local_i = PolynomialChaosSurrogate(x, y, lb, ub, op = local_kind[i].op)
             push!(local_surr, my_local_i)
         else

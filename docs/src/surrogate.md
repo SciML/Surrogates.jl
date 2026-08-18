@@ -111,6 +111,7 @@ SVMSurrogate
 ```@docs
 RadialBasisStructure
 KrigingStructure
+GEKStructure
 LinearStructure
 InverseDistanceStructure
 LobachevskyStructure
@@ -119,6 +120,7 @@ GENNStructure
 XGBoostStructure
 SecondOrderPolynomialStructure
 WendlandStructure
+PolyChaosStructure
 ```
 
 # Creating another surrogate
