@@ -5,121 +5,124 @@ using Distributions: Cauchy, Normal
 using Test
 
 #1D
-lb = 0.0
-ub = 5.0
-n = 5
-d = 1
 
-## Sampling methods from QuasiMonteCarlo.jl ##
+@testset "Sampling" begin
+    lb = 0.0
+    ub = 5.0
+    n = 5
+    d = 1
 
-# GridSample
-s = Surrogates.sample(n, lb, ub, GridSample())
-@test s isa Vector{Float64} && length(s) == n && all(x -> lb ≤ x ≤ ub, s)
+    ## Sampling methods from QuasiMonteCarlo.jl ##
 
-# RandomSample
-s = Surrogates.sample(n, lb, ub, RandomSample())
-@test s isa Vector{Float64} && length(s) == n && all(x -> lb ≤ x ≤ ub, s)
+    # GridSample
+    s = Surrogates.sample(n, lb, ub, GridSample())
+    @test s isa Vector{Float64} && length(s) == n && all(x -> lb ≤ x ≤ ub, s)
 
-# SobolSample
-s = Surrogates.sample(n, lb, ub, SobolSample())
-@test s isa Vector{Float64} && length(s) == n && all(x -> lb ≤ x ≤ ub, s)
+    # RandomSample
+    s = Surrogates.sample(n, lb, ub, RandomSample())
+    @test s isa Vector{Float64} && length(s) == n && all(x -> lb ≤ x ≤ ub, s)
 
-# LatinHypercubeSample
-s = Surrogates.sample(n, lb, ub, LatinHypercubeSample())
-@test s isa Vector{Float64} && length(s) == n && all(x -> lb ≤ x ≤ ub, s)
+    # SobolSample
+    s = Surrogates.sample(n, lb, ub, SobolSample())
+    @test s isa Vector{Float64} && length(s) == n && all(x -> lb ≤ x ≤ ub, s)
 
-# LowDiscrepancySample
-s = Surrogates.sample(20, lb, ub, HaltonSample())
-@test s isa Vector{Float64} && length(s) == 20 && all(x -> lb ≤ x ≤ ub, s)
+    # LatinHypercubeSample
+    s = Surrogates.sample(n, lb, ub, LatinHypercubeSample())
+    @test s isa Vector{Float64} && length(s) == n && all(x -> lb ≤ x ≤ ub, s)
 
-# LatticeRuleSample (not originally in Surrogates.jl, now available through QuasiMonteCarlo.jl)
-s = Surrogates.sample(20, lb, ub, LatticeRuleSample())
-@test s isa Vector{Float64} && length(s) == 20 && all(x -> lb ≤ x ≤ ub, s)
+    # LowDiscrepancySample
+    s = Surrogates.sample(20, lb, ub, HaltonSample())
+    @test s isa Vector{Float64} && length(s) == 20 && all(x -> lb ≤ x ≤ ub, s)
 
-# Distribution sampling (Cauchy)
-s = Surrogates.sample(n, d, Cauchy())
-@test s isa Vector{Float64} && length(s) == n
+    # LatticeRuleSample (not originally in Surrogates.jl, now available through QuasiMonteCarlo.jl)
+    s = Surrogates.sample(20, lb, ub, LatticeRuleSample())
+    @test s isa Vector{Float64} && length(s) == 20 && all(x -> lb ≤ x ≤ ub, s)
 
-# Distributions sampling (Normal)
-s = Surrogates.sample(n, d, Normal(0, 4))
-@test s isa Vector{Float64} && length(s) == n
+    # Distribution sampling (Cauchy)
+    s = Surrogates.sample(n, d, Cauchy())
+    @test s isa Vector{Float64} && length(s) == n
 
-## Sampling methods specific to Surrogates.jl ##
+    # Distributions sampling (Normal)
+    s = Surrogates.sample(n, d, Normal(0, 4))
+    @test s isa Vector{Float64} && length(s) == n
 
-# KroneckerSample
-s = Surrogates.sample(n, lb, ub, KroneckerSample([sqrt(2)], NoRand()))
-@test s isa Vector{Float64} && length(s) == n && all(x -> lb ≤ x ≤ ub, s)
+    ## Sampling methods specific to Surrogates.jl ##
 
-# GoldenSample
-s = Surrogates.sample(n, lb, ub, GoldenSample())
-@test s isa Vector{Float64} && length(s) == n && all(x -> lb ≤ x ≤ ub, s)
+    # KroneckerSample
+    s = Surrogates.sample(n, lb, ub, KroneckerSample([sqrt(2)], NoRand()))
+    @test s isa Vector{Float64} && length(s) == n && all(x -> lb ≤ x ≤ ub, s)
 
-# SectionSample
-constrained_val = 1.0
-s = Surrogates.sample(n, lb, ub, SectionSample([NaN64], RandomSample()))
-@test s isa Vector{Float64} && length(s) == n && all(x -> lb ≤ x ≤ ub, s)
+    # GoldenSample
+    s = Surrogates.sample(n, lb, ub, GoldenSample())
+    @test s isa Vector{Float64} && length(s) == n && all(x -> lb ≤ x ≤ ub, s)
 
-s = Surrogates.sample(n, lb, ub, SectionSample([constrained_val], RandomSample()))
-@test s isa Vector{Float64} && length(s) == n && all(x -> lb ≤ x ≤ ub, s)
-@test all(==(constrained_val), s)
-@test_throws AssertionError Surrogates.sample(
-    0, lb, ub, SectionSample([NaN64], RandomSample())
-)
-@test_throws AssertionError Surrogates.sample(
-    n, ub, lb, SectionSample([NaN64], RandomSample())
-)
-@test_throws AssertionError Surrogates.sample(
-    n, Float64[], Float64[], SectionSample(Float64[], RandomSample())
-)
+    # SectionSample
+    constrained_val = 1.0
+    s = Surrogates.sample(n, lb, ub, SectionSample([NaN64], RandomSample()))
+    @test s isa Vector{Float64} && length(s) == n && all(x -> lb ≤ x ≤ ub, s)
 
-# ND
-# Now that we use QuasiMonteCarlo.jl, these tests are to make sure that we transform the output
-# from a Matrix to a Vector of Tuples properly for ND problems.
+    s = Surrogates.sample(n, lb, ub, SectionSample([constrained_val], RandomSample()))
+    @test s isa Vector{Float64} && length(s) == n && all(x -> lb ≤ x ≤ ub, s)
+    @test all(==(constrained_val), s)
+    @test_throws AssertionError Surrogates.sample(
+        0, lb, ub, SectionSample([NaN64], RandomSample())
+    )
+    @test_throws AssertionError Surrogates.sample(
+        n, ub, lb, SectionSample([NaN64], RandomSample())
+    )
+    @test_throws AssertionError Surrogates.sample(
+        n, Float64[], Float64[], SectionSample(Float64[], RandomSample())
+    )
 
-lb = [0.1, -0.5]
-ub = [1.0, 20.0]
-n = 5
-d = 2
+    # ND
+    # Now that we use QuasiMonteCarlo.jl, these tests are to make sure that we transform the output
+    # from a Matrix to a Vector of Tuples properly for ND problems.
 
-#GridSample{T}
-s = Surrogates.sample(n, lb, ub, GridSample())
-@test isa(s, Array{Tuple{typeof(s[1][1]), typeof(s[1][1])}, 1}) == true
+    lb = [0.1, -0.5]
+    ub = [1.0, 20.0]
+    n = 5
+    d = 2
 
-#RandomSample()
-s = Surrogates.sample(n, lb, ub, RandomSample())
-@test isa(s, Array{Tuple{typeof(s[1][1]), typeof(s[1][1])}, 1}) == true
+    #GridSample{T}
+    s = Surrogates.sample(n, lb, ub, GridSample())
+    @test isa(s, Array{Tuple{typeof(s[1][1]), typeof(s[1][1])}, 1}) == true
 
-#SobolSample()
-s = Surrogates.sample(n, lb, ub, SobolSample())
-@test isa(s, Array{Tuple{typeof(s[1][1]), typeof(s[1][1])}, 1}) == true
+    #RandomSample()
+    s = Surrogates.sample(n, lb, ub, RandomSample())
+    @test isa(s, Array{Tuple{typeof(s[1][1]), typeof(s[1][1])}, 1}) == true
 
-#LHS
-s = Surrogates.sample(n, lb, ub, LatinHypercubeSample())
-@test isa(s, Array{Tuple{typeof(s[1][1]), typeof(s[1][1])}, 1}) == true
+    #SobolSample()
+    s = Surrogates.sample(n, lb, ub, SobolSample())
+    @test isa(s, Array{Tuple{typeof(s[1][1]), typeof(s[1][1])}, 1}) == true
 
-#LDS
-s = Surrogates.sample(n, lb, ub, HaltonSample())
-@test isa(s, Array{Tuple{typeof(s[1][1]), typeof(s[1][1])}, 1}) == true
+    #LHS
+    s = Surrogates.sample(n, lb, ub, LatinHypercubeSample())
+    @test isa(s, Array{Tuple{typeof(s[1][1]), typeof(s[1][1])}, 1}) == true
 
-#Distribution 1
-s = Surrogates.sample(n, d, Cauchy())
-@test isa(s, Array{Tuple{typeof(s[1][1]), typeof(s[1][1])}, 1}) == true
+    #LDS
+    s = Surrogates.sample(n, lb, ub, HaltonSample())
+    @test isa(s, Array{Tuple{typeof(s[1][1]), typeof(s[1][1])}, 1}) == true
 
-#Distribution 2
-s = Surrogates.sample(n, d, Normal(3, 5))
-@test isa(s, Array{Tuple{typeof(s[1][1]), typeof(s[1][1])}, 1}) == true
+    #Distribution 1
+    s = Surrogates.sample(n, d, Cauchy())
+    @test isa(s, Array{Tuple{typeof(s[1][1]), typeof(s[1][1])}, 1}) == true
 
-#Kronecker
-s = Surrogates.sample(n, lb, ub, KroneckerSample([sqrt(2), 3.1415], NoRand()))
-@test isa(s, Array{Tuple{typeof(s[1][1]), typeof(s[1][1])}, 1}) == true
+    #Distribution 2
+    s = Surrogates.sample(n, d, Normal(3, 5))
+    @test isa(s, Array{Tuple{typeof(s[1][1]), typeof(s[1][1])}, 1}) == true
 
-#Golden
-s = Surrogates.sample(n, lb, ub, GoldenSample())
-@test isa(s, Array{Tuple{typeof(s[1][1]), typeof(s[1][1])}, 1}) == true
+    #Kronecker
+    s = Surrogates.sample(n, lb, ub, KroneckerSample([sqrt(2), 3.1415], NoRand()))
+    @test isa(s, Array{Tuple{typeof(s[1][1]), typeof(s[1][1])}, 1}) == true
 
-# SectionSample
-constrained_val = 1.0
-s = Surrogates.sample(n, lb, ub, SectionSample([NaN64, constrained_val], RandomSample()))
-@test all(x -> x[end] == constrained_val, s)
-@test isa(s, Array{Tuple{typeof(s[1][1]), typeof(s[1][1])}, 1}) == true
-@test all(x -> lb[1] ≤ x[1] ≤ ub[1], s)
+    #Golden
+    s = Surrogates.sample(n, lb, ub, GoldenSample())
+    @test isa(s, Array{Tuple{typeof(s[1][1]), typeof(s[1][1])}, 1}) == true
+
+    # SectionSample
+    constrained_val = 1.0
+    s = Surrogates.sample(n, lb, ub, SectionSample([NaN64, constrained_val], RandomSample()))
+    @test all(x -> x[end] == constrained_val, s)
+    @test isa(s, Array{Tuple{typeof(s[1][1]), typeof(s[1][1])}, 1}) == true
+    @test all(x -> lb[1] ≤ x[1] ≤ ub[1], s)
+end

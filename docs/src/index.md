@@ -15,13 +15,23 @@ The available surrogates are:
 
   - Linear
   - Radial Basis
-  - Kriging
-  - Custom Kriging provided with Stheno
-  - Neural Network
-  - Support Vector Machine
-  - Random Forest
+  - Wendland
+  - Kriging, and its Gradient Enhanced (`GEK`) and Partial Least Squares
+    (`KPLS`, `KPLSK`, `GEKPLS`) variants
+  - Gaussian processes, via [AbstractGPs.jl](https://github.com/JuliaGaussianProcesses/AbstractGPs.jl)
   - Second Order Polynomial
   - Inverse Distance
+  - Lobachevsky
+  - Earth (multivariate adaptive regression splines)
+  - Variable fidelity
+  - Neural Network and its gradient-enhanced variant, via [Flux.jl](https://github.com/FluxML/Flux.jl)
+  - Polynomial chaos expansions, via [PolyChaos.jl](https://github.com/SciML/PolyChaos.jl)
+  - Gradient-boosted trees, via [XGBoost.jl](https://github.com/dmlc/XGBoost.jl)
+  - Support Vector Machine, via [LIBSVM.jl](https://github.com/JuliaML/LIBSVM.jl)
+  - Mixture of experts, via [GaussianMixtures.jl](https://github.com/davidavdav/GaussianMixtures.jl)
+
+The last six are loaded as package extensions, so they become available once the
+package they are built on is installed alongside Surrogates.
 
 After the surrogate is built, we need to optimize it with respect to some objective function.
 That is, simultaneously looking for a minimum **and** sampling the most unknown region.
@@ -31,6 +41,9 @@ The available optimization methods are:
   - Lower confidence-bound strategy (LCBS)
   - Expected improvement (EI)
   - Dynamic coordinate search (DYCORS)
+  - Surrogate optimization with Pareto center selection (SOP)
+
+For multi-objective problems, `SMB` and `RTEA` are also available.
 
 ## Multi-output Surrogates
 
@@ -56,16 +69,24 @@ y = f.(x)
 Currently, the following are implemented as multi-output surrogates:
 
   - Radial Basis
-  - Neural Network (via Flux)
   - Second Order Polynomial
   - Inverse Distance
-  - Custom Kriging (via Stheno)
+  - Variable fidelity, when both of its component surrogates are multi-output
+  - Neural Network (via Flux)
 
 ## Gradients
 
-The surrogates implemented here are all automatically differentiable via Zygote. Because
-of this property, surrogates are useful models for processes which aren't explicitly
-differentiable, and can be used as layers in, for instance, Flux models.
+The continuous surrogates implemented here are automatically differentiable with both
+ForwardDiff and Zygote. Radial Basis, Kriging, `GEK`, `GEKPLS`, Linear, Inverse Distance,
+Lobachevsky, Second Order Polynomial, Wendland, Earth, Variable fidelity, Mixture of
+experts and the gradient-enhanced neural surrogate are all covered by the differentiability
+test suite, in one and several dimensions.
+
+Because of this property, surrogates are useful models for processes which aren't
+explicitly differentiable, and can be used as layers in, for instance, Flux models.
+
+Tree-based surrogates are the exception: gradient-boosted trees are piecewise constant,
+so their derivatives carry no useful information.
 
 ## Installation
 

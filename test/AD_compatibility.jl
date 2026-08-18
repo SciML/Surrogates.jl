@@ -42,8 +42,10 @@ Random.seed!(42)
             my_linear = LinearSurrogate(x, y, lb, ub)
             g = x -> ForwardDiff.derivative(my_linear, x)
             @test g(5.0) isa Number
-            # Accuracy test: f(x) = x^2, f'(x) = 2x, so f'(5.0) = 10.0
-            # @test isapprox(g(5.0), 10.0, atol = 1e-1)
+            # The affine least-squares fit of f(x) = x^2 over a uniform sample
+            # of [0, 10] has slope cov(x, x^2) / var(x) = 10 exactly, which is
+            # also f'(5.0). This only holds because the fit has an intercept.
+            @test isapprox(g(5.0), 10.0, atol = 1.0e-1)
         end
 
         #Inverse distance
@@ -52,8 +54,13 @@ Random.seed!(42)
             my_inverse = InverseDistanceSurrogate(x, y, lb, ub, p = my_p)
             g = x -> ForwardDiff.derivative(my_inverse, x)
             @test g(5.0) isa Number
-            # Accuracy test: f(x) = x^2, f'(x) = 2x, so f'(5.0) = 10.0
-            # @test isapprox(g(5.0), 10.0, atol = 1e-1)
+            # No accuracy assertion: Shepard interpolation with p = 1.4 has a
+            # stationary point at every node, so its derivative does not
+            # approximate f'. Differentiability is the property under test.
+            @test isfinite(g(5.0))
+            # The weight-overflow branch (query numerically on top of a node)
+            # must stay differentiable rather than producing Inf/Inf = NaN.
+            @test isfinite(ForwardDiff.derivative(my_inverse, x[3]))
         end
 
         #Lobachevsky

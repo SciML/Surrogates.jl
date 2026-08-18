@@ -1,11 +1,15 @@
 """
     Wendland(x, y, lb, ub; eps = 1.0, maxiters = 300, tol = 1.0e-6)
 
-Compactly supported Wendland radial basis surrogate.
+Compactly supported Wendland radial basis surrogate using the C² Wendland
+kernel (smoothness `k = 1`). The kernel of a sample point vanishes at input
+distance `1 / eps` and beyond, so `eps` sets the reciprocal of the support
+radius.
 
-`Wendland` solves a sparse interpolation system with conjugate gradients. The
-fitted surrogate is callable as `wendland(x_new)` and can be updated with
-`update!(wendland, x_new, y_new)`.
+`Wendland` solves a sparse interpolation system with conjugate gradients; a
+warning is emitted if the solve does not converge within `maxiters`
+iterations. The fitted surrogate is callable as `wendland(x_new)` and can be
+updated with `update!(wendland, x_new, y_new)`.
 
 # Fields
 
@@ -21,13 +25,14 @@ fitted surrogate is callable as `wendland(x_new)` and can be updated with
 # Arguments
 
   - `x`: sample locations.
-  - `y`: observed values at `x`.
+  - `y`: observed values at `x`. Responses must be scalars; vector-valued responses are not supported.
   - `lb`: lower bound of the input domain.
   - `ub`: upper bound of the input domain.
 
 # Keywords
 
-  - `eps`: radial support scaling parameter.
+  - `eps`: reciprocal of the kernel support radius; a sample point influences
+    predictions within input distance `1 / eps` of it.
   - `maxiters`: maximum iterations for the coefficient solve.
   - `tol`: relative tolerance for the coefficient solve.
 
@@ -74,7 +79,17 @@ function _calc_coeffs_wend(x, y, eps, maxiters, tol)
         end
     end
     U = Symmetric(W, :U)
-    return cg(U, y, maxiter = maxiters, reltol = tol)
+    # `cg` builds a `CGIterable` whose numeric parameters must share one type, so
+    # a Float64 `tol` against a Float32 system is a MethodError rather than a
+    # promotion.
+    reltol = convert(real(eltype(U)), tol)
+    coeff, hist = cg(U, y, maxiter = maxiters, reltol = reltol, log = true)
+    if !hist.isconverged
+        # Not `maxlog`-limited: that state is process-wide, which would make the
+        # warning depend on what ran earlier in the session.
+        @warn "Wendland conjugate-gradient solve did not converge within $maxiters iterations (relative tolerance $tol); the surrogate may be inaccurate. Consider increasing maxiters or decreasing eps."
+    end
+    return coeff
 end
 
 function Wendland(x, y, lb, ub; eps = 1.0, maxiters = 300, tol = 1.0e-6)
@@ -83,7 +98,6 @@ function Wendland(x, y, lb, ub; eps = 1.0, maxiters = 300, tol = 1.0e-6)
 end
 
 function (wend::Wendland)(val)
-    # Check to make sure dimensions of input matches expected dimension of surrogate
     _check_dimension(wend, val)
 
     return sum(
@@ -93,14 +107,7 @@ function (wend::Wendland)(val)
 end
 
 function SurrogatesBase.update!(wend::Wendland, new_x, new_y)
-    if (length(new_x) == 1 && length(new_x[1]) == 1) ||
-            (length(new_x) > 1 && length(new_x[1]) == 1 && length(wend.lb) > 1)
-        push!(wend.x, new_x)
-        push!(wend.y, new_y)
-    else
-        append!(wend.x, new_x)
-        append!(wend.y, new_y)
-    end
+    wend.x, wend.y = _append_samples(wend.x, wend.y, new_x, new_y)
     wend.coeff = _calc_coeffs_wend(wend.x, wend.y, wend.eps, wend.maxiters, wend.tol)
     return nothing
 end

@@ -19,7 +19,7 @@ input dimension.
 # Arguments
 
   - `x`: training inputs.
-  - `y`: training responses, with one response per input.
+  - `y`: training responses, with one response per input. Responses must be scalars; vector-valued responses are not supported.
   - `lb`: scalar or vector lower domain bound.
   - `ub`: scalar or vector upper domain bound matching `lb`.
 
@@ -28,7 +28,8 @@ input dimension.
   - `alpha = 1.0`: kernel scale. The one-dimensional scalar must lie in `[0, 4]`.
     For multidimensional inputs, supply one scale per input dimension; the
     default is a vector of ones matching one training point.
-  - `n::Int = 4`: even kernel order.
+  - `n::Int = 4`: even kernel order, at most 20 (`factorial(n)` overflows
+    `Int64` beyond that).
   - `sparse::Bool = false`: use sparse coefficient construction.
 
 # Returns
@@ -91,22 +92,31 @@ function _calc_loba_coeff1D(x, y, alpha, n, sparse)
     Sym = Symmetric(D, :U)
     return Sym \ y
 end
+# `phi_nj1D` evaluates `factorial(n - 1)` and `_phi_int` evaluates
+# `factorial(n)`; `factorial(::Int)` overflows for arguments above 20.
+function _check_lobachevsky_n(n)
+    if n <= 0 || n % 2 != 0
+        throw(ArgumentError("Kernel order n must be even and positive! Got: $n."))
+    end
+    if n > 20
+        throw(ArgumentError("Kernel order n must be at most 20 (factorial(n) overflows Int64)! Got: $n."))
+    end
+    return nothing
+end
+
 function LobachevskySurrogate(
         x, y, lb::Number, ub::Number; alpha::Number = 1.0, n::Int = 4,
         sparse = false
     )
     if alpha > 4 || alpha < 0
-        error("Alpha must be between 0 and 4")
+        throw(ArgumentError("Kernel scale alpha must be between 0 and 4! Got: $alpha."))
     end
-    if n % 2 != 0
-        error("Parameter n must be even")
-    end
+    _check_lobachevsky_n(n)
     coeff = _calc_loba_coeff1D(x, y, alpha, n, sparse)
     return LobachevskySurrogate(x, y, alpha, n, lb, ub, coeff, sparse)
 end
 
 function (loba::LobachevskySurrogate)(val::Number)
-    # Check to make sure dimensions of input matches expected dimension of surrogate
     _check_dimension(loba, val)
 
     return sum(
@@ -138,15 +148,15 @@ function LobachevskySurrogate(
         x, y, lb, ub; alpha = collect(one.(x[1])), n::Int = 4,
         sparse = false
     )
-    if n % 2 != 0
-        error("Parameter n must be even")
+    if any(a -> a > 4 || a < 0, alpha)
+        throw(ArgumentError("All kernel scales alpha must be between 0 and 4! Got: $alpha."))
     end
+    _check_lobachevsky_n(n)
     coeff = _calc_loba_coeffND(x, y, alpha, n, sparse)
     return LobachevskySurrogate(x, y, alpha, n, lb, ub, coeff, sparse)
 end
 
 function (loba::LobachevskySurrogate)(val)
-    # Check to make sure dimensions of input matches expected dimension of surrogate
     _check_dimension(loba, val)
     return sum(
         loba.coeff[j] * phi_njND(val, loba.x[j], loba.alpha, loba.n)
@@ -155,16 +165,11 @@ function (loba::LobachevskySurrogate)(val)
 end
 
 function SurrogatesBase.update!(loba::LobachevskySurrogate, x_new, y_new)
-    if length(loba.x[1]) == 1
-        #1D
-        append!(loba.x, x_new)
-        append!(loba.y, y_new)
-        loba.coeff = _calc_loba_coeff1D(loba.x, loba.y, loba.alpha, loba.n, loba.sparse)
+    loba.x, loba.y = _append_samples(loba.x, loba.y, x_new, y_new)
+    loba.coeff = if first(loba.x) isa Number
+        _calc_loba_coeff1D(loba.x, loba.y, loba.alpha, loba.n, loba.sparse)
     else
-        #ND
-        loba.x = vcat(loba.x, x_new)
-        loba.y = vcat(loba.y, y_new)
-        loba.coeff = _calc_loba_coeffND(loba.x, loba.y, loba.alpha, loba.n, loba.sparse)
+        _calc_loba_coeffND(loba.x, loba.y, loba.alpha, loba.n, loba.sparse)
     end
     return nothing
 end
@@ -214,20 +219,28 @@ function lobachevsky_integral(loba::LobachevskySurrogate, lb, ub)
 end
 
 """
-lobachevsky_integrate_dimension(loba::LobachevskySurrogate,lb,ub,dimension)
+    lobachevsky_integrate_dimension(loba::LobachevskySurrogate, lb, ub, dim)
 
-Integrating the surrogate on selected dimension dim
+Integrate the surrogate over dimension `dim` on `[lb[dim], ub[dim]]`, returning
+a surrogate on the remaining `d - 1` coordinates that evaluates to the marginal
+of `loba`.
+
+The returned surrogate carries the marginal values at the reduced nodes as its
+`y`, so it is self-consistent: refitting it (for example through `update!`)
+reproduces its coefficients. Neither `loba` nor the `lb`/`ub` passed in are
+mutated.
 """
 function lobachevsky_integrate_dimension(loba::LobachevskySurrogate, lb, ub, dim::Int)
-    gamma_d = zero(loba.coeff[1])
     n = length(loba.x)
+    # The kernel is a tensor product, so integrating out dimension `dim` scales
+    # each coefficient by that sample's own one-dimensional integral factor.
+    new_coeff = copy(loba.coeff)
     for i in 1:n
         a = loba.alpha[dim] * (ub[dim] - loba.x[i][dim])
         b = loba.alpha[dim] * (lb[dim] - loba.x[i][dim])
         int = 1 / loba.alpha[dim] * (_phi_int(a, loba.n) - _phi_int(b, loba.n))
-        gamma_d = gamma_d + loba.coeff[i] * int
+        new_coeff[i] = loba.coeff[i] * int
     end
-    new_coeff = loba.coeff .* gamma_d
 
     if length(lb) == 2
         # Integrating one dimension -> 1D
@@ -243,11 +256,27 @@ function lobachevsky_integrate_dimension(loba::LobachevskySurrogate, lb, ub, dim
             push!(new_x, Tuple(deleteat!(collect(loba.x[i]), dim)))
         end
     end
-    new_lb = deleteat!(lb, dim)
-    new_ub = deleteat!(ub, dim)
-    new_loba = deleteat!(loba.alpha, dim)
-    return LobachevskySurrogate(
-        new_x, loba.y, loba.alpha, loba.n, new_lb, new_ub,
-        new_coeff, loba.sparse
-    )
+    # `collect` before deleting so neither the input surrogate nor the caller's
+    # bounds are mutated; it also accepts tuple bounds.
+    new_lb = deleteat!(collect(lb), dim)
+    new_ub = deleteat!(collect(ub), dim)
+    new_alpha = deleteat!(collect(loba.alpha), dim)
+    reduced = if length(lb) == 2
+        # 2D -> 1D: the one-dimensional surrogate stores scalar alpha and bounds
+        LobachevskySurrogate(
+            new_x, loba.y, new_alpha[1], loba.n, new_lb[1], new_ub[1],
+            new_coeff, loba.sparse
+        )
+    else
+        LobachevskySurrogate(
+            new_x, loba.y, new_alpha, loba.n, new_lb, new_ub,
+            new_coeff, loba.sparse
+        )
+    end
+    # `loba.y` are the responses of the full-dimensional model; the marginal's
+    # responses are its own values at the reduced nodes. Storing them keeps the
+    # surrogate self-consistent, so a later `update!` refit reproduces
+    # `new_coeff` instead of silently discarding the marginalization.
+    reduced.y = [reduced(p) for p in new_x]
+    return reduced
 end
