@@ -2,15 +2,13 @@ module Surrogates
 
 using Distributions: Normal, cdf, pdf, truncated
 using ExtendableSparse: ExtendableSparseMatrix
-using GLM: lm
 using IterativeSolvers: cg
 using LinearAlgebra: Diagonal, I, Symmetric, cholesky, cond, diag, dot, eigvals, norm,
-    pinv, qr, ⋅
+    pinv, qr, rank, ⋅
 using PrecompileTools: @compile_workload, @setup_workload
 using QuasiMonteCarlo: GoldenSample, GridSample, HaltonSample, KroneckerSample,
     LatinHypercubeSample, RandomSample, SamplingAlgorithm, SobolSample
 using Statistics: mean, std
-using StatsAPI: coef
 using SurrogatesBase: update!, AbstractDeterministicSurrogate,
     AbstractStochasticSurrogate
 
@@ -91,11 +89,12 @@ using Surrogates
 filter(contains("Kriging"), current_surrogates)
 ```
 """
-current_surrogates = [
-    "Kriging", "LinearSurrogate", "LobachevskySurrogate",
-    "NeuralSurrogate", "GENNSurrogate",
-    "RadialBasis", "XGBoostSurrogate", "SecondOrderPolynomialSurrogate",
-    "Wendland", "GEK", "PolynomialChaosSurrogate",
+const current_surrogates = [
+    "AbstractGPSurrogate", "EarthSurrogate", "GEK", "GEKPLS", "GENNSurrogate",
+    "InverseDistanceSurrogate", "KPLS", "KPLSK", "Kriging", "LinearSurrogate",
+    "LobachevskySurrogate", "MOE", "NeuralSurrogate", "PolynomialChaosSurrogate",
+    "RadialBasis", "SecondOrderPolynomialSurrogate", "SVMSurrogate",
+    "VariableFidelitySurrogate", "Wendland", "XGBoostSurrogate",
 ]
 
 """
@@ -141,6 +140,20 @@ function KrigingStructure(; p, theta)
     return (name = "Kriging", p = p, theta = theta)
 end
 
+"""
+    GEKStructure(; p, theta)
+
+Create a named-tuple configuration for a [`GEK`](@ref) surrogate.
+
+# Keywords
+
+  - `p`: Kriging correlation exponent.
+  - `theta`: Kriging correlation scale parameter.
+
+# Returns
+
+A named tuple with fields `name`, `p`, and `theta`.
+"""
 function GEKStructure(; p, theta)
     return (name = "GEK", p = p, theta = theta)
 end
@@ -155,7 +168,7 @@ Create a named-tuple configuration for a [`LinearSurrogate`](@ref).
 A named tuple with the field `name = "LinearSurrogate"`.
 """
 function LinearStructure()
-    return (name = "LinearSurrogate")
+    return (name = "LinearSurrogate",)
 end
 
 """
@@ -269,7 +282,7 @@ Create a named-tuple configuration for a
 A named tuple with the field `name = "SecondOrderPolynomialSurrogate"`.
 """
 function SecondOrderPolynomialStructure()
-    return (name = "SecondOrderPolynomialSurrogate")
+    return (name = "SecondOrderPolynomialSurrogate",)
 end
 
 """
@@ -291,7 +304,19 @@ function WendlandStructure(; eps, maxiters, tol)
     return (name = "Wendland", eps = eps, maxiters = maxiters, tol = tol)
 end
 
-#Polychaos structure
+"""
+    PolyChaosStructure(; op)
+
+Create a named-tuple configuration for a [`PolynomialChaosSurrogate`](@ref).
+
+# Keywords
+
+  - `op`: orthogonal-polynomial basis object from PolyChaos.jl.
+
+# Returns
+
+A named tuple with fields `name` and `op`.
+"""
 function PolyChaosStructure(; op)
     return (name = "PolynomialChaosSurrogate", op = op)
 end
@@ -300,11 +325,12 @@ Base.@deprecate_binding surrogate_optimize surrogate_optimize!
 
 export current_surrogates
 export GEKPLS
-export RadialBasisStructure, KrigingStructure, LinearStructure, InverseDistanceStructure
+export RadialBasisStructure, KrigingStructure, GEKStructure, LinearStructure,
+    InverseDistanceStructure
 export LobachevskyStructure,
     NeuralStructure, GENNStructure, XGBoostStructure,
     SecondOrderPolynomialStructure
-export WendlandStructure
+export WendlandStructure, PolyChaosStructure
 export SamplingAlgorithm
 export Kriging, RadialBasis, std_error_at_point
 # Parallelization Strategies
@@ -338,7 +364,7 @@ export AbstractSurrogate
 
 # Extensions
 include("extensions.jl")
-export AbstractGPSurrogate, logpdf_surrogate, std_error_at_point
+export AbstractGPSurrogate, logpdf_surrogate
 export NeuralSurrogate
 export GENNSurrogate, predict_derivative
 export PolynomialChaosSurrogate

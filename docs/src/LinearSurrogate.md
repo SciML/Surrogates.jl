@@ -1,8 +1,16 @@
 ## Linear Surrogate
 
-Linear Surrogate is a linear approach to modeling the relationship between a scalar response or dependent variable and one or more explanatory variables. We will use Linear Surrogate to optimize following function:
+The linear surrogate models a scalar response as an affine function of the
+explanatory variables: an intercept plus one slope per input dimension, fitted
+by least squares. It is exact whenever the data are affine, and otherwise
+returns the best affine approximation in the least-squares sense. Responses may
+be scalars or vectors; vector responses are fitted one output per column.
 
-$f(x) = \sin(x) + \log(x)$
+We will build one for
+
+$f(x) = 2x + 10$
+
+which is affine, so the surrogate should recover it exactly.
 
 First of all we have to import these two packages: `Surrogates` and `Plots`.
 
@@ -37,6 +45,12 @@ my_linear_surr_1D = LinearSurrogate(x, y, lower_bound, upper_bound)
 val = my_linear_surr_1D(5.0)
 ```
 
+The fitted coefficients are stored as `[intercept; slopes]`, so for this data they should be close to `[10, 2]`:
+
+```@example linear_surrogate1D
+my_linear_surr_1D.coeff
+```
+
 Now, we will simply plot `linear_surrogate`:
 
 ```@example linear_surrogate1D
@@ -60,91 +74,126 @@ plot!(f, label = "True function", xlims = (lower_bound, upper_bound))
 plot!(my_linear_surr_1D, label = "Surrogate function", xlims = (lower_bound, upper_bound))
 ```
 
-## Linear Surrogate tutorial (ND)
+## Vector-valued responses
 
-First of all we will define the `Egg Holder` function we are going to build a surrogate for. Notice, one how its argument is a vector of numbers, one for each coordinate, and its output is a scalar.
+A single surrogate can model several outputs at once. Pass a vector of responses
+per sample; the design matrix is shared, so each output is fitted independently
+and the prediction comes back in the same container.
 
-```@example linear_surrogateND
-using Plots
-default(c = :matter, legend = false, xlabel = "x", ylabel = "y")
+```@example linear_surrogate_multi
 using Surrogates
 
-function egg(x)
-    x1 = x[1]
-    x2 = x[2]
-    term1 = -(x2 + 47) * sin(sqrt(abs(x2 + x1 / 2 + 47)))
-    term2 = -x1 * sin(sqrt(abs(x1 - (x2 + 47))))
-    y = term1 + term2
+f(x) = [2x + 10, -x + 3]
+lower_bound = 5.2
+upper_bound = 12.5
+x = sample(50, lower_bound, upper_bound, SobolSample())
+y = f.(x)
+multi = LinearSurrogate(x, y, lower_bound, upper_bound)
+```
+
+`coeff` gains one column per output, still laid out as `[intercept; slopes]`:
+
+```@example linear_surrogate_multi
+multi.coeff
+```
+
+```@example linear_surrogate_multi
+multi(7.0), f(7.0)
+```
+
+## Linear Surrogate tutorial (ND)
+
+A linear surrogate is the right tool when the response is dominated by a global
+trend: it is cheap, needs few samples, and its coefficients are directly
+interpretable as sensitivities. The OTL circuit is a standard benchmark of that
+kind — the midpoint voltage of a transformerless push-pull circuit, a smooth
+function of six physical parameters that is close to, but not exactly, affine.
+
+```@example linear_surrogateND
+using Surrogates
+using Plots
+
+function otl_circuit(x)
+    Rb1, Rb2, Rf, Rc1, Rc2, beta = x
+    Vb1 = 12 * Rb2 / (Rb1 + Rb2)
+    denom = beta * (Rc2 + 9) + Rf
+    return (Vb1 + 0.74) * beta * (Rc2 + 9) / denom +
+           11.35 * Rf / denom +
+           0.74 * Rf * beta * (Rc2 + 9) / (denom * Rc1)
 end
 ```
 
 ### Sampling
 
-Let's define our bounds, this time we are working in two dimensions. In particular we want our first dimension `x` to have bounds `-10, 5`, and `0, 15` for the second dimension. We are taking 100 samples of the space using Sobol Sequences. We then evaluate our function on all of the sampling points.
+The six inputs are two bias resistances, a feedback resistance, two collector
+resistances, and the transistor current gain, each with its own physical range.
 
 ```@example linear_surrogateND
-n_samples = 100
-lower_bound = [-10.0, 0.0]
-upper_bound = [5.0, 15.0]
+lower_bound = [50.0, 25.0, 0.5, 1.2, 0.25, 50.0]
+upper_bound = [150.0, 70.0, 3.0, 2.5, 1.2, 300.0]
 
-xys = sample(n_samples, lower_bound, upper_bound, SobolSample())
-zs = egg.(xys)
-```
-
-```@example linear_surrogateND
-x, y = -10:5, 0:15
-p1 = surface(x, y, (x1, x2) -> egg((x1, x2)))
-xs = [xy[1] for xy in xys]
-ys = [xy[2] for xy in xys]
-scatter!(xs, ys, zs)
-p2 = contour(x, y, (x1, x2) -> egg((x1, x2)))
-scatter!(xs, ys)
-plot(p1, p2, title = "True function")
+x = sample(200, lower_bound, upper_bound, SobolSample())
+y = otl_circuit.(x)
+extrema(y)
 ```
 
 ### Building a surrogate
 
-Using the sampled points, we build the surrogate, the steps are analogous to the 1-dimensional case.
+```@example linear_surrogateND
+my_linear_ND = LinearSurrogate(x, y, lower_bound, upper_bound)
+my_linear_ND.coeff
+```
+
+With six inputs there is no surface to look at, so the fit is judged by
+comparing predictions against held-out samples. Points on the diagonal are
+exact.
 
 ```@example linear_surrogateND
-my_linear_ND = LinearSurrogate(xys, zs, lower_bound, upper_bound)
+using Statistics
+
+held_out = sample(500, lower_bound, upper_bound, HaltonSample())
+truth = otl_circuit.(held_out)
+predicted = my_linear_ND.(held_out)
+residuals = truth .- predicted
+
+R2 = 1 - sum(abs2, residuals) / sum(abs2, truth .- mean(truth))
+rmse = sqrt(mean(abs2, residuals))
+R2, rmse
 ```
 
 ```@example linear_surrogateND
-p1 = surface(x, y, (x, y) -> my_linear_ND([x y]))
-scatter!(xs, ys, zs, marker_z = zs)
-p2 = contour(x, y, (x, y) -> my_linear_ND([x y]))
-scatter!(xs, ys, marker_z = zs)
-plot(p1, p2, title = "Surrogate")
+scatter(truth, predicted, label = "Held-out points",
+    xlabel = "true midpoint voltage (V)", ylabel = "surrogate prediction (V)")
+plot!(truth, truth, label = "Exact")
 ```
+
+### Reading the coefficients
+
+Because the model is affine, each slope is the change in output per unit change
+in that input. Slopes are not comparable across inputs directly, since the
+inputs have very different ranges — multiplying by the width of each range gives
+the influence of moving that input across its whole domain.
+
+```@example linear_surrogateND
+names = ["Rb1", "Rb2", "Rf", "Rc1", "Rc2", "beta"]
+influence = my_linear_ND.coeff[2:end] .* (upper_bound .- lower_bound)
+sort(collect(zip(names, round.(influence, digits = 3))), by = t -> -abs(t[2]))
+```
+
+The feedback and collector resistances have the largest slopes, but the bias
+resistances swing the output most over their operating ranges — the kind of
+screening result a linear surrogate is built for.
 
 ### Optimizing
 
-With our surrogate, we can now search for the minima of the function.
-
-Notice how the new sampled points, which were created during the optimization process, are appended to the `xys` array.
-This is why its size changes.
-
-```@example linear_surrogateND
-size(xys)
-```
-
 ```@example linear_surrogateND
 surrogate_optimize!(
-    egg, SRBF(), lower_bound, upper_bound, my_linear_ND, SobolSample(), maxiters = 10)
+    otl_circuit, SRBF(), lower_bound, upper_bound, my_linear_ND, SobolSample(),
+    maxiters = 20)
 ```
 
-```@example linear_surrogateND
-size(xys)
-```
+The proposed points are appended to the surrogate's own sample list:
 
 ```@example linear_surrogateND
-p1 = surface(x, y, (x, y) -> my_linear_ND([x y]))
-xs = [xy[1] for xy in xys]
-ys = [xy[2] for xy in xys]
-zs = egg.(xys)
-scatter!(xs, ys, zs, marker_z = zs)
-p2 = contour(x, y, (x, y) -> my_linear_ND([x y]))
-scatter!(xs, ys, marker_z = zs)
-plot(p1, p2)
+length(x), length(my_linear_ND.x)
 ```

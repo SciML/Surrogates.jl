@@ -77,9 +77,6 @@ function _construct_2nd_order_interp_matrix(x, x_el)
     return X
 end
 
-_construct_y_matrix(y, y_el::Number) = y
-_construct_y_matrix(y, y_el) = [y[i][j] for i in 1:length(y), j in 1:length(y_el)]
-
 function (my_second_ord::SecondOrderPolynomialSurrogate)(val)
 
     # Check to make sure dimensions of input matches expected dimension of surrogate
