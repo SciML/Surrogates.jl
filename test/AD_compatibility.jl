@@ -18,7 +18,6 @@ Random.seed!(42)
         f = x -> x^2
         y = f.(x)
 
-        #Radials
         @testset "Radials" begin
             my_rad = RadialBasis(x, y, lb, ub, rad = linearRadial())
             g = x -> ForwardDiff.derivative(my_rad, x)
@@ -27,7 +26,6 @@ Random.seed!(42)
             @test isapprox(g(5.0), 10.0, atol = 1.0e-1)
         end
 
-        #Kriging
         @testset "Kriging" begin
             my_p = 1.5
             my_krig = Kriging(x, y, lb, ub, p = my_p)
@@ -37,16 +35,25 @@ Random.seed!(42)
             @test isapprox(g(5.0), 10.0, atol = 1.0e-1)
         end
 
-        #Linear Surrogate
         @testset "Linear Surrogate" begin
             my_linear = LinearSurrogate(x, y, lb, ub)
             g = x -> ForwardDiff.derivative(my_linear, x)
             @test g(5.0) isa Number
-            # Accuracy test: f(x) = x^2, f'(x) = 2x, so f'(5.0) = 10.0
-            # @test isapprox(g(5.0), 10.0, atol = 1e-1)
+            # Affine model: the derivative is the fitted slope, everywhere.
+            @test g(1.0) == g(9.0)
+            @test g(5.0) == my_linear.coeff[2]
+            # The slope is 2 * mean(x) -> f'(5.0) = 10; needs the intercept.
+            @test isapprox(g(5.0), 10.0, atol = 1.0e-2)
+
+            # Vector responses: the derivative is the row of slopes.
+            y_multi = [[t, t^2] for t in x]
+            my_linear_multi = LinearSurrogate(x, y_multi, lb, ub)
+            gm = t -> ForwardDiff.derivative(my_linear_multi, t)
+            @test gm(5.0) isa AbstractVector
+            @test gm(5.0) ≈ my_linear_multi.coeff[2, :]
+            @test gm(1.0) == gm(9.0)
         end
 
-        #Inverse distance
         @testset "Inverse Distance" begin
             my_p = 1.4
             my_inverse = InverseDistanceSurrogate(x, y, lb, ub, p = my_p)
@@ -56,7 +63,6 @@ Random.seed!(42)
             # @test isapprox(g(5.0), 10.0, atol = 1e-1)
         end
 
-        #Lobachevsky
         @testset "Lobachevsky" begin
             n = 4
             α = 2.4
@@ -67,7 +73,6 @@ Random.seed!(42)
             @test isapprox(g(5.0), 10.0, atol = 1.0e-1)
         end
 
-        #Second order polynomial
         @testset "Second Order Polynomial" begin
             my_second = SecondOrderPolynomialSurrogate(x, y, lb, ub)
             g = x -> ForwardDiff.derivative(my_second, x)
@@ -76,7 +81,6 @@ Random.seed!(42)
             @test isapprox(g(5.0), 10.0, atol = 1.0e-1)
         end
 
-        #Wendland
         @testset "Wendland" begin
             my_wend = Wendland(x, y, lb, ub)
             g = x -> ForwardDiff.derivative(my_wend, x)
@@ -85,7 +89,6 @@ Random.seed!(42)
             @test isapprox(g(5.0), 10.0, atol = 1.0)
         end
 
-        #GEK
         @testset "GEK" begin
             y1 = y
             der = x -> 2 * x
@@ -98,7 +101,6 @@ Random.seed!(42)
             # @test isapprox(g(5.0), 10.0, atol = 1e-1)
         end
 
-        #GEKPLS
         @testset "GEKPLS" begin
             grads = Zygote.gradient.(f, x)
             n_comp = 1
@@ -114,7 +116,6 @@ Random.seed!(42)
             @test isapprox(g(5.0), 10.0, atol = 1.0e-1)
         end
 
-        #Earth
         @testset "Earth" begin
             my_earth = EarthSurrogate(x, y, lb, ub)
             g = x -> ForwardDiff.derivative(my_earth, x)
@@ -123,7 +124,6 @@ Random.seed!(42)
             # @test isapprox(g(5.0), 10.0, atol = 1e-1)
         end
 
-        #VariableFidelity
         @testset "VariableFidelity" begin
             my_varfid = VariableFidelitySurrogate(x, y, lb, ub)
             g = x -> ForwardDiff.derivative(my_varfid, x)
@@ -132,7 +132,6 @@ Random.seed!(42)
             @test isapprox(g(5.0), 10.0, atol = 1.0e-1)
         end
 
-        #MOE
         @testset "MOE" begin
             expert_types = [
                 RadialBasisStructure(radial_function = linearRadial(), scale_factor = 1.0, sparse = false),
@@ -145,7 +144,6 @@ Random.seed!(42)
             @test isapprox(g(5.0), 10.0, atol = 1.0e-1)
         end
 
-        #GENN
         @testset "GENN" begin
             df = x -> 2 * x
             dydx = reshape(df.(x), :, 1)
@@ -165,7 +163,6 @@ Random.seed!(42)
         f = x -> x[1] * x[2]
         y = f.(x)
 
-        #Radials
         @testset "Radials" begin
             my_rad = RadialBasis(x, y, lb, ub, rad = linearRadial())
             g = x -> ForwardDiff.gradient(my_rad, x)
@@ -174,7 +171,6 @@ Random.seed!(42)
             @test isapprox(g([2.0, 5.0]), [5.0, 2.0], atol = 1.0e-1)
         end
 
-        #Kriging
         @testset "Kriging" begin
             my_theta = [2.0, 2.0]
             my_p = [1.9, 1.9]
@@ -185,16 +181,25 @@ Random.seed!(42)
             @test isapprox(g([2.0, 5.0]), [5.0, 2.0], atol = 1.0e-1)
         end
 
-        #Linear Surrogate
         @testset "Linear Surrogate" begin
             my_linear = LinearSurrogate(x, y, lb, ub)
             g = x -> ForwardDiff.gradient(my_linear, x)
             @test g([2.0, 5.0]) isa AbstractVector
-            # Accuracy test: f(x) = x[1] * x[2], ∇f = [x[2], x[1]], so ∇f([2.0, 5.0]) = [5.0, 2.0]
-            # @test isapprox(g([2.0, 5.0]), [5.0, 2.0], atol = 1e-1)
+            # The fit has constant slopes near [5, 5], not the pointwise
+            # ∇f([2, 5]) = [5, 2]; the gradient is those slopes, everywhere.
+            @test g([2.0, 5.0]) ≈ my_linear.coeff[2:end]
+            @test g([2.0, 5.0]) == g([9.0, 0.5])
+
+            # Vector responses: the Jacobian is the transposed slope block,
+            # the same matrix at any point.
+            y_multi = [[p[1] * p[2], p[1] + p[2]] for p in x]
+            my_linear_multi = LinearSurrogate(x, y_multi, lb, ub)
+            J = ForwardDiff.jacobian(my_linear_multi, [2.0, 5.0])
+            @test size(J) == (2, 2)
+            @test J ≈ permutedims(my_linear_multi.coeff[2:end, :])
+            @test J == ForwardDiff.jacobian(my_linear_multi, [9.0, 0.5])
         end
 
-        #Inverse Distance
         @testset "Inverse Distance" begin
             my_p = 1.4
             my_inverse = InverseDistanceSurrogate(x, y, lb, ub, p = my_p)
@@ -204,7 +209,6 @@ Random.seed!(42)
             # @test isapprox(g([2.0, 5.0]), [5.0, 2.0], atol = 1e-1)
         end
 
-        #Lobachevsky
         @testset "Lobachevsky" begin
             alpha = [1.4, 1.4]
             n = 4
@@ -215,7 +219,6 @@ Random.seed!(42)
             @test isapprox(g([2.0, 5.0]), [5.0, 2.0], atol = 1.0e-1)
         end
 
-        #Second order polynomial
         @testset "SecondOrderPolynomialSurrogate" begin
             my_second = SecondOrderPolynomialSurrogate(x, y, lb, ub)
             g = x -> ForwardDiff.gradient(my_second, x)
@@ -224,7 +227,6 @@ Random.seed!(42)
             @test isapprox(g([2.0, 5.0]), [5.0, 2.0], atol = 1.0e-1)
         end
 
-        #Wendland
         @testset "Wendland" begin
             my_wend_ND = Wendland(x, y, lb, ub)
             g = x -> ForwardDiff.gradient(my_wend_ND, x)
@@ -233,7 +235,6 @@ Random.seed!(42)
             @test isapprox(g([2.0, 5.0]), [5.0, 2.0], atol = 1.0)
         end
 
-        #GEK
         @testset "GEK" begin
             y1 = y
             der = x -> [x[2], x[1]]  # Gradient of f(x) = x[1] * x[2]
@@ -246,7 +247,6 @@ Random.seed!(42)
             # @test isapprox(g([2.0, 5.0]), [5.0, 2.0], atol = 1e-1)
         end
 
-        #GEKPLS
         @testset "GEKPLS" begin
             grads = Zygote.gradient.(f, x)
             n_comp = 2
@@ -262,7 +262,6 @@ Random.seed!(42)
             @test isapprox(g([2.0, 5.0]), [5.0, 2.0], atol = 1.0e-1)
         end
 
-        #GENN
         @testset "GENN" begin
             der = x -> [x[2], x[1]]  # Gradient of f(x) = x[1] * x[2]
             dydx = reduce(hcat, (der(xi) for xi in x))'  # (n_samples, n_inputs)
@@ -273,7 +272,6 @@ Random.seed!(42)
             @test isapprox(g([2.0, 5.0]), [5.0, 2.0], atol = 2.0)
         end
 
-        #Earth
         @testset "Earth" begin
             my_earth_ND = EarthSurrogate(x[1:10], y[1:10], lb, ub)
             g = x -> ForwardDiff.gradient(my_earth_ND, x)
@@ -282,7 +280,6 @@ Random.seed!(42)
             # @test isapprox(g([2.0, 5.0]), [5.0, 2.0], atol = 1e-1)
         end
 
-        #VariableFidelity
         @testset "VariableFidelity" begin
             my_varfid_ND = VariableFidelitySurrogate(x, y, lb, ub)
             g = x -> ForwardDiff.gradient(my_varfid_ND, x)
@@ -291,7 +288,6 @@ Random.seed!(42)
             @test isapprox(g([2.0, 5.0]), [5.0, 2.0], atol = 1.0e-1)
         end
 
-        #MOE
         @testset "MOE" begin
             expert_types = [
                 RadialBasisStructure(radial_function = linearRadial(), scale_factor = 1.0, sparse = false),
@@ -316,7 +312,6 @@ end
         f = x -> x^2
         y = f.(x)
 
-        #Radials
         @testset "Radials" begin
             my_rad = RadialBasis(x, y, lb, ub, rad = linearRadial())
             g = x -> Zygote.gradient(my_rad, x)
@@ -328,7 +323,6 @@ end
             @test isapprox(result[1], 10.0, atol = 1.0e-1)
         end
 
-        #Kriging
         @testset "Kriging" begin
             my_p = 1.5
             my_krig = Kriging(x, y, lb, ub, p = my_p)
@@ -341,7 +335,6 @@ end
             @test isapprox(result[1], 10.0, atol = 1.0e-1)
         end
 
-        #Linear Surrogate
         @testset "Linear Surrogate" begin
             my_linear = LinearSurrogate(x, y, lb, ub)
             g = x -> Zygote.gradient(my_linear, x)
@@ -349,11 +342,17 @@ end
             @test result isa Tuple
             @test length(result) == 1
             @test result[1] isa Number
-            # Accuracy test: f(x) = x^2, f'(x) = 2x, so f'(5.0) = 10.0
-            # @test isapprox(result[1], 10.0, atol = 1e-1)
+            # Same slope everywhere, and agreeing with forward mode.
+            @test result[1] ≈ my_linear.coeff[2]
+            @test result[1] == g(9.0)[1]
+            @test result[1] ≈ ForwardDiff.derivative(my_linear, 5.0)
+
+            # Vector responses go through Zygote.jacobian.
+            y_multi = [[t, t^2] for t in x]
+            my_linear_multi = LinearSurrogate(x, y_multi, lb, ub)
+            @test Zygote.jacobian(my_linear_multi, 5.0)[1] ≈ my_linear_multi.coeff[2, :]
         end
 
-        #Inverse distance
         @testset "Inverse Distance" begin
             my_p = 1.4
             my_inverse = InverseDistanceSurrogate(x, y, lb, ub, p = my_p)
@@ -366,7 +365,6 @@ end
             # @test isapprox(result[1], 10.0, atol = 1e-1)
         end
 
-        #Lobachevsky
         @testset "Lobachevsky" begin
             n = 4
             α = 2.4
@@ -380,7 +378,6 @@ end
             @test isapprox(result[1], 10.0, atol = 1.0e-1)
         end
 
-        #Second order polynomial
         @testset "Second Order Polynomial" begin
             my_second = SecondOrderPolynomialSurrogate(x, y, lb, ub)
             g = x -> Zygote.gradient(my_second, x)
@@ -392,7 +389,6 @@ end
             @test isapprox(result[1], 10.0, atol = 1.0e-1)
         end
 
-        #Wendland
         @testset "Wendland" begin
             my_wend = Wendland(x, y, lb, ub)
             g = x -> Zygote.gradient(my_wend, x)
@@ -404,7 +400,6 @@ end
             @test isapprox(result[1], 10.0, atol = 1.0)
         end
 
-        #GEK
         @testset "GEK" begin
             y1 = y
             der = x -> 2 * x
@@ -420,7 +415,6 @@ end
             # @test isapprox(result[1], 10.0, atol = 1e-1)
         end
 
-        #GEKPLS
         @testset "GEKPLS" begin
             grads = Zygote.gradient.(f, x)
             n_comp = 2
@@ -439,7 +433,6 @@ end
             @test isapprox(result[1], 10.0, atol = 1.0e-1)
         end
 
-        #GENN
         @testset "GENN" begin
             df = x -> 2 * x
             dydx = reshape(df.(x), :, 1)
@@ -453,7 +446,6 @@ end
             @test isapprox(result[1], 10.0, atol = 2.0)
         end
 
-        #Earth
         @testset "Earth" begin
             my_earth = EarthSurrogate(x, y, lb, ub)
             g = x -> Zygote.gradient(my_earth, x)
@@ -465,7 +457,6 @@ end
             # @test isapprox(result[1], 10.0, atol = 1e-1)
         end
 
-        #VariableFidelity
         @testset "VariableFidelity" begin
             my_varfid = VariableFidelitySurrogate(x, y, lb, ub)
             g = x -> Zygote.gradient(my_varfid, x)
@@ -477,7 +468,6 @@ end
             @test isapprox(result[1], 10.0, atol = 1.0e-1)
         end
 
-        #MOE
         @testset "MOE" begin
             expert_types = [
                 RadialBasisStructure(radial_function = linearRadial(), scale_factor = 1.0, sparse = false),
@@ -502,7 +492,6 @@ end
         f = x -> x[1] * x[2]
         y = f.(x)
 
-        #Radials
         @testset "Radials" begin
             my_rad = RadialBasis(x, y, lb, ub, rad = linearRadial(), scale_factor = 2.1)
             g = x -> Zygote.gradient(my_rad, x)
@@ -514,7 +503,6 @@ end
             @test all(isapprox.(result[1], (5.0, 2.0), atol = 1.0e-1))
         end
 
-        #Kriging
         @testset "Kriging" begin
             my_theta = [2.0, 2.0]
             my_p = [1.9, 1.9]
@@ -528,7 +516,6 @@ end
             @test all(isapprox.(result[1], (5.0, 2.0), atol = 1.0e-1))
         end
 
-        #Linear Surrogate
         @testset "Linear Surrogate" begin
             my_linear = LinearSurrogate(x, y, lb, ub)
             g = x -> Zygote.gradient(my_linear, x)
@@ -536,11 +523,21 @@ end
             @test result isa Tuple
             @test length(result) == 1
             @test result[1] isa Tuple
-            # Accuracy test: f(x) = x[1] * x[2], ∇f = [x[2], x[1]], so ∇f([2.0, 5.0]) = [5.0, 2.0]
-            # @test all(isapprox.(result[1], (5.0, 2.0), atol = 1e-1))
+            # The fitted slopes rather than the true ∇f, constant in x.
+            @test all(isapprox.(result[1], Tuple(my_linear.coeff[2:end])))
+            @test all(result[1] .== g((9.0, 0.5))[1])
+            @test all(isapprox.(result[1],
+                Tuple(ForwardDiff.gradient(my_linear, [2.0, 5.0]))))
+
+            # Vector responses on vector points.
+            x_vec = [collect(p) for p in x]
+            y_multi = [[p[1] * p[2], p[1] + p[2]] for p in x]
+            my_linear_multi = LinearSurrogate(x_vec, y_multi, lb, ub)
+            J = Zygote.jacobian(my_linear_multi, [2.0, 5.0])[1]
+            @test size(J) == (2, 2)
+            @test J ≈ permutedims(my_linear_multi.coeff[2:end, :])
         end
 
-        #Inverse Distance
         @testset "Inverse Distance" begin
             my_p = 1.4
             my_inverse = InverseDistanceSurrogate(x, y, lb, ub, p = my_p)
@@ -553,7 +550,6 @@ end
             # @test all(isapprox.(result[1], (5.0, 2.0), atol = 1e-1))
         end
 
-        #Lobachevsky
         @testset "Lobachevsky" begin
             alpha = [1.4, 1.4]
             n = 4
@@ -567,7 +563,6 @@ end
             @test all(isapprox.(result[1], (5.0, 2.0), atol = 1.0e-1))
         end
 
-        #Second order polynomial
         @testset "SecondOrderPolynomialSurrogate" begin
             my_second = SecondOrderPolynomialSurrogate(x, y, lb, ub)
             g = x -> Zygote.gradient(my_second, x)
@@ -579,7 +574,6 @@ end
             @test all(isapprox.(result[1], (5.0, 2.0), atol = 1.0e-1))
         end
 
-        #Wendland
         @testset "Wendland" begin
             my_wend_ND = Wendland(x, y, lb, ub)
             g = x -> Zygote.gradient(my_wend_ND, x)
@@ -591,7 +585,6 @@ end
             @test all(isapprox.(result[1], (5.0, 2.0), atol = 1.0))
         end
 
-        #GEK
         @testset "GEK" begin
             y1 = y
             der = x -> [x[2], x[1]]  # Gradient of f(x) = x[1] * x[2]
@@ -607,7 +600,6 @@ end
             # @test all(isapprox.(result[1], (5.0, 2.0), atol = 1e-1))
         end
 
-        #GEKPLS
         @testset "GEKPLS" begin
             grads = Zygote.gradient.(f, x)
             n_comp = 2
@@ -626,7 +618,6 @@ end
             @test all(isapprox.(result[1], (5.0, 2.0), atol = 1.0e-1))
         end
 
-        #GENN
         @testset "GENN" begin
             der = x -> [x[2], x[1]]  # Gradient of f(x) = x[1] * x[2]
             dydx = reduce(hcat, (der(xi) for xi in x))'  # (n_samples, n_inputs)
@@ -640,7 +631,6 @@ end
             @test all(isapprox.(result[1], (5.0, 2.0), atol = 2.0))
         end
 
-        #Earth
         @testset "Earth" begin
             my_earth_ND = EarthSurrogate(x[1:10], y[1:10], lb, ub)
             g = x -> Zygote.gradient(my_earth_ND, x)
@@ -652,7 +642,6 @@ end
             # @test all(isapprox.(result[1], (5.0, 2.0), atol = 1e-1))
         end
 
-        #VariableFidelity
         @testset "VariableFidelity" begin
             my_varfid_ND = VariableFidelitySurrogate(x, y, lb, ub)
             g = x -> Zygote.gradient(my_varfid_ND, x)
@@ -664,7 +653,6 @@ end
             @test all(isapprox.(result[1], (5.0, 2.0), atol = 1.0e-1))
         end
 
-        #MOE
         @testset "MOE" begin
             expert_types = [
                 RadialBasisStructure(radial_function = linearRadial(), scale_factor = 1.0, sparse = false),
