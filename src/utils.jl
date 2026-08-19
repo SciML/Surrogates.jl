@@ -1,6 +1,18 @@
 _match_container(y, y_el::Number) = first(y)
 _match_container(y, y_el) = y
 
+"""
+    _construct_y_matrix(y, y_el)
+
+Responses arranged for a least-squares solve.
+
+Scalar responses are already a vector, so they pass through and the resulting
+coefficients stay a vector. Vector-valued responses become an `n x m` matrix,
+one column per output, so a single `\\` solves all outputs at once.
+"""
+_construct_y_matrix(y, y_el::Number) = y
+_construct_y_matrix(y, y_el) = [y[i][j] for i in 1:length(y), j in 1:length(y_el)]
+
 _expected_dimension(x) = length(x[1])
 
 function _check_dimension(surr, input)

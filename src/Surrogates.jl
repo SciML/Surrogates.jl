@@ -2,7 +2,6 @@ module Surrogates
 
 using Distributions: Normal, cdf, pdf, truncated
 using ExtendableSparse: ExtendableSparseMatrix
-using GLM: lm
 using IterativeSolvers: cg
 using LinearAlgebra: Diagonal, I, Symmetric, cholesky, cond, diag, dot, eigvals, norm,
     pinv, qr, rank, ⋅
@@ -10,7 +9,6 @@ using PrecompileTools: @compile_workload, @setup_workload
 using QuasiMonteCarlo: GoldenSample, GridSample, HaltonSample, KroneckerSample,
     LatinHypercubeSample, RandomSample, SamplingAlgorithm, SobolSample
 using Statistics: mean, std
-using StatsAPI: coef
 using SurrogatesBase: update!, AbstractDeterministicSurrogate,
     AbstractStochasticSurrogate
 
