@@ -1,6 +1,8 @@
 # InverseDistance Surrogate Tutorial
 
-The **Inverse Distance Surrogate** is an interpolating method, and in this method, the unknown points are calculated with a weighted average of the sampling points. This model uses the inverse distance between the unknown and training points to predict the unknown point. We do not need to fit this model because the response of an unknown point x is computed with respect to the distance between x and the training points.
+The **Inverse Distance Surrogate** (Shepard's method) is an interpolating method, and in this method, the unknown points are calculated with a weighted average of the sampling points. This model uses the inverse distance between the unknown and training points to predict the unknown point. We do not need to fit this model because the response of an unknown point x is computed with respect to the distance between x and the training points.
+
+The single hyperparameter is the exponent `p`, which must be positive. Each sample point is weighted by `1 / distance^p`, so a larger `p` concentrates the weight on the nearest samples and pushes the surrogate towards nearest-neighbour interpolation; a smaller `p` spreads the weight out and flattens the surrogate towards the mean of the responses. The prediction is a weighted average of the sampled responses, so it never leaves their range.
 
 ```@docs
 InverseDistanceSurrogate
@@ -19,7 +21,7 @@ using Plots
 
 ### Sampling
 
-We choose to sample f in 1000 points between 0 and 10 using the `sample` function. The sampling points are chosen using a Low Discrepancy, this can be done by passing `HaltonSample()` to the `sample` function.
+We choose to sample f in 100 points between 0 and 10 using the `sample` function. The sampling points are chosen using a Low Discrepancy, this can be done by passing `HaltonSample()` to the `sample` function.
 
 ```@example Inverse_Distance1D
 f(x) = sin(x) + sin(x)^2 + sin(x)^3
@@ -49,6 +51,47 @@ plot(x, y, seriestype = :scatter, label = "Sampled points",
 plot!(f, label = "True function", xlims = (lower_bound, upper_bound), legend = :top)
 plot!(InverseDistance, label = "Surrogate function",
     xlims = (lower_bound, upper_bound), legend = :top)
+```
+
+### Choosing the exponent
+
+The default `p = 1.0` still gives distant samples enough weight to pull the
+surrogate towards the mean of the responses between the sampled points. Raising
+`p` concentrates the weight on the nearest samples:
+
+```@example Inverse_Distance1D
+plot(f, label = "True function", xlims = (lower_bound, upper_bound), legend = :top)
+for p in [1.0, 2.0, 6.0]
+    surr = InverseDistanceSurrogate(x, y, lower_bound, upper_bound, p = p)
+    plot!(surr, label = "p = $p", xlims = (lower_bound, upper_bound))
+end
+plot!()
+```
+
+The flattening at `p = 1` is easy to quantify. Away from the sampled points,
+compare how far the surrogate strays from the true function with how much of the
+function's own spread about the mean response it keeps:
+
+```@example Inverse_Distance1D
+grid = range(0.02, 9.98, length = 500)
+ybar = sum(y) / length(y)
+rms(v) = sqrt(sum(abs2, v) / length(v))
+
+for p in [1.0, 2.0, 6.0]
+    surr = InverseDistanceSurrogate(x, y, lower_bound, upper_bound, p = p)
+    println("p = ", p,
+        "  RMSE vs f = ", round(rms([surr(v) - f(v) for v in grid]), digits = 4),
+        "  spread kept = ", round(rms([surr(v) - ybar for v in grid]), digits = 4))
+end
+println("f's own spread about ybar = ",
+    round(rms([f(v) - ybar for v in grid]), digits = 4))
+```
+
+Whatever `p` is, the surrogate interpolates: at a sampled point it returns the
+sampled response exactly.
+
+```@example Inverse_Distance1D
+maximum(abs(InverseDistance(x[i]) - y[i]) for i in eachindex(x))
 ```
 
 ## Optimizing
@@ -128,11 +171,12 @@ plot(p1, p2, title = "Surrogate")
 
 With our surrogate, we can now search for the minima of the function.
 
-Notice how the new sampled points, which were created during the optimization process, are appended to the `xys` array.
-This is why its size changes.
+Notice how the new points sampled during the optimization process are added to
+the surrogate. The `xys` array we built it from is left untouched, so it is the
+surrogate's own sample list whose size changes.
 
 ```@example Inverse_DistanceND
-size(xys)
+length(xys), length(InverseDistance.x)
 ```
 
 ```@example Inverse_DistanceND
@@ -141,14 +185,14 @@ surrogate_optimize!(schaffer, SRBF(), lower_bound, upper_bound,
 ```
 
 ```@example Inverse_DistanceND
-size(xys)
+length(xys), length(InverseDistance.x)
 ```
 
 ```@example Inverse_DistanceND
 p1 = surface(x, y, (x, y) -> InverseDistance([x y]))
-xs = [xy[1] for xy in xys]
-ys = [xy[2] for xy in xys]
-zs = schaffer.(xys)
+xs = [xy[1] for xy in InverseDistance.x]
+ys = [xy[2] for xy in InverseDistance.x]
+zs = schaffer.(InverseDistance.x)
 scatter!(xs, ys, zs, marker_z = zs)
 p2 = contour(x, y, (x, y) -> InverseDistance([x y]))
 scatter!(xs, ys, marker_z = zs)
