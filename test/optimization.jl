@@ -131,6 +131,11 @@ using Test
         objective_function_ND, SRBF(), lb, ub, my_inverse_ND, SobolSample(),
         maxiters = 15
     )
+    # 78 of the 215 samples end up duplicates, so this exercises the
+    # coincidence branch heavily.
+    @test all(isfinite, my_inverse_ND.y)
+    @test [my_inverse_ND(v) for v in my_inverse_ND.x] ≈ my_inverse_ND.y
+    @test all(isfinite(my_inverse_ND(v)) for v in sample(200, lb, ub, HaltonSample()))
 
     #SecondOrderPolynomialSurrogate
     lb = [0.0, 0.0]
