@@ -48,8 +48,10 @@ using Test
             surr_x = [0.0, 1.0, 3.0]
             surr_y = [10.0, 20.0, 30.0]
             val = 0.9
-            preds = [InverseDistanceSurrogate(surr_x, surr_y, 0.0, 3.0, p = p)(val)
-                     for p in (1.0, 4.0, 16.0, 64.0)]
+            preds = [
+                InverseDistanceSurrogate(surr_x, surr_y, 0.0, 3.0, p = p)(val)
+                    for p in (1.0, 4.0, 16.0, 64.0)
+            ]
             @test issorted(abs.(preds .- 20.0), rev = true)
             @test preds[end] ≈ 20.0 atol = 1.0e-6
         end
@@ -229,7 +231,8 @@ using Test
             @test s(2) == 4.0
             @test s(1.5) isa Number
             @test s(1.5) ≈ InverseDistanceSurrogate(
-                [1.0, 2.0, 3.0], [1.0, 4.0, 9.0], 0.0, 4.0, p = 2.0)(1.5)
+                [1.0, 2.0, 3.0], [1.0, 4.0, 9.0], 0.0, 4.0, p = 2.0
+            )(1.5)
         end
 
         @testset "ND samples as vectors rather than tuples" begin

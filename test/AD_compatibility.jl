@@ -62,8 +62,10 @@ Random.seed!(42)
             # Shepard is stationary at every sample point, so its derivative
             # does not approximate f'. Checked against central differences.
             h = 1.0e-6
-            @test isapprox(g(5.0), (my_inverse(5.0 + h) - my_inverse(5.0 - h)) / 2h,
-                atol = 1.0e-4)
+            @test isapprox(
+                g(5.0), (my_inverse(5.0 + h) - my_inverse(5.0 - h)) / 2h,
+                atol = 1.0e-4
+            )
             # On a sample point the weight is non-finite; the derivative
             # must still come out finite.
             @test g(x[3]) == 0.0
@@ -104,8 +106,10 @@ Random.seed!(42)
             # Accuracy test: f(x) = x^2, f'(x) = 2x, so f'(5.0) = 10.0
             @test isapprox(g(5.0), 10.0, atol = 1.0)
             h = 1.0e-6
-            @test isapprox(g(5.0), (my_wend(5.0 + h) - my_wend(5.0 - h)) / 2h,
-                atol = 1.0e-4)
+            @test isapprox(
+                g(5.0), (my_wend(5.0 + h) - my_wend(5.0 - h)) / 2h,
+                atol = 1.0e-4
+            )
         end
 
         @testset "GEK" begin
@@ -226,8 +230,10 @@ Random.seed!(42)
             @test g([2.0, 5.0]) isa AbstractVector
             # As in 1D, checked against central differences, not ∇f.
             h = 1.0e-6
-            cd = [(my_inverse([2.0, 5.0] + h * e) - my_inverse([2.0, 5.0] - h * e)) / 2h
-                  for e in ([1.0, 0.0], [0.0, 1.0])]
+            cd = [
+                (my_inverse([2.0, 5.0] + h * e) - my_inverse([2.0, 5.0] - h * e)) / 2h
+                    for e in ([1.0, 0.0], [0.0, 1.0])
+            ]
             @test isapprox(g([2.0, 5.0]), cd, atol = 1.0e-4)
             # `norm` of a zero vector of duals is NaN, so this goes through
             # the coincidence branch.
@@ -259,8 +265,10 @@ Random.seed!(42)
             # Accuracy test: f(x) = x[1] * x[2], ∇f = [x[2], x[1]], so ∇f([2.0, 5.0]) = [5.0, 2.0]
             @test isapprox(g([2.0, 5.0]), [5.0, 2.0], atol = 1.0)
             h = 1.0e-6
-            cd = [(my_wend_ND([2.0, 5.0] + h * e) - my_wend_ND([2.0, 5.0] - h * e)) / 2h
-                  for e in ([1.0, 0.0], [0.0, 1.0])]
+            cd = [
+                (my_wend_ND([2.0, 5.0] + h * e) - my_wend_ND([2.0, 5.0] - h * e)) / 2h
+                    for e in ([1.0, 0.0], [0.0, 1.0])
+            ]
             @test isapprox(g([2.0, 5.0]), cd, atol = 1.0e-4)
 
             # At a sample point `norm` of the zero difference is NaN under AD.
@@ -269,8 +277,10 @@ Random.seed!(42)
             node = collect(x[3])
             @test all(isfinite, g(node))
             obj = q -> my_wend_ND(q)^2
-            cdn = [(obj(node + h * e) - obj(node - h * e)) / 2h
-                   for e in ([1.0, 0.0], [0.0, 1.0])]
+            cdn = [
+                (obj(node + h * e) - obj(node - h * e)) / 2h
+                    for e in ([1.0, 0.0], [0.0, 1.0])
+            ]
             @test isapprox(ForwardDiff.gradient(obj, node), cdn, atol = 1.0e-4)
         end
 
@@ -567,8 +577,12 @@ end
             # The fitted slopes rather than the true ∇f, constant in x.
             @test all(isapprox.(result[1], Tuple(my_linear.coeff[2:end])))
             @test all(result[1] .== g((9.0, 0.5))[1])
-            @test all(isapprox.(result[1],
-                Tuple(ForwardDiff.gradient(my_linear, [2.0, 5.0]))))
+            @test all(
+                isapprox.(
+                    result[1],
+                    Tuple(ForwardDiff.gradient(my_linear, [2.0, 5.0]))
+                )
+            )
 
             # Vector responses on vector points.
             x_vec = [collect(p) for p in x]
@@ -587,8 +601,11 @@ end
             @test result isa Tuple
             @test length(result) == 1
             @test result[1] isa Tuple
-            @test all(isapprox.(
-                result[1], Tuple(ForwardDiff.gradient(my_inverse, [2.0, 5.0]))))
+            @test all(
+                isapprox.(
+                    result[1], Tuple(ForwardDiff.gradient(my_inverse, [2.0, 5.0]))
+                )
+            )
         end
 
         @testset "Lobachevsky" begin
@@ -624,8 +641,11 @@ end
             @test result[1] isa Tuple
             # Accuracy test: f(x) = x[1] * x[2], ∇f = [x[2], x[1]], so ∇f([2.0, 5.0]) = [5.0, 2.0]
             @test all(isapprox.(result[1], (5.0, 2.0), atol = 1.0))
-            @test all(isapprox.(
-                result[1], Tuple(ForwardDiff.gradient(my_wend_ND, [2.0, 5.0]))))
+            @test all(
+                isapprox.(
+                    result[1], Tuple(ForwardDiff.gradient(my_wend_ND, [2.0, 5.0]))
+                )
+            )
         end
 
         @testset "GEK" begin

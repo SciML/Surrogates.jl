@@ -190,8 +190,10 @@ using LinearAlgebra
         end
 
         @testset "rational samples" begin
-            s = Wendland(Rational{Int}[1, 2, 3], Rational{Int}[1, 4, 9],
-                0 // 1, 4 // 1, eps = 1 // 2)
+            s = Wendland(
+                Rational{Int}[1, 2, 3], Rational{Int}[1, 4, 9],
+                0 // 1, 4 // 1, eps = 1 // 2
+            )
             @test s(3 // 2) isa AbstractFloat
             @test isapprox(s(2 // 1), 4.0, atol = 1.0e-6)
         end
@@ -238,7 +240,7 @@ using LinearAlgebra
     @testset "non-converged solve warns" begin
         x = sample(40, 0.0, 10.0, SobolSample())
         y = sin.(x)
-        @test_logs (:warn, r"did not converge") match_mode=:any Wendland(
+        @test_logs (:warn, r"did not converge") match_mode = :any Wendland(
             x, y, 0.0, 10.0, eps = 0.01, maxiters = 1
         )
         # A well-conditioned solve stays quiet.
