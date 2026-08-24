@@ -1,9 +1,9 @@
 """
     InverseDistanceSurrogate(x, y, lb, ub; p = 1.0)
 
-Construct an inverse-distance-weighted interpolating surrogate. At an existing
-sample point it returns the recorded response; elsewhere it returns the response
-average weighted by inverse distance raised to `p`.
+Construct an inverse-distance-weighted (Shepard) interpolating surrogate. At an
+existing sample point it returns the recorded response; elsewhere it returns the
+response average weighted by inverse distance raised to `p`.
 
 # Fields
 
@@ -11,8 +11,7 @@ average weighted by inverse distance raised to `p`.
   - `y`: responses corresponding to `x`.
   - `lb`: lower bound of the modeled domain.
   - `ub`: upper bound of the modeled domain.
-  - `p`: positive inverse-distance power. Values greater than one provide a
-    differentiable interpolant away from coincident points.
+  - `p`: positive inverse-distance power.
 
 # Arguments
 
@@ -23,12 +22,15 @@ average weighted by inverse distance raised to `p`.
 
 # Keywords
 
-  - `p::Number = 1.0`: exponent applied to inverse distances.
+  - `p::Number = 1.0`: positive exponent applied to inverse distances. Values
+    greater than one give an interpolant that is differentiable at the sample
+    points; `p <= 0` is rejected with an `ArgumentError`.
 
 # Returns
 
 A callable `InverseDistanceSurrogate` supporting
-`update!(surrogate, x_new, y_new)`.
+`update!(surrogate, x_new, y_new)`. A query point coinciding with one or more
+sample points returns that response, or the mean over the coincident ones.
 
 # Example
 
@@ -50,44 +52,34 @@ mutable struct InverseDistanceSurrogate{X, Y, L, U, P} <: AbstractDeterministicS
 end
 
 function InverseDistanceSurrogate(x, y, lb, ub; p::Number = 1.0)
+    if p <= 0
+        throw(ArgumentError("Inverse-distance exponent p must be positive! Got: $p."))
+    end
     return InverseDistanceSurrogate(x, y, lb, ub, p)
 end
 
 function (inverSurr::InverseDistanceSurrogate)(val)
-    # Check to make sure dimensions of input matches expected dimension of surrogate
     _check_dimension(inverSurr, val)
-
-    if val in inverSurr.x
-        return inverSurr.y[findfirst(x -> x == val, inverSurr.x)]
-    else
-        if length(inverSurr.lb) == 1
-            num = sum(
-                inverSurr.y[i] * (norm(val .- inverSurr.x[i]))^(-inverSurr.p)
-                    for i in 1:length(inverSurr.x)
-            )
-            den = sum(
-                norm(val .- inverSurr.x[i])^(-inverSurr.p)
-                    for i in 1:length(inverSurr.x)
-            )
-            return num / den
-        else
-            βᵢ = [norm(val .- inverSurr.x[i])^(-inverSurr.p) for i in 1:length(inverSurr.x)]
-            num = sum(inverSurr.y[i] * βᵢ[i] for i in 1:length(inverSurr.y))
-            den = sum(βᵢ)
-            return num / den
-        end
+    # A row-matrix query would broadcast into a d x d outer difference.
+    point = _as_point(val)
+    p = inverSurr.p
+    d = [norm(point .- inverSurr.x[i]) for i in eachindex(inverSurr.x)]
+    d_min = minimum(d)
+    # A query on a sample point returns that response, averaged over ties,
+    # instead of Inf / Inf. Tested through the weight rather than `d_min == 0`
+    # because `norm` of a zero vector of duals is NaN, and a dual carrying a
+    # nonzero derivative is not equal to zero.
+    if !isfinite(d_min^(-p))
+        hits = findall(dᵢ -> !isfinite(dᵢ^(-p)), d)
+        return sum(inverSurr.y[i] for i in hits) / length(hits)
     end
+    # (d / d_min)^(-p) is the same convex combination as d^(-p) with the
+    # largest weight pinned at one, so nothing overflows or underflows.
+    w = (d ./ d_min) .^ (-p)
+    return sum(w[i] * inverSurr.y[i] for i in eachindex(w)) / sum(w)
 end
 
 function SurrogatesBase.update!(inverSurr::InverseDistanceSurrogate, x_new, y_new)
-    if eltype(x_new) == eltype(inverSurr.x)
-        #1D
-        append!(inverSurr.x, x_new)
-        append!(inverSurr.y, y_new)
-    else
-        #ND
-        push!(inverSurr.x, x_new)
-        push!(inverSurr.y, y_new)
-    end
+    inverSurr.x, inverSurr.y = _append_samples(inverSurr.x, inverSurr.y, x_new, y_new)
     return nothing
 end
