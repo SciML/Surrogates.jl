@@ -159,7 +159,7 @@ function VariableFidelitySurrogate(
         eps = LinearSurrogate(x_high, y_eps, lb, ub)
 
     elseif high_fid_structure.name == "InverseDistanceSurrogate"
-        eps = InverseDistanceSurrogate(x_high, y_eps, lb, ub, high_fid_structure.p)
+        eps = InverseDistanceSurrogate(x_high, y_eps, lb, ub, p = high_fid_structure.p)
 
     elseif high_fid_structure.name == "LobachevskySurrogate"
         eps = LobachevskySurrogate(

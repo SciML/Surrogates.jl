@@ -292,7 +292,7 @@ Create a named-tuple configuration for a [`Wendland`](@ref) surrogate.
 
 # Keywords
 
-  - `eps`: compact-support scaling parameter.
+  - `eps`: reciprocal of the kernel support radius.
   - `maxiters::Integer`: maximum number of conjugate-gradient iterations.
   - `tol`: relative tolerance for the coefficient solve.
 
