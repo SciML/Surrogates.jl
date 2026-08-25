@@ -12,3 +12,6 @@ ispcs = "ispcs"
 eqs = "eqs"
 rhs = "rhs"
 MTK = "MTK"
+
+shepard = "shepard"
+Shepard = "Shepard"
