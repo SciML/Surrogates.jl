@@ -95,6 +95,17 @@ Random.seed!(42)
             @test isfinite(g(x[3]))
         end
 
+        @testset "Lobachevsky multi-output" begin
+            xm = sample(60, lb, ub, SobolSample())
+            ym = (t -> [t^2, sin(t)]).(xm)
+            my_loba_multi = LobachevskySurrogate(xm, ym, lb, ub, alpha = 2.4, n = 4)
+            J = ForwardDiff.jacobian(t -> my_loba_multi(t[1]), [5.0])
+            @test size(J) == (2, 1)
+            # d/dx x^2 = 2x and d/dx sin(x) = cos(x) at x = 5.0
+            @test isapprox(J[1], 10.0, atol = 1.0e-1)
+            @test isapprox(J[2], cos(5.0), atol = 1.0e-1)
+        end
+
         @testset "Second Order Polynomial" begin
             my_second = SecondOrderPolynomialSurrogate(x, y, lb, ub)
             g = x -> ForwardDiff.derivative(my_second, x)

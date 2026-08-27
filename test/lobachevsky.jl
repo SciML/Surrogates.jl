@@ -400,9 +400,74 @@ using Cubature
             @test isapprox(l([2.0, 2.0]), 5.0, atol = 1.0e-6)
         end
 
-        @testset "vector responses are not supported" begin
-            @test_throws MethodError LobachevskySurrogate(
-                x, [[t, t^2] for t in x], 0.0, 2.0, alpha = 1.0)
+        @testset "vector responses" begin
+            @test_throws DimensionMismatch LobachevskySurrogate(
+                x, [[t, t^2] for t in x[1:(end - 1)]], 0.0, 2.0, alpha = 1.0)
+        end
+    end
+
+    # The interpolant is linear in the responses and the kernel matrix does not
+    # involve them, so every output must agree with the surrogate fitted to
+    # that output alone.
+    @testset "vector-valued responses" begin
+        f = t -> [sin(t), cos(t), 2t]
+        x = sort(sample(20, 0.0, 4.0, SobolSample()))
+        y = f.(x)
+        lb, ub = 0.0, 4.0
+
+        @testset "1D" begin
+            s = LobachevskySurrogate(x, y, lb, ub, alpha = 2.0, n = 6)
+            @test size(s.coeff) == (length(x), 3)
+            @test s(1.3) isa AbstractVector
+            @test length(s(1.3)) == 3
+            # Interpolation still holds at every node, output by output.
+            @test all(isapprox(s(x[i]), y[i], atol = 1.0e-8) for i in eachindex(x))
+            for k in 1:3
+                sk = LobachevskySurrogate(
+                    x, [yi[k] for yi in y], lb, ub, alpha = 2.0, n = 6)
+                @test isapprox(s(1.3)[k], sk(1.3), atol = 1.0e-10)
+                @test isapprox(
+                    lobachevsky_integral(s, lb, ub)[k],
+                    lobachevsky_integral(sk, lb, ub), atol = 1.0e-10
+                )
+            end
+        end
+
+        @testset "1D update!" begin
+            s = LobachevskySurrogate(x, y, lb, ub, alpha = 2.0, n = 6)
+            update!(s, 4.5, f(4.5))
+            @test size(s.coeff) == (length(x) + 1, 3)
+            @test isapprox(s(4.5), f(4.5), atol = 1.0e-8)
+            update!(s, [5.0, 5.5], f.([5.0, 5.5]))
+            @test length(s.y) == length(x) + 3
+            @test isapprox(s(5.5), f(5.5), atol = 1.0e-8)
+        end
+
+        @testset "ND" begin
+            g = p -> [p[1] * p[2], sin(p[1]) + p[2]^2]
+            lbn, ubn = [0.0, 0.0], [2.0, 2.0]
+            xn = sample(40, lbn, ubn, SobolSample())
+            yn = g.(xn)
+            s = LobachevskySurrogate(xn, yn, lbn, ubn, alpha = [2.0, 2.0], n = 6)
+            @test size(s.coeff) == (length(xn), 2)
+            @test all(isapprox(s(xn[i]), yn[i], atol = 1.0e-8) for i in eachindex(xn))
+            for k in 1:2
+                sk = LobachevskySurrogate(
+                    xn, [yi[k] for yi in yn], lbn, ubn, alpha = [2.0, 2.0], n = 6)
+                @test isapprox(s((1.0, 1.5))[k], sk((1.0, 1.5)), atol = 1.0e-10)
+                @test isapprox(
+                    lobachevsky_integral(s, lbn, ubn)[k],
+                    lobachevsky_integral(sk, lbn, ubn), atol = 1.0e-10
+                )
+            end
+
+            marginal = lobachevsky_integrate_dimension(s, lbn, ubn, 2)
+            @test size(marginal.coeff) == (length(xn), 2)
+            @test marginal.y[1] isa AbstractVector
+            for k in 1:2
+                quad = quadgk(t -> s((1.0, t))[k], lbn[2], ubn[2])[1]
+                @test isapprox(marginal(1.0)[k], quad, atol = 1.0e-6)
+            end
         end
     end
 end
