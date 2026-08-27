@@ -70,28 +70,26 @@ function phi_nj1D(point, x, alpha, n)
     val = false * x[1]
     # At the element type, so a Float32 sample is not promoted by the constant.
     c = sqrt(oftype(float(val), n) / 3)
+    u = c * alpha * (point - x)
+    # `a` drops by 2 each term, so once it is non-positive so is every later one
+    # and the sum can stop. `b` steps through the binomials by
+    # C(n, l+1) = C(n, l) * (n - l) / (l + 1), exact in `Int` for n <= 20.
+    b = 1
     for l in 0:n
-        a = c * alpha * (point - x) + (n - 2 * l)
-        if a > 0
-            if l % 2 == 0
-                val += binomial(n, l) * a^(n - 1)
-            else
-                val -= binomial(n, l) * a^(n - 1)
-            end
-        end
+        a = u + (n - 2 * l)
+        a > 0 || break
+        val += ifelse(iseven(l), b, -b) * a^(n - 1)
+        b = b * (n - l) ÷ (l + 1)
     end
-    val *= c / (2^n * factorial(n - 1))
-    return val
+    return val * (c / (2^n * factorial(n - 1)))
 end
 
-# The interpolant is linear in the responses and the kernel matrix does not
-# involve them, so vector-valued `y` is one solve per output against the same
-# matrix and `coeff` becomes `n x m`. Contraction dispatches on that shape: the
-# scalar path stays allocation free, the multi-output one accumulates a row per
-# sample. `weight(j)` is the scalar multiplying sample `j`, so the same pair
-# serves evaluation and the closed-form integrals.
+# `weight(j)` is the scalar multiplying sample `j`, so one pair serves both
+# evaluation and the closed-form integrals. Vector-valued responses make `coeff`
+# an `n x m` matrix, contracted as a single matrix-vector product rather than a
+# row slice per sample; the scalar path stays allocation free.
 _loba_combine(coeff::AbstractVector, weight, n) = sum(coeff[j] * weight(j) for j in 1:n)
-_loba_combine(coeff::AbstractMatrix, weight, n) = sum(coeff[j, :] * weight(j) for j in 1:n)
+_loba_combine(coeff::AbstractMatrix, weight, n) = coeff' * [weight(j) for j in 1:n]
 
 function _calc_loba_coeff1D(x, y, alpha, n, sparse)
     dim = length(x)
@@ -201,13 +199,15 @@ end
 
 function _phi_int(point, n)
     res = zero(eltype(point))
-    # As in `phi_nj1D`, at the element type.
+    # As in `phi_nj1D`, at the element type, stepped and stopped the same way.
     s = sqrt(oftype(float(res), n) / 3)
+    u = s * point
+    b = 1
     for k in 0:n
-        c = s * point + (n - 2 * k)
-        if c > 0
-            res = res + (-1)^k * binomial(n, k) * c^n
-        end
+        c = u + (n - 2 * k)
+        c > 0 || break
+        res += ifelse(iseven(k), b, -b) * c^n
+        b = b * (n - k) ÷ (k + 1)
     end
     return res / (2^n * factorial(n))
 end
@@ -259,15 +259,13 @@ function lobachevsky_integrate_dimension(loba::LobachevskySurrogate, lb, ub, dim
     end
     n = length(loba.x)
     # The kernel is a tensor product, so integrating out `dim` scales each
-    # coefficient by that sample's own one-dimensional integral. Summing the
-    # factors instead would apply one global scale to every sample alike.
+    # coefficient by that sample's own one-dimensional integral.
     function scale(i)
         upper = _phi_int(loba.alpha[dim] * (ub[dim] - loba.x[i][dim]), loba.n)
         lower = _phi_int(loba.alpha[dim] * (lb[dim] - loba.x[i][dim]), loba.n)
         return (upper - lower) / loba.alpha[dim]
     end
-    # For an `n x m` multi-output `coeff` this broadcasts down the rows, scaling
-    # every output of a sample by that sample's factor.
+    # Broadcasts down the rows of an `n x m` multi-output `coeff`.
     new_coeff = loba.coeff .* scale.(1:n)
 
     if length(lb) == 2
@@ -283,8 +281,7 @@ function lobachevsky_integrate_dimension(loba::LobachevskySurrogate, lb, ub, dim
             push!(new_x, Tuple(deleteat!(collect(loba.x[i]), dim)))
         end
     end
-    # `collect` before deleting, so neither the surrogate's alpha nor the
-    # caller's bounds are mutated; it also accepts tuple bounds.
+    # `collect` first, so neither alpha nor the caller's bounds are mutated.
     new_lb = deleteat!(collect(lb), dim)
     new_ub = deleteat!(collect(ub), dim)
     new_alpha = deleteat!(collect(loba.alpha), dim)
@@ -301,7 +298,8 @@ function lobachevsky_integrate_dimension(loba::LobachevskySurrogate, lb, ub, dim
         )
     end
     # `loba.y` are the full-dimensional responses; the marginal's are its own
-    # values at the reduced nodes, so a later refit stays consistent. Built
-    # rather than assigned, so an integer `y` need not hold them.
-    return build([build(loba.y)(p) for p in new_x])
+    # values at the reduced nodes, so a later refit stays consistent. Built once
+    # and rebuilt rather than assigned, so an integer `y` need not hold them.
+    marginal = build(loba.y)
+    return build([marginal(p) for p in new_x])
 end
