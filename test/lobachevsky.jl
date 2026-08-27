@@ -33,9 +33,10 @@ using Cubature
         # BoundsError from indexing it per dimension.
         @test_throws ArgumentError LobachevskySurrogate(xn, yn, lbn, ubn, alpha = 2.0)
         @test_throws ArgumentError LobachevskySurrogate(
-            xn, yn, lbn, ubn, alpha = [1.0, 1.0, 1.0])
+            xn, yn, lbn, ubn, alpha = [1.0, 1.0, 1.0]
+        )
         @test LobachevskySurrogate(xn, yn, lbn, ubn, alpha = (1.0, 1.0)) isa
-              LobachevskySurrogate
+            LobachevskySurrogate
         # The default supplies one scale per dimension
         @test length(LobachevskySurrogate(xn, yn, lbn, ubn).alpha) == 2
 
@@ -73,8 +74,10 @@ using Cubature
         end
 
         @testset "approximates the objective" begin
-            @test all(isapprox(loba(t), obj(t), atol = 1.0e-3)
-            for t in range(1.2, 3.8, length = 25))
+            @test all(
+                isapprox(loba(t), obj(t), atol = 1.0e-3)
+                    for t in range(1.2, 3.8, length = 25)
+            )
         end
 
         @testset "call forms" begin
@@ -169,15 +172,21 @@ using Cubature
             loba = LobachevskySurrogate(x, obj.(x), a, b, alpha = 2.0, n = 6)
             # The closed form must reproduce numerical integration of the very
             # same surrogate; that isolates the formula from the fit quality.
-            @test isapprox(lobachevsky_integral(loba, a, b),
-                quadgk(loba, a, b)[1], rtol = 1.0e-8)
+            @test isapprox(
+                lobachevsky_integral(loba, a, b),
+                quadgk(loba, a, b)[1], rtol = 1.0e-8
+            )
             # and the surrogate's integral must approximate the objective's
-            @test isapprox(lobachevsky_integral(loba, a, b),
-                quadgk(obj, a, b)[1], atol = 1.0e-3)
+            @test isapprox(
+                lobachevsky_integral(loba, a, b),
+                quadgk(obj, a, b)[1], atol = 1.0e-3
+            )
             # A sub-interval integrates too, and splitting is additive
-            @test isapprox(lobachevsky_integral(loba, a, 2.5) +
-                           lobachevsky_integral(loba, 2.5, b),
-                lobachevsky_integral(loba, a, b), rtol = 1.0e-10)
+            @test isapprox(
+                lobachevsky_integral(loba, a, 2.5) +
+                    lobachevsky_integral(loba, 2.5, b),
+                lobachevsky_integral(loba, a, b), rtol = 1.0e-10
+            )
             # Integer bounds
             @test lobachevsky_integral(loba, 1, 4) ≈ lobachevsky_integral(loba, a, b)
         end
@@ -187,13 +196,17 @@ using Cubature
             lb, ub = [0.0, 0.0], [4.0, 4.0]
             x = sample(60, lb, ub, SobolSample())
             loba = LobachevskySurrogate(x, obj.(x), lb, ub, alpha = [2.0, 2.0], n = 6)
-            @test isapprox(lobachevsky_integral(loba, lb, ub),
-                hcubature(loba, lb, ub, abstol = 1.0e-8)[1], rtol = 1.0e-5)
-            @test isapprox(lobachevsky_integral(loba, lb, ub),
-                hcubature(obj, lb, ub, abstol = 1.0e-8)[1], rtol = 1.0e-2)
+            @test isapprox(
+                lobachevsky_integral(loba, lb, ub),
+                hcubature(loba, lb, ub, abstol = 1.0e-8)[1], rtol = 1.0e-5
+            )
+            @test isapprox(
+                lobachevsky_integral(loba, lb, ub),
+                hcubature(obj, lb, ub, abstol = 1.0e-8)[1], rtol = 1.0e-2
+            )
             # Bounds may be tuples
             @test lobachevsky_integral(loba, (lb[1], lb[2]), (ub[1], ub[2])) ≈
-                  lobachevsky_integral(loba, lb, ub)
+                lobachevsky_integral(loba, lb, ub)
         end
     end
 
@@ -226,28 +239,36 @@ using Cubature
             # Integrating out dimension 2 must reproduce a direct quadrature of
             # the full surrogate over that coordinate.
             for x1 in (0.5, 1.0, 2.0, 3.0)
-                @test isapprox(reduced(x1),
-                    quadgk(t -> loba((x1, t)), lb[2], ub[2])[1], rtol = 1.0e-6)
+                @test isapprox(
+                    reduced(x1),
+                    quadgk(t -> loba((x1, t)), lb[2], ub[2])[1], rtol = 1.0e-6
+                )
             end
         end
 
         @testset "integrating the marginal gives the full integral" begin
-            @test isapprox(lobachevsky_integral(reduced, reduced.lb, reduced.ub),
-                lobachevsky_integral(loba, lb, ub), rtol = 1.0e-8)
+            @test isapprox(
+                lobachevsky_integral(reduced, reduced.lb, reduced.ub),
+                lobachevsky_integral(loba, lb, ub), rtol = 1.0e-8
+            )
         end
 
         @testset "the reduced surrogate is self-consistent" begin
             # Its stored responses are its own values at the reduced nodes, so
             # refitting reproduces its coefficients.
-            refit = LobachevskySurrogate(reduced.x, reduced.y, reduced.lb, reduced.ub,
-                alpha = reduced.alpha, n = reduced.n)
+            refit = LobachevskySurrogate(
+                reduced.x, reduced.y, reduced.lb, reduced.ub,
+                alpha = reduced.alpha, n = reduced.n
+            )
             @test isapprox(refit.coeff, reduced.coeff, rtol = 1.0e-5)
         end
 
         @testset "either dimension can be integrated out" begin
             r1 = lobachevsky_integrate_dimension(loba, lb, ub, 1)
-            @test isapprox(r1(2.0),
-                quadgk(t -> loba((t, 2.0)), lb[1], ub[1])[1], rtol = 1.0e-6)
+            @test isapprox(
+                r1(2.0),
+                quadgk(t -> loba((t, 2.0)), lb[1], ub[1])[1], rtol = 1.0e-6
+            )
             # Bounds may be tuples
             rt = lobachevsky_integrate_dimension(loba, (lb[1], lb[2]), (ub[1], ub[2]), 2)
             @test rt(1.0) ≈ reduced(1.0)
@@ -256,12 +277,16 @@ using Cubature
         @testset "integer responses" begin
             # The marginal's values are not integers, so the reduced surrogate
             # must be built with them rather than assigned into an integer `y`.
-            li = LobachevskySurrogate([(1.0, 2.0), (3.0, 1.0), (2.0, 3.0), (0.5, 0.5)],
-                [1, 2, 3, 4], lb, ub, alpha = [1.0, 1.0])
+            li = LobachevskySurrogate(
+                [(1.0, 2.0), (3.0, 1.0), (2.0, 3.0), (0.5, 0.5)],
+                [1, 2, 3, 4], lb, ub, alpha = [1.0, 1.0]
+            )
             ri = lobachevsky_integrate_dimension(li, lb, ub, 2)
             @test eltype(ri.y) <: AbstractFloat
-            @test isapprox(ri(2.0),
-                quadgk(t -> li((2.0, t)), lb[2], ub[2])[1], rtol = 1.0e-6)
+            @test isapprox(
+                ri(2.0),
+                quadgk(t -> li((2.0, t)), lb[2], ub[2])[1], rtol = 1.0e-6
+            )
         end
 
         @testset "the dimension is checked" begin
@@ -278,8 +303,10 @@ using Cubature
             @test length(r3.alpha) == 2
             @test length(r3.lb) == 2
             @test length(r3.x[1]) == 2
-            @test isapprox(r3((1.0, 2.0)),
-                quadgk(t -> l3((1.0, 2.0, t)), lb3[3], ub3[3])[1], rtol = 1.0e-6)
+            @test isapprox(
+                r3((1.0, 2.0)),
+                quadgk(t -> l3((1.0, 2.0, t)), lb3[3], ub3[3])[1], rtol = 1.0e-6
+            )
         end
     end
 
@@ -319,8 +346,10 @@ using Cubature
             # The multivariate integral accumulates into a running product,
             # which must start at the element type rather than at Float64.
             xt32 = [(1.0f0, 2.0f0), (3.0f0, 1.0f0), (2.0f0, 3.0f0)]
-            n32 = LobachevskySurrogate(xt32, Float32[1, 2, 3], Float32[0, 0],
-                Float32[4, 4], alpha = Float32[1, 1])
+            n32 = LobachevskySurrogate(
+                xt32, Float32[1, 2, 3], Float32[0, 0],
+                Float32[4, 4], alpha = Float32[1, 1]
+            )
             @test n32((2.0f0, 2.0f0)) isa Float32
             @test lobachevsky_integral(n32, Float32[0, 0], Float32[4, 4]) isa Float32
 
@@ -348,8 +377,10 @@ using Cubature
         end
 
         @testset "rational samples" begin
-            s = LobachevskySurrogate(Rational{Int}[0, 1, 2], Rational{Int}[0, 1, 4],
-                0 // 1, 3 // 1, alpha = 1 // 1)
+            s = LobachevskySurrogate(
+                Rational{Int}[0, 1, 2], Rational{Int}[0, 1, 4],
+                0 // 1, 3 // 1, alpha = 1 // 1
+            )
             @test s(3 // 2) isa AbstractFloat
         end
 
@@ -371,8 +402,10 @@ using Cubature
             @test s(1) ≈ s(1.0)
             @test s(0.75f0) ≈ s(0.75)
             xt = [(1.0, 2.0), (3.0, 1.0), (2.0, 3.0)]
-            sn = LobachevskySurrogate(xt, [1.0, 2.0, 3.0], [0.0, 0.0], [4.0, 4.0],
-                alpha = [1.0, 1.0])
+            sn = LobachevskySurrogate(
+                xt, [1.0, 2.0, 3.0], [0.0, 0.0], [4.0, 4.0],
+                alpha = [1.0, 1.0]
+            )
             @test sn((2, 2.0)) ≈ sn((2.0, 2.0))
         end
 
@@ -384,8 +417,10 @@ using Cubature
         @testset "single and duplicate samples" begin
             @test LobachevskySurrogate([1.0], [3.0], 0.0, 2.0, alpha = 1.0)(1.5) isa Number
             # A repeated node makes the system singular but consistent.
-            d = LobachevskySurrogate([0.0, 1.0, 1.0], [0.0, 1.0, 1.0], 0.0, 2.0,
-                alpha = 1.0)
+            d = LobachevskySurrogate(
+                [0.0, 1.0, 1.0], [0.0, 1.0, 1.0], 0.0, 2.0,
+                alpha = 1.0
+            )
             @test all(isfinite, d.coeff)
             @test isapprox(d(1.0), 1.0, atol = 1.0e-6)
         end
@@ -393,8 +428,10 @@ using Cubature
         @testset "ND update! with a vector sample" begin
             xt = [(1.0, 2.0), (3.0, 1.0), (2.0, 3.0)]
             xv = [collect(p) for p in xt]
-            l = LobachevskySurrogate(xv, [1.0, 2.0, 3.0], [0.0, 0.0], [4.0, 4.0],
-                alpha = [1.0, 1.0])
+            l = LobachevskySurrogate(
+                xv, [1.0, 2.0, 3.0], [0.0, 0.0], [4.0, 4.0],
+                alpha = [1.0, 1.0]
+            )
             update!(l, [2.0, 2.0], 5.0)
             @test length(l.x) == 4
             @test isapprox(l([2.0, 2.0]), 5.0, atol = 1.0e-6)
@@ -402,7 +439,8 @@ using Cubature
 
         @testset "vector responses" begin
             @test_throws DimensionMismatch LobachevskySurrogate(
-                x, [[t, t^2] for t in x[1:(end - 1)]], 0.0, 2.0, alpha = 1.0)
+                x, [[t, t^2] for t in x[1:(end - 1)]], 0.0, 2.0, alpha = 1.0
+            )
         end
     end
 
@@ -424,7 +462,8 @@ using Cubature
             @test all(isapprox(s(x[i]), y[i], atol = 1.0e-8) for i in eachindex(x))
             for k in 1:3
                 sk = LobachevskySurrogate(
-                    x, [yi[k] for yi in y], lb, ub, alpha = 2.0, n = 6)
+                    x, [yi[k] for yi in y], lb, ub, alpha = 2.0, n = 6
+                )
                 @test isapprox(s(1.3)[k], sk(1.3), atol = 1.0e-10)
                 @test isapprox(
                     lobachevsky_integral(s, lb, ub)[k],
@@ -453,7 +492,8 @@ using Cubature
             @test all(isapprox(s(xn[i]), yn[i], atol = 1.0e-8) for i in eachindex(xn))
             for k in 1:2
                 sk = LobachevskySurrogate(
-                    xn, [yi[k] for yi in yn], lbn, ubn, alpha = [2.0, 2.0], n = 6)
+                    xn, [yi[k] for yi in yn], lbn, ubn, alpha = [2.0, 2.0], n = 6
+                )
                 @test isapprox(s((1.0, 1.5))[k], sk((1.0, 1.5)), atol = 1.0e-10)
                 @test isapprox(
                     lobachevsky_integral(s, lbn, ubn)[k],
