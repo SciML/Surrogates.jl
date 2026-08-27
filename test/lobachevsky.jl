@@ -62,6 +62,59 @@ using Cubature
         @test Surrogates.phi_nj1D(0.0, 100.0, 1.0, 4) == 0.0
     end
 
+    # `phi_nj1D` and `_phi_int` stop their sum once a term turns non-positive
+    # and step the binomial coefficient instead of recomputing it. Both are
+    # meant to be exactly the direct sum over all terms, so check bitwise
+    # against it -- especially at n = 12, the only admissible order where
+    # sqrt(n / 3) is rational and a term can be exactly zero.
+    @testset "truncated sum reproduces the direct sum" begin
+        function direct_phi(point, x, alpha, n)
+            val = false * x[1]
+            c = sqrt(oftype(float(val), n) / 3)
+            for l in 0:n
+                a = c * alpha * (point - x) + (n - 2 * l)
+                if a > 0
+                    val += (-1)^l * binomial(n, l) * a^(n - 1)
+                end
+            end
+            return val * (c / (2^n * factorial(n - 1)))
+        end
+        function direct_int(point, n)
+            res = zero(eltype(point))
+            s = sqrt(oftype(float(res), n) / 3)
+            for k in 0:n
+                c = s * point + (n - 2 * k)
+                if c > 0
+                    res = res + (-1)^k * binomial(n, k) * c^n
+                end
+            end
+            return res / (2^n * factorial(n))
+        end
+
+        @test sqrt(12 / 3) == 2.0
+        for n in 2:2:20, alpha in (0.5, 1.0, 2.4, 4.0)
+            @test all(
+                Surrogates.phi_nj1D(t, 0.0, alpha, n) === direct_phi(t, 0.0, alpha, n)
+                    for t in -8.0:0.125:8.0
+            )
+            @test all(
+                Surrogates._phi_int(t, n) === direct_int(t, n)
+                    for t in -8.0:0.125:8.0
+            )
+        end
+        # Element types are carried through unchanged.
+        @test Surrogates.phi_nj1D(1.5f0, 0.5f0, 2.0f0, 6) ===
+            direct_phi(1.5f0, 0.5f0, 2.0f0, 6)
+        @test Surrogates.phi_nj1D(1 // 2, 0 // 1, 1, 4) === direct_phi(1 // 2, 0 // 1, 1, 4)
+        @test Surrogates.phi_nj1D(2, 0, 1, 4) === direct_phi(2, 0, 1, 4)
+        # Non-finite inputs take the same branch. A NaN fails the guard on every
+        # term, so both forms sum to zero rather than propagating the NaN.
+        @test Surrogates.phi_nj1D(Inf, 0.0, 1.0, 4) === direct_phi(Inf, 0.0, 1.0, 4)
+        @test Surrogates.phi_nj1D(-Inf, 0.0, 1.0, 4) === direct_phi(-Inf, 0.0, 1.0, 4)
+        @test Surrogates.phi_nj1D(NaN, 0.0, 1.0, 4) === direct_phi(NaN, 0.0, 1.0, 4)
+        @test Surrogates.phi_nj1D(NaN, 0.0, 1.0, 4) == 0.0
+    end
+
     @testset "1D input" begin
         obj = t -> 3t + log(t)
         a, b = 1.0, 4.0
