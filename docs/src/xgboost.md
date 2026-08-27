@@ -1,6 +1,6 @@
-## Random Forests Surrogate Tutorial
+## XGBoost Surrogate Tutorial
 
-Random forests is a supervised learning algorithm that randomly creates and merges multiple decision trees into one forest.
+Gradient boosting fits an additive ensemble of decision trees, each round training a new tree on the residuals of the ensemble so far.
 
 ```@docs
 XGBoostSurrogate
@@ -35,7 +35,7 @@ plot!(f, label = "True function", xlims = (lower_bound, upper_bound), legend = :
 
 With our sampled points, we can build the XGBoost surrogate using the `XGBoostSurrogate` function.
 
-`xgboost_surrogate` behaves like an ordinary function, which we can simply plot. Additionally, you can specify the number of trees created
+`xgboost_surrogate` behaves like an ordinary function, which we can simply plot. Additionally, you can specify the number of boosting rounds
 using the parameter num_round
 
 ```@example XGBoostSurrogate_tutorial
@@ -63,7 +63,7 @@ plot!(xgboost_surrogate, label = "Surrogate function",
     xlims = (lower_bound, upper_bound), legend = :top)
 ```
 
-## Random Forest ND
+## XGBoost ND
 
 First of all we will define the `Bukin Function N. 6` function we are going to build a surrogate for.
 
