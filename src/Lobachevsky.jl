@@ -19,16 +19,19 @@ input dimension.
 # Arguments
 
   - `x`: training inputs.
-  - `y`: training responses, with one response per input.
+  - `y`: training responses, with one response per input. Responses must be
+    scalars; vector-valued responses are not supported.
   - `lb`: scalar or vector lower domain bound.
   - `ub`: scalar or vector upper domain bound matching `lb`.
 
 # Keywords
 
-  - `alpha = 1.0`: kernel scale. The one-dimensional scalar must lie in `[0, 4]`.
+  - `alpha = 1.0`: kernel scale, which must lie in `(0, 4]`. A scale of zero
+    makes every kernel value identical and the interpolation system singular.
     For multidimensional inputs, supply one scale per input dimension; the
     default is a vector of ones matching one training point.
-  - `n::Int = 4`: even kernel order.
+  - `n::Int = 4`: even, positive kernel order, at most 20 (`factorial(n)`
+    overflows `Int64` beyond that).
   - `sparse::Bool = false`: use sparse coefficient construction.
 
 # Returns
@@ -62,8 +65,10 @@ end
 
 function phi_nj1D(point, x, alpha, n)
     val = false * x[1]
+    # At the element type, so a Float32 sample is not promoted by the constant.
+    c = sqrt(oftype(float(val), n) / 3)
     for l in 0:n
-        a = sqrt(n / 3) * alpha * (point - x) + (n - 2 * l)
+        a = c * alpha * (point - x) + (n - 2 * l)
         if a > 0
             if l % 2 == 0
                 val += binomial(n, l) * a^(n - 1)
@@ -72,41 +77,58 @@ function phi_nj1D(point, x, alpha, n)
             end
         end
     end
-    val *= sqrt(n / 3) / (2^n * factorial(n - 1))
+    val *= c / (2^n * factorial(n - 1))
     return val
 end
 
 function _calc_loba_coeff1D(x, y, alpha, n, sparse)
     dim = length(x)
-    if sparse
-        D = ExtendableSparseMatrix{eltype(x), Int}(dim, dim)
-    else
-        D = zeros(eltype(x[1]), dim, dim)
-    end
+    # `float` so integer samples still give a matrix able to hold the kernel.
+    T = float(eltype(x[1]))
+    D = sparse ? ExtendableSparseMatrix{T, Int}(dim, dim) : zeros(T, dim, dim)
     for i in 1:dim
-        for j in 1:dim
+        # The kernel depends only on the difference and is even in it, so only
+        # the triangle `Symmetric` reads has to be filled.
+        for j in i:dim
             D[i, j] = phi_nj1D(x[i], x[j], alpha, n)
         end
     end
     Sym = Symmetric(D, :U)
     return Sym \ y
 end
+
+# The kernel evaluates `factorial(n - 1)` and `_phi_int` `factorial(n)`, and
+# `factorial(::Int)` overflows above 20.
+function _check_lobachevsky_n(n)
+    if n <= 0 || n % 2 != 0
+        throw(ArgumentError("Kernel order n must be even and positive! Got: $n."))
+    end
+    if n > 20
+        throw(ArgumentError("Kernel order n must be at most 20, as factorial(n) overflows Int64! Got: $n."))
+    end
+    return nothing
+end
+
+# A scale of zero collapses the kernel to a constant, leaving a rank-one
+# system. `any` iterates a scalar as well as a vector.
+function _check_lobachevsky_alpha(alpha)
+    if any(a -> !(0 < a <= 4), alpha)
+        throw(ArgumentError("Kernel scale alpha must be in (0, 4]! Got: $alpha."))
+    end
+    return nothing
+end
+
 function LobachevskySurrogate(
         x, y, lb::Number, ub::Number; alpha::Number = 1.0, n::Int = 4,
         sparse = false
     )
-    if alpha > 4 || alpha < 0
-        error("Alpha must be between 0 and 4")
-    end
-    if n % 2 != 0
-        error("Parameter n must be even")
-    end
+    _check_lobachevsky_alpha(alpha)
+    _check_lobachevsky_n(n)
     coeff = _calc_loba_coeff1D(x, y, alpha, n, sparse)
     return LobachevskySurrogate(x, y, alpha, n, lb, ub, coeff, sparse)
 end
 
 function (loba::LobachevskySurrogate)(val::Number)
-    # Check to make sure dimensions of input matches expected dimension of surrogate
     _check_dimension(loba, val)
 
     return sum(
@@ -121,13 +143,10 @@ end
 
 function _calc_loba_coeffND(x, y, alpha, n, sparse)
     dim = length(x)
-    if sparse
-        D = ExtendableSparseMatrix{eltype(x[1]), Int}(dim, dim)
-    else
-        D = zeros(eltype(x[1]), dim, dim)
-    end
+    T = float(eltype(x[1]))
+    D = sparse ? ExtendableSparseMatrix{T, Int}(dim, dim) : zeros(T, dim, dim)
     for i in 1:dim
-        for j in 1:dim
+        for j in i:dim
             D[i, j] = phi_njND(x[i], x[j], alpha, n)
         end
     end
@@ -138,15 +157,18 @@ function LobachevskySurrogate(
         x, y, lb, ub; alpha = collect(one.(x[1])), n::Int = 4,
         sparse = false
     )
-    if n % 2 != 0
-        error("Parameter n must be even")
+    # A scalar alpha would otherwise reach a BoundsError per dimension.
+    d = length(x[1])
+    if length(alpha) != d
+        throw(ArgumentError("Expected one kernel scale alpha per input dimension, $d of them! Got: $(length(alpha))."))
     end
+    _check_lobachevsky_alpha(alpha)
+    _check_lobachevsky_n(n)
     coeff = _calc_loba_coeffND(x, y, alpha, n, sparse)
     return LobachevskySurrogate(x, y, alpha, n, lb, ub, coeff, sparse)
 end
 
 function (loba::LobachevskySurrogate)(val)
-    # Check to make sure dimensions of input matches expected dimension of surrogate
     _check_dimension(loba, val)
     return sum(
         loba.coeff[j] * phi_njND(val, loba.x[j], loba.alpha, loba.n)
@@ -155,30 +177,26 @@ function (loba::LobachevskySurrogate)(val)
 end
 
 function SurrogatesBase.update!(loba::LobachevskySurrogate, x_new, y_new)
-    if length(loba.x[1]) == 1
-        #1D
-        append!(loba.x, x_new)
-        append!(loba.y, y_new)
-        loba.coeff = _calc_loba_coeff1D(loba.x, loba.y, loba.alpha, loba.n, loba.sparse)
+    loba.x, loba.y = _append_samples(loba.x, loba.y, x_new, y_new)
+    loba.coeff = if first(loba.x) isa Number
+        _calc_loba_coeff1D(loba.x, loba.y, loba.alpha, loba.n, loba.sparse)
     else
-        #ND
-        loba.x = vcat(loba.x, x_new)
-        loba.y = vcat(loba.y, y_new)
-        loba.coeff = _calc_loba_coeffND(loba.x, loba.y, loba.alpha, loba.n, loba.sparse)
+        _calc_loba_coeffND(loba.x, loba.y, loba.alpha, loba.n, loba.sparse)
     end
     return nothing
 end
 
-#Lobachevsky integrals
 function _phi_int(point, n)
     res = zero(eltype(point))
+    # As in `phi_nj1D`, at the element type.
+    s = sqrt(oftype(float(res), n) / 3)
     for k in 0:n
-        c = sqrt(n / 3) * point + (n - 2 * k)
+        c = s * point + (n - 2 * k)
         if c > 0
             res = res + (-1)^k * binomial(n, k) * c^n
         end
     end
-    return res *= 1 / (2^n * factorial(n))
+    return res / (2^n * factorial(n))
 end
 
 function lobachevsky_integral(loba::LobachevskySurrogate, lb::Number, ub::Number)
@@ -202,7 +220,7 @@ function lobachevsky_integral(loba::LobachevskySurrogate, lb, ub)
     d = length(lb)
     val = zero(eltype(loba.y[1]))
     for j in 1:length(loba.x)
-        I = 1.0
+        I = one(val)
         for i in 1:d
             upper = loba.alpha[i] * (ub[i] - loba.x[j][i])
             lower = loba.alpha[i] * (lb[i] - loba.x[j][i])
@@ -214,23 +232,33 @@ function lobachevsky_integral(loba::LobachevskySurrogate, lb, ub)
 end
 
 """
-lobachevsky_integrate_dimension(loba::LobachevskySurrogate,lb,ub,dimension)
+    lobachevsky_integrate_dimension(loba::LobachevskySurrogate, lb, ub, dim)
 
-Integrating the surrogate on selected dimension dim
+Integrate the surrogate over dimension `dim` on `[lb[dim], ub[dim]]`, returning
+a surrogate on the remaining `d - 1` coordinates that evaluates to the marginal
+of `loba`.
+
+Neither `loba` nor the `lb` and `ub` passed in are mutated. The returned
+surrogate carries the marginal values at the reduced nodes as its `y`, so it is
+self-consistent: refitting it reproduces its coefficients.
 """
 function lobachevsky_integrate_dimension(loba::LobachevskySurrogate, lb, ub, dim::Int)
-    gamma_d = zero(loba.coeff[1])
-    n = length(loba.x)
-    for i in 1:n
-        a = loba.alpha[dim] * (ub[dim] - loba.x[i][dim])
-        b = loba.alpha[dim] * (lb[dim] - loba.x[i][dim])
-        int = 1 / loba.alpha[dim] * (_phi_int(a, loba.n) - _phi_int(b, loba.n))
-        gamma_d = gamma_d + loba.coeff[i] * int
+    d = length(loba.x[1])
+    if !(1 <= dim <= d)
+        throw(ArgumentError("Cannot integrate dimension $dim of a $d-dimensional surrogate!"))
     end
-    new_coeff = loba.coeff .* gamma_d
+    n = length(loba.x)
+    # The kernel is a tensor product, so integrating out `dim` scales each
+    # coefficient by that sample's own one-dimensional integral. Summing the
+    # factors instead would apply one global scale to every sample alike.
+    new_coeff = [
+        loba.coeff[i] / loba.alpha[dim] * (
+            _phi_int(loba.alpha[dim] * (ub[dim] - loba.x[i][dim]), loba.n) -
+            _phi_int(loba.alpha[dim] * (lb[dim] - loba.x[i][dim]), loba.n)
+        ) for i in 1:n
+    ]
 
     if length(lb) == 2
-        # Integrating one dimension -> 1D
         new_x = zeros(eltype(loba.x[1][1]), n)
         for i in 1:n
             new_x[i] = deleteat!(collect(loba.x[i]), dim)[1]
@@ -243,11 +271,25 @@ function lobachevsky_integrate_dimension(loba::LobachevskySurrogate, lb, ub, dim
             push!(new_x, Tuple(deleteat!(collect(loba.x[i]), dim)))
         end
     end
-    new_lb = deleteat!(lb, dim)
-    new_ub = deleteat!(ub, dim)
-    new_loba = deleteat!(loba.alpha, dim)
-    return LobachevskySurrogate(
-        new_x, loba.y, loba.alpha, loba.n, new_lb, new_ub,
-        new_coeff, loba.sparse
-    )
+    # `collect` before deleting, so neither the surrogate's alpha nor the
+    # caller's bounds are mutated; it also accepts tuple bounds.
+    new_lb = deleteat!(collect(lb), dim)
+    new_ub = deleteat!(collect(ub), dim)
+    new_alpha = deleteat!(collect(loba.alpha), dim)
+    # 2D -> 1D leaves scalar alpha and bounds
+    function build(y)
+        if length(lb) == 2
+            return LobachevskySurrogate(
+                new_x, y, new_alpha[1], loba.n, new_lb[1], new_ub[1],
+                new_coeff, loba.sparse
+            )
+        end
+        return LobachevskySurrogate(
+            new_x, y, new_alpha, loba.n, new_lb, new_ub, new_coeff, loba.sparse
+        )
+    end
+    # `loba.y` are the full-dimensional responses; the marginal's are its own
+    # values at the reduced nodes, so a later refit stays consistent. Built
+    # rather than assigned, so an integer `y` need not hold them.
+    return build([build(loba.y)(p) for p in new_x])
 end
