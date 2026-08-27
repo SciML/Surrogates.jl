@@ -212,3 +212,29 @@ integrating the two-dimensional surrogate over the whole box:
 lobachevsky_integral(marginal, marginal.lb, marginal.ub),
 lobachevsky_integral(Lobachevsky, lower_bound, upper_bound)
 ```
+
+## Vector-valued responses
+
+The interpolant is linear in the responses and the kernel matrix does not
+involve them, so several outputs can be fitted at once against the same matrix.
+Pass a vector of equal-length response vectors and the surrogate returns a
+vector:
+
+```@example LobachevskySurrogate_multi
+using Surrogates
+
+f = x -> [sin(x), cos(x), 2x]
+x = sample(20, 0.0, 4.0, SobolSample())
+y = f.(x)
+
+multi = LobachevskySurrogate(x, y, 0.0, 4.0, alpha = 2.0, n = 6)
+multi(1.3)
+```
+
+Each output is the surrogate that would have been fitted to that output alone,
+so `lobachevsky_integral` and `lobachevsky_integrate_dimension` return one value
+per output as well:
+
+```@example LobachevskySurrogate_multi
+lobachevsky_integral(multi, 0.0, 4.0)
+```
