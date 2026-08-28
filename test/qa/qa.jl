@@ -24,6 +24,11 @@ end
 
 run_qa(
     Surrogates;
+    aqua_kwargs = (;
+        # QA loads Flux/XGBoost/JET/etc.; Aqua's subprocess precompile flakes on CI
+        # ("done.log was not created, but precompilation exited"), not a real task leak.
+        persistent_tasks = false,
+    ),
     # These dependency APIs are public, but current releases do not yet attach Julia public metadata.
     ei_kwargs = (;
         all_explicit_imports_are_public = (; ignore = (:Buffer,)),
