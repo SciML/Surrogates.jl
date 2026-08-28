@@ -24,22 +24,25 @@ Sampling can be done through [QuasiMonteCarlo.jl](https://github.com/SciML/Quasi
 
 ## ALL the currently available surrogate models:
 
-  - Kriging
-  - Kriging using Stheno
+  - Linear
   - Radial Basis
   - Wendland
-  - Linear
+  - Inverse Distance
   - Second Order Polynomial
-  - Support Vector Machines (Wait for LIBSVM resolution)
-  - Neural Networks
-  - Random Forests
   - Lobachevsky
-  - Inverse-distance
-  - Polynomial expansions
-  - Variable fidelity
-  - Mixture of experts (Waiting GaussianMixtures package to work on v1.5)
-  - Earth
-  - Gradient Enhanced Kriging
+  - Earth (multivariate adaptive regression splines)
+  - Kriging
+  - Gradient Enhanced Kriging (GEK)
+  - GEKPLS
+  - KPLS and KPLSK
+  - Variable Fidelity
+  - Custom Kriging (via AbstractGPs)
+  - Neural Network (via Flux)
+  - Gradient Enhanced Neural Network (via Flux)
+  - Support Vector Machine (via LIBSVM)
+  - Gradient Boosted Trees (via XGBoost)
+  - Polynomial Chaos (via PolyChaos)
+  - Mixture of Experts (via GaussianMixtures)
 
 ## ALL the currently available optimization methods:
 

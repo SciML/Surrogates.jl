@@ -15,13 +15,23 @@ The available surrogates are:
 
   - Linear
   - Radial Basis
-  - Kriging
-  - Custom Kriging provided with Stheno
-  - Neural Network
-  - Support Vector Machine
-  - Random Forest
-  - Second Order Polynomial
+  - Wendland
   - Inverse Distance
+  - Second Order Polynomial
+  - Lobachevsky
+  - Earth (multivariate adaptive regression splines)
+  - Kriging
+  - Gradient Enhanced Kriging (GEK)
+  - GEKPLS
+  - KPLS and KPLSK
+  - Variable Fidelity
+  - Custom Kriging (via AbstractGPs)
+  - Neural Network (via Flux)
+  - Gradient Enhanced Neural Network (via Flux)
+  - Support Vector Machine (via LIBSVM)
+  - Gradient Boosted Trees (via XGBoost)
+  - Polynomial Chaos (via PolyChaos)
+  - Mixture of Experts (via GaussianMixtures)
 
 After the surrogate is built, we need to optimize it with respect to some objective function.
 That is, simultaneously looking for a minimum **and** sampling the most unknown region.
@@ -59,7 +69,8 @@ Currently, the following are implemented as multi-output surrogates:
   - Neural Network (via Flux)
   - Second Order Polynomial
   - Inverse Distance
-  - Custom Kriging (via Stheno)
+  - Lobachevsky
+  - Custom Kriging (via AbstractGPs)
 
 ## Gradients
 

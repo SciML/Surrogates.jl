@@ -95,6 +95,8 @@ using Test
     n = 4
     my_loba_ND = LobachevskySurrogate(x, y, lb, ub)
     surrogate_optimize!(objective_function_ND, SRBF(), lb, ub, my_loba_ND, RandomSample())
+    @test all(isfinite, my_loba_ND.y)
+    @test all(isfinite(my_loba_ND(v)) for v in sample(100, lb, ub, HaltonSample()))
 
     #Linear
     lb = [1.0, 1.0]

@@ -89,7 +89,7 @@ lobachevsky_integral(loba::LobachevskySurrogate,lb,ub)
 SVMSurrogate(x,y,lb::Number,ub::Number)
 ```
 
-  - Random forest surrogate, requires `using XGBoost`.
+  - Gradient boosted trees surrogate, requires `using XGBoost`.
 
 ```
 XGBoostSurrogate(x,y,lb,ub;num_round::Int = 1)

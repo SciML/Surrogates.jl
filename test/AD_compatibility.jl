@@ -87,6 +87,25 @@ Random.seed!(42)
             @test g(5.0) isa Number
             # Accuracy test: f(x) = x^2, f'(x) = 2x, so f'(5.0) = 10.0
             @test isapprox(g(5.0), 10.0, atol = 1.0e-1)
+            h = 1.0e-6
+            @test isapprox(
+                g(5.0), (my_loba(5.0 + h) - my_loba(5.0 - h)) / 2h,
+                atol = 1.0e-4
+            )
+            # The kernel is a truncated power, so a derivative on a sample
+            # point still has to come out finite.
+            @test isfinite(g(x[3]))
+        end
+
+        @testset "Lobachevsky multi-output" begin
+            xm = sample(60, lb, ub, SobolSample())
+            ym = (t -> [t^2, sin(t)]).(xm)
+            my_loba_multi = LobachevskySurrogate(xm, ym, lb, ub, alpha = 2.4, n = 4)
+            J = ForwardDiff.jacobian(t -> my_loba_multi(t[1]), [5.0])
+            @test size(J) == (2, 1)
+            # d/dx x^2 = 2x and d/dx sin(x) = cos(x) at x = 5.0
+            @test isapprox(J[1], 10.0, atol = 1.0e-1)
+            @test isapprox(J[2], cos(5.0), atol = 1.0e-1)
         end
 
         @testset "Second Order Polynomial" begin
@@ -248,6 +267,13 @@ Random.seed!(42)
             @test g([2.0, 5.0]) isa AbstractVector
             # Accuracy test: f(x) = x[1] * x[2], ∇f = [x[2], x[1]], so ∇f([2.0, 5.0]) = [5.0, 2.0]
             @test isapprox(g([2.0, 5.0]), [5.0, 2.0], atol = 1.0e-1)
+            h = 1.0e-6
+            cd = [
+                (my_loba_ND([2.0, 5.0] + h * e) - my_loba_ND([2.0, 5.0] - h * e)) / 2h
+                    for e in ([1.0, 0.0], [0.0, 1.0])
+            ]
+            @test isapprox(g([2.0, 5.0]), cd, atol = 1.0e-4)
+            @test all(isfinite, g(collect(x[3])))
         end
 
         @testset "SecondOrderPolynomialSurrogate" begin
@@ -425,6 +451,8 @@ end
             @test result[1] isa Number
             # Accuracy test: f(x) = x^2, f'(x) = 2x, so f'(5.0) = 10.0
             @test isapprox(result[1], 10.0, atol = 1.0e-1)
+            # Reverse mode has to agree with forward mode.
+            @test result[1] ≈ ForwardDiff.derivative(my_loba, 5.0)
         end
 
         @testset "Second Order Polynomial" begin
@@ -619,6 +647,11 @@ end
             @test result[1] isa Tuple
             # Accuracy test: f(x) = x[1] * x[2], ∇f = [x[2], x[1]], so ∇f([2.0, 5.0]) = [5.0, 2.0]
             @test all(isapprox.(result[1], (5.0, 2.0), atol = 1.0e-1))
+            @test all(
+                isapprox.(
+                    result[1], Tuple(ForwardDiff.gradient(my_loba_ND, [2.0, 5.0]))
+                )
+            )
         end
 
         @testset "SecondOrderPolynomialSurrogate" begin

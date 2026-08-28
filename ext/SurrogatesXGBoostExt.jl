@@ -8,18 +8,18 @@ import SurrogatesBase
 """
     XGBoostSurrogate(x, y, lb, ub, num_round)
 
-Build Random forest surrogate. num_round is the number of trees.
+Build a tree-boosted surrogate. `num_round` is the number of boosting rounds.
 
 ## Arguments
 
   - `x`: Input data points.
   - `y`: Output data points.
   - `lb`: Lower bound of input data points.
-  - `ub`: Upper bound of output data points.
+  - `ub`: Upper bound of input data points.
 
 ## Keyword Arguments
 
-  - `num_round`: number of rounds of training.
+  - `num_round`: number of boosting rounds.
 """
 function Surrogates.XGBoostSurrogate(x, y, lb, ub; num_round::Int = 1)
     X = Array{Float64, 2}(undef, length(x), length(x[1]))
@@ -36,15 +36,15 @@ function Surrogates.XGBoostSurrogate(x, y, lb, ub; num_round::Int = 1)
     return XGBoostSurrogate(X, y, bst, lb, ub, num_round)
 end
 
-function (rndfor::XGBoostSurrogate)(val::Number)
-    return rndfor([val])
+function (xgb::XGBoostSurrogate)(val::Number)
+    return xgb([val])
 end
 
-function (rndfor::XGBoostSurrogate)(val)
-    return predict(rndfor.bst, reshape(collect(val), length(val), 1))[1]
+function (xgb::XGBoostSurrogate)(val)
+    return predict(xgb.bst, reshape(collect(val), length(val), 1))[1]
 end
 
-function SurrogatesBase.update!(rndfor::XGBoostSurrogate, x_new, y_new)
+function SurrogatesBase.update!(xgb::XGBoostSurrogate, x_new, y_new)
     if x_new isa Tuple
         x_new = reduce(hcat, x_new)
     elseif x_new isa Vector{<:Tuple}
@@ -56,16 +56,16 @@ function SurrogatesBase.update!(rndfor::XGBoostSurrogate, x_new, y_new)
             x_new = reduce(hcat, x_new)'
         end
     end
-    rndfor.x = vcat(rndfor.x, x_new)
-    rndfor.y = vcat(rndfor.y, y_new)
-    if length(rndfor.lb) == 1
-        rndfor.bst = xgboost(
-            (rndfor.x, rndfor.y);
-            num_round = rndfor.num_round
+    xgb.x = vcat(xgb.x, x_new)
+    xgb.y = vcat(xgb.y, y_new)
+    if length(xgb.lb) == 1
+        xgb.bst = xgboost(
+            (xgb.x, xgb.y);
+            num_round = xgb.num_round
         )
     else
-        rndfor.bst = xgboost(
-            (rndfor.x, rndfor.y); num_round = rndfor.num_round
+        xgb.bst = xgboost(
+            (xgb.x, xgb.y); num_round = xgb.num_round
         )
     end
     return nothing
