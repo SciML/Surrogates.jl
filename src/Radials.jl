@@ -124,8 +124,10 @@ A `RadialFunction` with polynomial degree `2` and basis
 """
 thinplateRadial() = RadialFunction(
     2, z -> begin
-        result = norm(z)^2 * log(norm(z))
-        ifelse(iszero(z), zero(result), result)
+        # On the radius, not on `z`: `iszero` of a tuple is a `MethodError`, so
+        # testing `z` made this kernel unusable for multidimensional inputs.
+        r = norm(z)
+        iszero(r) ? zero(r * r) : r^2 * log(r)
     end
 )
 
@@ -135,62 +137,39 @@ function RadialBasis(
     )
     q = rad.q
     phi = rad.phi
-    coeff = _calc_coeffs(x, y, lb, ub, phi, q, scale_factor, sparse, regularization)
-    return RadialBasis(phi, q, x, y, lb, ub, coeff, scale_factor, sparse, regularization)
+    # At the samples' own precision. The distance is divided by one and the
+    # interpolation matrix has the other added to its diagonal, so leaving
+    # either at its Float64 default carries a Float32 design into Float64.
+    T = float(eltype(first(x)))
+    scale = convert(T, scale_factor)
+    reg = convert(T, regularization)
+    coeff = _calc_coeffs(x, y, phi, scale, sparse, reg)
+    return RadialBasis(phi, q, x, y, lb, ub, coeff, scale, sparse, reg)
 end
 
-function _calc_coeffs(x, y, lb, ub, phi, q, scale_factor, sparse, regularization)
-    nd = length(first(x))
-    num_poly_terms = binomial(q + nd, q)
-    D = _construct_rbf_interp_matrix(x, first(x), lb, ub, phi, q, scale_factor, sparse)
+function _calc_coeffs(x, y, phi, scale_factor, sparse, regularization)
+    D = _construct_rbf_interp_matrix(x, phi, scale_factor, sparse)
     D += regularization * I # Add regularization to the diagonal
-    Y = _construct_rbf_y_matrix(y, first(y), length(y) + num_poly_terms)
-    if (typeof(y) == Vector{Float64}) #single output case
-        coeff = _copy(transpose(D \ y))
-    else
-        coeff = _copy(transpose(D \ Y[1:size(D)[1], :])) #if y is multi output;
-    end
-    return coeff
+    # One coefficient row per output; a scalar response gives a 1 x n row.
+    return _copy(transpose(D \ _construct_y_matrix(y, first(y))))
 end
 
-function _construct_rbf_interp_matrix(x, x_el::Number, lb, ub, phi, q, scale_factor, sparse)
+# The kernel reads a pair of samples through broadcasting, so a scalar and a
+# multidimensional sample are assembled the same way and one method serves both.
+function _construct_rbf_interp_matrix(x, phi, scale_factor, sparse)
     n = length(x)
-    if sparse
-        D = ExtendableSparseMatrix{eltype(x_el), Int}(n, n)
-    else
-        D = zeros(eltype(x_el), n, n)
-    end
+    # `float` because `phi` returns a distance: an integer design would
+    # otherwise throw `InexactError` for any scale the samples do not divide.
+    T = float(eltype(first(x)))
+    D = sparse ? ExtendableSparseMatrix{T, Int}(n, n) : zeros(T, n, n)
     @inbounds for i in 1:n
+        # The kernel depends only on the difference and is even in it, so only
+        # the triangle `Symmetric` reads has to be filled.
         for j in i:n
             D[i, j] = phi((x[i] .- x[j]) ./ scale_factor)
         end
     end
-    D_sym = Symmetric(D, :U)
-    return D_sym
-end
-
-function _construct_rbf_interp_matrix(x, x_el, lb, ub, phi, q, scale_factor, sparse)
-    n = length(x)
-    nd = length(x_el)
-    if sparse
-        D = ExtendableSparseMatrix{eltype(x_el), Int}(n, n)
-    else
-        D = zeros(eltype(x_el), n, n)
-    end
-    @inbounds for i in 1:n
-        for j in i:n
-            D[i, j] = phi((x[i] .- x[j]) ./ scale_factor)
-        end
-    end
-    D_sym = Symmetric(D, :U)
-    return D_sym
-end
-
-function _construct_rbf_y_matrix(y, y_el::Number, m)
-    return [i <= length(y) ? y[i] : zero(y_el) for i in 1:m]
-end
-function _construct_rbf_y_matrix(y, y_el, m)
-    return [i <= length(y) ? y[i][j] : zero(first(y_el)) for i in 1:m, j in 1:length(y_el)]
+    return Symmetric(D, :U)
 end
 
 using Zygote: Buffer
@@ -303,7 +282,14 @@ function _approx_rbf(val, rad::RadialBasis)
     n = length(rad.x)
 
     if n > size(rad.coeff, 2)
-        throw("Length of model's x vector exceeds number of calculated coefficients ($n != $(size(rad.coeff, 2))).")
+        throw(
+            ArgumentError(
+                "RadialBasis has $n samples but only $(size(rad.coeff, 2)) \
+                coefficients. The sample and coefficient containers have fallen \
+                out of step; rebuild the surrogate, or use update! to add \
+                samples so the coefficients are refitted with them."
+            )
+        )
     end
 
     approx = _make_approx(val, rad)
@@ -338,17 +324,9 @@ _center_bounds(x, lb, ub) = (ub .- lb) ./ 2
 Add new samples x and y and update the coefficients. Return the new object radial.
 """
 function SurrogatesBase.update!(rad::RadialBasis, new_x, new_y)
-    if (length(new_x) == 1 && length(new_x[1]) == 1) ||
-            (length(new_x) > 1 && length(new_x[1]) == 1 && length(rad.lb) > 1)
-        push!(rad.x, new_x)
-        push!(rad.y, new_y)
-    else
-        append!(rad.x, new_x)
-        append!(rad.y, new_y)
-    end
+    rad.x, rad.y = _append_samples(rad.x, rad.y, new_x, new_y)
     rad.coeff = _calc_coeffs(
-        rad.x, rad.y, rad.lb, rad.ub, rad.phi, rad.dim_poly,
-        rad.scale_factor, rad.sparse, rad.regularization
+        rad.x, rad.y, rad.phi, rad.scale_factor, rad.sparse, rad.regularization
     )
     return nothing
 end
