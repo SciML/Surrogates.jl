@@ -3,8 +3,8 @@ module Surrogates
 using Distributions: Normal, cdf, pdf, truncated
 using ExtendableSparse: ExtendableSparseMatrix
 using IterativeSolvers: cg
-using LinearAlgebra: Diagonal, I, Symmetric, cholesky, cond, diag, dot, eigvals, norm,
-    pinv, qr, rank, ⋅
+using LinearAlgebra: ColumnNorm, Diagonal, I, Symmetric, cholesky, cond, diag, dot,
+    eigvals, norm, pinv, qr, rank, ⋅
 using PrecompileTools: @compile_workload, @setup_workload
 using QuasiMonteCarlo: GoldenSample, GridSample, HaltonSample, KroneckerSample,
     LatinHypercubeSample, RandomSample, SamplingAlgorithm, SobolSample
