@@ -3,11 +3,22 @@
         n_max_terms = 10, rel_res_error = 1.0e-2, rel_GCV = 1.0e-2,
         maxiters = 100)
 
-Multivariate adaptive regression splines surrogate.
+Multivariate adaptive regression splines (MARS) surrogate.
 
-`EarthSurrogate` fits hinge-function basis terms with a forward pass followed
-by backward pruning. The fitted surrogate is callable as `earth(x_new)` and can
-be updated with `update!(earth, x_new, y_new)`.
+The model is a sum of one-dimensional hinge functions about the mean response,
+
+```math
+\\hat f(p) = \\bar y + \\sum_{t} c_t \\, h_t(p), \\qquad
+h_t(p) = \\max(0, \\pm(p_{j_t} - k_t))
+```
+
+fitted by a forward pass that greedily adds *reflected pairs* — a hinge and its
+mirror image about the same knot `k_t` in the same coordinate `j_t` — followed
+by backward pruning on the generalized cross-validation (GCV) criterion.
+
+Knots are drawn from the sampled coordinates, so the surrogate is piecewise
+linear with breakpoints at the data and is continuous but not differentiable
+there. It is a regression surrogate, not an interpolant.
 
 # Fields
 
@@ -15,39 +26,74 @@ be updated with `update!(earth, x_new, y_new)`.
   - `y`: training responses.
   - `lb`: lower bound of the input domain.
   - `ub`: upper bound of the input domain.
-  - `basis`: selected hinge basis terms.
-  - `coeff`: fitted basis coefficients.
+  - `basis`: selected hinge basis terms, as `HingeTerm`s.
+  - `coeff`: fitted basis coefficients, one per basis term.
   - `penalty`: generalized cross-validation penalty.
   - `n_min_terms`: minimum number of retained basis terms.
-  - `n_max_terms`: maximum number of basis terms considered during the forward
-    pass.
+  - `n_max_terms`: maximum number of reflected pairs added by the forward pass.
   - `rel_res_error`: relative residual-error threshold for adding terms.
   - `rel_GCV`: relative generalized-cross-validation threshold for pruning.
-  - `intercept`: fitted intercept term.
+  - `intercept`: mean response, the value the model takes where every hinge is
+    inactive.
   - `maxiters`: maximum number of forward-pass iterations.
 
 # Arguments
 
-  - `x`: sample locations. Use scalars for one-dimensional inputs or tuples for
-    multidimensional inputs.
-  - `y`: observed values at `x`.
+  - `x`: sample locations, as numbers for one-dimensional inputs or as
+    equal-length tuples or vectors otherwise.
+  - `y`: observed values at `x`, one number per sample.
   - `lb`: lower bound of the input domain.
-  - `ub`: upper bound of the input domain.
+  - `ub`: upper bound of the input domain matching `lb`.
 
 # Keywords
 
-  - `penalty`: complexity penalty used during pruning.
-  - `n_min_terms`: minimum number of basis terms to keep.
-  - `n_max_terms`: maximum number of basis terms to fit.
-  - `rel_res_error`: stopping threshold for forward selection.
-  - `rel_GCV`: stopping threshold for backward pruning.
-  - `maxiters`: maximum forward-selection iterations.
+  - `penalty = 2.0`: GCV complexity penalty. Each retained term costs
+    `1 + penalty / 2` effective parameters, so a larger penalty prunes harder.
+  - `n_min_terms::Int = 2`: minimum number of individual basis functions the
+    backward pass will leave in place.
+  - `n_max_terms::Int = 10`: maximum number of *reflected pairs* the forward
+    pass will add, so at most `2 * n_max_terms` basis functions.
+  - `rel_res_error = 1.0e-2`: a candidate pair is added only if it cuts the
+    residual sum of squares by at least this *fraction* of the current residual.
+  - `rel_GCV = 1.0e-2`: a term is pruned only if dropping it cuts the GCV
+    score by at least this fraction of the current score.
+  - `maxiters = 100`: maximum forward-selection iterations.
 
 # Returns
 
-An `EarthSurrogate` that satisfies the generic surrogate interface:
-`surrogate(x)` evaluates the approximation and `update!(surrogate, x, y)`
-refits after adding a sample.
+A callable `EarthSurrogate` supporting `update!(surrogate, x_new, y_new)`,
+which refits the basis and coefficients after adding observations.
+
+!!! note "Additive terms only"
+
+    Both passes select hinges in a single coordinate; products of hinges across
+    coordinates — the interaction terms of full MARS — are never formed, so the
+    model is additive in the input coordinates.
+
+# Element types
+
+The design matrices are built in `float(eltype)` of the samples, so `Float32`
+and `BigFloat` inputs keep their precision and integer or rational inputs are
+promoted the way `\\` would promote them. Knots are stored at the samples' own
+type, so an integer design keeps exact knots.
+
+# Differentiability
+
+Evaluation is differentiable in the query point with both ForwardDiff and
+Zygote. The hinges make the surrogate only piecewise differentiable: at a knot
+the derivative jumps, and the value returned there is whichever one-sided
+derivative `max` selects.
+
+# Example
+
+```julia
+using Surrogates
+
+x = sample(20, 0.0, 5.0, SobolSample())
+y = @. 2x + x^2
+surrogate = EarthSurrogate(x, y, 0.0, 5.0)
+surrogate(3.0)
+```
 """
 mutable struct EarthSurrogate{X, Y, L, U, B, C, P, M, N, R, G, I, T} <:
     AbstractDeterministicSurrogate
@@ -66,363 +112,222 @@ mutable struct EarthSurrogate{X, Y, L, U, B, C, P, M, N, R, G, I, T} <:
     maxiters::T
 end
 
-_hinge(x::Number, knot::Number) = max(0, x - knot)
-_hinge_mirror(x::Number, knot::Number) = max(0, knot - x)
+"""
+    HingeTerm(dim, knot, mirror)
 
-# AD-friendly basis term structure for 1D
-struct BasisTerm1D{K}
+One hinge basis function of an [`EarthSurrogate`](@ref): `max(0, p[dim] - knot)`,
+or the reflection `max(0, knot - p[dim])` when `mirror` is `true`.
+
+A hinge and its mirror are added as a pair, so together they represent a change
+of slope at `knot` rather than a one-sided ramp.
+"""
+struct HingeTerm{K}
+    dim::Int
     knot::K
-    is_mirror::Bool  # true for hinge_mirror, false for hinge
+    mirror::Bool
 end
 
-# Evaluate a basis term at a point (AD-friendly)
-@inline function _eval_basis_term_1d(term::BasisTerm1D, x::Number)
-    if term.is_mirror
-        return _hinge_mirror(x, term.knot)
-    else
-        return _hinge(x, term.knot)
+# A one-dimensional sample is its own only coordinate, so reading samples through
+# these lets one forward and one backward pass serve both input layouts.
+_coord(p::Number, ::Int) = p
+_coord(p, dim::Int) = p[dim]
+_ndims(p::Number) = 1
+_ndims(p) = length(p)
+
+@inline function _eval_term(term::HingeTerm, p)
+    z = _coord(p, term.dim)
+    return term.mirror ? max(0, term.knot - z) : max(0, z - term.knot)
+end
+
+_fill_column!(X, col, term, x) = (X[:, col] .= _eval_term.((term,), x); X)
+
+function _design_matrix(x, basis)
+    X = Matrix{float(eltype(first(x)))}(undef, length(x), length(basis))
+    for (col, term) in enumerate(basis)
+        _fill_column!(X, col, term, x)
     end
+    return X
 end
 
-function _coeff_1d(x, y, basis)
+# Master rejected a candidate on `cond(X'X) > 1e8`, i.e. `cond(X) > 1e4`. Column
+# pivoting leaves `|R[i, i]|` non-increasing, and `|R[1, 1]| / |R[m, m]|`
+# lower-bounds `cond(X)`, so the same screen — to within that slack — is a read of
+# the factorization that already solves the system, not a fresh SVD.
+const _EARTH_COND_TOL = 1.0e-4
+
+"""
+    _lstsq(X, yc)
+
+Least-squares coefficients of `yc` on the columns of `X`, or `nothing` when the
+design cannot support them.
+
+`nothing` marks the two cases the forward pass must skip rather than select on:
+a knot at an extreme sampled coordinate, whose mirrored hinge is an all-zero
+column, and fewer samples than columns, where `\\` returns a minimum-norm
+solution that fits the samples and says nothing between them.
+"""
+function _lstsq(X, yc)
+    size(X, 1) >= size(X, 2) || return nothing
+    F = qr(X, ColumnNorm())
+    r = abs.(diag(F.R))
+    (isempty(r) || last(r) <= _EARTH_COND_TOL * first(r)) && return nothing
+    return F \ yc
+end
+
+function _sse(X, coeff, yc)
+    s = zero(promote_type(eltype(X), eltype(yc), eltype(coeff)))
+    @inbounds for i in axes(X, 1)
+        r = yc[i]
+        for j in axes(X, 2)
+            r -= X[i, j] * coeff[j]
+        end
+        s += r^2
+    end
+    return s
+end
+
+# The mean is carried separately as `intercept`, so the basis is fitted to what
+# that leaves unexplained; regressing raw `y` would count the mean twice.
+_center(y) = y .- sum(y) / length(y)
+
+"""
+    _gcv(sse, n, m, penalty)
+
+Generalized cross-validation score of a fit with `m` hinge terms and residual
+sum of squares `sse` over `n` samples.
+
+Friedman's criterion (MARS, Ann. Statist. 19(1), eq. 30) as the reference
+implementations write it: `(sse / n) / (1 - C / n)^2` with
+`C = M + penalty * (M - 1) / 2`, where `M` counts every term the model fits, the
+constant included. The constant is carried outside `basis`, hence `M = m + 1`;
+counting only the hinges would understate every model by `1 + penalty / 2`
+effective parameters.
+
+The denominator vanishes as `C` reaches `n` and recovers beyond it, so a basis
+that saturates the samples scores `Inf` rather than spuriously well.
+"""
+function _gcv(sse, n, m, penalty)
+    nterms = m + 1
+    effective_params = nterms + penalty * (nterms - 1) / 2
+    effective_params >= n && return convert(float(typeof(sse)), Inf)
+    return sse / (n * (1 - effective_params / n)^2)
+end
+
+"""
+    _forward_pass(x, y, n_max_terms, rel_res_error, maxiters)
+
+Greedily grow a hinge basis, one reflected pair per iteration.
+
+Candidates are the reflected pairs at every sampled coordinate, `n * d` of them.
+Pairing each hinge with a mirror at a *different* knot, as the ND pass used to,
+costs `(n * d)^2` candidates and reaches no further: a pair at unrelated knots is
+two independent ramps that later iterations can add separately.
+"""
+function _forward_pass(x, y, n_max_terms, rel_res_error, maxiters)
     n = length(x)
-    d = length(basis)
-    X = zeros(eltype(x[1]), n, d)
-    @inbounds for i in 1:n
-        for j in 1:d
-            X[i, j] = _eval_basis_term_1d(basis[j], x[i])
+    d = _ndims(first(x))
+    yc = _center(y)
+    basis = HingeTerm{typeof(_coord(first(x), 1))}[]
+    # The intercept-only residual, which the first pair has to improve on.
+    best_sse = sum(abs2, yc)
+    pairs = 0
+    for _ in 1:maxiters
+        pairs < n_max_terms || break
+        # The retained columns are identical across candidates, so they are
+        # filled once and only the two trial columns are rewritten.
+        held = length(basis)
+        X = Matrix{float(eltype(first(x)))}(undef, n, held + 2)
+        for col in 1:held
+            _fill_column!(X, col, basis[col], x)
         end
-    end
-    return (X' * X) \ (X' * y)
-end
-
-function _forward_pass_1d(x, y, n_max_terms, rel_res_error, maxiters)
-    n = length(x)
-    basis = BasisTerm1D[]
-    current_sse = +Inf
-    intercept = sum(y) / length(y)
-    num_terms = 0
-    pos_of_knot = 0
-    iters = 0
-    while num_terms < n_max_terms && iters < maxiters
-        #Look for best addition:
-        new_addition = false
-        for i in 1:length(x)
-            #Add or not add the knot var_i?
-            var_i = x[i]
-            new_basis = copy(basis)
-            #select best new pair
-            push!(new_basis, BasisTerm1D(var_i, false))  # hinge
-            push!(new_basis, BasisTerm1D(var_i, true))   # hinge_mirror
-            #find coefficients
-            d = length(new_basis)
-            X = zeros(eltype(x[1]), n, d)
-            @inbounds for k in 1:n
-                for j in 1:d
-                    X[k, j] = _eval_basis_term_1d(new_basis[j], x[k])
-                end
-            end
-            if (cond(X' * X) > 1.0e8)
-                condition_number = false
-                new_sse = +Inf
-            else
-                condition_number = true
-                coeff = (X' * X) \ (X' * y)
-                new_sse = zero(y[1])
-                for k in 1:n
-                    val_k = sum(
-                        coeff[j] * _eval_basis_term_1d(new_basis[j], x[k])
-                            for j in 1:d
-                    ) + intercept
-                    new_sse = new_sse + (y[k] - val_k)^2
-                end
-            end
-            #is the i-esim the best?
-            if (
-                    (new_sse < current_sse) && (abs(current_sse - new_sse) >= rel_res_error) &&
-                        condition_number
-                )
-                #Add the hinge function to the basis
-                pos_of_knot = i
-                current_sse = new_sse
-                new_addition = true
+        best_pair = nothing
+        for i in 1:n, j in 1:d
+            knot = _coord(x[i], j)
+            pair = (HingeTerm(j, knot, false), HingeTerm(j, knot, true))
+            _fill_column!(X, held + 1, pair[1], x)
+            _fill_column!(X, held + 2, pair[2], x)
+            coeff = _lstsq(X, yc)
+            coeff === nothing && continue
+            sse = _sse(X, coeff, yc)
+            # Strictly, and by the margin: a response the basis already
+            # explains exactly leaves `best_sse` at zero, where a relative
+            # margin alone admits everything.
+            if sse < best_sse && best_sse - sse >= rel_res_error * best_sse
+                best_sse = sse
+                best_pair = pair
             end
         end
-        iters = iters + 1
-        if new_addition
-            push!(basis, BasisTerm1D(x[pos_of_knot], false))  # hinge
-            push!(basis, BasisTerm1D(x[pos_of_knot], true))   # hinge_mirror
-            num_terms = num_terms + 1
-        else
-            break
-        end
+        best_pair === nothing && break
+        push!(basis, best_pair[1], best_pair[2])
+        pairs += 1
     end
-    if length(basis) == 0
-        throw("Earth surrogate did not add any term, just the intercept. It is advised to double check the parameters.")
-    end
-    return basis
-end
-
-function _backward_pass_1d(x, y, n_min_terms, basis, penalty, rel_GCV)
-    n = length(x)
-    d = length(basis)
-    intercept = sum(y) / length(y)
-    coeff = _coeff_1d(x, y, basis)
-    sse = zero(y[1])
-    for i in 1:n
-        val_i = sum(coeff[j] * _eval_basis_term_1d(basis[j], x[i]) for j in 1:d) + intercept
-        sse = sse + (y[i] - val_i)^2
-    end
-    effect_num_params = d + penalty * (d - 1) / 2
-    current_gcv = sse / (n * (1 - effect_num_params / n)^2)
-    num_terms = d
-    while (num_terms > n_min_terms)
-        #Basis-> select worst performing element-> eliminate it
-        if num_terms <= 1
-            break
-        end
-        found_new_to_eliminate = false
-        best_removal_idx = 0
-        best_new_gcv = +Inf
-        for i in 1:num_terms
-            current_basis = [basis[j] for j in 1:num_terms if j != i]
-            coef = _coeff_1d(x, y, current_basis)
-            new_sse = zero(y[1])
-            current_base_len = num_terms - 1
-            for a in 1:n
-                val_a = sum(
-                    coef[j] * _eval_basis_term_1d(current_basis[j], x[a])
-                        for j in 1:current_base_len
-                ) + intercept
-                new_sse = new_sse + (y[a] - val_a)^2
-            end
-            effect_num_params = current_base_len + penalty * (current_base_len - 1) / 2
-            i_gcv = new_sse / (n * (1 - effect_num_params / n)^2)
-            if i_gcv < best_new_gcv
-                best_removal_idx = i
-                best_new_gcv = i_gcv
-                found_new_to_eliminate = true
-            end
-        end
-        if !found_new_to_eliminate || best_new_gcv >= current_gcv
-            break
-        end
-        if abs(current_gcv - best_new_gcv) < rel_GCV
-            break
-        else
-            num_terms = num_terms - 1
-            deleteat!(basis, best_removal_idx)
-            current_gcv = best_new_gcv
-        end
-    end
-    return basis
-end
-
-function EarthSurrogate(
-        x, y, lb::Number, ub::Number; penalty::Number = 2.0,
-        n_min_terms::Int = 2, n_max_terms::Int = 10,
-        rel_res_error::Number = 1.0e-2, rel_GCV::Number = 1.0e-2,
-        maxiters = 100
+    isempty(basis) && throw(
+        ArgumentError(
+            "EarthSurrogate added no basis term, leaving only the intercept: no \
+            reflected pair cut the residual sum of squares by the required \
+            fraction rel_res_error = $rel_res_error. Lower rel_res_error, or \
+            supply samples whose response varies beyond that tolerance."
+        )
     )
-    intercept = sum(y) / length(y)
-    basis_after_forward = _forward_pass_1d(x, y, n_max_terms, rel_res_error, maxiters)
-    basis = _backward_pass_1d(x, y, n_min_terms, basis_after_forward, penalty, rel_GCV)
-    coeff = _coeff_1d(x, y, basis)
-    return EarthSurrogate(
-        x, y, lb, ub, basis, coeff, penalty, n_min_terms, n_max_terms,
-        rel_res_error, rel_GCV, intercept, maxiters
+    return basis
+end
+
+"""
+    _backward_pass(x, y, n_min_terms, basis, penalty, rel_GCV)
+
+Prune `basis` in place for as long as removal improves the GCV score.
+
+The forward pass adds pairs on residual error alone and so overfits by
+construction; pruning one term at a time on GCV trades them back against their
+cost.
+"""
+function _backward_pass(x, y, n_min_terms, basis, penalty, rel_GCV)
+    n = length(x)
+    yc = _center(y)
+    coeff = _lstsq(_design_matrix(x, basis), yc)
+    coeff === nothing && return basis
+    current_gcv = _gcv(
+        _sse(_design_matrix(x, basis), coeff, yc), n, length(basis), penalty
     )
-end
-
-function (earth::EarthSurrogate)(val::Number)
-    # Check to make sure dimensions of input matches expected dimension of surrogate
-    _check_dimension(earth, val)
-    return sum(
-        earth.coeff[i] * _eval_basis_term_1d(earth.basis[i], val)
-            for i in 1:length(earth.coeff)
-    ) +
-        earth.intercept
-end
-
-#ND
-# AD-friendly basis term structure for ND
-struct BasisTermND{D, K}
-    dims::D  # Vector of dimension indices where basis is active (1-based)
-    knots::K  # Vector of knot values (one per active dimension)
-    is_mirror::Vector{Bool}  # Vector indicating hinge vs hinge_mirror for each active dimension
-end
-
-# Evaluate a ND basis term at a point (AD-friendly)
-@inline function _eval_basis_term_nd(term::BasisTermND, x)
-    result = one(eltype(x[1]))
-    for (idx, dim) in enumerate(term.dims)
-        knot = term.knots[idx]
-        if term.is_mirror[idx]
-            result *= _hinge_mirror(x[dim], knot)
-        else
-            result *= _hinge(x[dim], knot)
-        end
-    end
-    return result
-end
-
-function _coeff_nd(x, y, basis)
-    n = length(x)
-    base_len = length(basis)
-    X = zeros(eltype(x[1]), n, base_len)
-    @inbounds for a in 1:n
-        for b in 1:base_len
-            X[a, b] = _eval_basis_term_nd(basis[b], x[a])
-        end
-    end
-    return (X' * X) \ (X' * y)
-end
-
-function _forward_pass_nd(x, y, n_max_terms, rel_res_error, maxiters)
-    n = length(x)
-    basis = BasisTermND[]
-    current_sse = +Inf
-    intercept = sum(y) / length(y)
-    num_terms = 0
-    d = length(x[1])
-    iters = 0
-
-    while num_terms < n_max_terms && iters < maxiters
-        new_addition = false
-        best_term1 = nothing
-        best_term2 = nothing
-
-        for i in 1:n
-            for j in 1:d
-                for k in 1:n
-                    for l in 1:d
-                        # Create two new basis terms
-                        term1 = BasisTermND([j], [x[i][j]], [false])  # hinge
-                        term2 = BasisTermND([l], [x[k][l]], [true])  # hinge_mirror
-
-                        new_basis = vcat(basis, [term1, term2])
-                        bas_len = length(new_basis)
-
-                        # Build design matrix
-                        X = zeros(eltype(x[1]), n, bas_len)
-                        @inbounds for a in 1:n
-                            for b in 1:bas_len
-                                X[a, b] = _eval_basis_term_nd(new_basis[b], x[a])
-                            end
-                        end
-
-                        # Check condition number
-                        XtX = X' * X
-                        if cond(XtX) > 1.0e8
-                            continue
-                        end
-
-                        # Solve for coefficients
-                        coeff = XtX \ (X' * y)
-
-                        # Compute SSE
-                        new_sse = zero(y[1])
-                        @inbounds for a in 1:n
-                            val_a = sum(coeff[b] * X[a, b] for b in 1:bas_len) + intercept
-                            new_sse = new_sse + (y[a] - val_a)^2
-                        end
-
-                        # Check if this is the best so far
-                        if (new_sse < current_sse) &&
-                                (abs(current_sse - new_sse) >= rel_res_error)
-                            best_term1 = term1
-                            best_term2 = term2
-                            current_sse = new_sse
-                            new_addition = true
-                        end
-                    end
-                end
+    while length(basis) > max(n_min_terms, 1)
+        best_gcv = convert(typeof(current_gcv), Inf)
+        best_idx = 0
+        for i in eachindex(basis)
+            trial = deleteat!(copy(basis), i)
+            X = _design_matrix(x, trial)
+            trial_coeff = _lstsq(X, yc)
+            trial_coeff === nothing && continue
+            gcv = _gcv(_sse(X, trial_coeff, yc), n, length(trial), penalty)
+            if best_idx == 0 || gcv < best_gcv
+                best_gcv = gcv
+                best_idx = i
             end
         end
-
-        iters = iters + 1
-        if new_addition
-            push!(basis, best_term1)
-            push!(basis, best_term2)
-            num_terms = num_terms + 1
-        else
-            break
+        best_idx == 0 && break
+        # Stop unless dropping a term improves GCV by the required margin —
+        # except while the basis saturates the samples, where every score is
+        # `Inf` and GCV ranks nothing. Pruning has to continue there, or a
+        # penalty heavy enough to saturate returns a *larger* basis than a
+        # lighter one.
+        if isfinite(current_gcv)
+            current_gcv - best_gcv >= rel_GCV * current_gcv || break
         end
-    end
-
-    if length(basis) == 0
-        throw("Earth surrogate did not add any term, just the intercept. It is advised to double check the parameters.")
+        deleteat!(basis, best_idx)
+        current_gcv = best_gcv
     end
     return basis
 end
 
-function _backward_pass_nd(x, y, n_min_terms, basis, penalty, rel_GCV)
-    n = length(x)
-    d = length(x[1])
-    base_len = length(basis)
-    intercept = sum(y) / length(y)
-    coeff = _coeff_nd(x, y, basis)
-
-    # Compute initial SSE
-    sse = zero(y[1])
-    @inbounds for a in 1:n
-        val_a = sum(coeff[b] * _eval_basis_term_nd(basis[b], x[a]) for b in 1:base_len) +
-            intercept
-        sse = sse + (y[a] - val_a)^2
-    end
-
-    effect_num_params = base_len + penalty * (base_len - 1) / 2
-    current_gcv = sse / (n * (1 - effect_num_params / n)^2)
-    num_terms = base_len
-
-    while num_terms > n_min_terms
-        if num_terms <= 1
-            break
-        end
-
-        found_new_to_eliminate = false
-        best_removal_idx = 0
-        best_new_gcv = +Inf
-
-        for i in 1:num_terms
-            current_basis = [basis[j] for j in 1:num_terms if j != i]
-            coef = _coeff_nd(x, y, current_basis)
-
-            new_sse = zero(y[1])
-            current_base_len = num_terms - 1
-            @inbounds for a in 1:n
-                val_a = sum(
-                    coef[b] * _eval_basis_term_nd(current_basis[b], x[a])
-                        for b in 1:current_base_len
-                ) + intercept
-                new_sse = new_sse + (y[a] - val_a)^2
-            end
-
-            curr_effect_num_params = current_base_len + penalty * (current_base_len - 1) / 2
-            i_gcv = new_sse / (n * (1 - curr_effect_num_params / n)^2)
-
-            if i_gcv < best_new_gcv
-                best_removal_idx = i
-                best_new_gcv = i_gcv
-                found_new_to_eliminate = true
-            end
-        end
-
-        if !found_new_to_eliminate || best_new_gcv >= current_gcv
-            break
-        end
-
-        if abs(current_gcv - best_new_gcv) < rel_GCV
-            break
-        end
-
-        # Remove the best candidate
-        deleteat!(basis, best_removal_idx)
-        num_terms = num_terms - 1
-        current_gcv = best_new_gcv
-    end
-
-    return basis
+function _fit_coeff(x, y, basis)
+    coeff = _lstsq(_design_matrix(x, basis), _center(y))
+    coeff === nothing && throw(
+        ArgumentError(
+            "EarthSurrogate could not fit its retained basis of \
+            $(length(basis)) term(s): the design matrix at the $(length(x)) \
+            samples is rank deficient. Spread the samples across the domain."
+        )
+    )
+    return coeff
 end
 
 function EarthSurrogate(
@@ -430,56 +335,34 @@ function EarthSurrogate(
         n_max_terms::Int = 10, rel_res_error::Number = 1.0e-2,
         rel_GCV::Number = 1.0e-2, maxiters = 100
     )
-    intercept = sum(y) / length(y)
-    basis_after_forward = _forward_pass_nd(x, y, n_max_terms, rel_res_error, maxiters)
-    basis = _backward_pass_nd(x, y, n_min_terms, basis_after_forward, penalty, rel_GCV)
-    coeff = _coeff_nd(x, y, basis)
+    forward = _forward_pass(x, y, n_max_terms, rel_res_error, maxiters)
+    basis = _backward_pass(x, y, n_min_terms, forward, penalty, rel_GCV)
     return EarthSurrogate(
-        x, y, lb, ub, basis, coeff, penalty, n_min_terms, n_max_terms,
-        rel_res_error, rel_GCV, intercept, maxiters
+        x, y, lb, ub, basis, _fit_coeff(x, y, basis), penalty, n_min_terms,
+        n_max_terms, rel_res_error, rel_GCV, sum(y) / length(y), maxiters
     )
 end
 
+# A scalar accumulator, rebound rather than mutated: evaluation does not
+# allocate, and both forward and reverse mode differentiate through it.
 function (earth::EarthSurrogate)(val)
-    # Check to make sure dimensions of input matches expected dimension of surrogate
     _check_dimension(earth, val)
-    return sum(
-        earth.coeff[i] * _eval_basis_term_nd(earth.basis[i], val)
-            for i in 1:length(earth.coeff)
-    ) +
-        earth.intercept
+    v = earth.intercept
+    for i in eachindex(earth.coeff)
+        v += earth.coeff[i] * _eval_term(earth.basis[i], val)
+    end
+    return v
 end
 
 function SurrogatesBase.update!(earth::EarthSurrogate, x_new, y_new)
-    return if length(earth.x[1]) == 1
-        #1D
-        earth.x = vcat(earth.x, x_new)
-        earth.y = vcat(earth.y, y_new)
-        earth.intercept = sum(earth.y) / length(earth.y)
-        basis_after_forward = _forward_pass_1d(
-            earth.x, earth.y, earth.n_max_terms,
-            earth.rel_res_error, earth.maxiters
-        )
-        earth.basis = _backward_pass_1d(
-            earth.x, earth.y, earth.n_min_terms,
-            basis_after_forward, earth.penalty, earth.rel_GCV
-        )
-        earth.coeff = _coeff_1d(earth.x, earth.y, earth.basis)
-        nothing
-    else
-        #ND
-        earth.x = vcat(earth.x, x_new)
-        earth.y = vcat(earth.y, y_new)
-        earth.intercept = sum(earth.y) / length(earth.y)
-        basis_after_forward = _forward_pass_nd(
-            earth.x, earth.y, earth.n_max_terms,
-            earth.rel_res_error, earth.maxiters
-        )
-        earth.basis = _backward_pass_nd(
-            earth.x, earth.y, earth.n_min_terms,
-            basis_after_forward, earth.penalty, earth.rel_GCV
-        )
-        earth.coeff = _coeff_nd(earth.x, earth.y, earth.basis)
-        nothing
-    end
+    earth.x, earth.y = _append_samples(earth.x, earth.y, x_new, y_new)
+    forward = _forward_pass(
+        earth.x, earth.y, earth.n_max_terms, earth.rel_res_error, earth.maxiters
+    )
+    earth.basis = _backward_pass(
+        earth.x, earth.y, earth.n_min_terms, forward, earth.penalty, earth.rel_GCV
+    )
+    earth.coeff = _fit_coeff(earth.x, earth.y, earth.basis)
+    earth.intercept = sum(earth.y) / length(earth.y)
+    return nothing
 end
