@@ -3,248 +3,309 @@ using Test
 using LinearAlgebra
 using Surrogates
 
-#1D
-lb = 0.0
-ub = 4.0
-x = [1.0, 2.0, 3.0]
-y = [4.0, 5.0, 6.0]
-linear = x -> norm(x)
-cubic = x -> x^3
-λ = 2.3
-multiquadr = x -> sqrt(x^2 + λ^2)
-q = 1
-my_rad = RadialBasis(x, y, lb, ub, rad = linearRadial())
-est = my_rad(3.0)
-@test est ≈ 6.0
-update!(my_rad, 4.0, 10.0)
-est = my_rad(3.0)
-@test est ≈ 6.0
-update!(my_rad, [3.2, 3.3, 3.4], [8.0, 9.0, 10.0])
-est = my_rad(3.0)
-@test est ≈ 6.0
+@testset "RadialBasis" begin
+    @testset "1D" begin
+        lb = 0.0
+        ub = 4.0
+        x = [1.0, 2.0, 3.0]
+        y = [4.0, 5.0, 6.0]
 
-my_rad = RadialBasis(x, y, lb, ub, rad = cubicRadial())
-q = 2
-my_rad = RadialBasis(x, y, lb, ub, rad = multiquadricRadial())
-
-# Test that input dimension is properly checked for 1D radial surrogates
-@test_throws ArgumentError my_rad(Float64[])
-@test_throws ArgumentError my_rad((2.0, 3.0, 4.0))
-
-#ND
-x = [(1.0, 2.0, 3.0), (4.0, 5.0, 6.0), (7.0, 8.0, 9.0)]
-y = [4.0, 5.0, 6.0]
-lb = [0.0, 3.0, 6.0]
-ub = [4.0, 7.0, 10.0]
-#bounds = [[0.0, 3.0, 6.0], [4.0, 7.0, 10.0]]
-my_rad = RadialBasis(x, y, lb, ub)
-est = my_rad((1.0, 2.0, 3.0))
-@test est ≈ 4.0
-
-#WITH ADD_POINT, adding singleton
-x = [(1.0, 2.0, 3.0), (4.0, 5.0, 6.0), (7.0, 8.0, 9.0)]
-y = [4.0, 5.0, 6.0]
-lb = [0.0, 3.0, 6.0]
-ub = [4.0, 7.0, 10.0]
-#bounds = [[0.0,3.0,6.0],[4.0,7.0,10.0]]
-my_rad = RadialBasis(x, y, lb, ub, rad = linearRadial(), scale_factor = 1.0)
-update!(my_rad, (9.0, 10.0, 11.0), 10.0)
-est = my_rad((1.0, 2.0, 3.0))
-@test est ≈ 4.0
-
-#WITH ADD_POINT, adding more
-x = [(1.0, 2.0, 3.0), (4.0, 5.0, 6.0), (7.0, 8.0, 9.0)]
-y = [4.0, 5.0, 6.0]
-#bounds = [[0.0,3.0,6.0],[4.0,7.0,10.0]]
-lb = [0.0, 3.0, 6.0]
-ub = [4.0, 7.0, 10.0]
-my_rad = RadialBasis(x, y, lb, ub)
-update!(my_rad, [(9.0, 10.0, 11.0), (12.0, 13.0, 14.0)], [10.0, 11.0])
-est = my_rad((1.0, 2.0, 3.0))
-@test est ≈ 4.0
-
-lb = [0.0, 0.0, 0.0]
-ub = [10.0, 10.0, 10.0]
-#bounds = [lb,ub]
-x = [(1.0, 2.0, 3.0), (4.0, 5.0, 6.0), (7.0, 8.0, 9.0)]
-y = [4.0, 5.0, 6.0]
-
-my_rad_ND = RadialBasis(x, y, lb, ub)
-update!(my_rad_ND, (3.5, 4.5, 1.2), 18.9)
-update!(my_rad_ND, [(3.2, 1.2, 6.7), (3.4, 9.5, 7.4)], [25.72, 239.0])
-my_rad_ND = RadialBasis(x, y, lb, ub, rad = cubicRadial())
-my_rad_ND = RadialBasis(x, y, lb, ub, rad = multiquadricRadial())
-prediction = my_rad_ND((1.0, 1.0, 1.0))
-
-f = x -> x[1] * x[2]
-lb = [1.0, 2.0]
-ub = [10.0, 8.5]
-x = sample(500, lb, ub, SobolSample())
-push!(x, (1.0, 2.0))
-y = f.(x)
-my_radial_basis = RadialBasis(x, y, lb, ub, rad = linearRadial())
-@test my_radial_basis((1.0, 2.0)) ≈ 2
-my_radial_basis = RadialBasis(x, y, lb, ub, rad = linearRadial())
-@test my_radial_basis((1.0, 2.0)) ≈ 2
-
-f = x -> x[1] * x[2]
-lb = [1.0, 2.0]
-ub = [10.0, 8.5]
-x = sample(5, lb, ub, SobolSample())
-push!(x, (1.0, 2.0))
-y = f.(x)
-my_radial_basis = RadialBasis(x, y, lb, ub, rad = linearRadial())
-@test my_radial_basis((1.0, 2.0)) ≈ 2
-
-# Test that input dimension is properly checked for ND radial surrogates
-@test_throws ArgumentError my_radial_basis((1.0,))
-@test_throws ArgumentError my_radial_basis((2.0, 3.0, 4.0))
-
-# Multi-output
-f = x -> [x^2, x]
-lb = 1.0
-ub = 10.0
-x = sample(5, lb, ub, SobolSample())
-push!(x, 2.0)
-y = f.(x)
-my_radial_basis = RadialBasis(x, y, lb, ub, rad = linearRadial())
-my_radial_basis(2.0)
-@test my_radial_basis(2.0) ≈ [4, 2]
-
-f = x -> [x[1] * x[2], x[1] + x[2]^2]
-lb = [1.0, 2.0]
-ub = [10.0, 8.5]
-x = sample(5, lb, ub, SobolSample())
-push!(x, (1.0, 2.0))
-y = f.(x)
-my_radial_basis = RadialBasis(x, y, lb, ub, rad = linearRadial())
-my_radial_basis((1.0, 2.0))
-@test my_radial_basis((1.0, 2.0)) ≈ [2, 5]
-
-x_new = (2.0, 2.0)
-y_new = f(x_new)
-update!(my_radial_basis, x_new, y_new)
-@test my_radial_basis(x_new) ≈ y_new
-
-#sparse
-
-#1D
-lb = 0.0
-ub = 4.0
-x = [1.0, 2.0, 3.0]
-y = [4.0, 5.0, 6.0]
-my_rad = RadialBasis(x, y, lb, ub, rad = linearRadial(), sparse = true)
-
-#ND
-x = [(1.0, 2.0, 3.0), (4.0, 5.0, 6.0), (7.0, 8.0, 9.0)]
-y = [4.0, 5.0, 6.0]
-lb = [0.0, 3.0, 6.0]
-ub = [4.0, 7.0, 10.0]
-#bounds = [[0.0, 3.0, 6.0], [4.0, 7.0, 10.0]]
-my_rad = RadialBasis(x, y, lb, ub, sparse = true)
-
-#test to verify multiquadricRadial with default scale_factor
-lb = [0.0, 0.0, 0.0]
-ub = [3.0, 3.0, 3.0]
-n_samples = 100
-g(x) = sqrt(x[1]^2 + x[2]^2 + x[3]^2)
-x = sample(n_samples, lb, ub, SobolSample())
-y = g.(x)
-mq_rad = RadialBasis(x, y, lb, ub, rad = multiquadricRadial())
-@test isapprox(mq_rad([2.0, 2.0, 1.0]), g([2.0, 2.0, 1.0]), atol = 0.0001)
-mq_rad = RadialBasis(x, y, lb, ub, rad = multiquadricRadial(0.9)) # different shape parameter should not be as accurate
-@test !isapprox(mq_rad([2.0, 2.0, 1.0]), g([2.0, 2.0, 1.0]), atol = 0.0001)
-
-# Issue 316
-
-x = sample(1024, [-0.45, -0.4, -0.9], [0.4, 0.55, 0.35], SobolSample())
-lb = [-0.45 -0.4 -0.9]
-ub = [0.4 0.55 0.35]
-
-function mockvalues(in)
-    x, y, z = in
-    p1 = reverse(vec([1.09903695e+1 -1.015005e+1 -4.0662974e+1 -1.41834931e+1 1.00604784e+1 4.34951623e+0 -1.06519689e-1 -1.93335202e-3]))
-    p2 = vec([2.12791877 2.12791877 4.23881665 -1.05464575])
-    f = evalpoly(z, p1)
-    f += p2[1] * x^2 + p2[2] * y^2 + p2[3] * x^2 * y + p2[4] * x * y^2
-    return f
-end
-
-y = mockvalues.(x)
-rbf = RadialBasis(x, y, lb, ub, rad = multiquadricRadial(1.788))
-test = (lb .+ ub) ./ 2
-@test isapprox(rbf(test), mockvalues(test), atol = 0.001)
-
-# Test regularization parameter
-# Check the tests still pass with a small regularization parameter
-# 1D
-lb = 0.0
-ub = 4.0
-x = [1.0, 2.0, 3.0]
-y = [4.0, 5.0, 6.0]
-my_rad = RadialBasis(x, y, lb, ub, rad = linearRadial(), regularization = 1.0e-12)
-est = my_rad(3.0)
-@test est ≈ 6.0
-update!(my_rad, 4.0, 10.0)
-est = my_rad(3.0)
-@test est ≈ 6.0
-update!(my_rad, [3.2, 3.3, 3.4], [8.0, 9.0, 10.0])
-est = my_rad(3.0)
-@test est ≈ 6.0
-
-#ND
-x = [(1.0, 2.0, 3.0), (4.0, 5.0, 6.0), (7.0, 8.0, 9.0)]
-y = [4.0, 5.0, 6.0]
-lb = [0.0, 3.0, 6.0]
-ub = [4.0, 7.0, 10.0]
-my_rad = RadialBasis(x, y, lb, ub)
-est = my_rad((1.0, 2.0, 3.0))
-@test est ≈ 4.0
-#WITH ADD_POINT, adding singleton
-x = [(1.0, 2.0, 3.0), (4.0, 5.0, 6.0), (7.0, 8.0, 9.0)]
-y = [4.0, 5.0, 6.0]
-lb = [0.0, 3.0, 6.0]
-ub = [4.0, 7.0, 10.0]
-my_rad = RadialBasis(
-    x, y, lb, ub, rad = linearRadial(), scale_factor = 1.0, regularization = 1.0e-12
-)
-update!(my_rad, (9.0, 10.0, 11.0), 10.0)
-est = my_rad((1.0, 2.0, 3.0))
-@test est ≈ 4.0
-
-# Check regularization fixes the SingularException
-# 1D
-for reg in [0, 1.0e-12]
-    local lb = 0.0
-    local ub = 4.0
-    # Pass the first point twice to create a singular matrix
-    # This should throw a SingularException if regularization is not used
-    local x = [1.0, 1.0, 2.0, 3.0]
-    local y = [4.0, 4.0, 5.0, 6.0]
-    if reg == 0
-        @test_throws LinearAlgebra.SingularException RadialBasis(
-            x, y, lb, ub, rad = linearRadial(), regularization = reg
-        )
-    else
-        local my_rad = RadialBasis(x, y, lb, ub, rad = linearRadial(), regularization = reg)
+        my_rad = RadialBasis(x, y, lb, ub, rad = linearRadial())
         @test my_rad(3.0) ≈ 6.0
-        @test my_rad(1.0) ≈ 4.0
-    end
-end
+        update!(my_rad, 4.0, 10.0)
+        @test my_rad(3.0) ≈ 6.0
+        update!(my_rad, [3.2, 3.3, 3.4], [8.0, 9.0, 10.0])
+        @test my_rad(3.0) ≈ 6.0
 
-# ND
-for reg in [0, 1.0e-12]
-    local lb = [0.0, 3.0, 6.0]
-    local ub = [4.0, 7.0, 10.0]
-    local x = [(1.0, 2.0, 3.0), (1.0, 2.0, 3.0), (4.0, 5.0, 6.0), (7.0, 8.0, 9.0)]
-    local y = [4.0, 4.0, 5.0, 6.0]
-    if reg == 0
-        @test_throws LinearAlgebra.SingularException RadialBasis(
-            x, y, lb, ub, rad = linearRadial(), regularization = reg
-        )
-    else
-        local my_rad = RadialBasis(x, y, lb, ub, rad = linearRadial(), regularization = reg)
+        my_rad = RadialBasis(x, y, lb, ub, rad = cubicRadial())
+        my_rad = RadialBasis(x, y, lb, ub, rad = multiquadricRadial())
+
+        @test_throws ArgumentError my_rad(Float64[])
+        @test_throws ArgumentError my_rad((2.0, 3.0, 4.0))
+    end
+
+    @testset "ND" begin
+        x = [(1.0, 2.0, 3.0), (4.0, 5.0, 6.0), (7.0, 8.0, 9.0)]
+        y = [4.0, 5.0, 6.0]
+        lb = [0.0, 3.0, 6.0]
+        ub = [4.0, 7.0, 10.0]
+
+        my_rad = RadialBasis(x, y, lb, ub)
         @test my_rad((1.0, 2.0, 3.0)) ≈ 4.0
-        @test my_rad((4.0, 5.0, 6.0)) ≈ 5.0
+
+        my_rad = RadialBasis(x, y, lb, ub, rad = linearRadial(), scale_factor = 1.0)
+        update!(my_rad, (9.0, 10.0, 11.0), 10.0)
+        @test my_rad((1.0, 2.0, 3.0)) ≈ 4.0
+
+        my_rad = RadialBasis(x, y, lb, ub)
+        update!(my_rad, [(9.0, 10.0, 11.0), (12.0, 13.0, 14.0)], [10.0, 11.0])
+        @test my_rad((1.0, 2.0, 3.0)) ≈ 4.0
+
+        lb = [0.0, 0.0, 0.0]
+        ub = [10.0, 10.0, 10.0]
+        my_rad_ND = RadialBasis(x, y, lb, ub)
+        update!(my_rad_ND, (3.5, 4.5, 1.2), 18.9)
+        update!(my_rad_ND, [(3.2, 1.2, 6.7), (3.4, 9.5, 7.4)], [25.72, 239.0])
+        my_rad_ND = RadialBasis(x, y, lb, ub, rad = cubicRadial())
+        my_rad_ND = RadialBasis(x, y, lb, ub, rad = multiquadricRadial())
+        prediction = my_rad_ND((1.0, 1.0, 1.0))
+
+        f = x -> x[1] * x[2]
+        lb = [1.0, 2.0]
+        ub = [10.0, 8.5]
+        x = sample(500, lb, ub, SobolSample())
+        push!(x, (1.0, 2.0))
+        y = f.(x)
+        my_radial_basis = RadialBasis(x, y, lb, ub, rad = linearRadial())
+        @test my_radial_basis((1.0, 2.0)) ≈ 2
+        my_radial_basis = RadialBasis(x, y, lb, ub, rad = linearRadial())
+        @test my_radial_basis((1.0, 2.0)) ≈ 2
+
+        x = sample(5, lb, ub, SobolSample())
+        push!(x, (1.0, 2.0))
+        y = f.(x)
+        my_radial_basis = RadialBasis(x, y, lb, ub, rad = linearRadial())
+        @test my_radial_basis((1.0, 2.0)) ≈ 2
+
+        @test_throws ArgumentError my_radial_basis((1.0,))
+        @test_throws ArgumentError my_radial_basis((2.0, 3.0, 4.0))
+    end
+
+    @testset "multi-output" begin
+        f = x -> [x^2, x]
+        lb = 1.0
+        ub = 10.0
+        x = sample(5, lb, ub, SobolSample())
+        push!(x, 2.0)
+        y = f.(x)
+        my_radial_basis = RadialBasis(x, y, lb, ub, rad = linearRadial())
+        @test my_radial_basis(2.0) ≈ [4, 2]
+
+        f = x -> [x[1] * x[2], x[1] + x[2]^2]
+        lb = [1.0, 2.0]
+        ub = [10.0, 8.5]
+        x = sample(5, lb, ub, SobolSample())
+        push!(x, (1.0, 2.0))
+        y = f.(x)
+        my_radial_basis = RadialBasis(x, y, lb, ub, rad = linearRadial())
+        @test my_radial_basis((1.0, 2.0)) ≈ [2, 5]
+
+        x_new = (2.0, 2.0)
+        y_new = f(x_new)
+        update!(my_radial_basis, x_new, y_new)
+        @test my_radial_basis(x_new) ≈ y_new
+    end
+
+    @testset "sparse construction" begin
+        lb = 0.0
+        ub = 4.0
+        x = [1.0, 2.0, 3.0]
+        y = [4.0, 5.0, 6.0]
+        my_rad = RadialBasis(x, y, lb, ub, rad = linearRadial(), sparse = true)
+
+        x_nd = [(1.0, 2.0, 3.0), (4.0, 5.0, 6.0), (7.0, 8.0, 9.0)]
+        y_nd = [4.0, 5.0, 6.0]
+        my_rad = RadialBasis(x_nd, y_nd, [0.0, 3.0, 6.0], [4.0, 7.0, 10.0], sparse = true)
+
+        # A sparse assembly of a dense kernel is the same interpolant.
+        dense = RadialBasis(x, y, lb, ub, rad = linearRadial())
+        spars = RadialBasis(x, y, lb, ub, rad = linearRadial(), sparse = true)
+        for p in (1.0, 1.7, 2.5, 3.0)
+            @test dense(p) ≈ spars(p)
+        end
+    end
+
+    @testset "multiquadric shape parameter" begin
+        lb = [0.0, 0.0, 0.0]
+        ub = [3.0, 3.0, 3.0]
+        g(x) = sqrt(x[1]^2 + x[2]^2 + x[3]^2)
+        x = sample(100, lb, ub, SobolSample())
+        y = g.(x)
+        mq_rad = RadialBasis(x, y, lb, ub, rad = multiquadricRadial())
+        @test isapprox(mq_rad([2.0, 2.0, 1.0]), g([2.0, 2.0, 1.0]), atol = 0.0001)
+        # A different shape parameter should not be as accurate.
+        mq_rad = RadialBasis(x, y, lb, ub, rad = multiquadricRadial(0.9))
+        @test !isapprox(mq_rad([2.0, 2.0, 1.0]), g([2.0, 2.0, 1.0]), atol = 0.0001)
+    end
+
+    @testset "issue 316: bounds given as row matrices" begin
+        x = sample(1024, [-0.45, -0.4, -0.9], [0.4, 0.55, 0.35], SobolSample())
+        lb = [-0.45 -0.4 -0.9]
+        ub = [0.4 0.55 0.35]
+
+        # Distinct names: inside a testset these would otherwise be assignments
+        # to the captured `x` and `y` of the enclosing scope, not new locals.
+        function mockvalues(in)
+            xi, yi, zi = in
+            p1 = reverse(
+                vec(
+                    [1.09903695e+1 -1.015005e+1 -4.0662974e+1 -1.41834931e+1 1.00604784e+1 4.34951623e+0 -1.06519689e-1 -1.93335202e-3]
+                )
+            )
+            p2 = vec([2.12791877 2.12791877 4.23881665 -1.05464575])
+            f = evalpoly(zi, p1)
+            f += p2[1] * xi^2 + p2[2] * yi^2 + p2[3] * xi^2 * yi + p2[4] * xi * yi^2
+            return f
+        end
+
+        y = mockvalues.(x)
+        rbf = RadialBasis(x, y, lb, ub, rad = multiquadricRadial(1.788))
+        test = (lb .+ ub) ./ 2
+        @test isapprox(rbf(test), mockvalues(test), atol = 0.001)
+    end
+
+    @testset "regularization" begin
+        lb = 0.0
+        ub = 4.0
+        x = [1.0, 2.0, 3.0]
+        y = [4.0, 5.0, 6.0]
+        my_rad = RadialBasis(x, y, lb, ub, rad = linearRadial(), regularization = 1.0e-12)
+        @test my_rad(3.0) ≈ 6.0
+        update!(my_rad, 4.0, 10.0)
+        @test my_rad(3.0) ≈ 6.0
+        update!(my_rad, [3.2, 3.3, 3.4], [8.0, 9.0, 10.0])
+        @test my_rad(3.0) ≈ 6.0
+
+        x_nd = [(1.0, 2.0, 3.0), (4.0, 5.0, 6.0), (7.0, 8.0, 9.0)]
+        y_nd = [4.0, 5.0, 6.0]
+        lb_nd = [0.0, 3.0, 6.0]
+        ub_nd = [4.0, 7.0, 10.0]
+        my_rad = RadialBasis(x_nd, y_nd, lb_nd, ub_nd)
+        @test my_rad((1.0, 2.0, 3.0)) ≈ 4.0
+
+        my_rad = RadialBasis(
+            x_nd, y_nd, lb_nd, ub_nd, rad = linearRadial(), scale_factor = 1.0,
+            regularization = 1.0e-12
+        )
+        update!(my_rad, (9.0, 10.0, 11.0), 10.0)
+        @test my_rad((1.0, 2.0, 3.0)) ≈ 4.0
+
+        # A repeated sample makes the kernel matrix singular; the diagonal
+        # regularization is what lets the solve go through.
+        for reg in [0, 1.0e-12]
+            local lb = 0.0
+            local ub = 4.0
+            local x = [1.0, 1.0, 2.0, 3.0]
+            local y = [4.0, 4.0, 5.0, 6.0]
+            if reg == 0
+                @test_throws LinearAlgebra.SingularException RadialBasis(
+                    x, y, lb, ub, rad = linearRadial(), regularization = reg
+                )
+            else
+                local my_rad = RadialBasis(
+                    x, y, lb, ub, rad = linearRadial(), regularization = reg
+                )
+                @test my_rad(3.0) ≈ 6.0
+                @test my_rad(1.0) ≈ 4.0
+            end
+        end
+
+        for reg in [0, 1.0e-12]
+            local lb = [0.0, 3.0, 6.0]
+            local ub = [4.0, 7.0, 10.0]
+            local x = [
+                (1.0, 2.0, 3.0), (1.0, 2.0, 3.0), (4.0, 5.0, 6.0), (7.0, 8.0, 9.0),
+            ]
+            local y = [4.0, 4.0, 5.0, 6.0]
+            if reg == 0
+                @test_throws LinearAlgebra.SingularException RadialBasis(
+                    x, y, lb, ub, rad = linearRadial(), regularization = reg
+                )
+            else
+                local my_rad = RadialBasis(
+                    x, y, lb, ub, rad = linearRadial(), regularization = reg
+                )
+                @test my_rad((1.0, 2.0, 3.0)) ≈ 4.0
+                @test my_rad((4.0, 5.0, 6.0)) ≈ 5.0
+            end
+        end
+    end
+
+    @testset "every kernel interpolates its samples" begin
+        # The kernels differ in their polynomial degree `q`, but all four are
+        # solved as a plain interpolation system, so each must reproduce the
+        # responses at the nodes it was built from.
+        kernels = (
+            "linear" => linearRadial(), "cubic" => cubicRadial(),
+            "multiquadric" => multiquadricRadial(), "thinplate" => thinplateRadial(),
+        )
+        x = collect(0.0:1.0:5.0)
+        y = [0.0, 1.0, 4.0, 9.0, 16.0, 25.0]
+        for (name, rad) in kernels
+            surr = RadialBasis(x, y, 0.0, 5.0; rad = rad)
+            @test maximum(abs, [surr(p) - v for (p, v) in zip(x, y)]) < 1.0e-8
+        end
+
+        lb = [0.0, 0.0]
+        ub = [4.0, 4.0]
+        x_nd = sample(20, lb, ub, SobolSample())
+        y_nd = [p[1] + p[2] for p in x_nd]
+        for (name, rad) in kernels
+            # thinplateRadial tested `iszero` on the sample difference itself,
+            # which is a `MethodError` for a tuple: this kernel was unusable in
+            # more than one dimension.
+            surr = RadialBasis(x_nd, y_nd, lb, ub; rad = rad)
+            @test surr((2.0, 2.0)) isa Number
+            @test maximum(abs, [surr(p) - v for (p, v) in zip(x_nd, y_nd)]) < 1.0e-6
+        end
+    end
+
+    @testset "thinplate at a node" begin
+        # r^2 log(r) is 0 at r = 0 by continuation, and the kernel has to return
+        # it rather than the NaN that log(0) produces.
+        tp = thinplateRadial().phi
+        @test tp(0.0) == 0.0
+        @test isfinite(tp(0.0))
+        @test tp((0.0, 0.0)) == 0.0
+        @test tp((0.0, 0.0, 0.0)) == 0.0
+        @test tp(2.0) ≈ 4 * log(2)
+    end
+
+    @testset "element types" begin
+        # The interpolation matrix is built in `float(eltype)` of the samples,
+        # and both `scale_factor` and `regularization` are taken to that type:
+        # either left at its Float64 default would carry the whole solve into
+        # Float64.
+        for T in (Float64, Float32, BigFloat)
+            x = T[0, 1, 2, 3]
+            y = T[0, 1, 4, 9]
+            surr = RadialBasis(x, y, T(0), T(3); rad = linearRadial())
+            @test eltype(surr.coeff) == T
+            @test surr(T(1.5)) isa T
+            @test surr(T(2)) ≈ T(4)
+        end
+        # An integer design promotes the way `\` would, and no longer throws
+        # `InexactError` for a scale the samples do not divide.
+        surr = RadialBasis(
+            [0, 1, 2, 3], [0, 1, 4, 9], 0, 3; rad = linearRadial(), scale_factor = 0.3
+        )
+        @test eltype(surr.coeff) == Float64
+        @test surr(2) ≈ 4.0
+        surr = RadialBasis(
+            [0 // 1, 1 // 1, 2 // 1, 3 // 1], [0 // 1, 1 // 1, 4 // 1, 9 // 1],
+            0 // 1, 3 // 1; rad = linearRadial()
+        )
+        @test surr(2 // 1) ≈ 4.0
+    end
+
+    @testset "update! leaves the caller's containers alone" begin
+        # `push!`/`append!` onto the surrogate's fields grew the very vectors
+        # the caller passed in, so building a surrogate mutated its own inputs.
+        x = [1.0, 2.0, 3.0]
+        y = [4.0, 5.0, 6.0]
+        surr = RadialBasis(x, y, 0.0, 5.0; rad = linearRadial())
+        update!(surr, 4.0, 10.0)
+        @test x == [1.0, 2.0, 3.0]
+        @test y == [4.0, 5.0, 6.0]
+        @test length(surr.x) == 4
+        @test surr(4.0) ≈ 10.0
+
+        x_nd = [(1.0, 2.0), (3.0, 4.0), (5.0, 6.0)]
+        y_nd = [1.0, 2.0, 3.0]
+        surr = RadialBasis(x_nd, y_nd, [0.0, 0.0], [6.0, 7.0]; rad = linearRadial())
+        update!(surr, [(2.0, 3.0), (4.0, 5.0)], [4.0, 5.0])
+        @test length(x_nd) == 3
+        @test length(surr.x) == 5
+        @test surr((2.0, 3.0)) ≈ 4.0
     end
 end
