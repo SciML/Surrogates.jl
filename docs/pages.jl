@@ -10,6 +10,7 @@ pages = [
         "InverseDistance" => "InverseDistance.md",
         "XGBoost" => "xgboost.md",
         "SecondOrderPolynomial" => "secondorderpoly.md",
+        "Earth (MARS)" => "earth.md",
         "NeuralSurrogate" => "neural.md",
         "Wendland" => "wendland.md",
         "Polynomial Chaos" => "polychaos.md",
