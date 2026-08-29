@@ -106,11 +106,11 @@ function std_error_at_point(k::Kriging, val)
     r = zeros(eltype(k.x[1]), n, 1)
     r = [
         let
-                sum = zero(eltype(k.x[1]))
-                for l in 1:d
-                    sum = sum + k.theta[l] * norm(val[l] - k.x[i][l])^(k.p[l])
+            sum = zero(eltype(k.x[1]))
+            for l in 1:d
+                sum = sum + k.theta[l] * norm(val[l] - k.x[i][l])^(k.p[l])
             end
-                exp(-sum)
+            exp(-sum)
         end
             for i in 1:n
     ]
@@ -237,11 +237,11 @@ function _calc_kriging_coeffs(x, y, p, theta)
 
     R = [
         let
-                sum = zero(eltype(x[1]))
-                for l in 1:d
-                    sum = sum + theta[l] * norm(x[i][l] - x[j][l])^p[l]
+            sum = zero(eltype(x[1]))
+            for l in 1:d
+                sum = sum + theta[l] * norm(x[i][l] - x[j][l])^p[l]
             end
-                exp(-sum)
+            exp(-sum)
         end
             for j in 1:n, i in 1:n
     ]
