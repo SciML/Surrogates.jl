@@ -162,8 +162,16 @@ Random.seed!(42)
             my_earth = EarthSurrogate(x, y, lb, ub)
             g = x -> ForwardDiff.derivative(my_earth, x)
             @test g(5.0) isa Number
-            # Accuracy test: f(x) = x^2, f'(x) = 2x, so f'(5.0) = 10.0
-            # @test isapprox(g(5.0), 10.0, atol = 1e-1)
+            # f'(x) = 2x is out of reach: EarthSurrogate is piecewise linear, so
+            # its derivative is a step function, constant between knots.
+            # Accuracy is asserted against a target inside the model's own span
+            # instead — a hinge, whose slopes the surrogate reproduces exactly.
+            f_hinge = t -> 1 + 2 * t + 3 * max(0, t - 4)
+            x_hinge = collect(0.0:0.5:10.0)
+            earth_hinge = EarthSurrogate(x_hinge, f_hinge.(x_hinge), lb, ub)
+            dh = t -> ForwardDiff.derivative(earth_hinge, t)
+            @test isapprox(dh(2.0), 2.0, atol = 1.0e-8)
+            @test isapprox(dh(7.0), 5.0, atol = 1.0e-8)
         end
 
         @testset "VariableFidelity" begin
@@ -351,8 +359,16 @@ Random.seed!(42)
             my_earth_ND = EarthSurrogate(x[1:10], y[1:10], lb, ub)
             g = x -> ForwardDiff.gradient(my_earth_ND, x)
             @test g([2.0, 5.0]) isa AbstractVector
-            # Accuracy test: f(x) = x[1] * x[2], ∇f = [x[2], x[1]], so ∇f([2.0, 5.0]) = [5.0, 2.0]
-            # @test isapprox(g([2.0, 5.0]), [5.0, 2.0], atol = 1e-1)
+            # f(x) = x[1] * x[2] is an interaction, and EarthSurrogate selects
+            # hinges one coordinate at a time, so the model is additive and
+            # cannot represent it. The gradient is asserted against an additive
+            # target instead, which the model does span.
+            f_add = p -> 2 * p[1] + 3 * max(0, p[2] - 5)
+            x_add = sample(60, lb, ub, SobolSample())
+            earth_add = EarthSurrogate(x_add, f_add.(x_add), lb, ub)
+            @test isapprox(
+                ForwardDiff.gradient(earth_add, [3.0, 8.0]), [2.0, 3.0], atol = 1.0e-1
+            )
         end
 
         @testset "VariableFidelity" begin
@@ -532,8 +548,14 @@ end
             @test result isa Tuple
             @test length(result) == 1
             @test result[1] isa Number
-            # Accuracy test: f(x) = x^2, f'(x) = 2x, so f'(5.0) = 10.0
-            # @test isapprox(result[1], 10.0, atol = 1e-1)
+            # As in the ForwardDiff testset: the smooth f'(x) = 2x is out of
+            # reach for a piecewise-linear model, so the slope is asserted
+            # against a hinge target, which lies in the model's own span.
+            f_hinge = t -> 1 + 2 * t + 3 * max(0, t - 4)
+            x_hinge = collect(0.0:0.5:10.0)
+            earth_hinge = EarthSurrogate(x_hinge, f_hinge.(x_hinge), lb, ub)
+            @test isapprox(Zygote.gradient(earth_hinge, 2.0)[1], 2.0, atol = 1.0e-8)
+            @test isapprox(Zygote.gradient(earth_hinge, 7.0)[1], 5.0, atol = 1.0e-8)
         end
 
         @testset "VariableFidelity" begin
@@ -734,8 +756,17 @@ end
             @test result isa Tuple
             @test length(result) == 1
             @test result[1] isa Tuple
-            # Accuracy test: f(x) = x[1] * x[2], ∇f = [x[2], x[1]], so ∇f([2.0, 5.0]) = [5.0, 2.0]
-            # @test all(isapprox.(result[1], (5.0, 2.0), atol = 1e-1))
+            # As in the ForwardDiff testset: x[1] * x[2] is an interaction that
+            # an additive model cannot represent, so the gradient is asserted
+            # against an additive target, which it does span.
+            f_add = p -> 2 * p[1] + 3 * max(0, p[2] - 5)
+            x_add = sample(60, lb, ub, SobolSample())
+            earth_add = EarthSurrogate(x_add, f_add.(x_add), lb, ub)
+            @test all(
+                isapprox.(
+                    Zygote.gradient(earth_add, (3.0, 8.0))[1], (2.0, 3.0), atol = 1.0e-1
+                )
+            )
         end
 
         @testset "VariableFidelity" begin
