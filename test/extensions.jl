@@ -278,7 +278,10 @@ end
 
     lb = [0.0, 0.0]
     ub = [10.0, 2.0]
-    n = 5
+    # Six points, not five: a full quadratic in two dimensions has
+    # 1 + 2d + d(d - 1) / 2 = 6 coefficients, so five samples leave
+    # SecondOrderPolynomialSurrogate underdetermined.
+    n = 6
     x = sample(n, lb, ub, SobolSample())
     f = x -> [x[1]^2, x[2]]
     y = f.(x)

@@ -109,12 +109,15 @@ end
 
     @testset "BigFloat Support - ND Surrogates" begin
         # Test data with BigFloat for N-dimensional
+        # Six points, not five: a full quadratic in two dimensions has
+        # 1 + 2d + d(d - 1) / 2 = 6 coefficients, so five samples leave
+        # SecondOrderPolynomialSurrogate underdetermined.
         x_bf = [
             (BigFloat(1.0), BigFloat(2.0)), (BigFloat(2.0), BigFloat(3.0)),
             (BigFloat(3.0), BigFloat(1.0)), (BigFloat(4.0), BigFloat(4.0)),
-            (BigFloat(5.0), BigFloat(2.0)),
+            (BigFloat(5.0), BigFloat(2.0)), (BigFloat(2.0), BigFloat(5.0)),
         ]
-        y_bf = BigFloat[0.5, 1.2, 2.1, 2.8, 3.5]
+        y_bf = BigFloat[0.5, 1.2, 2.1, 2.8, 3.5, 2.4]
         lb_bf = (BigFloat(0.0), BigFloat(0.0))
         ub_bf = (BigFloat(6.0), BigFloat(5.0))
         test_point = (BigFloat(2.5), BigFloat(2.5))
