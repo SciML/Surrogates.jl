@@ -1,7 +1,3 @@
-using CommonSolve: solve
-using SciMLBase: OptimizationProblem
-using OptimizationOptimJL: NelderMead
-
 """
 KPLS: Kriging combined with Partial Least Squares for high-dimensional problems.
 
@@ -61,7 +57,8 @@ local refinement when `theta_init` is already known to be a good guess (e.g. the
 KPLSK full-dimensional refinement stage).
 """
 function _optimize_theta(
-        theta_init, kernel_type, d, nt, ij, y_norma; multistart = true, n_start = 10
+        theta_init, kernel_type, d, nt, ij, y_norma; multistart = true, n_start = 10,
+        nugget = _PLS_NUGGET, noise = 0.0, max_escalations = 0
     )
     n_comp = length(theta_init)
     log10_lb = fill(-20.0, n_comp)
@@ -70,45 +67,25 @@ function _optimize_theta(
     function neg_rlf(log10_theta, _)
         theta = 10 .^ clamp.(log10_theta, log10_lb, log10_ub)
         try
-            _, _, val = _reduced_likelihood_function(theta, kernel_type, d, nt, ij, y_norma)
+            _, _, val = _reduced_likelihood_function(
+                theta, kernel_type, d, nt, ij, y_norma;
+                nugget = nugget, noise = noise, max_escalations = max_escalations
+            )
             return isfinite(val) ? -val : Inf
         catch e
-            e isa Union{LinearAlgebra.SingularException, LinearAlgebra.PosDefException} ||
-                rethrow()
+            # Unqualified: `LinearAlgebra` itself is not in scope here, so the
+            # qualified form raised `UndefVarError` from inside the handler.
+            e isa Union{SingularException, PosDefException} || rethrow()
             return Inf
         end
     end
 
-    # Multi-start: user-provided theta + n_start Latin Hypercube samples across the
-    # log10(theta) bounds, covering the space more evenly than a handful of fixed points.
-    starts = if multistart
-        lhs_pts = sample(n_start, log10_lb, log10_ub, LatinHypercubeSample())
-        # `sample` returns a Vector{Float64} of scalars for n_comp == 1 (1D bounds) and
-        # a Vector{NTuple{n_comp, Float64}} otherwise; normalize both to Vector{Float64}.
-        lhs_starts = n_comp == 1 ? [[p] for p in lhs_pts] : [
-                collect(Float64, p)
-                for p in lhs_pts
-            ]
-        vcat([clamp.(log10.(theta_init), -20.0, 20.0)], lhs_starts)
-    else
-        [clamp.(log10.(theta_init), -20.0, 20.0)]
-    end
-
-    best_val = Inf
-    best_log10_theta = starts[1]
-    for x0 in starts
-        # NelderMead is derivative-free; passing lb/ub here would make
-        # OptimizationOptimJL wrap it in Fminbox, which requires gradients
-        # and errors. Bounds are instead enforced by clamping in neg_rlf.
-        prob = OptimizationProblem(neg_rlf, x0, nothing)
-        sol = solve(prob, NelderMead())
-        if sol.objective < best_val
-            best_val = sol.objective
-            best_log10_theta = sol.u
-        end
-    end
-
-    return 10 .^ clamp.(best_log10_theta, log10_lb, log10_ub)
+    # Multi-start over the log10(theta) box; see `_multistart_optimize`.
+    best_log10_theta, _ = _multistart_optimize(
+        neg_rlf, log10.(theta_init), log10_lb, log10_ub;
+        n_start = n_start, multistart = multistart
+    )
+    return 10 .^ best_log10_theta
 end
 
 """

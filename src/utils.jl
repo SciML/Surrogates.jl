@@ -87,3 +87,50 @@ instead.
 """
 _matrix_rank(A::AbstractMatrix{<:Union{Float32, Float64}}) = rank(A)
 _matrix_rank(A) = nothing
+
+"""
+    _multistart_optimize(f, u0, lo, hi; n_start = 10, multistart = true) -> (u, value)
+
+Minimize `f(u, _)` over the box `[lo, hi]` with Nelder-Mead, from `u0` and, when
+`multistart` is set, from `n_start` Latin-hypercube points as well.
+
+Nelder-Mead is derivative-free; passing bounds to `OptimizationOptimJL` would
+make it wrap the solver in `Fminbox`, which needs gradients and errors. The box
+is therefore enforced by clamping, both on the starts and on the result, and
+`f` is expected to clamp as well.
+
+The whole kriging family fits its correlation scales this way, so the search
+lives here rather than beside any one of them.
+"""
+function _multistart_optimize(
+        f, u0, lo, hi; n_start::Integer = 10, multistart = true, maxiters = nothing
+    )
+    n = length(u0)
+    starts = if multistart && n_start > 0
+        pts = sample(n_start, lo, hi, LatinHypercubeSample())
+        # `sample` gives a Vector{Float64} for one-dimensional bounds and a
+        # Vector{NTuple} otherwise; normalize both to Vector{Vector{Float64}}.
+        lhs = n == 1 ? [[p] for p in pts] : [collect(Float64, p) for p in pts]
+        vcat([clamp.(collect(Float64, u0), lo, hi)], lhs)
+    else
+        [clamp.(collect(Float64, u0), lo, hi)]
+    end
+
+    best_value = Inf
+    best_u = starts[1]
+    for x0 in starts
+        sol = try
+            prob = OptimizationProblem(f, collect(x0), nothing)
+            maxiters === nothing ? solve(prob, NelderMead()) :
+                solve(prob, NelderMead(); maxiters = maxiters)
+        catch e
+            e isa Union{SingularException, PosDefException} || rethrow()
+            continue
+        end
+        if isfinite(sol.objective) && sol.objective < best_value
+            best_value = sol.objective
+            best_u = sol.u
+        end
+    end
+    return clamp.(best_u, lo, hi), best_value
+end
