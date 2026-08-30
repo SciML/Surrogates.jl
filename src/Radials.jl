@@ -103,14 +103,33 @@ Construct the multiquadric radial basis function used by
 
 # Arguments
 
-  - `c::Real`: scale parameter inside the multiquadric basis.
+  - `c::Real`: shape parameter inside the multiquadric basis.
 
 # Returns
 
 A `RadialFunction` with polynomial degree `1` and basis
 `z -> sqrt((c * norm(z))^2 + 1)`.
+
+# Note
+
+This is Hardy's multiquadric `sqrt(r^2 + c0^2)` with `c0 = 1 / c`, times a
+constant that the interpolant is invariant to. So `c` runs the *opposite* way to
+the usual shape parameter: a larger `c` gives a peakier basis, not a flatter one.
+
+`c` and `scale_factor` both scale the radius, so they are one parameter between
+them: `multiquadricRadial(2.0)` with `scale_factor = 1.0` gives the same
+interpolant as `multiquadricRadial(1.0)` with `scale_factor = 0.5`.
 """
-multiquadricRadial(c = 1.0) = RadialFunction(1, z -> sqrt((c * norm(z))^2 + 1))
+function multiquadricRadial(c = 1.0)
+    return RadialFunction(
+        1, z -> begin
+            # `c` at the radius' own precision: its `1.0` default is a Float64
+            # literal, which would otherwise carry a Float32 design into Float64.
+            r = norm(z)
+            return sqrt((oftype(r, c) * r)^2 + one(r))
+        end
+    )
+end
 
 """
     thinplateRadial() -> RadialFunction
@@ -124,12 +143,16 @@ A `RadialFunction` with polynomial degree `2` and basis
 """
 thinplateRadial() = RadialFunction(
     2, z -> begin
-        # On the radius, not on `z`: `iszero` of a tuple is a `MethodError`, so
-        # testing `z` made this kernel unusable for multidimensional inputs.
+        # On the radius: `iszero` of a tuple is a `MethodError`, which made
+        # this kernel unusable for multidimensional inputs.
         r = norm(z)
         iszero(r) ? zero(r * r) : r^2 * log(r)
     end
 )
+
+# The closure captures nothing, so one instance identifies the kernel — and
+# calling `linearRadial()` to compare against put a construction in the hot loop.
+const _LINEAR_RADIAL_PHI = linearRadial().phi
 
 function RadialBasis(
         x, y, lb, ub; rad::RadialFunction = linearRadial(),
@@ -137,9 +160,9 @@ function RadialBasis(
     )
     q = rad.q
     phi = rad.phi
-    # At the samples' own precision. The distance is divided by one and the
-    # interpolation matrix has the other added to its diagonal, so leaving
-    # either at its Float64 default carries a Float32 design into Float64.
+    # At the samples' own precision: one divides the distance and the other is
+    # added to the matrix diagonal, so a Float64 default would carry a Float32
+    # design into Float64.
     T = float(eltype(first(x)))
     scale = convert(T, scale_factor)
     reg = convert(T, regularization)
@@ -149,13 +172,14 @@ end
 
 function _calc_coeffs(x, y, phi, scale_factor, sparse, regularization)
     D = _construct_rbf_interp_matrix(x, phi, scale_factor, sparse)
-    D += regularization * I # Add regularization to the diagonal
+    # Guarded: `D += r * I` copies the whole matrix, and the default is zero.
+    iszero(regularization) || (D += regularization * I)
     # One coefficient row per output; a scalar response gives a 1 x n row.
     return _copy(transpose(D \ _construct_y_matrix(y, first(y))))
 end
 
-# The kernel reads a pair of samples through broadcasting, so a scalar and a
-# multidimensional sample are assembled the same way and one method serves both.
+# Broadcasting reads a scalar and a multidimensional sample the same way, so one
+# method serves both.
 function _construct_rbf_interp_matrix(x, phi, scale_factor, sparse)
     n = length(x)
     # `float` because `phi` returns a distance: an integer design would
@@ -234,53 +258,30 @@ end
 Calculates current estimate of value 'val' with respect to the RadialBasis object.
 """
 function (rad::RadialBasis)(val)
-    # Check to make sure dimensions of input matches expected dimension of surrogate
     _check_dimension(rad, val)
 
     approx = _approx_rbf(val, rad)
     return _match_container(approx, first(rad.y))
 end
 
-function _approx_rbf(val::Number, rad::RadialBasis)
-    n = length(rad.x)
-    approx = zero(rad.coeff[:, 1])
-    for i in 1:n
-        approx += rad.coeff[:, i] * rad.phi((val .- rad.x[i]) / rad.scale_factor)
-    end
-    return approx
-end
+# The accumulator holds coefficient times kernel value, so its type is the
+# promotion of the two; taking it from the query alone broke integer queries.
+_approx_eltype(val, rad) = promote_type(eltype(val), eltype(rad.coeff))
 
+# Zygote cannot trace `setindex!`, so the multi-output accumulator is one of its
+# buffers rather than a plain array.
 function _make_approx(val, rad::RadialBasis)
-    l = size(rad.coeff, 1)
-    return Buffer(zeros(eltype(val), l), false)
+    return Buffer(zeros(_approx_eltype(val, rad), size(rad.coeff, 1)), false)
 end
-function _add_tmp_to_approx!(approx, i, tmp, rad::RadialBasis; f = identity)
+
+function _add_tmp_to_approx!(approx, i, kernel, rad::RadialBasis)
     return @inbounds @simd ivdep for j in 1:size(rad.coeff, 1)
-        approx[j] += rad.coeff[j, i] * f(tmp)
-    end
-end
-function _make_approx(
-        val,
-        ::RadialBasis{F, Q, X, <:AbstractArray{<:Number}}
-    ) where {F, Q, X}
-    return Ref(zero(eltype(val)))
-end
-function _add_tmp_to_approx!(
-        approx::Base.RefValue, i, tmp,
-        rad::RadialBasis{F, Q, X, <:AbstractArray{<:Number}};
-        f = identity
-    ) where {F, Q, X}
-    return @inbounds @simd ivdep for j in 1:size(rad.coeff, 1)
-        approx[] += rad.coeff[j, i] * f(tmp)
+        approx[j] += rad.coeff[j, i] * kernel
     end
 end
 
-_ret_copy(v::Base.RefValue) = v[]
-_ret_copy(v) = copy(v)
-
-function _approx_rbf(val, rad::RadialBasis)
+function _check_coeff_count(rad::RadialBasis)
     n = length(rad.x)
-
     if n > size(rad.coeff, 2)
         throw(
             ArgumentError(
@@ -291,27 +292,57 @@ function _approx_rbf(val, rad::RadialBasis)
             )
         )
     end
+    return n
+end
+
+function _approx_rbf(val, rad::RadialBasis)
+    n = _check_coeff_count(rad)
 
     approx = _make_approx(val, rad)
-
-    if rad.phi === linearRadial().phi
-        for i in 1:n
-            tmp = zero(eltype(val))
-            @inbounds @simd ivdep for j in 1:length(val)
-                tmp += ((val[j] - rad.x[i][j]) / rad.scale_factor)^2
-            end
-            tmp = sqrt(tmp)
-            _add_tmp_to_approx!(approx, i, tmp, rad)
+    if rad.phi === _LINEAR_RADIAL_PHI
+        @inbounds for i in 1:n
+            _add_tmp_to_approx!(approx, i, _linear_distance(val, rad, i), rad)
         end
     else
-        tmp = collect(val)
         @inbounds for i in 1:n
-            tmp = (val .- rad.x[i]) ./ rad.scale_factor
-            _add_tmp_to_approx!(approx, i, tmp, rad; f = rad.phi)
+            _add_tmp_to_approx!(
+                approx, i, rad.phi((val .- rad.x[i]) ./ rad.scale_factor), rad
+            )
         end
     end
+    return copy(approx)
+end
 
-    return _ret_copy(approx)
+# A scalar response has a single coefficient row, so it accumulates into a local
+# rather than a buffer: the total stays in a register, and nothing is mutated, so
+# reverse mode differentiates straight through.
+function _approx_rbf(
+        val, rad::RadialBasis{F, Q, X, <:AbstractArray{<:Number}}
+    ) where {F, Q, X}
+    n = _check_coeff_count(rad)
+    approx = zero(_approx_eltype(val, rad))
+    # Hoisted rather than tested per sample, which costs about a third of the
+    # evaluation. `@simd` marks a float reduction into a local, over reads alone.
+    if rad.phi === _LINEAR_RADIAL_PHI
+        @inbounds @simd for i in 1:n
+            approx += rad.coeff[1, i] * _linear_distance(val, rad, i)
+        end
+    else
+        @inbounds for i in 1:n
+            approx += rad.coeff[1, i] * rad.phi((val .- rad.x[i]) ./ rad.scale_factor)
+        end
+    end
+    return approx
+end
+
+# The linear kernel is `norm` itself, so its scaled distance is summed
+# coordinate by coordinate rather than through a temporary difference.
+@inline function _linear_distance(val, rad::RadialBasis, i)
+    tmp = zero(_approx_eltype(val, rad))
+    @inbounds @simd ivdep for j in 1:length(val)
+        tmp += ((val[j] - rad.x[i][j]) / rad.scale_factor)^2
+    end
+    return sqrt(tmp)
 end
 
 _scaled_chebyshev(x, k, lb, ub) = cos(k * acos(-1 + 2 * (x - lb) / (ub - lb)))
