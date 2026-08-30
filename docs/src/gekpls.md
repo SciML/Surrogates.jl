@@ -16,7 +16,18 @@ The following are the inputs when building a GEKPLS surrogate:
  6. lb - The lower bound for the training points
  7. ub - The upper bound for the training points
  8. extra_points - The number of additional points to use for the PLS
- 9. theta - The hyperparameter to use for the correlation model
+ 9. theta - The correlation scales, one per PLS component
+
+`theta` is used as given: unlike `KPLS`, `GEKPLS` does not fit it, and its
+magnitude matters a great deal. On the welded-beam problem below, `theta = 1`
+predicts about thirteen times more accurately than the conventional `0.01`
+starting point. `reduced_likelihood_function_value` ranks candidate scales, so
+it can be used to choose between them.
+
+Two keyword arguments are also accepted: `nugget`, the starting jitter added to
+the correlation diagonal (raised by factors of ten only as far as the Cholesky
+factorization requires), and `noise`, an observation-noise term added alongside
+it.
 
 ## Basic GEKPLS Usage
 
