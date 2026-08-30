@@ -2,6 +2,8 @@ using Base
 using Test
 using LinearAlgebra
 using Surrogates
+using ForwardDiff
+using Zygote
 
 @testset "RadialBasis" begin
     @testset "1D" begin
@@ -94,6 +96,22 @@ using Surrogates
         y_new = f(x_new)
         update!(my_radial_basis, x_new, y_new)
         @test my_radial_basis(x_new) ≈ y_new
+
+        # Responses may be tuples rather than vectors, and there is nothing
+        # special about two outputs.
+        pts = [(0.0, 0.0), (1.0, 2.0), (2.0, 1.0), (3.0, 3.0), (1.0, 3.0), (4.0, 0.5)]
+        lb2 = [0.0, 0.0]
+        ub2 = [4.0, 4.0]
+        as_tuples = RadialBasis(pts, [(p[1], p[2]) for p in pts], lb2, ub2)
+        as_vectors = RadialBasis(pts, [[p[1], p[2]] for p in pts], lb2, ub2)
+        @test as_tuples((1.0, 2.0)) ≈ as_vectors((1.0, 2.0))
+        three = RadialBasis(pts, [[p[1], p[2], p[1] + p[2]] for p in pts], lb2, ub2)
+        @test length(three((1.0, 2.0))) == 3
+        @test three((1.0, 2.0)) ≈ [1.0, 2.0, 3.0]
+
+        # Integer responses promote the way the solve does.
+        ints = RadialBasis(pts, [0, 1, 2, 3, 2, 1], lb2, ub2)
+        @test ints((1.0, 2.0)) ≈ 1.0
     end
 
     @testset "sparse construction" begin
@@ -112,6 +130,35 @@ using Surrogates
         spars = RadialBasis(x, y, lb, ub, rad = linearRadial(), sparse = true)
         for p in (1.0, 1.7, 2.5, 3.0)
             @test dense(p) ≈ spars(p)
+        end
+
+        # The sparse assembly has to agree for the other kernels and for vector
+        # responses too, not only for a scalar linear fit.
+        pts = [(0.0, 0.0), (1.0, 2.0), (2.0, 1.0), (3.0, 3.0), (1.0, 3.0), (4.0, 0.5)]
+        vals = [0.0, 1.0, 2.0, 3.0, 2.5, 1.2]
+        lb2 = [0.0, 0.0]
+        ub2 = [4.0, 4.0]
+        for rad in (linearRadial(), cubicRadial(), thinplateRadial())
+            d = RadialBasis(pts, vals, lb2, ub2; rad = rad, sparse = false)
+            sp = RadialBasis(pts, vals, lb2, ub2; rad = rad, sparse = true)
+            @test d((1.5, 2.5)) ≈ sp((1.5, 2.5))
+        end
+        multi = [[p[1], p[2]] for p in pts]
+        d = RadialBasis(pts, multi, lb2, ub2; sparse = false)
+        sp = RadialBasis(pts, multi, lb2, ub2; sparse = true)
+        @test d((1.5, 2.5)) ≈ sp((1.5, 2.5))
+    end
+
+    @testset "multiquadric shape parameter is redundant with scale_factor" begin
+        # `sqrt((c*r)^2 + 1)` is Hardy's `sqrt(r^2 + c0^2)` with `c0 = 1/c`,
+        # times a constant the interpolant is invariant to. Both `c` and
+        # `scale_factor` scale the radius, so they are one parameter.
+        x = collect(range(0.0, 1.0, length = 9))
+        y = sin.(3 .* x)
+        a = RadialBasis(x, y, 0.0, 1.0; rad = multiquadricRadial(2.0), scale_factor = 1.0)
+        b = RadialBasis(x, y, 0.0, 1.0; rad = multiquadricRadial(1.0), scale_factor = 0.5)
+        for p in range(0.0, 1.0, length = 11)
+            @test a(p) ≈ b(p)
         end
     end
 
@@ -286,6 +333,63 @@ using Surrogates
             0 // 1, 3 // 1; rad = linearRadial()
         )
         @test surr(2 // 1) ≈ 4.0
+
+        # `linearRadial` is evaluated through `_linear_distance` and every other
+        # kernel through `rad.phi`, so a precision carried by one branch says
+        # nothing about the other.
+        for rad in (cubicRadial(), multiquadricRadial(), thinplateRadial())
+            for T in (Float32, BigFloat)
+                xs = T[0, 1, 2, 3, 4]
+                ys = T[0, 1, 4, 9, 16]
+                surr = RadialBasis(xs, ys, T(0), T(4); rad = rad)
+                @test eltype(surr.coeff) == T
+                @test surr(T(2.5)) isa T
+                @test surr(T(3)) ≈ T(9) atol = sqrt(eps(T))
+            end
+        end
+    end
+
+    @testset "element types in more than one dimension" begin
+        pts = [(0.0, 0.0), (1.0, 2.0), (2.0, 1.0), (3.0, 3.0), (1.0, 3.0), (4.0, 0.5)]
+        vals = [0.0, 1.0, 2.0, 3.0, 2.5, 1.2]
+        for T in (Float32, BigFloat)
+            xs = [T.(p) for p in pts]
+            ys = T.(vals)
+            for rad in (linearRadial(), cubicRadial(), thinplateRadial())
+                surr = RadialBasis(xs, ys, T.([0.0, 0.0]), T.([4.0, 4.0]); rad = rad)
+                @test eltype(surr.coeff) == T
+                @test surr(T.((1.0, 2.0))) isa T
+                @test surr(T.((1.0, 2.0))) ≈ T(1) atol = sqrt(eps(T))
+            end
+        end
+        # An integer design in more than one dimension promotes the same way.
+        surr = RadialBasis(
+            [(0, 0), (1, 2), (2, 1), (3, 3), (1, 3), (4, 1)], vals, [0, 0], [4, 4]
+        )
+        @test eltype(surr.coeff) == Float64
+        @test surr((1, 2)) ≈ 1.0
+    end
+
+    @testset "input containers" begin
+        pts = [(0.0, 0.0), (1.0, 2.0), (2.0, 1.0), (3.0, 3.0), (1.0, 3.0), (4.0, 0.5)]
+        vals = [0.0, 1.0, 2.0, 3.0, 2.5, 1.2]
+        lb = [0.0, 0.0]
+        ub = [4.0, 4.0]
+        # Samples as tuples or as vectors give the same surrogate.
+        tuples = RadialBasis(pts, vals, lb, ub; rad = linearRadial())
+        vectors = RadialBasis(collect.(pts), vals, lb, ub; rad = linearRadial())
+        @test tuples((1.5, 2.5)) ≈ vectors((1.5, 2.5))
+
+        # A point is a point however it is wrapped.
+        @test tuples((1.5, 2.5)) ≈ tuples([1.5, 2.5])
+        @test tuples((1.5, 2.5)) ≈ tuples([1.5 2.5])
+
+        x1 = [0.0, 1.0, 2.0, 3.0]
+        y1 = [0.0, 1.0, 4.0, 9.0]
+        surr = RadialBasis(x1, y1, 0.0, 3.0; rad = linearRadial())
+        @test surr(2.0) ≈ surr([2.0])
+        @test surr(2.0) ≈ surr((2.0,))
+        @test surr(2.0) ≈ surr(fill(2.0, 1, 1))
     end
 
     @testset "update! leaves the caller's containers alone" begin
@@ -307,5 +411,75 @@ using Surrogates
         @test length(x_nd) == 3
         @test length(surr.x) == 5
         @test surr((2.0, 3.0)) ≈ 4.0
+    end
+    @testset "queries of a different element type than the samples" begin
+        # The accumulator holds coefficient times kernel value, so its type is
+        # the promotion of the two. Taking it from the query alone made an
+        # integer query throw InexactError on the first write.
+        x = [(0.0, 0.0), (1.0, 2.0), (2.0, 1.0), (3.0, 3.0), (1.0, 0.0)]
+        y = [0.0, 1.0, 2.0, 3.0, 1.5]
+        surr = RadialBasis(x, y, [0.0, 0.0], [3.0, 3.0]; rad = linearRadial())
+        @test surr((1, 2)) ≈ surr((1.0, 2.0))
+        @test surr([1, 2]) ≈ surr((1.0, 2.0))
+
+        x1 = [0.0, 1.0, 2.0, 3.0]
+        y1 = [0.0, 1.0, 4.0, 9.0]
+        surr1 = RadialBasis(x1, y1, 0.0, 3.0; rad = linearRadial())
+        @test surr1(2) ≈ surr1(2.0)
+        @test surr1(2) ≈ 4.0
+
+        # An integer *design* promotes the same way.
+        surri = RadialBasis([0, 1, 2, 3], [0, 1, 4, 9], 0, 3; rad = linearRadial())
+        @test surri(2) ≈ 4.0
+        @test surri(2.5) isa Float64
+    end
+
+    @testset "samples added without refitting are caught" begin
+        # `update!` keeps the two containers in step; reaching past it does not.
+        x = [1.0, 2.0, 3.0]
+        y = [4.0, 5.0, 6.0]
+        surr = RadialBasis(x, y, 0.0, 5.0; rad = linearRadial())
+        push!(surr.x, 4.0)
+        err = try
+            surr(2.0)
+            nothing
+        catch e
+            e
+        end
+        @test err isa ArgumentError
+        @test occursin("4 samples but only 3 coefficients", err.msg)
+    end
+
+    @testset "automatic differentiation" begin
+        # Evaluation accumulates into a local for a scalar response and into a
+        # Zygote buffer for a vector one, so both modes have to be exercised on
+        # both paths.
+        x1 = collect(0.0:0.5:10.0)
+        y1 = x1 .^ 2
+        # Off the nodes: every kernel is a function of `norm(z)`, whose
+        # derivative at a zero difference is 0/0.
+        query = 5.25
+        for rad in (linearRadial(), cubicRadial(), multiquadricRadial(), thinplateRadial())
+            surr = RadialBasis(x1, y1, 0.0, 10.0; rad = rad)
+            fd = ForwardDiff.derivative(surr, query)
+            @test fd isa Number
+            @test Zygote.gradient(surr, query)[1] ≈ fd
+        end
+
+        lb = [0.0, 0.0]
+        ub = [10.0, 10.0]
+        xn = sample(40, lb, ub, SobolSample())
+        surr = RadialBasis(xn, [p[1]^2 + p[2]^2 for p in xn], lb, ub; rad = cubicRadial())
+        g = ForwardDiff.gradient(surr, [2.3, 3.1])
+        @test g isa AbstractVector
+        @test Zygote.gradient(surr, [2.3, 3.1])[1] ≈ g
+
+        # Vector responses go through the buffered path.
+        surr_multi = RadialBasis(
+            xn, [[p[1]^2, p[2]] for p in xn], lb, ub; rad = linearRadial()
+        )
+        J = ForwardDiff.jacobian(p -> surr_multi(p), [2.3, 3.1])
+        @test size(J) == (2, 2)
+        @test Zygote.jacobian(p -> surr_multi(p), [2.3, 3.1])[1] ≈ J
     end
 end
