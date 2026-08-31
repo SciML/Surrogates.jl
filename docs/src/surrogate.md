@@ -102,7 +102,6 @@ NeuralSurrogate(x,y,lb,ub; model = Chain(Dense(length(x[1]),1), first), loss = (
 ```
 
 ```@docs
-EarthSurrogate
 SVMSurrogate
 ```
 
