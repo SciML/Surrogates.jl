@@ -148,7 +148,7 @@ y_true = sphere_function.(x_test)
     g = GEKPLS(x, y, grads, n_comp, delta_x, lb, ub, extra_points, initial_theta)
     y_pred = g.(x_test)
     rmse = sqrt(sum(((y_pred - y_true) .^ 2) / n_test))
-    @test rmse < 0.001  # 0.000167
+    @test rmse < 0.0004  # 0.000167
 end
 
 ## 2D
@@ -170,7 +170,7 @@ y_true = sphere_function.(x_test)
     g = GEKPLS(x, y, grads, n_comp, delta_x, lb, ub, extra_points, initial_theta)
     y_pred = g.(x_test)
     rmse = sqrt(sum(((y_pred - y_true) .^ 2) / n_test))
-    @test rmse < 0.001  # 3.9e-5
+    @test rmse < 0.0001  # 3.9e-5
 end
 
 @testset "Test 9: Add Point Test (dimensions = 3; n_comp = 2; extra_points = 2)" begin
@@ -261,6 +261,31 @@ end
     x = sample(30, lb, ub, SobolSample())
     grads = gradient.(sphere_function, x)
     y = sphere_function.(x)
+
+    @testset "theta must have one entry per PLS component" begin
+        # The mismatch used to reach the `reshape` inside `squar_exp`, six
+        # frames down, and surface as an opaque `DimensionMismatch`.
+        @test_throws ArgumentError GEKPLS(
+            x, y, grads, 2, 1.0e-4, lb, ub, 2, [0.01]
+        )
+        @test_throws ArgumentError GEKPLS(
+            x, y, grads, 2, 1.0e-4, lb, ub, 2, [0.01, 0.01, 0.01]
+        )
+    end
+
+    @testset "a collection of points is not read as one point" begin
+        # `_check_dimension` cannot tell `d` query points from one
+        # `d`-dimensional point, and the prediction path used to return only
+        # the first of them — a silently wrong answer rather than an error.
+        g = GEKPLS(x, y, grads, 2, 1.0e-4, lb, ub, 2, [0.01, 0.01])
+        pts = [(1.0, 2.0, 3.0), (4.0, 4.0, 4.0), (0.0, 0.0, 0.0)]
+        @test_throws ArgumentError g(pts)
+        # A single point is accepted as a tuple, a vector, or a `1 x d` row
+        # matrix, as it is by `Kriging` and `GEK`. The row matrix used to reach
+        # `differences` as a `1 x 1 x d` array and raise there.
+        @test g((1.0, 2.0, 3.0)) ≈ g([1.0, 2.0, 3.0])
+        @test g(reshape([1.0, 2.0, 3.0], 1, 3)) ≈ g((1.0, 2.0, 3.0))
+    end
 
     @testset "training points outside the bounds are rejected" begin
         # This used to print a diagnostic and return `nothing`, so the caller

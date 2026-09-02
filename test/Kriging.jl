@@ -62,21 +62,21 @@ end
         y = [4.0, 5.0, 6.0]
         k = Kriging(x, y, lb, ub, p = 1.3)
         @test k(1.0) == 4.0
-        @test std_error_at_point(k, 1.0) < 10^(-6)
+        @test std_error_at_point(k, 1.0) < 1.0e-12
     end
 
     @testset "update! with a single sample" begin
         k = Kriging([1.0, 2.0, 3.0], [4.0, 5.0, 6.0], lb, ub, p = 1.3)
         update!(k, 4.0, 9.0)
         @test k(4.0) ≈ 9.0
-        @test std_error_at_point(k, 4.0) < 10^(-6)
+        @test std_error_at_point(k, 4.0) < 1.0e-12
     end
 
     @testset "update! with several samples" begin
         k = Kriging([1.0, 2.0, 3.0], [4.0, 5.0, 6.0], lb, ub, p = 1.3)
         update!(k, [4.0, 5.0, 6.0], [9.0, 13.0, 15.0])
         @test k(4.0) ≈ 9.0
-        @test std_error_at_point(k, 4.0) < 10^(-6)
+        @test std_error_at_point(k, 4.0) < 1.0e-12
     end
 
     @testset "hyperparameter initialization" begin
@@ -109,21 +109,21 @@ end
     @testset "without update!" begin
         k = Kriging(base_x, base_y, lb, ub, p = unit_p, theta = my_theta)
         @test k((1.0, 2.0, 3.0)) ≈ 1.0
-        @test std_error_at_point(k, (1.0, 2.0, 3.0)) < 10^(-6)
+        @test std_error_at_point(k, (1.0, 2.0, 3.0)) < 1.0e-12
     end
 
     @testset "update! with a single sample" begin
         k = Kriging(base_x, base_y, lb, ub, p = unit_p, theta = my_theta)
         update!(k, (10.0, 11.0, 12.0), 4.0)
         @test k((10.0, 11.0, 12.0)) ≈ 4.0
-        @test std_error_at_point(k, (10.0, 11.0, 12.0)) < 10^(-6)
+        @test std_error_at_point(k, (10.0, 11.0, 12.0)) < 1.0e-12
     end
 
     @testset "update! with several samples" begin
         k = Kriging(base_x, base_y, lb, ub, p = unit_p, theta = my_theta)
         update!(k, [(10.0, 11.0, 12.0), (13.0, 14.0, 15.0)], [4.0, 5.0])
         @test k((10.0, 11.0, 12.0)) ≈ 4.0
-        @test std_error_at_point(k, (10.0, 11.0, 12.0)) < 10^(-6)
+        @test std_error_at_point(k, (10.0, 11.0, 12.0)) < 1.0e-12
     end
 
     kwarg_krig_ND = Kriging(base_x, base_y, lb, ub, optimize_theta = false)
@@ -133,6 +133,13 @@ end
         @test_throws ArgumentError Kriging(base_x, base_y, lb, ub, p = -my_p)
         @test_throws ArgumentError Kriging(base_x, base_y, lb, ub, theta = -my_theta)
         @test_throws ArgumentError Kriging(base_x, base_y, lb, ub, p = 0 * my_p)
+
+        # A scalar is the shape the one-dimensional constructor takes; here it
+        # used to index past its end and raise a bare `BoundsError`.
+        @test_throws ArgumentError Kriging(base_x, base_y, lb, ub, p = 2.0)
+        @test_throws ArgumentError Kriging(base_x, base_y, lb, ub, theta = 2.0)
+        @test_throws ArgumentError Kriging(base_x, base_y, lb, ub, p = fill(2.0, 4))
+        @test_throws ArgumentError Kriging(base_x, base_y, lb, ub, theta = fill(2.0, 4))
     end
 
     @testset "input dimension validation" begin
@@ -170,7 +177,7 @@ end
     x = sample(12, lb, ub, SobolSample())
     k = Kriging(x, f.(x), lb, ub, p = 1.9)
     for val in range(0.05, 9.95, length = 23)
-        @test std_error_at_point(k, val) ≈ reference_std_error(k, val) atol = 1.0e-8
+        @test std_error_at_point(k, val) ≈ reference_std_error(k, val) rtol = 1.0e-8 atol = 1.0e-11
     end
 
     lb3, ub3 = [0.0, 0.0, 1.0], [5.0, 7.5, 10.0]
@@ -178,11 +185,11 @@ end
     g = p -> p[1] + p[2] * p[3]
     k3 = Kriging(x3, g.(x3), lb3, ub3, p = [1.9, 1.9, 1.9], theta = [2.0, 2.0, 2.0])
     for val in sample(15, lb3, ub3, HaltonSample())
-        @test std_error_at_point(k3, val) ≈ reference_std_error(k3, val) atol = 1.0e-8
+        @test std_error_at_point(k3, val) ≈ reference_std_error(k3, val) rtol = 1.0e-8 atol = 1.0e-11
     end
 
     # The variance vanishes at a sample and is positive between samples.
-    @test std_error_at_point(k, x[4]) < 1.0e-8
+    @test std_error_at_point(k, x[4]) < 1.0e-12
     @test std_error_at_point(k, (x[4] + x[5]) / 2) > 1.0e-8
 end
 
@@ -389,4 +396,23 @@ end
         @test Surrogates._kriging_loglik(x1, y1, kf.p, kf.theta) >
             Surrogates._kriging_loglik(x1, y1, kh.p, kh.theta)
     end
+end
+
+@testset "the default correlation scale is finite for a degenerate design" begin
+    # `std` is undefined for a single sample, and a `NaN` correlation scale used
+    # to reach the solve as an "the samples are likely near-duplicates" error
+    # naming the wrong cause. The domain-width floor carries the scale instead.
+    k = Kriging([1.0], [2.0], 0.0, 2.0; optimize_theta = false)
+    @test isfinite(k.theta)
+    @test k(1.0) ≈ 2.0
+    @test k.mu ≈ 2.0
+    @test k.sigma ≈ 0.0 atol = 1.0e-14
+
+    kn = Kriging([(1.0, 2.0)], [3.0], [0.0, 0.0], [2.0, 4.0]; optimize_theta = false)
+    @test all(isfinite, kn.theta)
+    @test kn((1.0, 2.0)) ≈ 3.0
+
+    # Fitting has no likelihood to maximize with one sample (sigma is zero), so
+    # it keeps the default rather than wandering off it.
+    @test isfinite(Kriging([1.0], [2.0], 0.0, 2.0).theta)
 end

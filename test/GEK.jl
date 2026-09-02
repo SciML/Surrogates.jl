@@ -70,16 +70,16 @@ end
         # function and summed only the value half of the weight vector, so the
         # derivative observations never reached the prediction.
         for xi in x
-            @test my_gek(xi) ≈ f(xi) atol = 1.0e-2
-            @test ForwardDiff.derivative(my_gek, xi) ≈ df(xi) atol = 1.0e-2
+            @test my_gek(xi) ≈ f(xi) atol = 1.0e-8
+            @test ForwardDiff.derivative(my_gek, xi) ≈ df(xi) atol = 1.0e-8
         end
-        @test maximum(std_error_at_point(my_gek, xi) for xi in x) < 1.0e-2
+        @test maximum(std_error_at_point(my_gek, xi) for xi in x) < 1.0e-5
     end
 
     @testset "is accurate between the samples" begin
         probe = range(0.6, 4.4, length = 40)
         rms = sqrt(sum((my_gek(v) - f(v))^2 for v in probe) / length(probe))
-        @test rms < 1.0e-2
+        @test rms < 1.0e-3
     end
 
     @testset "the mean squared error is the kriging variance" begin
@@ -91,7 +91,7 @@ end
         g = GEK(x, y, lb, ub; theta = 2.0)
         for v in range(0.6, 4.4, length = 17)
             @test std_error_at_point(g, v) ≈
-                reference_gek_std_error(g, v) atol = 1.0e-8
+                reference_gek_std_error(g, v) atol = 1.0e-10
         end
         @test maximum(std_error_at_point(g, v) for v in range(0.6, 4.4, length = 17)) >
             1.0e-3
@@ -107,7 +107,7 @@ end
         update!(g, 2.5, f(2.5), df(2.5))
         @test length(g.x) == 7
         @test length(g.y) == 14
-        @test g(2.5) ≈ f(2.5) atol = 1.0e-2
+        @test g(2.5) ≈ f(2.5) atol = 1.0e-4
         # A new sample without its gradient cannot be placed in the covariance
         # system; the three-argument form used to splice it in and silently
         # leave the observation vector and the block layout out of step.
@@ -138,11 +138,11 @@ end
         # was not even symmetric and had entries above one. The model missed its
         # own samples by ~7.6e15.
         for p in x
-            @test my_gek_ND(p) ≈ F(p) atol = 1.0e-8
+            @test my_gek_ND(p) ≈ F(p) atol = 1.0e-10
             @test ForwardDiff.gradient(v -> my_gek_ND(v), collect(p)) ≈
-                G(p) atol = 1.0e-8
+                G(p) atol = 1.0e-10
         end
-        @test maximum(std_error_at_point(my_gek_ND, p) for p in x) < 1.0e-6
+        @test maximum(std_error_at_point(my_gek_ND, p) for p in x) < 1.0e-7
     end
 
     @testset "the mean squared error is the kriging variance" begin
@@ -150,7 +150,7 @@ end
         probe = [(1.0, 1.0), (2.0, 1.5), (0.8, 2.2), (2.2, 2.2)]
         for p in probe
             @test std_error_at_point(g, p) ≈
-                reference_gek_std_error(g, p) atol = 1.0e-8
+                reference_gek_std_error(g, p) atol = 1.0e-10
         end
         @test maximum(std_error_at_point(g, p) for p in probe) > 1.0e-3
     end
@@ -174,7 +174,7 @@ end
         update!(g, new_p, F(new_p), G(new_p))
         @test length(g.x) == 7
         @test length(g.y) == 21
-        @test g(new_p) ≈ F(new_p) atol = 1.0e-8
+        @test g(new_p) ≈ F(new_p) atol = 1.0e-10
         # The observation vector keeps all values ahead of all gradients.
         @test g.y[1:7] ≈ [F(p) for p in g.x]
         @test_throws ArgumentError update!(g, (0.9, 0.9), F((0.9, 0.9)))
@@ -211,6 +211,10 @@ end
     x2 = [(0.5, 0.5), (2.5, 0.7), (1.2, 2.4)]
     y2 = vcat([p[1] + p[2] for p in x2], reduce(vcat, [[1.0, 1.0] for _ in x2]))
     @test_throws ArgumentError GEK(x2, y2, lb2, ub2, p = [1.0, 1.0])
+    # A scalar `p` or `theta` used to index past its end with a `BoundsError`.
+    @test_throws ArgumentError GEK(x2, y2, lb2, ub2, p = 2.0)
+    @test_throws ArgumentError GEK(x2, y2, lb2, ub2, theta = 1.0)
+    @test_throws ArgumentError GEK(x2, y2, lb2, ub2, theta = [1.0, 1.0, 1.0])
     @test_throws ArgumentError GEK(x2, y2, lb2, ub2, theta = [-1.0, 1.0])
 end
 
