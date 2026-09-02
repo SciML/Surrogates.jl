@@ -18,16 +18,24 @@ The following are the inputs when building a GEKPLS surrogate:
  8. extra_points - The number of additional points to use for the PLS
  9. theta - The correlation scales, one per PLS component
 
-`theta` is used as given: unlike `KPLS`, `GEKPLS` does not fit it, and its
+`theta` must have exactly `n_comp` entries, one per PLS component. By default it
+is used as given — unlike `KPLS`, `GEKPLS` does not fit it unless asked — and its
 magnitude matters a great deal. On the welded-beam problem below, `theta = 1`
 predicts about thirteen times more accurately than the conventional `0.01`
 starting point. `reduced_likelihood_function_value` ranks candidate scales, so
 it can be used to choose between them.
 
-Two keyword arguments are also accepted: `nugget`, the starting jitter added to
-the correlation diagonal (raised by factors of ten only as far as the Cholesky
-factorization requires), and `noise`, an observation-noise term added alongside
-it.
+The following keyword arguments are also accepted:
+
+  - `optimize_theta`: fit `theta` by maximizing the reduced likelihood, taking
+    the supplied value as the starting point. **Defaults to `false`**, unlike
+    `Kriging` and `GEK`: every evaluation factorizes an `nt × nt` matrix with
+    `nt = n(1 + extra_points)`, so the search costs far more here than the fit
+    itself. Worth setting on a modest design and worth avoiding on a large one.
+  - `n_start`: Latin-hypercube starts for that search.
+  - `nugget`: the starting jitter added to the correlation diagonal, raised by
+    factors of ten only as far as the Cholesky factorization requires.
+  - `noise`: an observation-noise term added alongside the nugget.
 
 ## Basic GEKPLS Usage
 
