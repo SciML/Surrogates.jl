@@ -3,7 +3,6 @@ KPLSK: KPLS followed by a full-dimensional Kriging refinement.
 
 Based on: Bouhlel et al. (2016), "Improving kriging surrogates of high-dimensional design
 models by Partial Least Squares dimension reduction", Struct Multidisc Optim 53:935–952.
-See also: https://smt.readthedocs.io/en/latest/_src_docs/surrogate_models/gpr/kplsk.html
 
 KPLSK first fits a reduced-dimension KPLS model (h << d hyperparameters, see [`KPLS`](@ref))
 and uses it only to obtain a good initial guess for a standard, full-dimensional (d
@@ -39,8 +38,8 @@ end
     _expand_kpls_theta(theta_pls, coeff_pls)
 
 Expand KPLS hyperparameters `theta_pls` (length h) into full-dimensional Kriging
-hyperparameters `theta0` (length d), using the (already component-squared) PLS rotation
-coefficients `coeff_pls` [d, h]:
+hyperparameters `theta0` (length d), using the PLS rotation coefficients
+`coeff_pls` [d, h] as `_compute_pls` returns them, that is `abs.(W*)`:
 
     θ0_k = Σ_{l=1}^h θ_l * coeff_pls[k, l]^2
 """
@@ -108,11 +107,8 @@ function KPLSK(x_vec, y_vec, n_comp, lb, ub, theta)
     xlimits = hcat(collect(Float64, lb), collect(Float64, ub))
     X = vector_of_tuples_to_matrix(x_vec)
     y = reshape(collect(Float64, y_vec), (size(X, 1), 1))
-
-    if bounds_error(X, xlimits)
-        println("X values outside bounds")
-        return
-    end
+    _check_pls_components("KPLSK", n_comp, size(X, 2), theta)
+    _check_pls_bounds("KPLSK", X, xlimits)
 
     # Stage 1: KPLS, to get a reduced-dimension theta and the PLS rotation coefficients.
     pls_mean, X_after_PLS, y_after_PLS = _compute_pls(X, y, n_comp)
@@ -180,18 +176,20 @@ Add a new sample point and re-train the KPLSK model.
 """
 function SurrogatesBase.update!(k::KPLSK, new_x, new_y)
     new_x_mat = prep_data_for_pred([new_x])
+    # A duplicate is a no-op, not an error; see `Kriging`'s `update!`.
     if vec(new_x_mat) in eachrow(k.x_matrix)
-        println("Adding a sample that already exists. Cannot update KPLSK.")
-        return
+        @warn "Skipping `update!`: this sample already exists in the KPLSK " *
+            "surrogate, and duplicate points would make the correlation matrix singular."
+        return nothing
     end
 
     if bounds_error(new_x_mat, k.xl)
-        println("x values outside bounds")
-        return
+        throw(ArgumentError("The new sample lies outside [lb, ub]; cannot update KPLSK."))
     end
 
-    push!(k.x, new_x)
-    push!(k.y, new_y)
+    # `vcat` rather than `push!`; see `KPLS`'s `update!`.
+    k.x = vcat(k.x, [new_x])
+    k.y = vcat(k.y, new_y)
     k.x_matrix = vcat(k.x_matrix, new_x_mat)
     k.y_matrix = vcat(k.y_matrix, reshape([Float64(new_y)], (1, 1)))
 

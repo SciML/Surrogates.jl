@@ -185,19 +185,22 @@ function GEKPLS(
         nugget = _GEKPLS_NUGGET, noise = 0.0, optimize_theta = false,
         n_start::Integer = 10
     )
+    # Checked here rather than at the `reshape` inside `squar_exp`, six frames
+    # down, where the mismatch surfaces as an opaque `DimensionMismatch`.
+    if length(theta) != n_comp
+        throw(
+            ArgumentError(
+                "GEKPLS needs one correlation scale per PLS component: " *
+                    "length(theta) = $(length(theta)) but n_comp = $(n_comp)."
+            )
+        )
+    end
     xlimits = hcat(lb, ub)
     X = vector_of_tuples_to_matrix(x_vec)
     y = reshape(y_vec, (size(X, 1), 1))
     grads = vector_of_tuples_to_matrix2(grads_vec)
 
-    #ensure that X values are within the upper and lower bounds
-    if bounds_error(X, xlimits)
-        throw(
-            ArgumentError(
-                "Some training points lie outside [lb, ub]; cannot build GEKPLS."
-            )
-        )
-    end
+    _check_pls_bounds("GEKPLS", X, xlimits)
 
     fit = _gekpls_fit(
         X, y, grads, n_comp, delta_x, xlimits, extra_points, theta, nugget, noise;
@@ -233,7 +236,25 @@ end
 
 function (g::GEKPLS)(x_vec)
     _check_dimension(g, x_vec)
-    return _gekpls_predict(g, x_vec)
+    # A `1 x d` row matrix — what `(lb .+ ub) ./ 2` gives for row-matrix bounds —
+    # keeps a second dimension that `prep_data_for_pred` turns into a `1 x 1 x d`
+    # array, which `differences` then rejects. `Kriging` and `GEK` flatten the
+    # same way; `vec` is a no-op view for a vector and leaves a tuple alone.
+    point = _as_point(x_vec)
+    # `_check_dimension` only compares lengths, so it cannot tell `d` query
+    # points from one `d`-dimensional point. `prep_data_for_pred` reads the
+    # former as `d` separate queries and `_gekpls_predict` returns only the
+    # first, silently answering a different question; a point's own entries are
+    # numbers, which is what separates the two cases.
+    if !(first(point) isa Number)
+        throw(
+            ArgumentError(
+                "GEKPLS predicts one point at a time, but got a collection of " *
+                    "points. Broadcast over them instead: `g.(points)`."
+            )
+        )
+    end
+    return _gekpls_predict(g, point)
 end
 
 """
@@ -318,10 +339,6 @@ Parameters
 """
 function _ge_compute_pls(X, y, n_comp, grads, delta_x, xlimits, extra_points)
 
-    # this function is equivalent to a combination of
-    # https://github.com/SMTorg/smt/blob/f124c01ffa78c04b80221dded278a20123dac742/smt/utils/kriging_utils.py#L1036
-    # and https://github.com/SMTorg/smt/blob/f124c01ffa78c04b80221dded278a20123dac742/smt/surrogate_models/gekpls.py#L48
-
     nt, dim = size(X)
     XX = zeros(0, dim)
     yy = zeros(0, size(y)[2])
@@ -351,15 +368,13 @@ function _ge_compute_pls(X, y, n_comp, grads, delta_x, xlimits, extra_points)
         end
         _X = zeros((size(bb_vals)[1], dim))
         _y = zeros((size(bb_vals)[1], 1))
-        bb_vals = bb_vals .* (delta_x * (xlimits[:, 2] - xlimits[:, 1]))' #smt calls this sign. I've called it bb_vals
+        # The Box-Behnken stencil, scaled to a `delta_x` fraction of each side.
+        bb_vals = bb_vals .* (delta_x * (xlimits[:, 2] - xlimits[:, 1]))'
         _X = X[i, :]' .+ bb_vals
         bb_vals = bb_vals .* grads[i, :]'
         _y = y[i, :] .+ sum(bb_vals, dims = 2)
 
-        #_pls.fit(_X, _y) # relic from sklearn version; retained for future reference.
-        #coeff_pls[:, :, i] = _pls.x_rotations_ #relic from sklearn version; retained for future reference.
-
-        coeff_pls[:, :, i] = _modified_pls(_X, _y, n_comp) #_modified_pls returns the equivalent of SKLearn's _pls.x_rotations_
+        coeff_pls[:, :, i] = _modified_pls(_X, _y, n_comp)
         if extra_points != 0
             start_index = max(1, length(coeff_pls[:, 1, i]) - extra_points + 1)
             max_coeff = sortperm(broadcast(abs, coeff_pls[:, 1, i]))[start_index:end]
@@ -379,36 +394,6 @@ function _ge_compute_pls(X, y, n_comp, grads, delta_x, xlimits, extra_points)
     pls_mean = mean(broadcast(abs, coeff_pls), dims = 3)
     return pls_mean, X, y
 end
-
-######start of bbdesign######
-
-#
-# Adapted from 'ExperimentalDesign.jl: Design of Experiments in Julia'
-# https://github.com/phrb/ExperimentalDesign.jl
-
-# MIT License
-
-# ExperimentalDesign.jl: Design of Experiments in Julia
-# Copyright (C) 2019 Pedro Bruel <pedro.bruel@gmail.com>
-
-# Permission is hereby granted, free of charge,  to any person obtaining a copy of
-# this software  and associated documentation  files (the "Software"), to  deal in
-# the Software  without restriction,  including without  limitation the  rights to
-# use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
-# the Software, and to permit persons to  whom the Software is furnished to do so,
-# subject to the following conditions:
-
-# The  above copyright  notice  and  this permission  notice  (including the  next
-# paragraph)  shall be  included  in all  copies or  substantial  portions of  the
-# Software.
-
-# THE  SOFTWARE IS  PROVIDED "AS  IS", WITHOUT  WARRANTY OF  ANY KIND,  EXPRESS OR
-# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
-# FOR A PARTICULAR  PURPOSE AND NONINFRINGEMENT. IN NO EVENT  SHALL THE AUTHORS OR
-# COPYRIGHT HOLDERS BE  LIABLE FOR ANY CLAIM, DAMAGES OR  OTHER LIABILITY, WHETHER
-# IN  AN ACTION  OF  CONTRACT, TORT  OR  OTHERWISE,  ARISING FROM,  OUT  OF OR  IN
-# CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-#
 
 function boxbehnken(matrix_size::Int)
     return boxbehnken(matrix_size, matrix_size)
@@ -460,7 +445,6 @@ function fullfactorial(factors::Tuple)
     return Base.Iterators.product(factors...)
 end
 
-######end of bb design######
 
 """
 We subtract the mean from each variable. Then, we divide the values of each
@@ -488,7 +472,6 @@ X_scale:  The standard deviation of each input variable.
 y_std: The standard deviation of the output variable.
 """
 function standardization(X, y)
-    #Equivalent of https://github.com/SMTorg/smt/blob/4a4df255b9259965439120091007f9852f41523e/smt/utils/kriging_utils.py#L21
     X_offset = mean(X, dims = 1)
     X_scale = std(X, dims = 1)
     X_scale = map(x -> (x == 0.0) ? x = 1 : x = x, X_scale) #to prevent division by 0 below
@@ -520,7 +503,6 @@ ij: [n_obs * (n_obs - 1) / 2, 2]
     distances in D.
 """
 function cross_distances(X)
-    # equivalent of https://github.com/SMTorg/smt/blob/4a4df255b9259965439120091007f9852f41523e/smt/utils/kriging_utils.py#L86
     n_samples, n_features = size(X)
     n_nonzero_cross_dist = (n_samples * (n_samples - 1)) ÷ 2
     ij = zeros((n_nonzero_cross_dist, 2))
@@ -541,8 +523,7 @@ end
         Computes the nonzero componentwise cross-spatial-correlation-distance
         between the vectors in X.
 
-        Equivalent of https://github.com/SMTorg/smt/blob/4a4df255b9259965439120091007f9852f41523e/smt/utils/kriging_utils.py#L1257
-        with some simplifications (removed theta and return_derivative as it's not required for GEKPLS)
+        Simplified: `theta` and `return_derivative` are not needed for GEKPLS.
 
         Parameters
         ----------
@@ -569,11 +550,6 @@ end
 """
 function componentwise_distance_PLS(D, corr, n_comp, coeff_pls)
 
-    #equivalent of https://github.com/SMTorg/smt/blob/4a4df255b9259965439120091007f9852f41523e/smt/utils/kriging_utils.py#L1257
-    #todo
-    #figure out how to handle this computation in the case of very large matrices
-    #similar to what SMT has done
-    #at https://github.com/SMTorg/smt/blob/4a4df255b9259965439120091007f9852f41523e/smt/utils/kriging_utils.py#L1257
     D_corr = zeros((size(D)[1], n_comp))
 
     if corr == "squar_exp"
@@ -588,7 +564,6 @@ end
 """
 ## Squared exponential correlation model.
 
-Equivalent of https://github.com/SMTorg/smt/blob/4a4df255b9259965439120091007f9852f41523e/smt/utils/kriging_utils.py#L604
 Parameters:
 
 theta : Hyperparameters of the correlation model
@@ -626,8 +601,6 @@ We get an output (diff) that looks like this:
         -5. -6. -7.]
 """
 function differences(X, Y)
-    #equivalent of https://github.com/SMTorg/smt/blob/4a4df255b9259965439120091007f9852f41523e/smt/utils/kriging_utils.py#L392
-    #code credit: Elias Carvalho - https://stackoverflow.com/questions/72392010/row-wise-operations-between-matrices-in-julia
     Rx = repeat(X, inner = (size(Y, 1), 1))
     Ry = repeat(Y, size(X, 1))
     return Rx - Ry
@@ -638,10 +611,8 @@ end
                                  nugget = 1.0e6 * eps(), noise = 0.0,
                                  max_escalations = 0)
 
-Compute the reduced likelihood function value and other coefficients necessary for prediction
-This function is a loose translation of SMT code from
-https://github.com/SMTorg/smt/blob/4a4df255b9259965439120091007f9852f41523e/smt/surrogate_models/krg_based.py#L247
-It  determines the BLUP parameters and evaluates the reduced likelihood function for the given theta.
+Determine the BLUP parameters and evaluate the reduced likelihood function at the
+given `theta`, returning the coefficients prediction needs.
 
 ## Parameters
 
@@ -691,20 +662,19 @@ function _reduced_likelihood_function(
         theta, kernel_type, d, nt, ij, y_norma;
         nugget = _PLS_NUGGET, noise = 0.0, max_escalations = 0
     )
-    #equivalent of https://github.com/SMTorg/smt/blob/4a4df255b9259965439120091007f9852f41523e/smt/surrogate_models/krg_based.py#L247
-    if kernel_type == "squar_exp" #todo - add other kernel type abs_exp etc.
+    if kernel_type == "squar_exp"
         r = squar_exp(theta, d)
     else
         throw(ArgumentError("unsupported kernel_type $(kernel_type); only \"squar_exp\" is implemented"))
     end
 
     C = _correlation_cholesky(r, nt, ij, nugget, noise, max_escalations)
-    F = ones(nt, 1) #todo - examine if this should be a parameter for this function
+    # Constant trend: ordinary kriging.
+    F = ones(nt, 1)
     Ft = C \ F
     Q, G = qr(Ft)
     Q = Array(Q)
     Yt = C \ y_norma
-    #todo - in smt, they check if the matrix is ill-conditioned using SVD. Verify and include if necessary
     beta = G \ [(transpose(Q) ⋅ Yt)]
     rho = Yt .- (Ft .* beta)
     gamma = transpose(C) \ rho
@@ -713,13 +683,6 @@ function _reduced_likelihood_function(
     reduced_likelihood_function_value = -nt * log10(sum(sigma2)) - nt * log10(detR)
     return beta, gamma, reduced_likelihood_function_value
 end
-
-### MODIFIED PLS BELOW ###
-
-# The code below is a simplified version of
-# SKLearn's PLS
-# https://github.com/scikit-learn/scikit-learn/blob/80598905e/sklearn/cross_decomposition/_pls.py
-# It is completely self-contained (no dependencies)
 
 function _center_scale(X, Y)
     x_mean = mean(X, dims = 1)
@@ -736,7 +699,6 @@ function _center_scale(X, Y)
 end
 
 function _svd_flip_1d(u, v)
-    # equivalent of https://github.com/scikit-learn/scikit-learn/blob/80598905e517759b4696c74ecc35c6e2eb508cff/sklearn/cross_decomposition/_pls.py#L149
     biggest_abs_val_idx = findmax(abs.(vec(u)))[2]
     sign_ = sign(u[biggest_abs_val_idx])
     u .*= sign_
@@ -751,7 +713,8 @@ function _get_first_singular_vectors_power_method(X, Y)
     x_score = X * x_weights
     y_weights = transpose(Y)x_score / dot(x_score, x_score)
     y_score = Y * y_weights / (dot(y_weights, y_weights) + my_eps)
-    #Equivalent in intent to https://github.com/scikit-learn/scikit-learn/blob/80598905e517759b4696c74ecc35c6e2eb508cff/sklearn/cross_decomposition/_pls.py#L66
+    # A component with no variance left to explain gives NaN weights; the caller
+    # stops there rather than filling the remaining columns with noise.
     if any(isnan.(x_weights)) || any(isnan.(y_weights))
         return false, false
     end
@@ -785,10 +748,6 @@ function _modified_pls(X, Y, n_components)
     x_rotations_ = x_weights_ * pinv(transpose(x_loadings_)x_weights_)
     return x_rotations_
 end
-
-### MODIFIED PLS ABOVE ###
-
-### BELOW ARE HELPER FUNCTIONS TO HELP MODIFY VECTORS INTO ARRAYS
 
 function vector_of_tuples_to_matrix(v)
     num_rows = length(v)

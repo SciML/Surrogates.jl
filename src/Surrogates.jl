@@ -5,7 +5,7 @@ using ExtendableSparse: ExtendableSparseMatrix
 using IterativeSolvers: cg
 using CommonSolve: solve
 using LinearAlgebra: ColumnNorm, Diagonal, I, LAPACKException, PosDefException,
-    SingularException, Symmetric, cholesky, diag, dot, eigmax, eigmin, eigvals,
+    SingularException, Symmetric, cholesky, diag, dot, eigvals,
     issuccess, logdet, norm, pinv, qr, rank, ⋅
 using OptimizationOptimJL: NelderMead
 using SciMLBase: OptimizationProblem

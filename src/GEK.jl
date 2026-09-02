@@ -1,27 +1,13 @@
-#=
-Gradient-enhanced Kriging (first-order cokriging), following
-"Improving variable-fidelity surrogate modeling via gradient-enhanced kriging"
-by Han, Görtz and Zimmermann, and Chung and Alonso, "Using Gradients to
-Construct Cokriging Approximation Models for High-Dimensional Design
-Optimization Problems".
-
-Writing k(x, x') = exp(-Σ_l θ_l (x_l - x'_l)²) and Δ_l = x_l - x'_l, the joint
-covariance of the process and its partial derivatives is
-
-    Cov(f(x),  f(x'))     = σ² k
-    Cov(f(x),  ∂_l f(x')) = σ² ∂k/∂x'_l           = σ² · 2θ_l Δ_l k
-    Cov(∂_l f(x), f(x'))  = σ² ∂k/∂x_l            = σ² · -2θ_l Δ_l k
-    Cov(∂_l f(x), ∂_m f(x')) = σ² ∂²k/∂x_l ∂x'_m
-                             = σ² (2θ_l δ_lm - 4θ_l θ_m Δ_l Δ_m) k
-
-The derivative blocks exist only because the Gaussian kernel is mean-square
-differentiable; a power-exponential kernel with `p < 2` is not differentiable at
-the origin, so `p` is restricted to 2.
-=#
 """
     GEK(x, y, lb, ub; p = 2.0, theta = 1.0)
 
 Gradient-enhanced Kriging surrogate.
+
+Based on: Han, Görtz and Zimmermann (2013), "Improving variable-fidelity
+surrogate modeling via gradient-enhanced kriging and a generalized hybrid
+bridge function", Aerosp Sci Technol 25:177-189; and Chung and Alonso (2002),
+"Using Gradients to Construct Cokriging Approximation Models for
+High-Dimensional Design Optimization Problems", AIAA 2002-0317.
 
 `GEK` augments the Kriging covariance system with derivative observations. The
 surrogate is callable as `gek(x_new)`, exposes uncertainty through
@@ -36,7 +22,8 @@ surrogate is callable as `gek(x_new)`, exposes uncertainty through
   - `lb`: lower bound of the input domain.
   - `ub`: upper bound of the input domain.
   - `p`: correlation exponent. Only `2` is admissible; see the keyword below.
-  - `theta`: scalar or per-dimension correlation scale parameter.
+  - `theta`: correlation scale: a scalar in one dimension, one entry per input
+    coordinate otherwise.
   - `mu`: fitted process mean.
   - `b`: covariance weights `R⁻¹(y - Fμ)`, one per observation.
   - `sigma`: fitted process variance.
@@ -66,12 +53,11 @@ surrogate is callable as `gek(x_new)`, exposes uncertainty through
     cusp at the origin and no derivative-derivative covariance. The keyword is
     kept, and validated, so that an inadmissible value is reported rather than
     silently producing a meaningless model.
-  - `theta`: scalar or per-dimension correlation scale. When left unset it is
-    **fitted by maximum likelihood**, starting from the same sample-spread
-    heuristic [`Kriging`](@ref) uses; `update!` then refits it. An explicitly
-    supplied `theta` is used as given. The former fixed default of `1.0` carried
-    no information about the design: on a sphere function over `[-5, 5]³` the
-    fitted scale predicts about two hundred times more accurately.
+  - `theta`: correlation scale, a scalar in one dimension and one entry per
+    input coordinate otherwise. When left unset it is **fitted by maximum
+    likelihood**, starting from the same sample-spread heuristic
+    [`Kriging`](@ref) uses; `update!` then refits it. An explicitly supplied
+    `theta` is used as given.
   - `optimize_theta`: whether to fit `theta` by maximizing the concentrated
     log-likelihood over all `n(1 + d)` observations. Defaults to `true` exactly
     when `theta` is not supplied.
@@ -83,6 +69,20 @@ surrogate is callable as `gek(x_new)`, exposes uncertainty through
 A `GEK` surrogate satisfying the generic surrogate interface. Duplicate sample
 points make the covariance matrix singular and are rejected with an
 `ArgumentError`.
+
+!!! note "Conditioning"
+
+    Direct GEK is far worse conditioned than plain Kriging. Derivative
+    observations at nearby points are nearly redundant once the correlation
+    length is long, so a fitted `theta` routinely puts `cond(R)` at `1e16`–`1e18`
+    where the value block alone is near `1e9`. The nugget of [`Kriging`](@ref)
+    regularizes it to a condition number of `1e12`, which keeps predictions
+    accurate — the fitted scale beats the sample-spread heuristic by two to three
+    orders of magnitude on smooth problems — at the cost of reproducing training
+    points to about `1e-5` rather than to machine precision. Where that matters,
+    [`GEKPLS`](@ref) is the indirect alternative: it adds Taylor-extrapolated
+    points to an ordinary Kriging system instead of forming derivative covariance
+    blocks, and so never builds this matrix.
 """
 mutable struct GEK{X, Y, L, U, P, T, M, B, S, R} <: AbstractDeterministicSurrogate
     x::X
@@ -101,15 +101,7 @@ mutable struct GEK{X, Y, L, U, P, T, M, B, S, R} <: AbstractDeterministicSurroga
 end
 
 function Base.getproperty(k::GEK, s::Symbol)
-    if s === :inverse_of_R
-        Base.depwarn(
-            "`GEK.inverse_of_R` is deprecated: the Cholesky factorization of the " *
-                "regularized covariance matrix is stored in `R_fact`. Prefer solving " *
-                "with `k.R_fact \\ v` over forming the inverse.",
-            :getproperty
-        )
-        return inv(getfield(k, :R_fact))
-    end
+    s === :inverse_of_R && return _deprecated_inverse_of_R(k, :GEK)
     return getfield(k, s)
 end
 
@@ -117,15 +109,22 @@ end
 # vector: the `n` function values come first, then `d` derivatives per point.
 _gek_deriv_index(n, d, i, l) = n + (i - 1) * d + l
 
-# The GEK covariance matrix, σ² factored out. Scalar samples index as length-1
-# containers (`(5.0)[1] === 5.0`), so one implementation serves the scalar and
-# the multidimensional case.
+# The GEK covariance matrix, σ² factored out. Writing k(x, x') = exp(-Σ_l θ_l Δ_l²)
+# with Δ_l = x_l - x'_l, the joint covariance of the process and its partials is
+#
+#     Cov(f(x),     f(x'))     = k
+#     Cov(f(x),     ∂_l f(x')) = ∂k/∂x'_l        =  2θ_l Δ_l k
+#     Cov(∂_l f(x), f(x'))     = ∂k/∂x_l         = -2θ_l Δ_l k
+#     Cov(∂_l f(x), ∂_m f(x')) = ∂²k/∂x_l ∂x'_m  = (2θ_l δ_lm - 4θ_l θ_m Δ_l Δ_m) k
+#
+# These exist only because the Gaussian kernel is mean-square differentiable,
+# which is why `p` is restricted to 2. Scalar samples index as length-1
+# containers, so one implementation serves both input layouts.
 function _gek_covariance(x, theta)
     n = length(x)
     d = length(x[1])
     N = n * (1 + d)
-    # `theta` too: a Float64 scale over a Float32 design would otherwise be
-    # truncated back to Float32 on assignment into `R`.
+    # `theta` too, so a Float64 scale over a Float32 design is not truncated.
     T = float(promote_type(eltype(x[1]), eltype(theta)))
     R = zeros(T, N, N)
 
@@ -142,8 +141,8 @@ function _gek_covariance(x, theta)
             for m in 1:d
                 jm = _gek_deriv_index(n, d, j, m)
                 Δm = x[i][m] - x[j][m]
-                # The `2θ_l δ_lm` term is what makes the derivative-derivative
-                # diagonal positive; without it R is not a covariance matrix.
+                # The `2θ_l δ_lm` term makes the derivative-derivative diagonal
+                # positive; without it R is not a covariance matrix.
                 R[il, jm] = (
                     (l == m ? 2 * theta[l] : zero(T)) -
                         4 * theta[l] * theta[m] * Δl * Δm
@@ -155,8 +154,8 @@ function _gek_covariance(x, theta)
 end
 
 # Cross-covariance between the process at `val` and every observation. The
-# element type promotes the query with the samples, so a query of a different
-# type than the design — a dual number, say — is not truncated back to it.
+# element type promotes the query with the samples, so a dual number is not
+# truncated back to the design's type.
 function _gek_r(k::GEK, val)
     n = length(k.x)
     d = length(k.x[1])
@@ -201,7 +200,7 @@ function _gek_gls(F, y, n, d, N)
     mu = dot(f, F \ y) / dot(f, F \ f)
     y_minus_fmu = y - f * mu
     b = F \ y_minus_fmu
-    # Maximum likelihood over all N observations, not over the n sample points.
+    # Over all N observations, not the n sample points.
     sigma = dot(y_minus_fmu, b) / N
     return mu, b, sigma
 end
@@ -230,10 +229,7 @@ function _gek_loglik(x, y, theta)
     N = n * (1 + d)
     R = _gek_covariance(x, theta)
     all(isfinite, R) || return -Inf
-    # The conditioning nugget must be the *same* one the final fit uses.
-    # Without it the likelihood is unbounded as the scale shrinks: R goes
-    # near-singular, `logdet(R)` dives, and the search walks off to a degenerate
-    # correlation length that predicts worse than the heuristic it started from.
+    # The same nugget the final fit uses; see `_kriging_loglik`.
     F = _try_kriging_factorize(R)
     F === nothing && return -Inf
     _, _, sigma = _gek_gls(F, y, n, d, N)
@@ -241,28 +237,8 @@ function _gek_loglik(x, y, theta)
     return -N / 2 * log(sigma) - logdet(F) / 2
 end
 
-function _fit_gek_theta(x, y, theta0; n_start::Integer = _KRIGING_N_START, multistart = true, maxiters = _KRIGING_MAXITERS)
-    scalar = theta0 isa Number
-    # The search itself always runs in Float64: the Latin-hypercube sampler
-    # cannot work in a non-bits element type, and the extra precision would buy
-    # nothing for a correlation scale. The fitted value converts back below.
-    u0 = log10.(Float64.(scalar ? [theta0] : collect(theta0)))
-    lo = u0 .- _KRIGING_THETA_DECADES
-    hi = u0 .+ _KRIGING_THETA_DECADES
-    negll(u, _) = begin
-        theta = 10.0 .^ clamp.(u, lo, hi)
-        v = _gek_loglik(x, y, scalar ? theta[1] : theta)
-        return isfinite(v) ? -v : Inf
-    end
-    u, value = _multistart_optimize(
-        negll, u0, lo, hi; n_start = n_start, multistart = multistart,
-        maxiters = maxiters
-    )
-    isfinite(value) || return theta0
-    # The search runs in Float64 for conditioning; the scale goes back to the
-    # design's own element type so a Float32 fit stays a Float32 fit.
-    theta = 10.0 .^ u
-    return scalar ? oftype(theta0, theta[1]) : convert(typeof(theta0), theta)
+function _fit_gek_theta(x, y, theta0; kwargs...)
+    return _fit_theta(theta -> _gek_loglik(x, y, theta), theta0; kwargs...)
 end
 
 function (k::GEK)(val)
@@ -272,19 +248,11 @@ end
 
 (k::GEK)(val::Number) = (_check_dimension(k, val); k.mu + dot(_gek_r(k, val), k.b))
 
-# Universal-kriging mean squared error with the constant trend basis `f`; see
-# the note on `Kriging`'s `_kriging_std_error` for the shape of the third term.
+# The trend basis is zero on the derivative rows; see `_blup_std_error`.
 function _gek_std_error(k::GEK, val)
-    n = length(k.x)
-    d = length(k.x[1])
     r = _gek_r(k, val)
-    f = _gek_trend(n, d, eltype(r))
-    Rinv_r = k.R_fact \ r
-    a = dot(r, Rinv_r)
-    c = dot(f, Rinv_r)
-    b = dot(f, k.R_fact \ f)
-    mean_squared_error = k.sigma * (1 - a + (1 - c)^2 / b)
-    return sqrt(max(mean_squared_error, zero(mean_squared_error)))
+    f = _gek_trend(length(k.x), length(k.x[1]), eltype(r))
+    return _blup_std_error(k.sigma, r, f, k.R_fact)
 end
 
 function std_error_at_point(k::GEK, val)
@@ -312,38 +280,14 @@ function _check_gek_p(p, d)
     return nothing
 end
 
-function _check_gek_samples(x)
-    if length(x) != length(unique(x))
-        throw(
-            ArgumentError(
-                "There is a repetition in the samples, cannot build GEK: " *
-                    "duplicate points make the covariance matrix singular."
-            )
-        )
-    end
-    return nothing
-end
-
-# Defaults at the samples' own precision, so a Float32 design is not promoted
-# to Float64 by a literal.
-_gek_eltype(x) = float(eltype(first(x)))
-_gek_default_p(x, ::Number) = 2 * one(_gek_eltype(x))
-_gek_default_p(x, _) = fill(2 * one(_gek_eltype(x)), length(x[1]))
-
-# The starting correlation scale, derived from the sample spread exactly as
-# `Kriging`'s is. The former fixed `1.0` carried no information about the design
-# and was a poor place to start a likelihood search from — on a sphere function
-# over [-5, 5]^3 it predicted eighty times worse than the fitted scale.
-_gek_default_theta(x, lb, ub, p) = _kriging_default_theta(x, lb, ub, p)
-
 function GEK(
-        x, y, lb::Number, ub::Number; p = _gek_default_p(x, first(x)),
+        x, y, lb::Number, ub::Number; p = _default_p(x, first(x)),
         theta = nothing, optimize_theta = theta === nothing, n_start::Integer = _KRIGING_N_START,
         maxiters = _KRIGING_MAXITERS
     )
-    _check_gek_samples(x)
+    _check_no_duplicate_samples("GEK", x)
     _check_gek_p(p, 1)
-    theta = theta === nothing ? _gek_default_theta(x, lb, ub, p) : theta
+    theta = theta === nothing ? _kriging_default_theta(x, lb, ub, p) : theta
     if theta ≤ 0
         throw(ArgumentError("Hyperparameter theta must be positive! Got: $theta."))
     end
@@ -354,14 +298,16 @@ function GEK(
 end
 
 function GEK(
-        x, y, lb, ub; p = _gek_default_p(x, first(x)),
+        x, y, lb, ub; p = _default_p(x, first(x)),
         theta = nothing, optimize_theta = theta === nothing, n_start::Integer = _KRIGING_N_START,
         maxiters = _KRIGING_MAXITERS
     )
-    _check_gek_samples(x)
+    _check_no_duplicate_samples("GEK", x)
     d = length(x[1])
+    _check_kriging_length("p", p, d)
     _check_gek_p(p, d)
-    theta = theta === nothing ? _gek_default_theta(x, lb, ub, p) : theta
+    theta = theta === nothing ? _kriging_default_theta(x, lb, ub, p) : theta
+    _check_kriging_length("theta", theta, d)
     for l in 1:d
         if theta[l] ≤ 0
             throw(ArgumentError("All theta must be positive! Got: $theta."))
@@ -413,12 +359,12 @@ function SurrogatesBase.update!(k::GEK, new_x, new_y, new_grad)
         return nothing
     end
 
-    # The observation vector keeps all values ahead of all gradients, so a new
-    # point splices into both halves rather than appending to one.
+    # All values sit ahead of all gradients, so a new point splices into both
+    # halves rather than appending to one.
     k.x = x_new
     k.y = vcat(k.y[1:n], vals, k.y[(n + 1):end], grads)
     if k.optimize_theta
-        # Local refinement from the scale in hand; see `Kriging.update!`.
+        # Local refinement from the scale in hand; see `Kriging`'s `update!`.
         k.theta = _fit_gek_theta(k.x, k.y, k.theta; multistart = false)
     end
     k.mu, k.b, k.sigma, k.R_fact = _calc_gek_coeffs(k.x, k.y, k.theta)

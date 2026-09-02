@@ -1,9 +1,3 @@
-#=
-One-dimensional Kriging method, following these papers:
-"Efficient Global Optimization of Expensive Black Box Functions" and
-"A Taxonomy of Global Optimization Methods Based on Response Surfaces"
-both by DONALD R. JONES
-=#
 """
     Kriging(x, y, lb::Number, ub::Number; p = 2.0,
             theta = 0.5 / max(1.0e-6 * abs(ub - lb), std(x))^p)
@@ -17,14 +11,20 @@ Fit a Kriging interpolant with a power-exponential correlation model. The
 surrogate is callable for mean predictions, while [`std_error_at_point`](@ref)
 evaluates predictive uncertainty.
 
+Based on: Jones, Schonlau and Welch (1998), "Efficient Global Optimization of
+Expensive Black-Box Functions", J Glob Optim 13:455-492; and Jones (2001), "A
+Taxonomy of Global Optimization Methods Based on Response Surfaces", J Glob
+Optim 21:345-383.
+
 # Fields
 
   - `x`: sampled scalar points or multidimensional points.
   - `y`: scalar responses corresponding to `x`.
   - `lb`: lower bound of the modeled domain.
   - `ub`: upper bound of the modeled domain.
-  - `p`: scalar or per-dimension correlation smoothness exponent.
-  - `theta`: scalar or per-dimension correlation scale.
+  - `p`: correlation smoothness exponent: a scalar in one dimension, one
+    entry per input coordinate otherwise.
+  - `theta`: correlation scale, shaped like `p`.
   - `mu`: estimated constant process mean.
   - `b`: BLUP weights `R⁻¹(y - 𝟙μ)`.
   - `sigma`: estimated process variance.
@@ -53,11 +53,10 @@ evaluates predictive uncertainty.
     added. An explicitly supplied `theta` is a modelling choice: it is used as
     given and preserved across `update!`.
   - `optimize_theta`: whether to fit `theta` by maximizing the concentrated
-    log-likelihood `-n/2 log σ̂²(θ) - 1/2 log|R(θ)|`, as in Jones (2001) §2, DACE
-    and SMT. Defaults to `true` exactly when `theta` is not supplied. Fitting
+    log-likelihood `-n/2 log σ̂²(θ) - 1/2 log|R(θ)|`, as in Jones (2001) §2 and
+    DACE. Defaults to `true` exactly when `theta` is not supplied. Fitting
     costs a Nelder-Mead search whose every step factorizes an `n × n` matrix, so
-    set it to `false` for a cheap fit on a large design; across a six-problem
-    benchmark it lowered prediction error by factors of 1.03 to 25.6.
+    set it to `false` for a cheap fit on a large design.
   - `n_start`: Latin-hypercube starts for that search, in addition to the
     data-derived one. Ignored when `optimize_theta` is `false`.
   - `maxiters`: Nelder-Mead iteration cap per start.
@@ -93,24 +92,14 @@ mutable struct Kriging{X, Y, L, U, P, T, M, B, S, R} <: AbstractDeterministicSur
     b::B
     sigma::S
     R_fact::R
-    # Whether `theta` came from the data-dependent default, in which case
-    # `update!` re-derives it.
+    # `update!` re-derives `theta` when it came from the data-dependent default,
+    # and refits it when it was fitted by maximum likelihood.
     theta_auto::Bool
-    # Whether `theta` is fitted by maximum likelihood, in which case `update!`
-    # refits it against the extended sample set.
     optimize_theta::Bool
 end
 
 function Base.getproperty(k::Kriging, s::Symbol)
-    if s === :inverse_of_R
-        Base.depwarn(
-            "`Kriging.inverse_of_R` is deprecated: the Cholesky factorization of the " *
-                "regularized correlation matrix is stored in `R_fact`. Prefer solving " *
-                "with `k.R_fact \\ v` over forming the inverse.",
-            :getproperty
-        )
-        return inv(getfield(k, :R_fact))
-    end
+    s === :inverse_of_R && return _deprecated_inverse_of_R(k, :Kriging)
     return getfield(k, s)
 end
 
@@ -135,26 +124,11 @@ end
 
 (k::Kriging)(val::Number) = (_check_dimension(k, val); k.mu + dot(_kriging_r(k, val), k.b))
 
-# Ordinary-kriging mean squared error, Jones (2001) "A Taxonomy of Global
-# Optimization Methods Based on Response Surfaces", eq. (5):
-#
-#   s²(x) = σ² [1 - rᵀR⁻¹r + (1 - 𝟙ᵀR⁻¹r)² / (𝟙ᵀR⁻¹𝟙)]
-#
-# The third term is the variance contributed by estimating the trend μ, so its
-# numerator is the *trend* residual `1 - 𝟙ᵀR⁻¹r`, not the prediction residual
-# `1 - rᵀR⁻¹r` that this used to square.
+# Ordinary kriging: the trend basis is 𝟙 over every observation. Jones (2001)
+# eq. (5); see `_blup_std_error`.
 function _kriging_std_error(k::Kriging, val)
     r = _kriging_r(k, val)
-    Rinv_r = k.R_fact \ r
-    one_vec = ones(eltype(r), length(r))
-    a = dot(r, Rinv_r)
-    c = sum(Rinv_r)
-    b = dot(one_vec, k.R_fact \ one_vec)
-    mean_squared_error = k.sigma * (1 - a + (1 - c)^2 / b)
-    # As a variance the expression is non-negative in exact arithmetic, so a
-    # negative value is round-off and clamps to zero. Reflecting it with `abs`
-    # would turn an ill-conditioned solve into a plausible-looking error bar.
-    return sqrt(max(mean_squared_error, zero(mean_squared_error)))
+    return _blup_std_error(k.sigma, r, ones(eltype(r), length(r)), k.R_fact)
 end
 
 function std_error_at_point(k::Kriging, val)
@@ -167,64 +141,50 @@ function std_error_at_point(k::Kriging, val::Number)
     return _kriging_std_error(k, val)
 end
 
-# The element type the fit is carried out in: whatever the samples are, made
-# floating point. Every default and every constant below is taken to it, so a
-# Float32 design is not silently promoted to Float64 by a literal.
-_kriging_eltype(x) = float(eltype(first(x)))
+# The sample spread, floored by a fraction of the domain width so a coordinate
+# that barely varies cannot send the correlation scale to infinity. `std` is
+# undefined for a single sample; the floor then stands alone, since a `NaN`
+# scale reaches the solve as a "near-duplicate samples" error naming the wrong
+# cause.
+_kriging_spread(s, floor_) = isfinite(s) ? max(floor_, s) : floor_
 
 # The default correlation scale, derived from the sample spread and the domain
 # width. Kept as a function so `update!` can re-derive it.
 function _kriging_default_theta(x, lb::Number, ub::Number, p)
-    T = _kriging_eltype(x)
-    return T(0.5) / max(T(1.0e-6) * abs(ub - lb), T(std(x)))^p
+    T = _surrogate_eltype(x)
+    return T(0.5) / _kriging_spread(T(std(x)), T(1.0e-6) * abs(ub - lb))^p
 end
 function _kriging_default_theta(x, lb, ub, p)
-    T = _kriging_eltype(x)
+    T = _surrogate_eltype(x)
     return [
-        T(0.5) / max(T(1.0e-6) * T(norm(ub .- lb)), T(std(x_i[i] for x_i in x)))^p[i]
+        T(0.5) / _kriging_spread(
+                T(std(x_i[i] for x_i in x)), T(1.0e-6) * T(norm(ub .- lb))
+            )^p[i]
             for i in eachindex(x[1])
     ]
 end
 
-# The default correlation smoothness, at the samples' own precision.
-_kriging_default_p(x::Any, ::Number) = 2 * one(_kriging_eltype(x))
-_kriging_default_p(x, _) = fill(2 * one(_kriging_eltype(x)), length(x[1]))
-
 # The largest condition number the regularized correlation matrix may have.
-#
-# This was 1e8, which is conservative by four orders of magnitude: at 1e12 a
-# Float64 solve still retains about four significant digits, and the escalating
-# factorization below still catches a matrix no jitter can save. The difference
-# is not academic — the nugget relaxes interpolation, and a fitted correlation
-# scale is precisely where R is most ill-conditioned, so an over-tight target
-# throws away most of what fitting the scale buys. Across a six-problem
-# benchmark, raising it lowered prediction error by up to a factor of eighteen
-# on the three problems where the nugget fires at all, and left the other three
-# untouched; the worst training-point reproduction error improved with it.
+# A tighter target buys a safer solve with a larger nugget, which relaxes
+# interpolation; at 1e12 a Float64 solve still retains about four digits.
 const _KRIGING_KAPPA_MAX = 1.0e12
 
-# Estimate a nugget from the maximum allowed condition number. This regularizes
-# R so that samples may lie close together without R becoming singular, at the
-# cost of slightly relaxing the interpolation condition. Derived from "An
-# analytic comparison of regularization methods for Gaussian Processes" by
-# Mohammadi et al (https://arxiv.org/pdf/1602.00853.pdf).
+# The nugget that brings `cond(R + δI)` to `_KRIGING_KAPPA_MAX`, letting samples
+# lie close together without R going singular, at the cost of relaxing the
+# interpolation condition. Mohammadi et al, "An analytic comparison of
+# regularization methods for Gaussian Processes", arXiv:1602.00853.
 #
-# `eigmin`/`eigmax` ask LAPACK for the two extremal eigenvalues rather than the
-# whole spectrum, and are only defined for BLAS element types; for generic ones
-# the criterion is skipped and the factorization below escalates instead.
+# Only defined for BLAS element types; for generic ones the criterion is skipped
+# and the factorization below escalates instead.
 function _kriging_nugget(R, ::Type{T}) where {T <: Union{Float32, Float64}}
     all(isfinite, R) || return zero(T)
     S = Symmetric(R)
-    # At the matrix' own precision: as a Float64 literal this alone promoted a
-    # Float32 solve, through `R + Diagonal(nugget)`.
+    # At the matrix' own precision, so a Float64 literal does not promote a
+    # Float32 solve through `R + Diagonal(nugget)`.
     κ = T(_KRIGING_KAPPA_MAX)
-    # The symmetric eigensolver can fail to converge on a correlation matrix
-    # driven to the all-ones limit by an extreme scale, which the likelihood
-    # search visits routinely. Skipping the criterion leaves the escalating
-    # factorization below to size the nugget instead.
-    # One decomposition, not two: `eigmin` and `eigmax` each run a full
-    # symmetric eigensolve, and this is the dominant cost of a likelihood
-    # evaluation, which the hyperparameter search makes thousands of.
+    # One eigensolve: this dominates a likelihood evaluation, and the search
+    # makes thousands. It can fail to converge as an extreme scale drives R to
+    # the all-ones limit, leaving the escalation below to size the nugget.
     λdiff = try
         λ = eigvals(S)
         λ[end] - κ * λ[1]
@@ -237,12 +197,10 @@ end
 _kriging_nugget(R, ::Type) = zero(eltype(R))
 
 # Factorize the regularized correlation matrix, escalating the nugget if
-# round-off leaves it marginally indefinite. The Cholesky factorization is both
-# cheaper and more accurate than `inv(R)`, and every use site needs only solves.
-# `condition_nugget = false` skips the eigenvalue criterion and lets the
-# escalation below size the jitter alone. Kept for callers that only need the
-# factorization to exist; the likelihood is not one of them, since the objective
-# has to see the same regularization the final fit will use.
+# round-off leaves it marginally indefinite. `condition_nugget = false` skips the
+# eigenvalue criterion for callers that only need the factorization to exist; the
+# likelihood is not one of them, since the objective has to see the same
+# regularization the final fit will use.
 function _try_kriging_factorize(R; condition_nugget = true)
     all(isfinite, R) || return nothing
     n = size(R, 1)
@@ -278,12 +236,15 @@ function _kriging_gls(F, y, n)
     return mu, b, sigma
 end
 
-function _check_kriging_samples(x)
-    if length(x) != length(unique(x))
+# `p` and `theta` are indexed one entry per coordinate, so a scalar — the shape
+# the one-dimensional constructors take — would reach a `BoundsError` instead.
+# Only length is checked: a tuple indexes as happily as a vector.
+function _check_kriging_length(name, v, d)
+    if length(v) != d
         throw(
             ArgumentError(
-                "There is a repetition in the samples, cannot build Kriging: " *
-                    "duplicate points make the correlation matrix singular."
+                "For a $d-dimensional design, $name needs $d entries, one per " *
+                    "input coordinate! Got $(length(v)): $v."
             )
         )
     end
@@ -291,11 +252,11 @@ function _check_kriging_samples(x)
 end
 
 function Kriging(
-        x, y, lb::Number, ub::Number; p = _kriging_default_p(x, first(x)),
+        x, y, lb::Number, ub::Number; p = _default_p(x, first(x)),
         theta = nothing, optimize_theta = theta === nothing, n_start::Integer = _KRIGING_N_START,
         maxiters = _KRIGING_MAXITERS
     )
-    _check_kriging_samples(x)
+    _check_no_duplicate_samples("Kriging", x)
 
     if p > 2.0 || p <= 0.0
         throw(ArgumentError("Hyperparameter p must be in (0, 2]! Got: $p."))
@@ -316,9 +277,7 @@ function Kriging(
     )
 end
 
-# The power-exponential correlation matrix. Scalar samples index as length-1
-# containers, so one implementation serves the scalar and multidimensional case,
-# as it does for `_kriging_r`.
+# The power-exponential correlation matrix; indexed like `_kriging_r`.
 function _kriging_correlation(x, p, theta)
     n = length(x)
     d = length(x[1])
@@ -337,12 +296,14 @@ function _calc_kriging_coeffs(x, y, p, theta)
 end
 
 function Kriging(
-        x, y, lb, ub; p = _kriging_default_p(x, first(x)),
+        x, y, lb, ub; p = _default_p(x, first(x)),
         theta = nothing, optimize_theta = theta === nothing, n_start::Integer = _KRIGING_N_START,
         maxiters = _KRIGING_MAXITERS
     )
-    _check_kriging_samples(x)
+    _check_no_duplicate_samples("Kriging", x)
 
+    d = length(x[1])
+    _check_kriging_length("p", p, d)
     for i in eachindex(x[1])
         if p[i] > 2.0 || p[i] <= 0.0
             throw(ArgumentError("All p must be in (0, 2]! Got: $p."))
@@ -351,6 +312,7 @@ function Kriging(
 
     theta_auto = theta === nothing
     theta = theta_auto ? _kriging_default_theta(x, lb, ub, p) : theta
+    _check_kriging_length("theta", theta, d)
 
     for i in eachindex(x[1])
         if theta[i] ≤ 0.0
@@ -366,24 +328,6 @@ function Kriging(
     )
 end
 
-# How far, in decades, the fitted correlation scale may move from the
-# data-derived default. The default already carries the right order of magnitude
-# — it is the inverse sample spread — so a search centred on it is both better
-# conditioned and far cheaper than a fixed box spanning forty decades, which is
-# what an absolute bound would need in order to cover designs whose coordinates
-# differ by ten orders of magnitude.
-const _KRIGING_THETA_DECADES = 5.0
-
-# Nelder-Mead's own default is 1000 iterations per start, which is far more than
-# a handful of correlation scales needs and is paid once per start.
-const _KRIGING_MAXITERS = 250
-
-# Latin-hypercube starts in addition to the data-derived one. Four rather than
-# ten: across a six-problem benchmark the two gave identical fits, and four costs
-# half as much. Zero is not enough — on a Levy function the extra starts were
-# worth a factor of four, so the sweep is doing real work.
-const _KRIGING_N_START = 4
-
 """
     _kriging_loglik(x, y, p, theta)
 
@@ -391,7 +335,7 @@ Concentrated log-likelihood of the correlation scale, up to additive constants:
 
     l(θ) = -n/2 log σ̂²(θ) - 1/2 log |R(θ)|
 
-This is the objective Jones (2001) §2, DACE and SMT all maximize over `θ`. A
+This is the objective Jones (2001) §2 and DACE both maximize over `θ`. A
 scale whose correlation matrix cannot be factorized scores `-Inf` rather than
 raising, so the search simply walks away from it.
 """
@@ -399,10 +343,8 @@ function _kriging_loglik(x, y, p, theta)
     n = length(x)
     R = _kriging_correlation(x, p, theta)
     all(isfinite, R) || return -Inf
-    # The conditioning nugget must be the *same* one the final fit uses.
-    # Without it the likelihood is unbounded as the scale shrinks: R goes
-    # near-singular, `logdet(R)` dives, and the search walks off to a degenerate
-    # correlation length that predicts worse than the heuristic it started from.
+    # The same nugget the final fit uses. Without it the likelihood is unbounded
+    # as the scale shrinks: R goes near-singular and `logdet(R)` dives.
     F = _try_kriging_factorize(R)
     F === nothing && return -Inf
     _, _, sigma = _kriging_gls(F, y, n)
@@ -410,32 +352,9 @@ function _kriging_loglik(x, y, p, theta)
     return -n / 2 * log(sigma) - logdet(F) / 2
 end
 
-# Fit the correlation scale by maximum likelihood, in log10 space so that the
-# search is scale-free and the positivity constraint is automatic.
-function _fit_kriging_theta(x, y, p, theta0; n_start::Integer = _KRIGING_N_START, multistart = true, maxiters = _KRIGING_MAXITERS)
-    scalar = theta0 isa Number
-    # The search itself always runs in Float64: the Latin-hypercube sampler
-    # cannot work in a non-bits element type, and the extra precision would buy
-    # nothing for a correlation scale. The fitted value converts back below.
-    u0 = log10.(Float64.(scalar ? [theta0] : collect(theta0)))
-    lo = u0 .- _KRIGING_THETA_DECADES
-    hi = u0 .+ _KRIGING_THETA_DECADES
-    negll(u, _) = begin
-        theta = 10.0 .^ clamp.(u, lo, hi)
-        v = _kriging_loglik(x, y, p, scalar ? theta[1] : theta)
-        return isfinite(v) ? -v : Inf
-    end
-    u, value = _multistart_optimize(
-        negll, u0, lo, hi; n_start = n_start, multistart = multistart,
-        maxiters = maxiters
-    )
-    # Every start failed: keep the data-derived default rather than a scale the
-    # likelihood never actually endorsed.
-    isfinite(value) || return theta0
-    # The search runs in Float64 for conditioning; the scale goes back to the
-    # design's own element type so a Float32 fit stays a Float32 fit.
-    theta = 10.0 .^ u
-    return scalar ? oftype(theta0, theta[1]) : convert(typeof(theta0), theta)
+# Fit the correlation scale by maximum likelihood; see `_fit_theta`.
+function _fit_kriging_theta(x, y, p, theta0; kwargs...)
+    return _fit_theta(theta -> _kriging_loglik(x, y, p, theta), theta0; kwargs...)
 end
 
 """
@@ -457,6 +376,7 @@ function SurrogatesBase.update!(k::Kriging, new_x, new_y)
     # A duplicate is a no-op, not an error: the model already carries that
     # observation, and optimizers re-propose points near convergence. Checked on
     # the merged samples, so a repetition *within* a batch is caught too.
+
     if length(unique(x_new)) != length(x_new)
         @warn "Skipping `update!`: these samples repeat a point already in the " *
             "Kriging surrogate, and duplicate points would make the correlation " *
@@ -465,10 +385,8 @@ function SurrogatesBase.update!(k::Kriging, new_x, new_y)
     end
     k.x, k.y = x_new, y_new
     if k.optimize_theta
-        # Refit from the scale already in hand, without the multi-start sweep:
-        # the extended sample set is a small perturbation of the one that scale
-        # was fitted to, so a local refinement is both enough and affordable in
-        # the `update!`-in-a-loop pattern optimizers use.
+        # A local refinement from the scale in hand: the extended sample set is
+        # a small perturbation, and `update!` is called in a loop.
         k.theta = _fit_kriging_theta(k.x, k.y, k.p, k.theta; multistart = false)
     elseif k.theta_auto
         k.theta = _kriging_default_theta(k.x, k.lb, k.ub, k.p)

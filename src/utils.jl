@@ -134,3 +134,140 @@ function _multistart_optimize(
     end
     return clamp.(best_u, lo, hi), best_value
 end
+
+"""
+    _surrogate_eltype(x)
+
+The floating-point element type a fit should be carried out in.
+
+Every default and constant in the kriging family is taken to this before use, so
+that a `Float64` literal cannot silently promote a `Float32` design.
+"""
+_surrogate_eltype(x) = float(eltype(first(x)))
+
+"""
+    _default_p(x, x_el)
+
+The default correlation smoothness, `2`, at the samples' own precision. Scalar
+for a one-dimensional design, one entry per coordinate otherwise.
+"""
+_default_p(x, ::Number) = 2 * one(_surrogate_eltype(x))
+_default_p(x, _) = fill(2 * one(_surrogate_eltype(x)), length(x[1]))
+
+"""
+    _check_no_duplicate_samples(name, x)
+
+Reject repeated sample points, which make the correlation matrix singular.
+"""
+function _check_no_duplicate_samples(name, x)
+    if length(x) != length(unique(x))
+        throw(
+            ArgumentError(
+                "There is a repetition in the samples, cannot build $name: " *
+                    "duplicate points make the correlation matrix singular."
+            )
+        )
+    end
+    return nothing
+end
+
+"""
+    _deprecated_inverse_of_R(k, kind)
+
+Materialize `R⁻¹` from a stored Cholesky factorization, warning that the field it
+replaced is gone. Shared by the surrogates that used to store the inverse.
+"""
+function _deprecated_inverse_of_R(k, kind)
+    Base.depwarn(
+        "`$kind.inverse_of_R` is deprecated: the Cholesky factorization of the " *
+            "regularized $(kind === :Kriging ? "correlation" : "covariance") matrix is " *
+            "stored in `R_fact`. Prefer solving with `k.R_fact \\ v` over forming the " *
+            "inverse.",
+        :getproperty
+    )
+    return inv(getfield(k, :R_fact))
+end
+
+"""
+    _blup_std_error(sigma, r, f, F)
+
+Standard error of the best linear unbiased predictor, given the process variance
+`sigma`, the cross-covariance `r` between the query point and the observations,
+the trend basis `f` over the observations, and a factorization `F` of the
+regularized covariance matrix:
+
+    s²(x) = σ² [ 1 - rᵀR⁻¹r + (1 - fᵀR⁻¹r)² / (fᵀR⁻¹f) ]
+
+The third term is the variance contributed by estimating the trend, so its
+numerator is the *trend* residual `1 - fᵀR⁻¹r`, not the prediction residual
+`1 - rᵀR⁻¹r`. For ordinary kriging `f` is `𝟙`; `GEK` zeroes it on the derivative
+rows, since a gradient carries no information about the process mean.
+
+As a variance the bracket is non-negative in exact arithmetic, so a negative
+value is round-off and clamps to zero. Reflecting it with `abs` would turn an
+ill-conditioned solve into a plausible-looking error bar.
+"""
+function _blup_std_error(sigma, r, f, F)
+    Rinv_r = F \ r
+    a = dot(r, Rinv_r)
+    c = dot(f, Rinv_r)
+    b = dot(f, F \ f)
+    mean_squared_error = sigma * (1 - a + (1 - c)^2 / b)
+    return sqrt(max(mean_squared_error, zero(mean_squared_error)))
+end
+
+# How far, in decades, the fitted correlation scale may move from the
+# data-derived default. Relative rather than absolute: the default is the inverse
+# sample spread, so it already carries the right order of magnitude, where a box
+# in absolute units would have to span forty decades to cover designs whose
+# coordinates differ by ten orders of magnitude.
+const _KRIGING_THETA_DECADES = 5.0
+
+# Nelder-Mead defaults to 1000 iterations per start, far more than a handful of
+# correlation scales needs.
+const _KRIGING_MAXITERS = 250
+
+# Latin-hypercube starts in addition to the data-derived one.
+const _KRIGING_N_START = 4
+
+"""
+    _fit_theta(loglik, theta0; n_start, multistart, maxiters)
+
+Maximize a concentrated log-likelihood over the correlation scale.
+
+The search runs in `log₁₀ θ`, which makes it scale-free and enforces positivity
+automatically, over a box of `_KRIGING_THETA_DECADES` decades either side of
+`theta0`. The box is relative rather than absolute because `theta0` already
+carries the right order of magnitude, where a box in absolute units would have to
+span forty decades to cover designs whose coordinates differ by ten orders of
+magnitude.
+
+`loglik` takes a correlation scale shaped like `theta0` and returns a number;
+`-Inf` marks a scale whose matrix cannot be factorized, so the search walks away
+from it rather than raising. If every start fails, `theta0` is returned rather
+than an unendorsed scale.
+"""
+function _fit_theta(
+        loglik, theta0; n_start::Integer = _KRIGING_N_START, multistart = true,
+        maxiters = _KRIGING_MAXITERS
+    )
+    scalar = theta0 isa Number
+    # Always in Float64: the Latin-hypercube sampler needs a bits type, and the
+    # extra precision buys nothing for a correlation scale. Converted back below.
+    u0 = log10.(Float64.(scalar ? [theta0] : collect(theta0)))
+    lo = u0 .- _KRIGING_THETA_DECADES
+    hi = u0 .+ _KRIGING_THETA_DECADES
+    negll(u, _) = begin
+        theta = 10.0 .^ clamp.(u, lo, hi)
+        v = loglik(scalar ? theta[1] : theta)
+        return isfinite(v) ? -v : Inf
+    end
+    u, value = _multistart_optimize(
+        negll, u0, lo, hi; n_start = n_start, multistart = multistart,
+        maxiters = maxiters
+    )
+    isfinite(value) || return theta0
+    # Back to the design's own element type, so a Float32 fit stays Float32.
+    theta = 10.0 .^ u
+    return scalar ? oftype(theta0, theta[1]) : convert(typeof(theta0), theta)
+end

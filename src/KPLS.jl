@@ -30,6 +30,43 @@ mutable struct KPLS{T, X, Y} <: AbstractDeterministicSurrogate
     y_std::T                # std of y
 end
 
+# The PLS basis has at most `d` components, and one correlation scale is fitted
+# per retained component. Both are checked at the constructor: an oversized
+# `n_comp` otherwise leaves `_modified_pls` returning columns of zeros for the
+# components that do not exist, and a `theta` of the wrong length dies six
+# frames down in `squar_exp`'s `reshape` as an opaque `DimensionMismatch`.
+function _check_pls_components(name, n_comp, d, theta)
+    if n_comp < 1 || n_comp > d
+        throw(
+            ArgumentError(
+                "$name needs 1 to $d PLS components for a $d-dimensional design! " *
+                    "Got n_comp = $(n_comp)."
+            )
+        )
+    end
+    if length(theta) != n_comp
+        throw(
+            ArgumentError(
+                "$name needs one correlation scale per PLS component: " *
+                    "length(theta) = $(length(theta)) but n_comp = $(n_comp)."
+            )
+        )
+    end
+    return nothing
+end
+
+# Training points outside `[lb, ub]` cannot be standardized against the bounds
+# the model reports, so they are rejected rather than silently returning a
+# `nothing` that every later call turns into a `MethodError`.
+function _check_pls_bounds(name, X, xlimits)
+    if bounds_error(X, xlimits)
+        throw(
+            ArgumentError("Some training points lie outside [lb, ub]; cannot build $name.")
+        )
+    end
+    return nothing
+end
+
 """
     _compute_pls(X, y, n_comp)
 
@@ -50,9 +87,8 @@ Optimize KPLS hyperparameters `theta` by maximizing the reduced log-likelihood.
 Uses Nelder-Mead (via Optimization.jl + OptimizationOptimJL) in log₁₀(theta) space
 (bounds [-20, 20]). `theta_init` is always used as a starting point. When
 `multistart` is `true` (the default), `n_start` additional Latin Hypercube starts
-spread across the log₁₀(theta) bounds are also tried, following the multistart
-strategy used by SMT's Kriging-based optimizer, to improve robustness against the
-reduced likelihood surface's local optima. Set `multistart = false` for a cheap
+spread across the log₁₀(theta) bounds are also tried, to improve robustness
+against the reduced likelihood surface's local optima. Set `multistart = false` for a cheap
 local refinement when `theta_init` is already known to be a good guess (e.g. the
 KPLSK full-dimensional refinement stage).
 """
@@ -149,11 +185,8 @@ function KPLS(x_vec, y_vec, n_comp, lb, ub, theta)
     xlimits = hcat(collect(Float64, lb), collect(Float64, ub))
     X = vector_of_tuples_to_matrix(x_vec)
     y = reshape(collect(Float64, y_vec), (size(X, 1), 1))
-
-    if bounds_error(X, xlimits)
-        println("X values outside bounds")
-        return
-    end
+    _check_pls_components("KPLS", n_comp, size(X, 2), theta)
+    _check_pls_bounds("KPLS", X, xlimits)
 
     pls_mean, X_after_PLS, y_after_PLS = _compute_pls(X, y, n_comp)
     X_after_std, y_after_std, X_offset, y_mean, X_scale, y_std = standardization(
@@ -163,7 +196,7 @@ function KPLS(x_vec, y_vec, n_comp, lb, ub, theta)
     d = componentwise_distance_PLS(D, "squar_exp", n_comp, pls_mean)
     nt = size(X_after_PLS, 1)
 
-    # Optimize theta by maximizing the reduced log-likelihood (matches SMT behaviour)
+    # Optimize theta by maximizing the reduced log-likelihood.
     theta_opt = _optimize_theta(theta, "squar_exp", d, nt, ij, y_after_std)
 
     beta, gamma, reduced_likelihood_function_value = _reduced_likelihood_function(
@@ -214,18 +247,21 @@ Add a new sample point and re-train the KPLS model.
 """
 function SurrogatesBase.update!(k::KPLS, new_x, new_y)
     new_x_mat = prep_data_for_pred([new_x])
+    # A duplicate is a no-op, not an error; see `Kriging`'s `update!`.
     if vec(new_x_mat) in eachrow(k.x_matrix)
-        println("Adding a sample that already exists. Cannot update KPLS.")
-        return
+        @warn "Skipping `update!`: this sample already exists in the KPLS " *
+            "surrogate, and duplicate points would make the correlation matrix singular."
+        return nothing
     end
 
     if bounds_error(new_x_mat, k.xl)
-        println("x values outside bounds")
-        return
+        throw(ArgumentError("The new sample lies outside [lb, ub]; cannot update KPLS."))
     end
 
-    push!(k.x, new_x)
-    push!(k.y, new_y)
+    # `vcat` rather than `push!`: the containers are the caller's own, and
+    # growing them behind their back would extend a design they still hold.
+    k.x = vcat(k.x, [new_x])
+    k.y = vcat(k.y, new_y)
     k.x_matrix = vcat(k.x_matrix, new_x_mat)
     k.y_matrix = vcat(k.y_matrix, reshape([Float64(new_y)], (1, 1)))
 
