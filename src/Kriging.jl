@@ -158,8 +158,8 @@ function _kriging_default_theta(x, lb, ub, p)
     T = _surrogate_eltype(x)
     return [
         T(0.5) / _kriging_spread(
-                T(std(x_i[i] for x_i in x)), T(1.0e-6) * T(norm(ub .- lb))
-            )^p[i]
+            T(std(x_i[i] for x_i in x)), T(1.0e-6) * T(norm(ub .- lb))
+        )^p[i]
             for i in eachindex(x[1])
     ]
 end
