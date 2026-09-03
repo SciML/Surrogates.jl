@@ -153,30 +153,37 @@ function _gek_covariance(x, theta)
     return R
 end
 
-# Cross-covariance between the process at `val` and every observation. The
-# element type promotes the query with the samples, so a dual number is not
-# truncated back to the design's type.
+# Cross-covariance between the process at `val` and every observation.
+#
+# Built by concatenation rather than by writing into a preallocated vector:
+# reverse-mode AD cannot differentiate through `setindex!`, and this is on the
+# prediction path, so `Zygote.gradient(gek, x)` has to work. The element type
+# follows from the arithmetic, so a dual number is not truncated back to the
+# design's type.
 function _gek_r(k::GEK, val)
     n = length(k.x)
     d = length(k.x[1])
-    T = float(promote_type(eltype(k.x[1]), eltype(val), eltype(k.theta)))
-    r = zeros(T, n * (1 + d))
-    @inbounds for i in 1:n
-        ki = exp(-sum(k.theta[l] * (val[l] - k.x[i][l])^2 for l in 1:d))
-        r[i] = ki
-        for l in 1:d
-            r[_gek_deriv_index(n, d, i, l)] = 2 * k.theta[l] * (val[l] - k.x[i][l]) * ki
+    ks = [exp(-sum(k.theta[l] * (val[l] - k.x[i][l])^2 for l in 1:d)) for i in 1:n]
+    # Flattened in `_gek_deriv_index` order — point by point, and within a point,
+    # coordinate by coordinate — so the layout matches `_gek_covariance`. The
+    # index arithmetic inverts `n + (i - 1) * d + l`; a nested comprehension
+    # would read better but lowers to a `Flatten` iterator that reverse-mode AD
+    # accumulates with `push!`.
+    dks = [
+        let i = (j - 1) ÷ d + 1, l = (j - 1) % d + 1
+            2 * k.theta[l] * (val[l] - k.x[i][l]) * ks[i]
         end
-    end
-    return r
+            for j in 1:(n * d)
+    ]
+    return vcat(ks, dks)
 end
 
 # Trend basis for the constant mean: a derivative observation carries no
 # information about it, so its rows are zero.
 function _gek_trend(n, d, ::Type{T}) where {T}
-    f = zeros(T, n * (1 + d))
-    f[1:n] .= one(T)
-    return f
+    # Concatenated rather than filled in place: this is on the `std_error_at_point`
+    # path, and reverse-mode AD cannot differentiate through the assignment.
+    return vcat(ones(T, n), zeros(T, n * d))
 end
 
 function _check_gek_observations(x, y)

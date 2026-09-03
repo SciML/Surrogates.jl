@@ -146,7 +146,7 @@ Predict the output at input point `x_vec` (a tuple or vector).
 """
 function (k::KPLSK)(x_vec)
     _check_dimension(k, x_vec)
-    X_test = prep_data_for_pred([x_vec])
+    X_test = prep_data_for_pred(_single_query_point("KPLSK", x_vec))
     n_eval = size(X_test, 1)
     X_cont = (X_test .- k.X_offset) ./ k.X_scale
     dx = differences(X_cont, k.X_after_std)

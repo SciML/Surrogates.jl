@@ -76,6 +76,33 @@ _as_point(val::AbstractArray) = vec(val)
 _as_point(val) = val
 
 """
+    _single_query_point(name, val)
+
+A single query point, flattened, with a collection of points rejected.
+
+The PLS-based surrogates predict one point at a time. `_check_dimension` only
+compares lengths, so on a `d`-dimensional model it cannot tell one `d`-vector
+from `d` separate query points; the latter would be read as a batch and only the
+first prediction returned, silently answering a different question. A point's own
+entries are numbers, which is what separates the two cases.
+
+The point is passed on unwrapped: building an array around it, as these callables
+used to, is something reverse-mode AD cannot push a gradient back through.
+"""
+function _single_query_point(name, val)
+    point = _as_point(val)
+    if !(first(point) isa Number)
+        throw(
+            ArgumentError(
+                "$name predicts one point at a time, but got a collection of " *
+                    "points. Broadcast over them instead: `surrogate.(points)`."
+            )
+        )
+    end
+    return point
+end
+
+"""
     _matrix_rank(A)
 
 Rank of `A`, or `nothing` when it cannot be computed.

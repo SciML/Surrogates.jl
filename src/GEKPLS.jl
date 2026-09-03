@@ -236,25 +236,7 @@ end
 
 function (g::GEKPLS)(x_vec)
     _check_dimension(g, x_vec)
-    # A `1 x d` row matrix — what `(lb .+ ub) ./ 2` gives for row-matrix bounds —
-    # keeps a second dimension that `prep_data_for_pred` turns into a `1 x 1 x d`
-    # array, which `differences` then rejects. `Kriging` and `GEK` flatten the
-    # same way; `vec` is a no-op view for a vector and leaves a tuple alone.
-    point = _as_point(x_vec)
-    # `_check_dimension` only compares lengths, so it cannot tell `d` query
-    # points from one `d`-dimensional point. `prep_data_for_pred` reads the
-    # former as `d` separate queries and `_gekpls_predict` returns only the
-    # first, silently answering a different question; a point's own entries are
-    # numbers, which is what separates the two cases.
-    if !(first(point) isa Number)
-        throw(
-            ArgumentError(
-                "GEKPLS predicts one point at a time, but got a collection of " *
-                    "points. Broadcast over them instead: `g.(points)`."
-            )
-        )
-    end
-    return _gekpls_predict(g, point)
+    return _gekpls_predict(g, _single_query_point("GEKPLS", x_vec))
 end
 
 """
