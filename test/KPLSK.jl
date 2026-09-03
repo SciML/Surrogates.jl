@@ -172,3 +172,12 @@ end
         @test k.y_mean + k.y_std * (mu + dot(r, b)) ≈ k(p) atol = 1.0e-7
     end
 end
+
+@testset "KPLSK: one point at a time" begin
+    lb, ub = [-2.0, -2.0, -2.0], [2.0, 2.0, 2.0]
+    g = p -> p[1]^2 + 0.5p[2] + sin(p[3])
+    x = sample(30, lb, ub, SobolSample())
+    k = KPLSK(x, g.(x), 2, lb, ub, [1.0, 1.0])
+    @test_throws ArgumentError k([(1.0, 2.0, -1.0), (0.5, 0.5, 0.5), (-1.0, 0.0, 1.0)])
+    @test k([1.0 2.0 -1.0]) ≈ k((1.0, 2.0, -1.0))
+end

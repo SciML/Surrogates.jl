@@ -308,3 +308,46 @@ end
             Surrogates._gek_loglik(x1, y1, 1.0)
     end
 end
+
+@testset "the cross-covariance is laid out by _gek_deriv_index" begin
+    # `_gek_r` builds its derivative half with flattened index arithmetic rather
+    # than a nested loop, because reverse-mode AD cannot differentiate through
+    # `setindex!` (or through the `Flatten` iterator a nested comprehension
+    # lowers to). That arithmetic has to keep inverting `n + (i - 1) * d + l`
+    # exactly, or `r` stops lining up with the rows of `_gek_covariance`.
+    for (x, lb, ub, pts) in (
+            (
+                collect(range(0.5, 9.5, length = 12)), 0.0, 10.0,
+                (1.0, 5.0, 7.3),
+            ),
+            (
+                [
+                    (a, b) for (a, b) in zip(
+                            range(0.5, 9.5, length = 12),
+                            range(1.0, 8.0, length = 12)
+                        )
+                ],
+                [0.0, 0.0], [10.0, 10.0], ([1.0, 2.0], [5.0, 5.0]),
+            ),
+        )
+        d = x[1] isa Number ? 1 : length(x[1])
+        n = length(x)
+        vals = x[1] isa Number ? [xi^2 for xi in x] : [p[1]^2 + 3p[2] for p in x]
+        grads = x[1] isa Number ? [2xi for xi in x] :
+            reduce(vcat, [[2p[1], 3.0] for p in x])
+        k = GEK(x, vcat(vals, grads), lb, ub)
+
+        for val in pts
+            r = Surrogates._gek_r(k, val)
+            @test length(r) == n * (1 + d)
+            for i in 1:n
+                ki = exp(-sum(k.theta[l] * (val[l] - k.x[i][l])^2 for l in 1:d))
+                @test r[i] ≈ ki
+                for l in 1:d
+                    idx = Surrogates._gek_deriv_index(n, d, i, l)
+                    @test r[idx] ≈ 2 * k.theta[l] * (val[l] - k.x[i][l]) * ki
+                end
+            end
+        end
+    end
+end
