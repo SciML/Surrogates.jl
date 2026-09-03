@@ -1,5 +1,6 @@
 using Surrogates
 using Test
+using LinearAlgebra
 
 # Sphere function (sum of squares): easy analytical test
 function sphere_function(x)
@@ -99,4 +100,90 @@ end
     # More data should generally improve accuracy
     @test rmse2 < rmse1
     @test rmse2 < 8.0e-3
+end
+
+@testset "KPLS: constructor validation" begin
+    lb, ub = [-1.0, -1.0], [1.0, 1.0]
+    x = sample(12, lb, ub, SobolSample())
+    y = sphere_function.(x)
+
+    # One correlation scale per PLS component. Without this check the mismatch
+    # surfaced as a `DimensionMismatch` from `squar_exp`'s `reshape`.
+    @test_throws ArgumentError KPLS(x, y, 2, lb, ub, [1.0])
+    @test_throws ArgumentError KPLS(x, y, 1, lb, ub, [1.0, 1.0])
+
+    # PLS has at most `d` components; asking for more silently produced columns
+    # of zeros and a meaningless correlation scale for each missing component.
+    @test_throws ArgumentError KPLS(x, y, 3, lb, ub, [1.0, 1.0, 1.0])
+    @test_throws ArgumentError KPLS(x, y, 0, lb, ub, Float64[])
+
+    # Out-of-bounds training points used to print and return `nothing`.
+    x_bad = vcat(x, [(5.0, 5.0)])
+    y_bad = vcat(y, 50.0)
+    @test_throws ArgumentError KPLS(x_bad, y_bad, 1, lb, ub, [1.0])
+end
+
+@testset "KPLS: update! leaves the caller's containers alone" begin
+    lb, ub = [-1.0, -1.0], [1.0, 1.0]
+    x = sample(12, lb, ub, SobolSample())
+    y = sphere_function.(x)
+    k = KPLS(x, y, 1, lb, ub, [1.0])
+
+    update!(k, (0.31, 0.47), sphere_function((0.31, 0.47)))
+    @test length(x) == 12
+    @test length(y) == 12
+    @test length(k.x) == 13
+    @test size(k.x_matrix, 1) == 13
+
+    # A duplicate is a no-op, and an out-of-bounds point is an error.
+    @test_logs (:warn,) update!(k, (0.31, 0.47), sphere_function((0.31, 0.47)))
+    @test length(k.x) == 13
+    @test_throws ArgumentError update!(k, (5.0, 5.0), 50.0)
+end
+
+@testset "KPLS: prediction matches an independent ordinary-kriging solve" begin
+    # The KPLS kernel is a Gaussian kernel on the standardized inputs with
+    # squared PLS rotation coefficients folded in. Rebuilding it from the fitted
+    # fields and solving the ordinary-kriging system directly must reproduce the
+    # surrogate; this checks the whole prediction path, not just the fit.
+    lb, ub = [-2.0, -2.0, -2.0], [2.0, 2.0, 2.0]
+    g(x) = x[1]^2 + 0.5x[2] + sin(x[3])
+    x = sample(25, lb, ub, SobolSample())
+    y = g.(x)
+    k = KPLS(x, y, 2, lb, ub, [1.0, 1.0])
+
+    Xs, W, th = k.X_after_std, k.pls_mean, k.theta
+    ker(a, b) = exp(
+        -sum(
+            th[l] * sum(W[q, l]^2 * (a[q] - b[q])^2 for q in axes(W, 1))
+                for l in eachindex(th)
+        )
+    )
+    nt = size(Xs, 1)
+    R = [ker(Xs[i, :], Xs[j, :]) for i in 1:nt, j in 1:nt] + (1.0e6 * eps()) * I
+    ys = vec((k.y_matrix .- k.y_mean) ./ k.y_std)
+    ones_v = ones(nt)
+    mu = dot(ones_v, R \ ys) / dot(ones_v, R \ ones_v)
+    b = R \ (ys .- mu)
+
+    x_test = sample(30, lb, ub, GoldenSample())
+    for p in x_test
+        ps = vec((collect(p)' .- k.X_offset) ./ k.X_scale)
+        r = [ker(ps, Xs[i, :]) for i in 1:nt]
+        @test k.y_mean + k.y_std * (mu + dot(r, b)) ≈ k(p) atol = 1.0e-10
+    end
+end
+
+@testset "KPLS: one point at a time" begin
+    lb, ub = [-2.0, -2.0, -2.0], [2.0, 2.0, 2.0]
+    g = p -> p[1]^2 + 0.5p[2] + sin(p[3])
+    x = sample(30, lb, ub, SobolSample())
+    k = KPLS(x, g.(x), 2, lb, ub, [1.0, 1.0])
+
+    # `_check_dimension` compares lengths only, so on a 3-dimensional model it
+    # cannot distinguish one point from three; unwrapping the point without this
+    # guard would return the first prediction of a silent batch.
+    @test_throws ArgumentError k([(1.0, 2.0, -1.0), (0.5, 0.5, 0.5), (-1.0, 0.0, 1.0)])
+    # A `1 x d` row matrix is what `(lb .+ ub) ./ 2` gives for row-matrix bounds.
+    @test k([1.0 2.0 -1.0]) ≈ k((1.0, 2.0, -1.0))
 end

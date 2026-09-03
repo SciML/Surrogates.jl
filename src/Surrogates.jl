@@ -3,8 +3,12 @@ module Surrogates
 using Distributions: Normal, cdf, pdf, truncated
 using ExtendableSparse: ExtendableSparseMatrix
 using IterativeSolvers: cg
-using LinearAlgebra: ColumnNorm, Diagonal, I, Symmetric, cholesky, diag, dot,
-    eigvals, norm, pinv, qr, rank, ⋅
+using CommonSolve: solve
+using LinearAlgebra: ColumnNorm, Diagonal, I, LAPACKException, PosDefException,
+    SingularException, Symmetric, cholesky, diag, dot, eigvals,
+    issuccess, logdet, norm, pinv, qr, rank, ⋅
+using OptimizationOptimJL: NelderMead
+using SciMLBase: OptimizationProblem
 using PrecompileTools: @compile_workload, @setup_workload
 using QuasiMonteCarlo: GoldenSample, GridSample, HaltonSample, KroneckerSample,
     LatinHypercubeSample, RandomSample, SamplingAlgorithm, SobolSample
@@ -147,7 +151,7 @@ Create a named-tuple configuration for a [`GEK`](@ref) surrogate.
 
 # Keywords
 
-  - `p`: Kriging correlation exponent.
+  - `p`: correlation exponent. [`GEK`](@ref) requires `2`.
   - `theta`: Kriging correlation scale parameter.
 
 # Returns

@@ -136,7 +136,7 @@ Random.seed!(42)
             der = x -> 2 * x
             y2 = der.(x)
             y_gek = vcat(y1, y2)
-            my_gek = GEK(x, y_gek, lb, ub)
+            my_gek = GEK(x, y_gek, lb, ub; optimize_theta = false)
             g = x -> ForwardDiff.derivative(my_gek, x)
             @test g(5.0) isa Number
             # Accuracy test: f(x) = x^2, f'(x) = 2x, so f'(5.0) = 10.0
@@ -156,6 +156,21 @@ Random.seed!(42)
             @test g(5.0) isa Number
             # Accuracy test: f(x) = x^2, f'(x) = 2x, so f'(5.0) = 10.0
             @test isapprox(g(5.0), 10.0, atol = 1.0e-1)
+        end
+
+        @testset "KPLS" begin
+            my_kpls = KPLS(x, y, 1, [lb], [ub], [1.0]; optimize_theta = false)
+            g = x -> ForwardDiff.derivative(my_kpls, x)
+            @test g(5.0) isa Number
+            # Accuracy test: f(x) = x^2, f'(x) = 2x, so f'(5.0) = 10.0
+            @test isapprox(g(5.0), 10.0, atol = 1.0)
+        end
+
+        @testset "KPLSK" begin
+            my_kplsk = KPLSK(x, y, 1, [lb], [ub], [1.0]; optimize_theta = false)
+            g = x -> ForwardDiff.derivative(my_kplsk, x)
+            @test g(5.0) isa Number
+            @test isapprox(g(5.0), 10.0, atol = 1.0)
         end
 
         @testset "Earth" begin
@@ -323,7 +338,7 @@ Random.seed!(42)
             der = x -> [x[2], x[1]]  # Gradient of f(x) = x[1] * x[2]
             y2 = vcat([der(xi) for xi in x]...)  # Flatten gradients by point
             y_gek = vcat(y1, y2)
-            my_gek = GEK(x, y_gek, lb, ub)
+            my_gek = GEK(x, y_gek, lb, ub; optimize_theta = false)
             g = x -> ForwardDiff.gradient(my_gek, x)
             @test g([2.0, 5.0]) isa AbstractVector
             # Accuracy test: f(x) = x[1] * x[2], ∇f = [x[2], x[1]], so ∇f([2.0, 5.0]) = [5.0, 2.0]
@@ -343,6 +358,21 @@ Random.seed!(42)
             @test g([2.0, 5.0]) isa AbstractVector
             # Accuracy test: f(x) = x[1] * x[2], ∇f = [x[2], x[1]], so ∇f([2.0, 5.0]) = [5.0, 2.0]
             @test isapprox(g([2.0, 5.0]), [5.0, 2.0], atol = 1.0e-1)
+        end
+
+        @testset "KPLS" begin
+            my_kpls_ND = KPLS(x, y, 2, lb, ub, [1.0, 1.0]; optimize_theta = false)
+            g = x -> ForwardDiff.gradient(my_kpls_ND, x)
+            @test g([2.0, 5.0]) isa AbstractVector
+            # Accuracy test: f(x) = x[1] * x[2], ∇f = [x[2], x[1]], so ∇f([2.0, 5.0]) = [5.0, 2.0]
+            @test isapprox(g([2.0, 5.0]), [5.0, 2.0], atol = 1.0)
+        end
+
+        @testset "KPLSK" begin
+            my_kplsk_ND = KPLSK(x, y, 2, lb, ub, [1.0, 1.0]; optimize_theta = false)
+            g = x -> ForwardDiff.gradient(my_kplsk_ND, x)
+            @test g([2.0, 5.0]) isa AbstractVector
+            @test isapprox(g([2.0, 5.0]), [5.0, 2.0], atol = 1.0)
         end
 
         @testset "GENN" begin
@@ -500,7 +530,7 @@ end
             der = x -> 2 * x
             y2 = der.(x)
             y_gek = vcat(y1, y2)
-            my_gek = GEK(x, y_gek, lb, ub)
+            my_gek = GEK(x, y_gek, lb, ub; optimize_theta = false)
             g = x -> Zygote.gradient(my_gek, x)
             result = g(5.0)
             @test result isa Tuple
@@ -526,6 +556,32 @@ end
             @test result[1] isa Number
             # Accuracy test: f(x) = x^2, f'(x) = 2x, so f'(5.0) = 10.0
             @test isapprox(result[1], 10.0, atol = 1.0e-1)
+        end
+
+        @testset "KPLS" begin
+            # The callable used to wrap the query point in an array, which
+            # reverse-mode AD cannot push a gradient back through.
+            my_kpls = KPLS(x, y, 1, [lb], [ub], [1.0]; optimize_theta = false)
+            g = x -> Zygote.gradient(my_kpls, x)
+            result = g(5.0)
+            @test result isa Tuple
+            @test length(result) == 1
+            @test result[1] isa Number
+            # Accuracy test: f(x) = x^2, f'(x) = 2x, so f'(5.0) = 10.0
+            @test isapprox(result[1], 10.0, atol = 1.0)
+            # Reverse mode has to agree with forward mode.
+            @test result[1] ≈ ForwardDiff.derivative(my_kpls, 5.0)
+        end
+
+        @testset "KPLSK" begin
+            my_kplsk = KPLSK(x, y, 1, [lb], [ub], [1.0]; optimize_theta = false)
+            g = x -> Zygote.gradient(my_kplsk, x)
+            result = g(5.0)
+            @test result isa Tuple
+            @test length(result) == 1
+            @test result[1] isa Number
+            @test isapprox(result[1], 10.0, atol = 1.0)
+            @test result[1] ≈ ForwardDiff.derivative(my_kplsk, 5.0)
         end
 
         @testset "GENN" begin
@@ -708,7 +764,7 @@ end
             der = x -> [x[2], x[1]]  # Gradient of f(x) = x[1] * x[2]
             y2 = vcat([der(xi) for xi in x]...)  # Flatten gradients by point
             y_gek = vcat(y1, y2)
-            my_gek = GEK(x, y_gek, lb, ub)
+            my_gek = GEK(x, y_gek, lb, ub; optimize_theta = false)
             g = x -> Zygote.gradient(my_gek, x)
             result = g((2.0, 5.0))
             @test result isa Tuple
@@ -734,6 +790,27 @@ end
             @test result[1] isa Tuple
             # Accuracy test: f(x) = x[1] * x[2], ∇f = [x[2], x[1]], so ∇f([2.0, 5.0]) = [5.0, 2.0]
             @test all(isapprox.(result[1], (5.0, 2.0), atol = 1.0e-1))
+        end
+
+        @testset "KPLS" begin
+            my_kpls_ND = KPLS(x, y, 2, lb, ub, [1.0, 1.0]; optimize_theta = false)
+            g = x -> Zygote.gradient(my_kpls_ND, x)
+            result = g((2.0, 5.0))
+            @test result isa Tuple
+            @test length(result) == 1
+            @test result[1] isa Tuple
+            # Accuracy test: f(x) = x[1] * x[2], ∇f = [x[2], x[1]], so ∇f([2.0, 5.0]) = [5.0, 2.0]
+            @test all(isapprox.(result[1], (5.0, 2.0), atol = 1.0))
+        end
+
+        @testset "KPLSK" begin
+            my_kplsk_ND = KPLSK(x, y, 2, lb, ub, [1.0, 1.0]; optimize_theta = false)
+            g = x -> Zygote.gradient(my_kplsk_ND, x)
+            result = g((2.0, 5.0))
+            @test result isa Tuple
+            @test length(result) == 1
+            @test result[1] isa Tuple
+            @test all(isapprox.(result[1], (5.0, 2.0), atol = 1.0))
         end
 
         @testset "GENN" begin

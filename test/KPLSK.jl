@@ -1,5 +1,6 @@
 using Surrogates
 using Test
+using LinearAlgebra
 
 # Sphere function (sum of squares): easy analytical test
 function sphere_function(x)
@@ -99,4 +100,84 @@ end
     # More data should generally improve accuracy
     @test rmse2 < rmse1
     @test rmse2 < 8.0e-3
+end
+
+@testset "KPLSK: constructor validation" begin
+    lb, ub = [-1.0, -1.0], [1.0, 1.0]
+    x = sample(12, lb, ub, SobolSample())
+    y = sphere_function.(x)
+
+    @test_throws ArgumentError KPLSK(x, y, 2, lb, ub, [1.0])
+    @test_throws ArgumentError KPLSK(x, y, 1, lb, ub, [1.0, 1.0])
+    @test_throws ArgumentError KPLSK(x, y, 3, lb, ub, [1.0, 1.0, 1.0])
+    @test_throws ArgumentError KPLSK(x, y, 0, lb, ub, Float64[])
+
+    x_bad = vcat(x, [(5.0, 5.0)])
+    y_bad = vcat(y, 50.0)
+    @test_throws ArgumentError KPLSK(x_bad, y_bad, 1, lb, ub, [1.0])
+end
+
+@testset "KPLSK: update! leaves the caller's containers alone" begin
+    lb, ub = [-1.0, -1.0], [1.0, 1.0]
+    x = sample(12, lb, ub, SobolSample())
+    y = sphere_function.(x)
+    k = KPLSK(x, y, 1, lb, ub, [1.0])
+
+    update!(k, (0.31, 0.47), sphere_function((0.31, 0.47)))
+    @test length(x) == 12
+    @test length(y) == 12
+    @test length(k.x) == 13
+    @test size(k.x_matrix, 1) == 13
+
+    @test_logs (:warn,) update!(k, (0.31, 0.47), sphere_function((0.31, 0.47)))
+    @test length(k.x) == 13
+    @test_throws ArgumentError update!(k, (5.0, 5.0), 50.0)
+end
+
+@testset "KPLSK: theta is released to full dimension" begin
+    # Stage 2 expands the h reduced-space scales into d full-dimensional ones
+    # through theta0_k = sum_l theta_pls_l * (w*_lk)^2, then refines all d of
+    # them. The released fit must therefore carry one scale per input coordinate.
+    lb, ub = [-2.0, -2.0, -2.0], [2.0, 2.0, 2.0]
+    g(x) = x[1]^2 + 0.5x[2] + sin(x[3])
+    x = sample(25, lb, ub, SobolSample())
+    k = KPLSK(x, g.(x), 2, lb, ub, [1.0, 1.0])
+    @test length(k.theta) == 3
+    @test length(k.theta_pls) == 2
+    @test all(>(0), k.theta)
+end
+
+@testset "KPLSK: prediction matches an independent full-anisotropic solve" begin
+    # After stage 2 the kernel is a plain anisotropic Gaussian on the
+    # standardized inputs, with no PLS rotation left in it.
+    lb, ub = [-2.0, -2.0, -2.0], [2.0, 2.0, 2.0]
+    g(x) = x[1]^2 + 0.5x[2] + sin(x[3])
+    x = sample(25, lb, ub, SobolSample())
+    k = KPLSK(x, g.(x), 2, lb, ub, [1.0, 1.0])
+
+    Xs, th = k.X_after_std, k.theta
+    ker(a, b) = exp(-sum(th[q] * (a[q] - b[q])^2 for q in eachindex(th)))
+    nt = size(Xs, 1)
+    R = [ker(Xs[i, :], Xs[j, :]) for i in 1:nt, j in 1:nt] + (1.0e6 * eps()) * I
+    ys = vec((k.y_matrix .- k.y_mean) ./ k.y_std)
+    ones_v = ones(nt)
+    mu = dot(ones_v, R \ ys) / dot(ones_v, R \ ones_v)
+    b = R \ (ys .- mu)
+
+    for p in sample(30, lb, ub, GoldenSample())
+        ps = vec((collect(p)' .- k.X_offset) ./ k.X_scale)
+        r = [ker(ps, Xs[i, :]) for i in 1:nt]
+        # The fitted scales can leave R poorly conditioned, so the reference
+        # solve and the surrogate's Cholesky path agree to fewer digits here.
+        @test k.y_mean + k.y_std * (mu + dot(r, b)) ≈ k(p) atol = 1.0e-7
+    end
+end
+
+@testset "KPLSK: one point at a time" begin
+    lb, ub = [-2.0, -2.0, -2.0], [2.0, 2.0, 2.0]
+    g = p -> p[1]^2 + 0.5p[2] + sin(p[3])
+    x = sample(30, lb, ub, SobolSample())
+    k = KPLSK(x, g.(x), 2, lb, ub, [1.0, 1.0])
+    @test_throws ArgumentError k([(1.0, 2.0, -1.0), (0.5, 0.5, 0.5), (-1.0, 0.0, 1.0)])
+    @test k([1.0 2.0 -1.0]) ≈ k((1.0, 2.0, -1.0))
 end

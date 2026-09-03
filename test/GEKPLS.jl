@@ -1,5 +1,11 @@
 using Surrogates
 using Zygote
+using Test
+
+# Accuracy assertions here are one-sided bounds with the measured value in a
+# comment. They used to be two-sided `isapprox(rmse, pinned, atol)` bands, which
+# fail when the model gets *better* — three of them were failing for exactly
+# that reason, while their own comments still recorded the older, lower numbers.
 
 # #water flow function tests
 function water_flow(x)
@@ -34,7 +40,7 @@ y_true = water_flow.(x_test)
     g = GEKPLS(x, y, grads, n_comp, delta_x, lb, ub, extra_points, initial_theta)
     y_pred = g.(x_test)
     rmse = sqrt(sum(((y_pred - y_true) .^ 2) / n_test))
-    @test isapprox(rmse, 0.03, atol = 0.02) #rmse: 0.039
+    @test rmse < 0.03  # 0.0221
 end
 
 @testset "Test 2: Water Flow Function Test (dimensions = 8; n_comp = 3; extra_points = 2)" begin
@@ -45,7 +51,7 @@ end
     g = GEKPLS(x, y, grads, n_comp, delta_x, lb, ub, extra_points, initial_theta)
     y_pred = g.(x_test)
     rmse = sqrt(sum(((y_pred - y_true) .^ 2) / n_test))
-    @test isapprox(rmse, 0.02, atol = 0.01) #rmse: 0.027
+    @test rmse < 0.03  # 0.0219
 end
 
 @testset "Test 3: Water Flow Function Test (dimensions = 8; n_comp = 3; extra_points = 3)" begin
@@ -56,7 +62,7 @@ end
     g = GEKPLS(x, y, grads, n_comp, delta_x, lb, ub, extra_points, initial_theta)
     y_pred = g.(x_test)
     rmse = sqrt(sum(((y_pred - y_true) .^ 2) / n_test))
-    @test isapprox(rmse, 0.02, atol = 0.01) #rmse: 0.027
+    @test rmse < 0.03  # 0.0219
 end
 
 # ## welded beam tests
@@ -88,8 +94,10 @@ y_true = welded_beam.(x_test)
     g = GEKPLS(x, y, grads, n_comp, delta_x, lb, ub, extra_points, initial_theta)
     y_pred = g.(x_test)
     rmse = sqrt(sum(((y_pred - y_true) .^ 2) / n_test))
-    @test isapprox(rmse, 50.0, atol = 0.5) #rmse: 38.988
+    @test rmse < 26.0  # 23.08
 end
+
+rmse_two_extra_points = 0.0
 
 @testset "Test 5: Welded Beam Function Test (dimensions = 3; n_comp = 2; extra_points = 2)" begin
     n_comp = 2
@@ -99,7 +107,8 @@ end
     g = GEKPLS(x, y, grads, n_comp, delta_x, lb, ub, extra_points, initial_theta)
     y_pred = g.(x_test)
     rmse = sqrt(sum(((y_pred - y_true) .^ 2) / n_test))
-    @test isapprox(rmse, 51.0, atol = 0.5) #rmse: 39.481
+    @test rmse < 26.0  # 23.64
+    global rmse_two_extra_points = rmse
 end
 
 ## increasing extra points increases accuracy
@@ -111,7 +120,8 @@ end
     g = GEKPLS(x, y, grads, n_comp, delta_x, lb, ub, extra_points, initial_theta)
     y_pred = g.(x_test)
     rmse = sqrt(sum(((y_pred - y_true) .^ 2) / n_test))
-    @test isapprox(rmse, 49.0, atol = 0.5) #rmse: 37.87
+    @test rmse < 26.0  # 22.81
+    @test rmse < rmse_two_extra_points
 end
 
 ## sphere function tests
@@ -138,7 +148,7 @@ y_true = sphere_function.(x_test)
     g = GEKPLS(x, y, grads, n_comp, delta_x, lb, ub, extra_points, initial_theta)
     y_pred = g.(x_test)
     rmse = sqrt(sum(((y_pred - y_true) .^ 2) / n_test))
-    @test isapprox(rmse, 0.001, atol = 0.05) #rmse: 0.00083
+    @test rmse < 0.0004  # 0.000167
 end
 
 ## 2D
@@ -160,7 +170,7 @@ y_true = sphere_function.(x_test)
     g = GEKPLS(x, y, grads, n_comp, delta_x, lb, ub, extra_points, initial_theta)
     y_pred = g.(x_test)
     rmse = sqrt(sum(((y_pred - y_true) .^ 2) / n_test))
-    @test isapprox(rmse, 0.1, atol = 0.5) #rmse: 0.0022
+    @test rmse < 0.0001  # 3.9e-5
 end
 
 @testset "Test 9: Add Point Test (dimensions = 3; n_comp = 2; extra_points = 2)" begin
@@ -242,5 +252,157 @@ end
     for i in eachindex(grads_surr_vec)
         sum_of_rmse += sqrt((sum((grads_surr_vec[i][1] .- grads[i][1]) .^ 2) / 3.0))
     end
-    @test isapprox(sum_of_rmse, 0.05, atol = 0.01)
+    @test sum_of_rmse < 0.02  # 0.0115
+end
+
+@testset "Test 12: Construction and update! contracts" begin
+    lb = [-5.0, -5.0, -5.0]
+    ub = [5.0, 5.0, 5.0]
+    x = sample(30, lb, ub, SobolSample())
+    grads = gradient.(sphere_function, x)
+    y = sphere_function.(x)
+
+    @testset "theta must have one entry per PLS component" begin
+        # The mismatch used to reach the `reshape` inside `squar_exp`, six
+        # frames down, and surface as an opaque `DimensionMismatch`.
+        @test_throws ArgumentError GEKPLS(
+            x, y, grads, 2, 1.0e-4, lb, ub, 2, [0.01]
+        )
+        @test_throws ArgumentError GEKPLS(
+            x, y, grads, 2, 1.0e-4, lb, ub, 2, [0.01, 0.01, 0.01]
+        )
+    end
+
+    @testset "a collection of points is not read as one point" begin
+        # `_check_dimension` cannot tell `d` query points from one
+        # `d`-dimensional point, and the prediction path used to return only
+        # the first of them — a silently wrong answer rather than an error.
+        g = GEKPLS(x, y, grads, 2, 1.0e-4, lb, ub, 2, [0.01, 0.01])
+        pts = [(1.0, 2.0, 3.0), (4.0, 4.0, 4.0), (0.0, 0.0, 0.0)]
+        @test_throws ArgumentError g(pts)
+        # A single point is accepted as a tuple, a vector, or a `1 x d` row
+        # matrix, as it is by `Kriging` and `GEK`. The row matrix used to reach
+        # `differences` as a `1 x 1 x d` array and raise there.
+        @test g((1.0, 2.0, 3.0)) ≈ g([1.0, 2.0, 3.0])
+        @test g(reshape([1.0, 2.0, 3.0], 1, 3)) ≈ g((1.0, 2.0, 3.0))
+    end
+
+    @testset "training points outside the bounds are rejected" begin
+        # This used to print a diagnostic and return `nothing`, so the caller
+        # got a `Nothing` where a surrogate was expected.
+        out_x = vcat(collect(x), [(9.0, 0.0, 0.0)])
+        out_y = sphere_function.(out_x)
+        out_grads = gradient.(sphere_function, out_x)
+        @test_throws ArgumentError GEKPLS(
+            out_x, out_y, out_grads, 2, 1.0e-4, lb, ub, 2, [0.01, 0.01]
+        )
+    end
+
+    @testset "update! returns nothing and honours its contract" begin
+        g = GEKPLS(x, y, grads, 2, 1.0e-4, lb, ub, 2, [0.01, 0.01])
+        new_p = (1.0, 2.0, 3.0)
+        @test update!(
+            g, new_p, sphere_function(new_p),
+            gradient(sphere_function, new_p)[1]
+        ) === nothing
+        @test length(g.x) == 31
+
+        # A duplicate warns and leaves the model alone.
+        before = g((0.5, 0.5, 0.5))
+        @test_logs (:warn,) update!(
+            g, new_p, sphere_function(new_p),
+            gradient(sphere_function, new_p)[1]
+        )
+        @test length(g.x) == 31
+        @test g((0.5, 0.5, 0.5)) == before
+
+        # Out of bounds is an error, not a printed diagnostic.
+        @test_throws ArgumentError update!(g, (9.0, 0.0, 0.0), 81.0, [18.0, 0.0, 0.0])
+    end
+
+    @testset "update! leaves the caller's containers alone" begin
+        xc = collect(x)
+        yc = collect(y)
+        g = GEKPLS(xc, yc, grads, 2, 1.0e-4, lb, ub, 2, [0.01, 0.01])
+        new_p = (1.0, 2.0, 3.0)
+        update!(g, new_p, sphere_function(new_p), gradient(sphere_function, new_p)[1])
+        @test length(xc) == 30
+        @test length(yc) == 30
+        @test length(g.x) == 31
+    end
+
+    @testset "the keyword front-end matches the positional form" begin
+        # `(x, y, lb, ub; kwargs...)` is the shape every other surrogate uses.
+        a = GEKPLS(x, y, grads, 2, 1.0e-4, lb, ub, 2, [0.01, 0.01])
+        b = GEKPLS(
+            x, y, grads, lb, ub; n_comp = 2, delta_x = 1.0e-4,
+            extra_points = 2, theta = [0.01, 0.01]
+        )
+        @test a((1.0, 1.0, 1.0)) ≈ b((1.0, 1.0, 1.0))
+    end
+
+    @testset "an oversized nugget costs accuracy" begin
+        # The jitter used to be fixed at 1e6 * eps(); it is now the smallest
+        # power of ten that lets the Cholesky factorization succeed.
+        x_test = sample(50, lb, ub, GoldenSample())
+        y_true = sphere_function.(x_test)
+        err(nug) = sqrt(
+            sum(
+                (
+                    GEKPLS(
+                        x, y, grads, 2, 1.0e-4, lb, ub, 2, [0.01, 0.01];
+                        nugget = nug
+                    ).(x_test) - y_true
+                ) .^ 2
+            ) / 50
+        )
+        @test err(10.0 * eps()) < err(1.0e6 * eps())
+    end
+end
+
+@testset "Test 13: theta can be fitted by maximizing the reduced likelihood" begin
+    lb = [0.125, 5.0, 5.0]
+    ub = [1.0, 10.0, 10.0]
+    x = sample(60, lb, ub, SobolSample())
+    y = welded_beam.(x)
+    grads = gradient.(welded_beam, x)
+    x_test = sample(60, lb, ub, GoldenSample())
+    y_true = welded_beam.(x_test)
+    err(g) = sqrt(sum((g.(x_test) - y_true) .^ 2) / length(x_test))
+
+    given = GEKPLS(x, y, grads, 2, 1.0e-4, lb, ub, 2, [0.01, 0.01])
+    fitted = GEKPLS(
+        x, y, grads, 2, 1.0e-4, lb, ub, 2, [0.01, 0.01]; optimize_theta = true
+    )
+
+    # Fitting is off by default here, unlike Kriging and GEK: every likelihood
+    # evaluation factorizes an nt x nt matrix with nt = n(1 + extra_points).
+    @test !given.optimize_theta
+    @test fitted.optimize_theta
+    @test given.theta == [0.01, 0.01]
+    @test fitted.theta != [0.01, 0.01]
+    # The reduced likelihood is the criterion, so it must improve.
+    @test fitted.reduced_likelihood_function_value >
+        given.reduced_likelihood_function_value
+    @test err(fitted) < err(given)
+
+    @testset "update! refits when fitting is on" begin
+        g = GEKPLS(
+            x, y, grads, 2, 1.0e-4, lb, ub, 2, [0.01, 0.01]; optimize_theta = true
+        )
+        before = copy(g.theta)
+        new_p = (0.5, 7.0, 7.0)
+        update!(g, new_p, welded_beam(new_p), gradient(welded_beam, new_p)[1])
+        @test length(g.x) == 61
+        @test g.theta != before
+    end
+
+    @testset "the keyword front-end passes it through" begin
+        g = GEKPLS(
+            x, y, grads, lb, ub; n_comp = 2, extra_points = 2,
+            theta = [0.01, 0.01], optimize_theta = true, n_start = 2
+        )
+        @test g.optimize_theta
+        @test g.theta != [0.01, 0.01]
+    end
 end
