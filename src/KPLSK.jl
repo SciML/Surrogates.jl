@@ -32,6 +32,9 @@ mutable struct KPLSK{T, X, Y} <: AbstractDeterministicSurrogate
     X_after_std::Matrix{T}  # standardized training X
     y_mean::T               # mean of y
     y_std::T                # std of y
+    # Whether both fitting stages run, in which case `update!` repeats them
+    # against the extended sample set.
+    optimize_theta::Bool
 end
 
 """
@@ -84,7 +87,17 @@ of full-dimensional Kriging.
     must not exceed the input dimension.
   - `lb`: lower bounds for the input coordinates.
   - `ub`: upper bounds for the input coordinates, matching `lb`.
-  - `theta`: positive initial correlation scales for the intermediate KPLS fit.
+  - `theta`: positive correlation scales for the intermediate KPLS fit. Used as
+    the starting point of stage 1, or as given when `optimize_theta` is `false`.
+
+# Keywords
+
+  - `optimize_theta`: whether to run the two likelihood searches. Defaults to
+    `true`. With `false`, the supplied reduced-space `theta` is expanded to full
+    dimension and used directly — the expansion is the model KPLSK fits, so only
+    the searches are skipped.
+  - `n_start`: Latin-hypercube starts for the stage-1 search. Ignored when
+    `optimize_theta` is `false`.
 
 # Returns
 
@@ -103,7 +116,10 @@ surrogate = KPLSK(x, y, 1, lb, ub, [1.0])
 surrogate((0.2, -0.1))
 ```
 """
-function KPLSK(x_vec, y_vec, n_comp, lb, ub, theta)
+function KPLSK(
+        x_vec, y_vec, n_comp, lb, ub, theta;
+        optimize_theta = true, n_start::Integer = _PLS_N_START
+    )
     xlimits = hcat(collect(Float64, lb), collect(Float64, ub))
     X = vector_of_tuples_to_matrix(x_vec)
     y = reshape(collect(Float64, y_vec), (size(X, 1), 1))
@@ -118,15 +134,20 @@ function KPLSK(x_vec, y_vec, n_comp, lb, ub, theta)
     D, ij = cross_distances(X_after_std)
     d_pls = componentwise_distance_PLS(D, "squar_exp", n_comp, pls_mean)
     nt = size(X_after_PLS, 1)
-    theta_pls = _optimize_theta(theta, "squar_exp", d_pls, nt, ij, y_after_std)
+    theta_pls = optimize_theta ?
+        _optimize_theta(theta, "squar_exp", d_pls, nt, ij, y_after_std; n_start = n_start) :
+        collect(float.(theta))
 
     # Stage 2: expand theta into full dimension d and refine it locally by
     # maximizing the reduced log-likelihood of the full-dimensional (non-PLS) kernel.
+    # The expansion happens either way — it is the model KPLSK fits, not a search
+    # step — so `optimize_theta = false` skips only the two searches.
     theta0 = _expand_kpls_theta(theta_pls, pls_mean)
     d_full = D .^ 2
-    theta_opt = _optimize_theta(
-        theta0, "squar_exp", d_full, nt, ij, y_after_std; multistart = false
-    )
+    theta_opt = optimize_theta ?
+        _optimize_theta(
+            theta0, "squar_exp", d_full, nt, ij, y_after_std; multistart = false
+        ) : theta0
 
     beta, gamma, reduced_likelihood_function_value = _reduced_likelihood_function(
         theta_opt, "squar_exp", d_full, nt, ij, y_after_std
@@ -135,7 +156,7 @@ function KPLSK(x_vec, y_vec, n_comp, lb, ub, theta)
     return KPLSK(
         x_vec, y_vec, X, y, xlimits, n_comp, beta, gamma, theta_opt, theta_pls,
         reduced_likelihood_function_value,
-        X_offset, X_scale, X_after_std, y_mean, y_std
+        X_offset, X_scale, X_after_std, y_mean, y_std, optimize_theta
     )
 end
 
@@ -200,13 +221,18 @@ function SurrogatesBase.update!(k::KPLSK, new_x, new_y)
     D, ij = cross_distances(k.X_after_std)
     d_pls = componentwise_distance_PLS(D, "squar_exp", k.n_comp, pls_mean)
     nt = size(X_after_PLS, 1)
-    k.theta_pls = _optimize_theta(k.theta_pls, "squar_exp", d_pls, nt, ij, y_after_std)
+    if k.optimize_theta
+        k.theta_pls = _optimize_theta(
+            k.theta_pls, "squar_exp", d_pls, nt, ij, y_after_std
+        )
+    end
 
     theta0 = _expand_kpls_theta(k.theta_pls, pls_mean)
     d_full = D .^ 2
-    k.theta = _optimize_theta(
-        theta0, "squar_exp", d_full, nt, ij, y_after_std; multistart = false
-    )
+    k.theta = k.optimize_theta ?
+        _optimize_theta(
+            theta0, "squar_exp", d_full, nt, ij, y_after_std; multistart = false
+        ) : theta0
     k.beta, k.gamma, k.reduced_likelihood_function_value = _reduced_likelihood_function(
         k.theta, "squar_exp", d_full, nt, ij, y_after_std
     )

@@ -28,6 +28,9 @@ mutable struct KPLS{T, X, Y} <: AbstractDeterministicSurrogate
     pls_mean::Matrix{T}     # PLS rotation matrix W* [d, h]
     y_mean::T               # mean of y
     y_std::T                # std of y
+    # Whether `theta` is fitted by maximizing the reduced likelihood, in which
+    # case `update!` refits it against the extended sample set.
+    optimize_theta::Bool
 end
 
 # The PLS basis has at most `d` components, and one correlation scale is fitted
@@ -79,8 +82,11 @@ function _compute_pls(X, y, n_comp)
     return abs.(coeff_pls), X, y
 end
 
+# Latin-hypercube starts in addition to the supplied `theta`.
+const _PLS_N_START = 10
+
 """
-    _optimize_theta(theta_init, kernel_type, d, nt, ij, y_norma; multistart = true, n_start = 10)
+    _optimize_theta(theta_init, kernel_type, d, nt, ij, y_norma; multistart = true, n_start = _PLS_N_START)
 
 Optimize KPLS hyperparameters `theta` by maximizing the reduced log-likelihood.
 
@@ -93,7 +99,8 @@ local refinement when `theta_init` is already known to be a good guess (e.g. the
 KPLSK full-dimensional refinement stage).
 """
 function _optimize_theta(
-        theta_init, kernel_type, d, nt, ij, y_norma; multistart = true, n_start = 10,
+        theta_init, kernel_type, d, nt, ij, y_norma; multistart = true,
+        n_start = _PLS_N_START,
         nugget = _PLS_NUGGET, noise = 0.0, max_escalations = 0
     )
     n_comp = length(theta_init)
@@ -161,7 +168,18 @@ many correlation parameters.
     dimension.
   - `lb`: lower bounds for the input coordinates.
   - `ub`: upper bounds for the input coordinates, matching `lb`.
-  - `theta`: positive initial correlation scales, with one value per component.
+  - `theta`: positive correlation scales, with one value per component. Used as
+    the starting point of the fit, or as given when `optimize_theta` is `false`.
+
+# Keywords
+
+  - `optimize_theta`: whether to fit `theta` by maximizing the reduced
+    likelihood. Defaults to `true`. The search factorizes an `nt x nt` matrix at
+    every step, so it dominates the cost on a large design: a 1000-point
+    two-dimensional fit takes about 137 seconds against 6 seconds for 100 points.
+    Set it to `false` to use the supplied `theta` directly.
+  - `n_start`: Latin-hypercube starts for that search, in addition to the
+    supplied `theta`. Ignored when `optimize_theta` is `false`.
 
 # Returns
 
@@ -181,7 +199,10 @@ surrogate = KPLS(x, y, 1, lb, ub, [1.0])
 surrogate((0.2, -0.1))
 ```
 """
-function KPLS(x_vec, y_vec, n_comp, lb, ub, theta)
+function KPLS(
+        x_vec, y_vec, n_comp, lb, ub, theta;
+        optimize_theta = true, n_start::Integer = _PLS_N_START
+    )
     xlimits = hcat(collect(Float64, lb), collect(Float64, ub))
     X = vector_of_tuples_to_matrix(x_vec)
     y = reshape(collect(Float64, y_vec), (size(X, 1), 1))
@@ -196,8 +217,9 @@ function KPLS(x_vec, y_vec, n_comp, lb, ub, theta)
     d = componentwise_distance_PLS(D, "squar_exp", n_comp, pls_mean)
     nt = size(X_after_PLS, 1)
 
-    # Optimize theta by maximizing the reduced log-likelihood.
-    theta_opt = _optimize_theta(theta, "squar_exp", d, nt, ij, y_after_std)
+    theta_opt = optimize_theta ?
+        _optimize_theta(theta, "squar_exp", d, nt, ij, y_after_std; n_start = n_start) :
+        collect(float.(theta))
 
     beta, gamma, reduced_likelihood_function_value = _reduced_likelihood_function(
         theta_opt, "squar_exp", d, nt, ij, y_after_std
@@ -206,7 +228,7 @@ function KPLS(x_vec, y_vec, n_comp, lb, ub, theta)
     return KPLS(
         x_vec, y_vec, X, y, xlimits, n_comp, beta, gamma, theta_opt,
         reduced_likelihood_function_value,
-        X_offset, X_scale, X_after_std, pls_mean, y_mean, y_std
+        X_offset, X_scale, X_after_std, pls_mean, y_mean, y_std, optimize_theta
     )
 end
 
@@ -273,7 +295,9 @@ function SurrogatesBase.update!(k::KPLS, new_x, new_y)
     k.pls_mean = pls_mean
     d = componentwise_distance_PLS(D, "squar_exp", k.n_comp, k.pls_mean)
     nt = size(X_after_PLS, 1)
-    k.theta = _optimize_theta(k.theta, "squar_exp", d, nt, ij, y_after_std)
+    if k.optimize_theta
+        k.theta = _optimize_theta(k.theta, "squar_exp", d, nt, ij, y_after_std)
+    end
     k.beta, k.gamma, k.reduced_likelihood_function_value = _reduced_likelihood_function(
         k.theta, "squar_exp", d, nt, ij, y_after_std
     )
