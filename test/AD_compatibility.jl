@@ -159,7 +159,7 @@ Random.seed!(42)
         end
 
         @testset "KPLS" begin
-            my_kpls = KPLS(x, y, 1, [lb], [ub], [1.0])
+            my_kpls = KPLS(x, y, 1, [lb], [ub], [1.0]; optimize_theta = false)
             g = x -> ForwardDiff.derivative(my_kpls, x)
             @test g(5.0) isa Number
             # Accuracy test: f(x) = x^2, f'(x) = 2x, so f'(5.0) = 10.0
@@ -167,7 +167,7 @@ Random.seed!(42)
         end
 
         @testset "KPLSK" begin
-            my_kplsk = KPLSK(x, y, 1, [lb], [ub], [1.0])
+            my_kplsk = KPLSK(x, y, 1, [lb], [ub], [1.0]; optimize_theta = false)
             g = x -> ForwardDiff.derivative(my_kplsk, x)
             @test g(5.0) isa Number
             @test isapprox(g(5.0), 10.0, atol = 1.0)
@@ -361,7 +361,7 @@ Random.seed!(42)
         end
 
         @testset "KPLS" begin
-            my_kpls_ND = KPLS(x, y, 2, lb, ub, [1.0, 1.0])
+            my_kpls_ND = KPLS(x, y, 2, lb, ub, [1.0, 1.0]; optimize_theta = false)
             g = x -> ForwardDiff.gradient(my_kpls_ND, x)
             @test g([2.0, 5.0]) isa AbstractVector
             # Accuracy test: f(x) = x[1] * x[2], ∇f = [x[2], x[1]], so ∇f([2.0, 5.0]) = [5.0, 2.0]
@@ -369,7 +369,7 @@ Random.seed!(42)
         end
 
         @testset "KPLSK" begin
-            my_kplsk_ND = KPLSK(x, y, 2, lb, ub, [1.0, 1.0])
+            my_kplsk_ND = KPLSK(x, y, 2, lb, ub, [1.0, 1.0]; optimize_theta = false)
             g = x -> ForwardDiff.gradient(my_kplsk_ND, x)
             @test g([2.0, 5.0]) isa AbstractVector
             @test isapprox(g([2.0, 5.0]), [5.0, 2.0], atol = 1.0)
@@ -561,7 +561,7 @@ end
         @testset "KPLS" begin
             # The callable used to wrap the query point in an array, which
             # reverse-mode AD cannot push a gradient back through.
-            my_kpls = KPLS(x, y, 1, [lb], [ub], [1.0])
+            my_kpls = KPLS(x, y, 1, [lb], [ub], [1.0]; optimize_theta = false)
             g = x -> Zygote.gradient(my_kpls, x)
             result = g(5.0)
             @test result isa Tuple
@@ -574,7 +574,7 @@ end
         end
 
         @testset "KPLSK" begin
-            my_kplsk = KPLSK(x, y, 1, [lb], [ub], [1.0])
+            my_kplsk = KPLSK(x, y, 1, [lb], [ub], [1.0]; optimize_theta = false)
             g = x -> Zygote.gradient(my_kplsk, x)
             result = g(5.0)
             @test result isa Tuple
@@ -793,7 +793,7 @@ end
         end
 
         @testset "KPLS" begin
-            my_kpls_ND = KPLS(x, y, 2, lb, ub, [1.0, 1.0])
+            my_kpls_ND = KPLS(x, y, 2, lb, ub, [1.0, 1.0]; optimize_theta = false)
             g = x -> Zygote.gradient(my_kpls_ND, x)
             result = g((2.0, 5.0))
             @test result isa Tuple
@@ -804,7 +804,7 @@ end
         end
 
         @testset "KPLSK" begin
-            my_kplsk_ND = KPLSK(x, y, 2, lb, ub, [1.0, 1.0])
+            my_kplsk_ND = KPLSK(x, y, 2, lb, ub, [1.0, 1.0]; optimize_theta = false)
             g = x -> Zygote.gradient(my_kplsk_ND, x)
             result = g((2.0, 5.0))
             @test result isa Tuple

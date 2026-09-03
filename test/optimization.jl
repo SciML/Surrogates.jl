@@ -206,13 +206,18 @@ using Test
     x = [(1.2, 3.0), (3.0, 3.5), (5.2, 5.7)]
     y = objective_function_ND.(x)
     min_y = minimum(y)
-    p = [1.2, 1.2]
-    theta = [2.0, 2.0]
     lb = [-1.0, -1.0]
     ub = [6.0, 6.0]
 
     #Kriging
-    my_k_EIN = Kriging(x, y, lb, ub)
+    # `theta` is used as given. Three observations cannot identify a maximum
+    # likelihood fit of two correlation scales plus the process variance, and on
+    # this design the fitted scales come out about five times smaller than the
+    # sample-spread default, which makes the model overconfident away from the
+    # data: the predicted standard error at (5, 5) drops from 2.26 to 0.73, and
+    # EI explores on exactly that. What this testset checks is that EI minimizes
+    # rather than maximizes, not the quality of the hyperparameter fit.
+    my_k_EIN = Kriging(x, y, lb, ub; optimize_theta = false)
     surrogate_optimize!(objective_function_ND, EI(), lb, ub, my_k_EIN, SobolSample())
 
     # Check that EI is correctly minimizing instead of maximizing
