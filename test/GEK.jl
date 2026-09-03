@@ -17,6 +17,17 @@ function reference_gek_std_error(k, val)
     return sqrt(max(k.sigma * (1 - dot(r, w) + λ), 0.0))
 end
 
+
+# At a training point the predictive variance is zero in exact arithmetic, so
+# what survives is round-off. Round-off enters the *variance*, at roughly
+# `eps * sigma`, and the square root that turns a variance into a standard error
+# amplifies it to `sqrt(eps * sigma)` — of order `1e-7` for these designs.
+# Asserting a standard error below `1e-12` therefore demands a variance below
+# `1e-24`, far under machine precision, and passes or fails on which side of zero
+# the BLAS happens to land: this returns exactly `0.0` on one platform and
+# `5.25e-8` on another. Scale the bound to the model's own variance instead.
+interpolation_floor(k) = 16 * sqrt(eps(Float64) * k.sigma)
+
 @testset "the covariance blocks are the derivatives of the kernel" begin
     # Every block of the GEK matrix is a partial derivative of
     # k(x, x') = exp(-Σ θ_l Δ_l²); check each against a finite difference of
@@ -73,7 +84,8 @@ end
             @test my_gek(xi) ≈ f(xi) atol = 1.0e-8
             @test ForwardDiff.derivative(my_gek, xi) ≈ df(xi) atol = 1.0e-8
         end
-        @test maximum(std_error_at_point(my_gek, xi) for xi in x) < 1.0e-5
+        @test maximum(std_error_at_point(my_gek, xi) for xi in x) <
+            interpolation_floor(my_gek)
     end
 
     @testset "is accurate between the samples" begin
@@ -142,7 +154,8 @@ end
             @test ForwardDiff.gradient(v -> my_gek_ND(v), collect(p)) ≈
                 G(p) atol = 1.0e-10
         end
-        @test maximum(std_error_at_point(my_gek_ND, p) for p in x) < 1.0e-7
+        @test maximum(std_error_at_point(my_gek_ND, p) for p in x) <
+            interpolation_floor(my_gek_ND)
     end
 
     @testset "the mean squared error is the kriging variance" begin

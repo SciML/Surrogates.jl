@@ -24,6 +24,17 @@ function reference_std_error(k, val)
     return sqrt(max(k.sigma * (1 - dot(r, w) + λ), 0.0))
 end
 
+
+# At a training point the predictive variance is zero in exact arithmetic, so
+# what survives is round-off. Round-off enters the *variance*, at roughly
+# `eps * sigma`, and the square root that turns a variance into a standard error
+# amplifies it to `sqrt(eps * sigma)` — of order `1e-7` for these designs.
+# Asserting a standard error below `1e-12` therefore demands a variance below
+# `1e-24`, far under machine precision, and passes or fails on which side of zero
+# the BLAS happens to land: this returns exactly `0.0` on one platform and
+# `5.25e-8` on another. Scale the bound to the model's own variance instead.
+interpolation_floor(k) = 16 * sqrt(eps(Float64) * k.sigma)
+
 @testset "1D" begin
     lb = 0.0
     ub = 10.0
@@ -62,21 +73,21 @@ end
         y = [4.0, 5.0, 6.0]
         k = Kriging(x, y, lb, ub, p = 1.3)
         @test k(1.0) == 4.0
-        @test std_error_at_point(k, 1.0) < 1.0e-12
+        @test std_error_at_point(k, 1.0) < interpolation_floor(k)
     end
 
     @testset "update! with a single sample" begin
         k = Kriging([1.0, 2.0, 3.0], [4.0, 5.0, 6.0], lb, ub, p = 1.3)
         update!(k, 4.0, 9.0)
         @test k(4.0) ≈ 9.0
-        @test std_error_at_point(k, 4.0) < 1.0e-12
+        @test std_error_at_point(k, 4.0) < interpolation_floor(k)
     end
 
     @testset "update! with several samples" begin
         k = Kriging([1.0, 2.0, 3.0], [4.0, 5.0, 6.0], lb, ub, p = 1.3)
         update!(k, [4.0, 5.0, 6.0], [9.0, 13.0, 15.0])
         @test k(4.0) ≈ 9.0
-        @test std_error_at_point(k, 4.0) < 1.0e-12
+        @test std_error_at_point(k, 4.0) < interpolation_floor(k)
     end
 
     @testset "hyperparameter initialization" begin
@@ -109,21 +120,21 @@ end
     @testset "without update!" begin
         k = Kriging(base_x, base_y, lb, ub, p = unit_p, theta = my_theta)
         @test k((1.0, 2.0, 3.0)) ≈ 1.0
-        @test std_error_at_point(k, (1.0, 2.0, 3.0)) < 1.0e-12
+        @test std_error_at_point(k, (1.0, 2.0, 3.0)) < interpolation_floor(k)
     end
 
     @testset "update! with a single sample" begin
         k = Kriging(base_x, base_y, lb, ub, p = unit_p, theta = my_theta)
         update!(k, (10.0, 11.0, 12.0), 4.0)
         @test k((10.0, 11.0, 12.0)) ≈ 4.0
-        @test std_error_at_point(k, (10.0, 11.0, 12.0)) < 1.0e-12
+        @test std_error_at_point(k, (10.0, 11.0, 12.0)) < interpolation_floor(k)
     end
 
     @testset "update! with several samples" begin
         k = Kriging(base_x, base_y, lb, ub, p = unit_p, theta = my_theta)
         update!(k, [(10.0, 11.0, 12.0), (13.0, 14.0, 15.0)], [4.0, 5.0])
         @test k((10.0, 11.0, 12.0)) ≈ 4.0
-        @test std_error_at_point(k, (10.0, 11.0, 12.0)) < 1.0e-12
+        @test std_error_at_point(k, (10.0, 11.0, 12.0)) < interpolation_floor(k)
     end
 
     kwarg_krig_ND = Kriging(base_x, base_y, lb, ub, optimize_theta = false)
@@ -189,8 +200,8 @@ end
     end
 
     # The variance vanishes at a sample and is positive between samples.
-    @test std_error_at_point(k, x[4]) < 1.0e-12
-    @test std_error_at_point(k, (x[4] + x[5]) / 2) > 1.0e-8
+    @test std_error_at_point(k, x[4]) < interpolation_floor(k)
+    @test std_error_at_point(k, (x[4] + x[5]) / 2) > interpolation_floor(k)
 end
 
 @testset "duplicate samples" begin
