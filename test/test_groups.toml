@@ -7,7 +7,6 @@ group = "Core"
 versions = ["1"]
 os = ["ubuntu-latest"]
 arch = "x86"
-continue_on_error = true
 
 [QA]
 versions = ["lts", "1"]
