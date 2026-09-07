@@ -1,5 +1,13 @@
 [Core]
 versions = ["lts", "1", "pre"]
 
+# Blocked on QuasiMonteCarlo/LatticeRules 32-bit fix until those releases propagate.
+["Core 32-bit"]
+group = "Core"
+versions = ["1"]
+os = ["ubuntu-latest"]
+arch = "x86"
+continue_on_error = true
+
 [QA]
 versions = ["lts", "1"]
