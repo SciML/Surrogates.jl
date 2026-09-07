@@ -1,6 +1,17 @@
 # Gradient Enhanced Kriging Surrogate Tutorial
 
-Gradient-enhanced Kriging is an extension of kriging which supports gradient information. GEK is usually more accurate than kriging. However, it is not computationally efficient when the number of inputs, the number of sampling points, or both, are high. This is mainly due to the size of the corresponding correlation matrix, which increases proportionally with both the number of inputs and the number of sampling points.
+Gradient-enhanced Kriging extends Kriging with derivative observations. Because the
+Gaussian kernel is mean-square differentiable, the joint covariance of a process and
+its partial derivatives is available in closed form, so a gradient can be treated as
+`d` extra observations rather than as a separate model. That is usually more accurate
+than Kriging at the same number of sample points, and it is what makes GEK attractive
+when gradients come cheaply — from an adjoint solver or from automatic differentiation.
+
+The cost is the size of the system. With `n` points in `d` dimensions the covariance
+matrix is `n(1 + d) × n(1 + d)`, so it grows with the number of inputs *and* with the
+number of samples, and it is far worse conditioned than the plain correlation matrix
+— see the conditioning note in the docstring below. [`GEKPLS`](@ref) is the indirect
+alternative for high dimensions.
 
 ```@docs
 GEK
@@ -27,12 +38,19 @@ upper_bound = 10
 xs = lower_bound:0.001:upper_bound
 x = sample(n_samples, lower_bound, upper_bound, SobolSample())
 f(x) = x^3 - 6x^2 + 4x + 12
+der(x) = 3 * x^2 - 12 * x + 4
 y1 = f.(x)
-der = x -> 3 * x^2 - 12 * x + 4
 y2 = der.(x)
-y = vcat(y1, y2)
 scatter(x, y1, label = "Sampled points", xlims = (lower_bound, upper_bound), legend = :top)
 plot!(f, label = "True function", xlims = (lower_bound, upper_bound), legend = :top)
+```
+
+`GEK` takes all the observations in one vector: every function value first, then
+every derivative. In one dimension that is simply
+
+```@example GEK1D
+y = vcat(y1, y2)
+length(y) == 2 * n_samples
 ```
 
 ## Building a surrogate
@@ -40,7 +58,7 @@ plot!(f, label = "True function", xlims = (lower_bound, upper_bound), legend = :
 With our sampled points, we can build the Gradient Enhanced Kriging surrogate using the `GEK` function.
 
 ```@example GEK1D
-my_gek = GEK(x, y, lower_bound, upper_bound, p = 0.03, theta = 0.3)
+my_gek = GEK(x, y, lower_bound, upper_bound, theta = 0.3)
 
 scatter(x, y1, label = "Sampled points", xlims = (lower_bound, upper_bound), legend = :top)
 plot!(f, label = "True function", xlims = (lower_bound, upper_bound), legend = :top)
@@ -82,12 +100,12 @@ y1 = leon.(xys)
 ```
 
 ```@example GEK_ND
-x, y = 0:1, 0:1
-p1 = surface(x, y, (x1, x2) -> leon((x1, x2)))
+xgrid, ygrid = 0:0.05:1, 0:0.05:1
+p1 = surface(xgrid, ygrid, (x1, x2) -> leon((x1, x2)))
 xs = [xy[1] for xy in xys]
 ys = [xy[2] for xy in xys]
 scatter!(xs, ys, y1)
-p2 = contour(x, y, (x1, x2) -> leon((x1, x2)))
+p2 = contour(xgrid, ygrid, (x1, x2) -> leon((x1, x2)))
 scatter!(xs, ys)
 plot(p1, p2, title = "True function")
 ```
@@ -96,33 +114,34 @@ plot(p1, p2, title = "True function")
 
 Using the sampled points, we build the surrogate, the steps are analogous to the 1-dimensional case.
 
-```@example GEK_ND
-grad1 = x -> 2 * (x[2] - x[1]^3) * (-3x[1]^2) - 2 * (1 - x[1])
-grad2 = x -> 2 * (x[2] - x[1]^3)
-d = 2
-n = 100
-function create_grads(n, d, grad1, grad2, y1)
-    c = 0
-    y2 = zeros(eltype(y1[1]), n * d)
-    for i in 1:n
-        y2[i + c] = grad1(xys[i])
-        y2[i + c + 1] = grad2(xys[i])
-        c = c + 1
-    end
-    return y2
-end
-y2 = create_grads(n, d, grad1, grad2, y1)
-y = vcat(y1, y2)
+In `d` dimensions the observation vector holds all `n` function values, then each
+point's `d` partial derivatives in coordinate order:
+
+```math
+[\, f(x_1),\ \dots,\ f(x_n),\ \partial_1 f(x_1),\ \dots,\ \partial_d f(x_1),\ \partial_1 f(x_2),\ \dots,\ \partial_d f(x_n) \,]
 ```
+
+so flattening a vector of gradients in order produces exactly the right layout.
+
+```@example GEK_ND
+grad(x) = (2 * (x[2] - x[1]^3) * (-3x[1]^2) - 2 * (1 - x[1]), 2 * (x[2] - x[1]^3))
+y2 = reduce(vcat, collect.(grad.(xys)))
+y = vcat(y1, y2)
+length(y) == n_samples * (1 + 2)
+```
+
+Left unset, `theta` is fitted by maximum likelihood over all `n(1 + d)` observations,
+exactly as [`Kriging`](@ref) fits it over the `n` function values alone.
 
 ```@example GEK_ND
 my_GEK = GEK(xys, y, lower_bound, upper_bound)
+my_GEK.theta
 ```
 
 ```@example GEK_ND
-p1 = surface(x, y, (x, y) -> my_GEK([x y]))
+p1 = surface(xgrid, ygrid, (x1, x2) -> my_GEK((x1, x2)))
 scatter!(xs, ys, y1, marker_z = y1)
-p2 = contour(x, y, (x, y) -> my_GEK([x y]))
+p2 = contour(xgrid, ygrid, (x1, x2) -> my_GEK((x1, x2)))
 scatter!(xs, ys, marker_z = y1)
 plot(p1, p2, title = "Surrogate")
 ```

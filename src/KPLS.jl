@@ -1,7 +1,3 @@
-using CommonSolve: solve
-using SciMLBase: OptimizationProblem
-using OptimizationOptimJL: NelderMead
-
 """
 KPLS: Kriging combined with Partial Least Squares for high-dimensional problems.
 
@@ -32,6 +28,46 @@ mutable struct KPLS{T, X, Y} <: AbstractDeterministicSurrogate
     pls_mean::Matrix{T}     # PLS rotation matrix W* [d, h]
     y_mean::T               # mean of y
     y_std::T                # std of y
+    # Whether `theta` is fitted by maximizing the reduced likelihood, in which
+    # case `update!` refits it against the extended sample set.
+    optimize_theta::Bool
+end
+
+# The PLS basis has at most `d` components, and one correlation scale is fitted
+# per retained component. Both are checked at the constructor: an oversized
+# `n_comp` otherwise leaves `_modified_pls` returning columns of zeros for the
+# components that do not exist, and a `theta` of the wrong length dies six
+# frames down in `squar_exp`'s `reshape` as an opaque `DimensionMismatch`.
+function _check_pls_components(name, n_comp, d, theta)
+    if n_comp < 1 || n_comp > d
+        throw(
+            ArgumentError(
+                "$name needs 1 to $d PLS components for a $d-dimensional design! " *
+                    "Got n_comp = $(n_comp)."
+            )
+        )
+    end
+    if length(theta) != n_comp
+        throw(
+            ArgumentError(
+                "$name needs one correlation scale per PLS component: " *
+                    "length(theta) = $(length(theta)) but n_comp = $(n_comp)."
+            )
+        )
+    end
+    return nothing
+end
+
+# Training points outside `[lb, ub]` cannot be standardized against the bounds
+# the model reports, so they are rejected rather than silently returning a
+# `nothing` that every later call turns into a `MethodError`.
+function _check_pls_bounds(name, X, xlimits)
+    if bounds_error(X, xlimits)
+        throw(
+            ArgumentError("Some training points lie outside [lb, ub]; cannot build $name.")
+        )
+    end
+    return nothing
 end
 
 """
@@ -46,22 +82,26 @@ function _compute_pls(X, y, n_comp)
     return abs.(coeff_pls), X, y
 end
 
+# Latin-hypercube starts in addition to the supplied `theta`.
+const _PLS_N_START = 10
+
 """
-    _optimize_theta(theta_init, kernel_type, d, nt, ij, y_norma; multistart = true, n_start = 10)
+    _optimize_theta(theta_init, kernel_type, d, nt, ij, y_norma; multistart = true, n_start = _PLS_N_START)
 
 Optimize KPLS hyperparameters `theta` by maximizing the reduced log-likelihood.
 
 Uses Nelder-Mead (via Optimization.jl + OptimizationOptimJL) in log₁₀(theta) space
 (bounds [-20, 20]). `theta_init` is always used as a starting point. When
 `multistart` is `true` (the default), `n_start` additional Latin Hypercube starts
-spread across the log₁₀(theta) bounds are also tried, following the multistart
-strategy used by SMT's Kriging-based optimizer, to improve robustness against the
-reduced likelihood surface's local optima. Set `multistart = false` for a cheap
+spread across the log₁₀(theta) bounds are also tried, to improve robustness
+against the reduced likelihood surface's local optima. Set `multistart = false` for a cheap
 local refinement when `theta_init` is already known to be a good guess (e.g. the
 KPLSK full-dimensional refinement stage).
 """
 function _optimize_theta(
-        theta_init, kernel_type, d, nt, ij, y_norma; multistart = true, n_start = 10
+        theta_init, kernel_type, d, nt, ij, y_norma; multistart = true,
+        n_start = _PLS_N_START,
+        nugget = _PLS_NUGGET, noise = 0.0, max_escalations = 0
     )
     n_comp = length(theta_init)
     log10_lb = fill(-20.0, n_comp)
@@ -70,45 +110,25 @@ function _optimize_theta(
     function neg_rlf(log10_theta, _)
         theta = 10 .^ clamp.(log10_theta, log10_lb, log10_ub)
         try
-            _, _, val = _reduced_likelihood_function(theta, kernel_type, d, nt, ij, y_norma)
+            _, _, val = _reduced_likelihood_function(
+                theta, kernel_type, d, nt, ij, y_norma;
+                nugget = nugget, noise = noise, max_escalations = max_escalations
+            )
             return isfinite(val) ? -val : Inf
         catch e
-            e isa Union{LinearAlgebra.SingularException, LinearAlgebra.PosDefException} ||
-                rethrow()
+            # Unqualified: `LinearAlgebra` itself is not in scope here, so the
+            # qualified form raised `UndefVarError` from inside the handler.
+            e isa Union{SingularException, PosDefException} || rethrow()
             return Inf
         end
     end
 
-    # Multi-start: user-provided theta + n_start Latin Hypercube samples across the
-    # log10(theta) bounds, covering the space more evenly than a handful of fixed points.
-    starts = if multistart
-        lhs_pts = sample(n_start, log10_lb, log10_ub, LatinHypercubeSample())
-        # `sample` returns a Vector{Float64} of scalars for n_comp == 1 (1D bounds) and
-        # a Vector{NTuple{n_comp, Float64}} otherwise; normalize both to Vector{Float64}.
-        lhs_starts = n_comp == 1 ? [[p] for p in lhs_pts] : [
-                collect(Float64, p)
-                for p in lhs_pts
-            ]
-        vcat([clamp.(log10.(theta_init), -20.0, 20.0)], lhs_starts)
-    else
-        [clamp.(log10.(theta_init), -20.0, 20.0)]
-    end
-
-    best_val = Inf
-    best_log10_theta = starts[1]
-    for x0 in starts
-        # NelderMead is derivative-free; passing lb/ub here would make
-        # OptimizationOptimJL wrap it in Fminbox, which requires gradients
-        # and errors. Bounds are instead enforced by clamping in neg_rlf.
-        prob = OptimizationProblem(neg_rlf, x0, nothing)
-        sol = solve(prob, NelderMead())
-        if sol.objective < best_val
-            best_val = sol.objective
-            best_log10_theta = sol.u
-        end
-    end
-
-    return 10 .^ clamp.(best_log10_theta, log10_lb, log10_ub)
+    # Multi-start over the log10(theta) box; see `_multistart_optimize`.
+    best_log10_theta, _ = _multistart_optimize(
+        neg_rlf, log10.(theta_init), log10_lb, log10_ub;
+        n_start = n_start, multistart = multistart
+    )
+    return 10 .^ best_log10_theta
 end
 
 """
@@ -148,7 +168,18 @@ many correlation parameters.
     dimension.
   - `lb`: lower bounds for the input coordinates.
   - `ub`: upper bounds for the input coordinates, matching `lb`.
-  - `theta`: positive initial correlation scales, with one value per component.
+  - `theta`: positive correlation scales, with one value per component. Used as
+    the starting point of the fit, or as given when `optimize_theta` is `false`.
+
+# Keywords
+
+  - `optimize_theta`: whether to fit `theta` by maximizing the reduced
+    likelihood. Defaults to `true`. The search factorizes an `nt x nt` matrix at
+    every step, so it dominates the cost on a large design: a 1000-point
+    two-dimensional fit takes about 137 seconds against 6 seconds for 100 points.
+    Set it to `false` to use the supplied `theta` directly.
+  - `n_start`: Latin-hypercube starts for that search, in addition to the
+    supplied `theta`. Ignored when `optimize_theta` is `false`.
 
 # Returns
 
@@ -168,15 +199,15 @@ surrogate = KPLS(x, y, 1, lb, ub, [1.0])
 surrogate((0.2, -0.1))
 ```
 """
-function KPLS(x_vec, y_vec, n_comp, lb, ub, theta)
+function KPLS(
+        x_vec, y_vec, n_comp, lb, ub, theta;
+        optimize_theta = true, n_start::Integer = _PLS_N_START
+    )
     xlimits = hcat(collect(Float64, lb), collect(Float64, ub))
     X = vector_of_tuples_to_matrix(x_vec)
     y = reshape(collect(Float64, y_vec), (size(X, 1), 1))
-
-    if bounds_error(X, xlimits)
-        println("X values outside bounds")
-        return
-    end
+    _check_pls_components("KPLS", n_comp, size(X, 2), theta)
+    _check_pls_bounds("KPLS", X, xlimits)
 
     pls_mean, X_after_PLS, y_after_PLS = _compute_pls(X, y, n_comp)
     X_after_std, y_after_std, X_offset, y_mean, X_scale, y_std = standardization(
@@ -186,8 +217,9 @@ function KPLS(x_vec, y_vec, n_comp, lb, ub, theta)
     d = componentwise_distance_PLS(D, "squar_exp", n_comp, pls_mean)
     nt = size(X_after_PLS, 1)
 
-    # Optimize theta by maximizing the reduced log-likelihood (matches SMT behaviour)
-    theta_opt = _optimize_theta(theta, "squar_exp", d, nt, ij, y_after_std)
+    theta_opt = optimize_theta ?
+        _optimize_theta(theta, "squar_exp", d, nt, ij, y_after_std; n_start = n_start) :
+        collect(float.(theta))
 
     beta, gamma, reduced_likelihood_function_value = _reduced_likelihood_function(
         theta_opt, "squar_exp", d, nt, ij, y_after_std
@@ -196,7 +228,7 @@ function KPLS(x_vec, y_vec, n_comp, lb, ub, theta)
     return KPLS(
         x_vec, y_vec, X, y, xlimits, n_comp, beta, gamma, theta_opt,
         reduced_likelihood_function_value,
-        X_offset, X_scale, X_after_std, pls_mean, y_mean, y_std
+        X_offset, X_scale, X_after_std, pls_mean, y_mean, y_std, optimize_theta
     )
 end
 
@@ -207,7 +239,7 @@ Predict the output at input point `x_vec` (a tuple or vector).
 """
 function (k::KPLS)(x_vec)
     _check_dimension(k, x_vec)
-    X_test = prep_data_for_pred([x_vec])
+    X_test = prep_data_for_pred(_single_query_point("KPLS", x_vec))
     n_eval = size(X_test, 1)
     X_cont = (X_test .- k.X_offset) ./ k.X_scale
     dx = differences(X_cont, k.X_after_std)
@@ -237,18 +269,21 @@ Add a new sample point and re-train the KPLS model.
 """
 function SurrogatesBase.update!(k::KPLS, new_x, new_y)
     new_x_mat = prep_data_for_pred([new_x])
+    # A duplicate is a no-op, not an error; see `Kriging`'s `update!`.
     if vec(new_x_mat) in eachrow(k.x_matrix)
-        println("Adding a sample that already exists. Cannot update KPLS.")
-        return
+        @warn "Skipping `update!`: this sample already exists in the KPLS " *
+            "surrogate, and duplicate points would make the correlation matrix singular."
+        return nothing
     end
 
     if bounds_error(new_x_mat, k.xl)
-        println("x values outside bounds")
-        return
+        throw(ArgumentError("The new sample lies outside [lb, ub]; cannot update KPLS."))
     end
 
-    push!(k.x, new_x)
-    push!(k.y, new_y)
+    # `vcat` rather than `push!`: the containers are the caller's own, and
+    # growing them behind their back would extend a design they still hold.
+    k.x = vcat(k.x, [new_x])
+    k.y = vcat(k.y, new_y)
     k.x_matrix = vcat(k.x_matrix, new_x_mat)
     k.y_matrix = vcat(k.y_matrix, reshape([Float64(new_y)], (1, 1)))
 
@@ -260,7 +295,9 @@ function SurrogatesBase.update!(k::KPLS, new_x, new_y)
     k.pls_mean = pls_mean
     d = componentwise_distance_PLS(D, "squar_exp", k.n_comp, k.pls_mean)
     nt = size(X_after_PLS, 1)
-    k.theta = _optimize_theta(k.theta, "squar_exp", d, nt, ij, y_after_std)
+    if k.optimize_theta
+        k.theta = _optimize_theta(k.theta, "squar_exp", d, nt, ij, y_after_std)
+    end
     k.beta, k.gamma, k.reduced_likelihood_function_value = _reduced_likelihood_function(
         k.theta, "squar_exp", d, nt, ij, y_after_std
     )

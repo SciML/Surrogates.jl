@@ -3,7 +3,6 @@ KPLSK: KPLS followed by a full-dimensional Kriging refinement.
 
 Based on: Bouhlel et al. (2016), "Improving kriging surrogates of high-dimensional design
 models by Partial Least Squares dimension reduction", Struct Multidisc Optim 53:935–952.
-See also: https://smt.readthedocs.io/en/latest/_src_docs/surrogate_models/gpr/kplsk.html
 
 KPLSK first fits a reduced-dimension KPLS model (h << d hyperparameters, see [`KPLS`](@ref))
 and uses it only to obtain a good initial guess for a standard, full-dimensional (d
@@ -33,14 +32,17 @@ mutable struct KPLSK{T, X, Y} <: AbstractDeterministicSurrogate
     X_after_std::Matrix{T}  # standardized training X
     y_mean::T               # mean of y
     y_std::T                # std of y
+    # Whether both fitting stages run, in which case `update!` repeats them
+    # against the extended sample set.
+    optimize_theta::Bool
 end
 
 """
     _expand_kpls_theta(theta_pls, coeff_pls)
 
 Expand KPLS hyperparameters `theta_pls` (length h) into full-dimensional Kriging
-hyperparameters `theta0` (length d), using the (already component-squared) PLS rotation
-coefficients `coeff_pls` [d, h]:
+hyperparameters `theta0` (length d), using the PLS rotation coefficients
+`coeff_pls` [d, h] as `_compute_pls` returns them, that is `abs.(W*)`:
 
     θ0_k = Σ_{l=1}^h θ_l * coeff_pls[k, l]^2
 """
@@ -85,7 +87,17 @@ of full-dimensional Kriging.
     must not exceed the input dimension.
   - `lb`: lower bounds for the input coordinates.
   - `ub`: upper bounds for the input coordinates, matching `lb`.
-  - `theta`: positive initial correlation scales for the intermediate KPLS fit.
+  - `theta`: positive correlation scales for the intermediate KPLS fit. Used as
+    the starting point of stage 1, or as given when `optimize_theta` is `false`.
+
+# Keywords
+
+  - `optimize_theta`: whether to run the two likelihood searches. Defaults to
+    `true`. With `false`, the supplied reduced-space `theta` is expanded to full
+    dimension and used directly — the expansion is the model KPLSK fits, so only
+    the searches are skipped.
+  - `n_start`: Latin-hypercube starts for the stage-1 search. Ignored when
+    `optimize_theta` is `false`.
 
 # Returns
 
@@ -104,15 +116,15 @@ surrogate = KPLSK(x, y, 1, lb, ub, [1.0])
 surrogate((0.2, -0.1))
 ```
 """
-function KPLSK(x_vec, y_vec, n_comp, lb, ub, theta)
+function KPLSK(
+        x_vec, y_vec, n_comp, lb, ub, theta;
+        optimize_theta = true, n_start::Integer = _PLS_N_START
+    )
     xlimits = hcat(collect(Float64, lb), collect(Float64, ub))
     X = vector_of_tuples_to_matrix(x_vec)
     y = reshape(collect(Float64, y_vec), (size(X, 1), 1))
-
-    if bounds_error(X, xlimits)
-        println("X values outside bounds")
-        return
-    end
+    _check_pls_components("KPLSK", n_comp, size(X, 2), theta)
+    _check_pls_bounds("KPLSK", X, xlimits)
 
     # Stage 1: KPLS, to get a reduced-dimension theta and the PLS rotation coefficients.
     pls_mean, X_after_PLS, y_after_PLS = _compute_pls(X, y, n_comp)
@@ -122,15 +134,20 @@ function KPLSK(x_vec, y_vec, n_comp, lb, ub, theta)
     D, ij = cross_distances(X_after_std)
     d_pls = componentwise_distance_PLS(D, "squar_exp", n_comp, pls_mean)
     nt = size(X_after_PLS, 1)
-    theta_pls = _optimize_theta(theta, "squar_exp", d_pls, nt, ij, y_after_std)
+    theta_pls = optimize_theta ?
+        _optimize_theta(theta, "squar_exp", d_pls, nt, ij, y_after_std; n_start = n_start) :
+        collect(float.(theta))
 
     # Stage 2: expand theta into full dimension d and refine it locally by
     # maximizing the reduced log-likelihood of the full-dimensional (non-PLS) kernel.
+    # The expansion happens either way — it is the model KPLSK fits, not a search
+    # step — so `optimize_theta = false` skips only the two searches.
     theta0 = _expand_kpls_theta(theta_pls, pls_mean)
     d_full = D .^ 2
-    theta_opt = _optimize_theta(
-        theta0, "squar_exp", d_full, nt, ij, y_after_std; multistart = false
-    )
+    theta_opt = optimize_theta ?
+        _optimize_theta(
+            theta0, "squar_exp", d_full, nt, ij, y_after_std; multistart = false
+        ) : theta0
 
     beta, gamma, reduced_likelihood_function_value = _reduced_likelihood_function(
         theta_opt, "squar_exp", d_full, nt, ij, y_after_std
@@ -139,7 +156,7 @@ function KPLSK(x_vec, y_vec, n_comp, lb, ub, theta)
     return KPLSK(
         x_vec, y_vec, X, y, xlimits, n_comp, beta, gamma, theta_opt, theta_pls,
         reduced_likelihood_function_value,
-        X_offset, X_scale, X_after_std, y_mean, y_std
+        X_offset, X_scale, X_after_std, y_mean, y_std, optimize_theta
     )
 end
 
@@ -150,7 +167,7 @@ Predict the output at input point `x_vec` (a tuple or vector).
 """
 function (k::KPLSK)(x_vec)
     _check_dimension(k, x_vec)
-    X_test = prep_data_for_pred([x_vec])
+    X_test = prep_data_for_pred(_single_query_point("KPLSK", x_vec))
     n_eval = size(X_test, 1)
     X_cont = (X_test .- k.X_offset) ./ k.X_scale
     dx = differences(X_cont, k.X_after_std)
@@ -180,18 +197,20 @@ Add a new sample point and re-train the KPLSK model.
 """
 function SurrogatesBase.update!(k::KPLSK, new_x, new_y)
     new_x_mat = prep_data_for_pred([new_x])
+    # A duplicate is a no-op, not an error; see `Kriging`'s `update!`.
     if vec(new_x_mat) in eachrow(k.x_matrix)
-        println("Adding a sample that already exists. Cannot update KPLSK.")
-        return
+        @warn "Skipping `update!`: this sample already exists in the KPLSK " *
+            "surrogate, and duplicate points would make the correlation matrix singular."
+        return nothing
     end
 
     if bounds_error(new_x_mat, k.xl)
-        println("x values outside bounds")
-        return
+        throw(ArgumentError("The new sample lies outside [lb, ub]; cannot update KPLSK."))
     end
 
-    push!(k.x, new_x)
-    push!(k.y, new_y)
+    # `vcat` rather than `push!`; see `KPLS`'s `update!`.
+    k.x = vcat(k.x, [new_x])
+    k.y = vcat(k.y, new_y)
     k.x_matrix = vcat(k.x_matrix, new_x_mat)
     k.y_matrix = vcat(k.y_matrix, reshape([Float64(new_y)], (1, 1)))
 
@@ -202,13 +221,18 @@ function SurrogatesBase.update!(k::KPLSK, new_x, new_y)
     D, ij = cross_distances(k.X_after_std)
     d_pls = componentwise_distance_PLS(D, "squar_exp", k.n_comp, pls_mean)
     nt = size(X_after_PLS, 1)
-    k.theta_pls = _optimize_theta(k.theta_pls, "squar_exp", d_pls, nt, ij, y_after_std)
+    if k.optimize_theta
+        k.theta_pls = _optimize_theta(
+            k.theta_pls, "squar_exp", d_pls, nt, ij, y_after_std
+        )
+    end
 
     theta0 = _expand_kpls_theta(k.theta_pls, pls_mean)
     d_full = D .^ 2
-    k.theta = _optimize_theta(
-        theta0, "squar_exp", d_full, nt, ij, y_after_std; multistart = false
-    )
+    k.theta = k.optimize_theta ?
+        _optimize_theta(
+            theta0, "squar_exp", d_full, nt, ij, y_after_std; multistart = false
+        ) : theta0
     k.beta, k.gamma, k.reduced_likelihood_function_value = _reduced_likelihood_function(
         k.theta, "squar_exp", d_full, nt, ij, y_after_std
     )

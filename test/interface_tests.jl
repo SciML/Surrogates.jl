@@ -96,14 +96,10 @@ end
             @test result isa BigFloat
         end
 
-        # Note: Kriging with BigFloat fails because eigvals() doesn't support
-        # arbitrary precision types (requires LAPACK). This is a known limitation.
-        @testset "Kriging 1D (known limitation)" begin
-            @test_broken begin
-                k = Kriging(x_bf, y_bf, lb_bf, ub_bf)
-                result = k(test_point)
-                result isa BigFloat
-            end
+        @testset "Kriging 1D" begin
+            k = Kriging(x_bf, y_bf, lb_bf, ub_bf)
+            result = k(test_point)
+            @test result isa BigFloat
         end
     end
 
@@ -140,14 +136,10 @@ end
             @test result isa BigFloat
         end
 
-        # Note: Kriging with BigFloat fails because eigvals() doesn't support
-        # arbitrary precision types (requires LAPACK). This is a known limitation.
-        @testset "Kriging ND (known limitation)" begin
-            @test_broken begin
-                k = Kriging(x_bf, y_bf, lb_bf, ub_bf)
-                result = k(test_point)
-                result isa BigFloat
-            end
+        @testset "Kriging ND" begin
+            k = Kriging(x_bf, y_bf, lb_bf, ub_bf)
+            result = k(test_point)
+            @test result isa BigFloat
         end
     end
 end

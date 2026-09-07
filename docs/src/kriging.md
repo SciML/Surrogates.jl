@@ -1,8 +1,23 @@
 # Kriging Surrogate Tutorial (1D)
 
-Kriging or Gaussian process regression, is a method of interpolation in which the interpolated values are modeled by a Gaussian process.
+Kriging, or Gaussian process regression, is a method of interpolation in which the
+interpolated values are modeled by a Gaussian process. The model has two
+hyperparameters per input coordinate: a correlation scale `theta`, which sets how
+fast correlation decays with distance, and a smoothness exponent `p` in `(0, 2]`.
 
-We are going to use a Kriging surrogate to optimize $f(x)=(6x-2)^2sin(12x-4)$.
+Left unset, `theta` is **fitted by maximum likelihood**: `Kriging` maximizes the
+concentrated log-likelihood
+
+```math
+\ell(\theta) = -\frac{n}{2}\log\hat\sigma^2(\theta) - \frac{1}{2}\log|R(\theta)|
+```
+
+over `theta` with a multi-start Nelder-Mead search. Supplying `theta` explicitly is
+a modelling choice and turns the fit off; `optimize_theta` controls it directly, and
+is worth setting to `false` on a large design, where every likelihood evaluation
+factorizes an `n × n` matrix.
+
+We are going to use a Kriging surrogate to optimize $f(x)=(6x-2)^2\sin(12x-4)$.
 
 First of all, import `Surrogates` and `Plots`.
 
@@ -114,9 +129,13 @@ plot(p1, p2, title = "True function")
 
 Using the sampled points, we build the surrogate, the steps are analogous to the 1-dimensional case.
 
+In more than one dimension `p` and `theta` take one entry per input coordinate. A
+separate `theta` per coordinate is what makes the model *anisotropic*: branin varies
+much faster along `x1` than along `x2`, and the fit is free to say so.
+
 ```@example kriging_tutorialnd
-kriging_surrogate = Kriging(
-    xys, zs, lower_bound, upper_bound, p = [2.0, 2.0], theta = [0.03, 0.003])
+kriging_surrogate = Kriging(xys, zs, lower_bound, upper_bound)
+kriging_surrogate.theta
 ```
 
 ```@example kriging_tutorialnd
