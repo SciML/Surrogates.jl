@@ -19,6 +19,8 @@ of the fitted low-fidelity surrogate and the high-fidelity residual surrogate.
   - `num_high_fidel`: number of leading samples treated as high fidelity.
   - `low_fid_surr`: surrogate fitted to low-fidelity data.
   - `eps_surr`: surrogate fitted to high-fidelity residuals.
+  - `eps_structure`: the configuration `eps_surr` was built from, kept so that
+    `update!` can refit it against the corrected residuals.
 
 # Arguments
 
@@ -29,7 +31,8 @@ of the fitted low-fidelity surrogate and the high-fidelity residual surrogate.
 
 # Keywords
 
-  - `num_high_fidel`: number of leading samples treated as high fidelity.
+  - `num_high_fidel`: number of leading samples treated as high fidelity. It
+    must leave at least one sample on each side of the split.
   - `low_fid_structure`: named-tuple surrogate configuration for low-fidelity
     data.
   - `high_fid_structure`: named-tuple surrogate configuration for the residual
@@ -39,7 +42,7 @@ of the fitted low-fidelity surrogate and the high-fidelity residual surrogate.
 
 A `VariableFidelitySurrogate` satisfying the generic surrogate interface.
 """
-mutable struct VariableFidelitySurrogate{X, Y, L, U, N, F, E} <:
+mutable struct VariableFidelitySurrogate{X, Y, L, U, N, F, E, H} <:
     AbstractDeterministicSurrogate
     x::X
     y::Y
@@ -48,6 +51,65 @@ mutable struct VariableFidelitySurrogate{X, Y, L, U, N, F, E} <:
     num_high_fidel::N
     low_fid_surr::F
     eps_surr::E
+    eps_structure::H
+end
+
+# Build the surrogate a `*Structure` named tuple describes. Both fidelity levels
+# and `update!` need exactly this dispatch, so it lives in one place rather than
+# being spelled out once per call site.
+#
+# `GEKStructure` is absent deliberately: `GEK` needs `n(1 + d)` observations,
+# values followed by gradients, and a variable-fidelity design carries only
+# function values — the split by sample count would slice a gradient block in
+# half. It is rejected below with the other unsupported names.
+function _variable_fidelity_surrogate(structure, x, y, lb, ub)
+    name = structure.name
+    return if name == "RadialBasis"
+        RadialBasis(
+            x, y, lb, ub, rad = structure.radial_function,
+            scale_factor = structure.scale_factor, sparse = structure.sparse
+        )
+    elseif name == "Kriging"
+        Kriging(x, y, lb, ub, p = structure.p, theta = structure.theta)
+    elseif name == "LinearSurrogate"
+        LinearSurrogate(x, y, lb, ub)
+    elseif name == "InverseDistanceSurrogate"
+        InverseDistanceSurrogate(x, y, lb, ub, p = structure.p)
+    elseif name == "LobachevskySurrogate"
+        LobachevskySurrogate(
+            x, y, lb, ub, alpha = structure.alpha, n = structure.n,
+            sparse = structure.sparse
+        )
+    elseif name == "NeuralSurrogate"
+        NeuralSurrogate(
+            x, y, lb, ub, model = structure.model, loss = structure.loss,
+            opt = structure.opt, n_epochs = structure.n_epochs
+        )
+    elseif name == "XGBoostSurrogate"
+        XGBoostSurrogate(x, y, lb, ub, num_round = structure.num_round)
+    elseif name == "SecondOrderPolynomialSurrogate"
+        SecondOrderPolynomialSurrogate(x, y, lb, ub)
+    elseif name == "Wendland"
+        Wendland(
+            x, y, lb, ub, eps = structure.eps, maxiters = structure.maxiters,
+            tol = structure.tol
+        )
+    else
+        throw(
+            ArgumentError(
+                "VariableFidelitySurrogate does not support a $(name) component. " *
+                    "Supported: RadialBasis, Kriging, LinearSurrogate, " *
+                    "InverseDistanceSurrogate, LobachevskySurrogate, NeuralSurrogate, " *
+                    "XGBoostSurrogate, SecondOrderPolynomialSurrogate, Wendland."
+            )
+        )
+    end
+end
+
+# The residuals the correction surrogate is fitted to. Recomputed by `update!`,
+# since every change to `low_fid_surr` changes what is left for it to explain.
+function _variable_fidelity_residuals(low_fid_surr, x_high, y_high)
+    return [y_high[i] - low_fid_surr(x_high[i]) for i in eachindex(x_high)]
 end
 
 function VariableFidelitySurrogate(
@@ -64,180 +126,57 @@ function VariableFidelitySurrogate(
             sparse = false
         )
     )
-    x_high = x[1:num_high_fidel]
-    x_low = x[(num_high_fidel + 1):end]
-    y_high = y[1:num_high_fidel]
-    y_low = y[(num_high_fidel + 1):end]
-
-    #Fit low fidelity surrogate:
-    if low_fid_structure.name == "RadialBasis"
-        #fit and append to local_surr
-        low_fid_surr = RadialBasis(
-            x_low, y_low, lb, ub,
-            rad = low_fid_structure.radial_function,
-            scale_factor = low_fid_structure.scale_factor,
-            sparse = low_fid_structure.sparse
+    # Both surrogates need samples of their own; an empty split otherwise
+    # reaches the inner constructor as a `BoundsError` naming neither side.
+    if num_high_fidel < 1 || num_high_fidel >= length(x)
+        throw(
+            ArgumentError(
+                "num_high_fidel must leave samples on both sides of the split: " *
+                    "expected 1 to $(length(x) - 1) for $(length(x)) samples, got " *
+                    "$(num_high_fidel)."
+            )
         )
-
-    elseif low_fid_structure.name == "Kriging"
-        low_fid_surr = Kriging(
-            x_low, y_low, lb, ub, p = low_fid_structure.p,
-            theta = low_fid_structure.theta
-        )
-
-    elseif low_fid_structure.name == "GEK"
-        low_fid_surr = GEK(
-            x_low, y_low, lb, ub, p = low_fid_structure.p,
-            theta = low_fid_structure.theta
-        )
-
-    elseif low_fid_structure.name == "LinearSurrogate"
-        low_fid_surr = LinearSurrogate(x_low, y_low, lb, ub)
-
-    elseif low_fid_structure.name == "InverseDistanceSurrogate"
-        low_fid_surr = InverseDistanceSurrogate(
-            x_low, y_low, lb, ub,
-            p = low_fid_structure.p
-        )
-
-    elseif low_fid_structure.name == "LobachevskySurrogate"
-        low_fid_surr = LobachevskySurrogate(
-            x_low, y_low, lb, ub,
-            alpha = low_fid_structure.alpha,
-            n = low_fid_structure.n,
-            sparse = low_fid_structure.sparse
-        )
-
-    elseif low_fid_structure.name == "NeuralSurrogate"
-        low_fid_surr = NeuralSurrogate(
-            x_low, y_low, lb, ub,
-            model = low_fid_structure.model,
-            loss = low_fid_structure.loss,
-            opt = low_fid_structure.opt,
-            n_epochs = low_fid_structure.n_epochs
-        )
-
-    elseif low_fid_structure.name == "XGBoostSurrogate"
-        low_fid_surr = XGBoostSurrogate(
-            x_low, y_low, lb, ub,
-            num_round = low_fid_structure.num_round
-        )
-
-    elseif low_fid_structure.name == "SecondOrderPolynomialSurrogate"
-        low_fid_surr = SecondOrderPolynomialSurrogate(x_low, y_low, lb, ub)
-
-    elseif low_fid_structure.name == "Wendland"
-        low_fid_surr = Wendand(
-            x_low, y_low, lb, ub, eps = low_fid_surr.eps,
-            maxiters = low_fid_surr.maxiters, tol = low_fid_surr.tol
-        )
-    else
-        throw("A surrogate with the name provided does not exist or is not currently supported with VariableFidelity")
     end
 
-    #Fit surrogate eps on high fidelity data with objective function y_high - low_find_surr
-    y_eps = zeros(eltype(y), num_high_fidel)
-    @inbounds for i in 1:num_high_fidel
-        y_eps[i] = y_high[i] - low_fid_surr(x_high[i])
-    end
+    x_high, x_low = x[1:num_high_fidel], x[(num_high_fidel + 1):end]
+    y_high, y_low = y[1:num_high_fidel], y[(num_high_fidel + 1):end]
 
-    if high_fid_structure.name == "RadialBasis"
-        #fit and append to local_surr
-        eps = RadialBasis(
-            x_high, y_eps, lb, ub, rad = high_fid_structure.radial_function,
-            scale_factor = high_fid_structure.scale_factor,
-            sparse = high_fid_structure.sparse
-        )
+    low_fid_surr = _variable_fidelity_surrogate(low_fid_structure, x_low, y_low, lb, ub)
+    y_eps = _variable_fidelity_residuals(low_fid_surr, x_high, y_high)
+    eps_surr = _variable_fidelity_surrogate(high_fid_structure, x_high, y_eps, lb, ub)
 
-    elseif high_fid_structure.name == "Kriging"
-        eps = Kriging(
-            x_high, y_eps, lb, ub, p = high_fid_structure.p,
-            theta = high_fid_structure.theta
-        )
-
-    elseif high_fid_structure.name == "LinearSurrogate"
-        eps = LinearSurrogate(x_high, y_eps, lb, ub)
-
-    elseif high_fid_structure.name == "InverseDistanceSurrogate"
-        eps = InverseDistanceSurrogate(x_high, y_eps, lb, ub, p = high_fid_structure.p)
-
-    elseif high_fid_structure.name == "LobachevskySurrogate"
-        eps = LobachevskySurrogate(
-            x_high, y_eps, lb, ub, alpha = high_fid_structure.alpha,
-            n = high_fid_structure.n,
-            sparse = high_fid_structure.sparse
-        )
-
-    elseif high_fid_structure.name == "NeuralSurrogate"
-        eps = NeuralSurrogate(
-            x_high, y_eps, lb, ub, model = high_fid_structure.model,
-            loss = high_fid_structure.loss, opt = high_fid_structure.opt,
-            n_epochs = high_fid_structure.n_epochs
-        )
-
-    elseif high_fid_structure.name == "XGBoostSurrogate"
-        eps = XGBoostSurrogate(
-            x_high, y_eps, lb, ub,
-            num_round = high_fid_structure.num_round
-        )
-
-    elseif high_fid_structure.name == "SecondOrderPolynomialSurrogate"
-        eps = SecondOrderPolynomialSurrogate(x_high, y_eps, lb, ub)
-
-    elseif high_fid_structure.name == "Wendland"
-        eps = Wendand(
-            x_high, y_eps, lb, ub, eps = high_fid_structure.eps,
-            maxiters = high_fid_structure.maxiters, tol = high_fid_structure.tol
-        )
-    else
-        throw("A surrogate with the name provided does not exist or is not currently supported with VariableFidelity")
-    end
-    return VariableFidelitySurrogate(x, y, lb, ub, num_high_fidel, low_fid_surr, eps)
+    return VariableFidelitySurrogate(
+        x, y, lb, ub, num_high_fidel, low_fid_surr, eps_surr, high_fid_structure
+    )
 end
-
-#=
-function (varfid::VariableFidelitySurrogate)(val::Number)
-    return varfid.eps_surr(val) + varfid.low_fid_surr(val)
-end
-
-"""
-VariableFidelitySurrogate(x,y,lb,ub;
-                                   num_high_fidel = Int(floor(length(x)/2))
-                                   low_fid = RadialBasisStructure(radial_function = linearRadial, scale_factor=1.0, sparse = false),
-                                   high_fid = RadialBasisStructure(radial_function = cubicRadial ,scale_factor=1.0,sparse=false))
-First section (1:num_high_fidel) of samples are high fidelity, second section are low fidelity
-"""
-function VariableFidelitySurrogate(x,y,lb,ub;
-                                   num_high_fidel = Int(floor(length(x)/2))
-                                   low_fid = RadialBasisStructure(radial_function = linearRadial, scale_factor=1.0, sparse = false),
-                                   high_fid = RadialBasisStructure(radial_function = cubicRadial ,scale_factor=1.0,sparse=false))
-
-end
-=#
 
 function (varfid::VariableFidelitySurrogate)(val)
     return varfid.eps_surr(val) + varfid.low_fid_surr(val)
 end
 
 """
-update!(varfid::VariableFidelitySurrogate,x_new,y_new)
+    update!(varfid::VariableFidelitySurrogate, x_new, y_new)
 
-I expect to add low fidelity data to the surrogate.
+Add low-fidelity samples and refit.
+
+The new observations extend the low-fidelity surrogate. The correction surrogate
+is then refitted as well: it was fitted to `y_high - low_fid_surr(x_high)`, so
+once `low_fid_surr` moves, those residuals describe a low-fidelity surrogate that
+no longer exists and the sum of the two stops reproducing the high-fidelity data.
+
+# Returns
+
+Returns `nothing`.
 """
 function SurrogatesBase.update!(varfid::VariableFidelitySurrogate, x_new, y_new)
-    return if length(varfid.x[1]) == 1
-        #1D
-        varfid.x = vcat(varfid.x, x_new)
-        varfid.y = vcat(varfid.y, y_new)
+    varfid.x, varfid.y = _append_samples(varfid.x, varfid.y, x_new, y_new)
+    update!(varfid.low_fid_surr, x_new, y_new)
 
-        #I added a new lowfidelity datapoint, I need to update the low_fid_surr:
-        update!(varfid.low_fid_surr, x_new, y_new)
-    else
-        #ND
-        varfid.x = vcat(varfid.x, x_new)
-        varfid.y = vcat(varfid.y, y_new)
-
-        #I added a new lowfidelity datapoint, I need to update the low_fid_surr:
-        update!(varfid.low_fid_surr, x_new, y_new)
-    end
+    nhf = varfid.num_high_fidel
+    x_high, y_high = varfid.x[1:nhf], varfid.y[1:nhf]
+    y_eps = _variable_fidelity_residuals(varfid.low_fid_surr, x_high, y_high)
+    varfid.eps_surr = _variable_fidelity_surrogate(
+        varfid.eps_structure, x_high, y_eps, varfid.lb, varfid.ub
+    )
+    return nothing
 end
