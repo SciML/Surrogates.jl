@@ -3,7 +3,9 @@
 The water flow function is defined as:
 ``f(r_w,r,T_u,H_u,T_l,H_l,L,K_w) = \frac{2*\pi*T_u(H_u - H_l)}{\log(\frac{r}{r_w})*[1 + \frac{2LT_u}{\log(\frac{r}{r_w})*r_w^2*K_w}+ \frac{T_u}{T_l} ]}``
 
-It has 8 dimensions.
+It has 8 dimensions, with the bounds below. The response spans roughly an
+order of magnitude across that box, so the errors reported at the end are worth
+reading against that scale rather than in absolute terms.
 
 ```@example water
 using Surrogates
@@ -32,7 +34,6 @@ end
 
 ```@example water
 n = 180
-d = 8
 lb = [0.05, 100, 63070, 990, 63.1, 700, 1120, 9855]
 ub = [0.15, 50000, 115600, 1110, 116, 820, 1680, 12045]
 x = sample(n, lb, ub, SobolSample())
@@ -47,8 +48,8 @@ my_rad = RadialBasis(x, y, lb, ub)
 y_rad = my_rad.(x_test)
 my_poly = PolynomialChaosSurrogate(x, y, lb, ub)
 y_poly = my_poly.(x_test)
-mse_rad = norm(y_true - y_rad, 2) / n_test
-mse_poly = norm(y_true - y_poly, 2) / n_test
-println("MSE Radial: $mse_rad")
-println("MSE Radial: $mse_poly")
+rmse_rad = norm(y_true - y_rad, 2) / sqrt(n_test)
+rmse_poly = norm(y_true - y_poly, 2) / sqrt(n_test)
+println("RMSE Radial:     $rmse_rad")
+println("RMSE Polynomial: $rmse_poly")
 ```

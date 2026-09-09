@@ -6,7 +6,7 @@ With:
 ``a = \frac{6000}{\sqrt{2}hl}``
 ``b = \frac{6000(14 + 0.5l)*\sqrt{0.25(l^2+(h+t)^2)}}{2*[0.707hl(\frac{l^2}{12}+0.25*(h+t)^2)]}``
 
-It has 3 dimension.
+It has 3 dimensions.
 
 ```@example welded
 using Surrogates
@@ -30,7 +30,6 @@ end
 
 ```@example welded
 n = 300
-d = 3
 lb = [0.125, 5.0, 5.0]
 ub = [1.0, 10.0, 10.0]
 x = sample(n, lb, ub, SobolSample())
@@ -43,11 +42,11 @@ y_true = f.(x_test)
 ```@example welded
 my_rad = RadialBasis(x, y, lb, ub)
 y_rad = my_rad.(x_test)
-mse_rad = norm(y_true - y_rad, 2) / n_test
-println("MSE Radial: $mse_rad")
+rmse_rad = norm(y_true - y_rad, 2) / sqrt(n_test)
+println("RMSE Radial:      $rmse_rad")
 
 my_loba = LobachevskySurrogate(x, y, lb, ub)
 y_loba = my_loba.(x_test)
-mse_rad = norm(y_true - y_loba, 2) / n_test
-println("MSE Lobachevsky: $mse_rad")
+rmse_loba = norm(y_true - y_loba, 2) / sqrt(n_test)
+println("RMSE Lobachevsky: $rmse_loba")
 ```

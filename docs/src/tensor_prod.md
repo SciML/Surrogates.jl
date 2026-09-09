@@ -23,7 +23,6 @@ end
 n = 100
 lb = -5.0
 ub = 5.0
-a = 0.5
 x = sample(n, lb, ub, SobolSample())
 y = f.(x)
 xs = lb:0.001:ub

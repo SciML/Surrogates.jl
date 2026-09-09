@@ -1,4 +1,4 @@
-## XGBoost Surrogate Tutorial
+# XGBoost surrogate tutorial
 
 Gradient boosting fits an additive ensemble of decision trees, each round training a new tree on the residuals of the ensemble so far.
 
@@ -16,9 +16,11 @@ using XGBoost
 using Plots
 ```
 
+## One dimension
+
 ### Sampling
 
-We choose to sample f in 100 points between 0 and 1 using the `sample` function. The sampling points are chosen using a Sobol sequence, this can be done by passing `SobolSample()` to the `sample` function.
+We choose to sample f in 100 points between 2.7 and 7.5 using the `sample` function. The sampling points are chosen using a Sobol sequence, this can be done by passing `SobolSample()` to the `sample` function.
 
 ```@example XGBoostSurrogate_tutorial
 f(x) = sin(x) + sin(10 / 3 * x)
@@ -63,7 +65,7 @@ plot!(xgboost_surrogate, label = "Surrogate function",
     xlims = (lower_bound, upper_bound), legend = :top)
 ```
 
-## XGBoost ND
+## Several dimensions
 
 First of all we will define the `Bukin Function N. 6` function we are going to build a surrogate for.
 
@@ -95,12 +97,13 @@ zs = bukin6.(xys)
 ```
 
 ```@example XGBoostSurrogateND
-x, y = -5:10, 0:15
-p1 = surface(x, y, (x1, x2) -> bukin6((x1, x2)))
+xgrid = range(lower_bound[1], upper_bound[1], length = 100)
+ygrid = range(lower_bound[2], upper_bound[2], length = 100)
+p1 = surface(xgrid, ygrid, (x1, x2) -> bukin6((x1, x2)))
 xs = [xy[1] for xy in xys]
 ys = [xy[2] for xy in xys]
 scatter!(xs, ys, zs)
-p2 = contour(x, y, (x1, x2) -> bukin6((x1, x2)))
+p2 = contour(xgrid, ygrid, (x1, x2) -> bukin6((x1, x2)))
 scatter!(xs, ys)
 plot(p1, p2, title = "True function")
 ```
@@ -114,9 +117,9 @@ XGBoost = XGBoostSurrogate(xys, zs, lower_bound, upper_bound)
 ```
 
 ```@example XGBoostSurrogateND
-p1 = surface(x, y, (x, y) -> XGBoost([x y]))
+p1 = surface(xgrid, ygrid, (x, y) -> XGBoost([x y]))
 scatter!(xs, ys, zs, marker_z = zs)
-p2 = contour(x, y, (x, y) -> XGBoost([x y]))
+p2 = contour(xgrid, ygrid, (x, y) -> XGBoost([x y]))
 scatter!(xs, ys, marker_z = zs)
 plot(p1, p2, title = "Surrogate")
 ```
@@ -142,12 +145,12 @@ size(xys)
 ```
 
 ```@example XGBoostSurrogateND
-p1 = surface(x, y, (x, y) -> XGBoost([x y]))
+p1 = surface(xgrid, ygrid, (x, y) -> XGBoost([x y]))
 xs = [xy[1] for xy in xys]
 ys = [xy[2] for xy in xys]
 zs = bukin6.(xys)
 scatter!(xs, ys, zs, marker_z = zs)
-p2 = contour(x, y, (x, y) -> XGBoost([x y]))
+p2 = contour(xgrid, ygrid, (x, y) -> XGBoost([x y]))
 scatter!(xs, ys, marker_z = zs)
 plot(p1, p2)
 ```

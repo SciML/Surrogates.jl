@@ -1,4 +1,4 @@
-# KPLS and KPLSK Surrogate Tutorial
+# KPLS and KPLSK surrogate tutorial
 
 Full anisotropic Kriging fits one correlation scale per input coordinate, so a
 `d`-dimensional problem needs a `d`-dimensional likelihood maximization. That search

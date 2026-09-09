@@ -20,7 +20,9 @@ function f(x, p)
 end
 ```
 
-Let's see a simple 1D case:
+In one dimension the Lp norm collapses to ``|x|`` for every ``p``, so the
+exponent only starts to matter from two dimensions on. The 1D case below is
+therefore just the absolute value:
 
 ```@example lp
 n = 30
@@ -28,7 +30,7 @@ lb = -5.0
 ub = 5.0
 p = 1.3
 x = sample(n, lb, ub, SobolSample())
-y = f.(x, p)
+y = f.(x, p)   # = abs.(x), independent of p in one dimension
 xs = lb:0.001:ub
 plot(x, y, seriestype = :scatter, label = "Sampled points",
     xlims = (lb, ub), ylims = (0, 5), legend = :top)

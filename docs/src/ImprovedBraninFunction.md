@@ -1,12 +1,26 @@
-# Branin Function
+# Improved Branin function
 
-The Branin Function is commonly used as a test function for metamodelling in computer experiments, especially in the context of optimization.
+The [Branin function](BraninFunction.md) is smooth, deterministic, and has three
+global minima of equal value. That makes it a clean test, but an unrealistic one:
+a real objective evaluated by simulation is rarely reproducible to the last bit.
 
-## Modifications for Improved Branin Function:
+The *improved* Branin function adds a time-varying perturbation inside the cosine
+term, turning the landscape into something closer to what an optimizer meets in
+practice:
 
-To enhance the Branin function, changes were made to introduce irregularities, variability, and a dynamic aspect to its landscape. Here's an example:
+```math
+f(x_1, x_2, \tau) = \left(x_2 - \frac{5.1}{4\pi^2}x_1^2 + \frac{5}{\pi}x_1 - 6\right)^2
+                  + 10\left(1 - \frac{1}{8\pi}\right)\cos(x_1 + \tau\,\xi) + 10,
+\qquad \xi \sim \mathcal{N}(0, 1)
+```
+
+where `time_step` is ``\tau``. Because ``\xi`` is drawn afresh on every call, the
+objective is **stochastic**: two evaluations at the same point disagree.
 
 ```@example improved_branin
+using Surrogates, Plots, Random
+Random.seed!(42)
+
 function improved_branin(x, time_step)
     x1 = x[1]
     x2 = x[2]
@@ -17,35 +31,46 @@ function improved_branin(x, time_step)
     s = 10
     t = 1 / (8 * pi)
 
-    # Adding noise to the function's output
-    noise = randn() * time_step  # Simulating time-varying noise
+    # Time-varying perturbation of the phase, redrawn on every call.
+    noise = randn() * time_step
     term1 = a * (x2 - b * x1^2 + c * x1 - r)^2
-    term2 = s * (1 - t) * cos(x1 + noise)  # Introducing dynamic component
-    y = term1 + term2 + s
+    term2 = s * (1 - t) * cos(x1 + noise)
+    return term1 + term2 + s
 end
 ```
 
-This improved function now incorporates irregularities, variability, and a dynamic aspect. These changes aim to make the optimization landscape more challenging and realistic.
-
-## Using the Improved Branin Function:
-
-After defining the improved Branin function, you can proceed to test different surrogates and visualize their performance using the updated function. Here's an example of using the improved function with the Radial Basis surrogate:
+The seed matters here: without it, every run of this page — and every build of
+these docs — produces a different surface.
 
 ```@example improved_branin
-using Surrogates, Plots
+p = [2.5, 7.5]
+repeats = [improved_branin(p, 0.1) for _ in 1:6]
+extrema(repeats)
+```
 
+## Fitting a surrogate
+
+```@example improved_branin
 n_samples = 80
-lower_bound = [-5, 0]
-upper_bound = [10, 15]
+lower_bound = [-5.0, 0.0]
+upper_bound = [10.0, 15.0]
 xys = sample(n_samples, lower_bound, upper_bound, SobolSample())
 zs = [improved_branin(xy, 0.1) for xy in xys]
-radial_surrogate = RadialBasis(xys, zs, lower_bound, upper_bound)
-x, y = -5.00:10.00, 0.00:15.00
+kriging_surrogate = Kriging(xys, zs, lower_bound, upper_bound)
+```
+
+```@example improved_branin
+xgrid = range(lower_bound[1], upper_bound[1], length = 100)
+ygrid = range(lower_bound[2], upper_bound[2], length = 100)
 xs = [xy[1] for xy in xys]
 ys = [xy[2] for xy in xys]
-p1 = surface(x, y, (x, y) -> radial_surrogate([x, y]))
+p1 = surface(xgrid, ygrid, (x, y) -> kriging_surrogate((x, y)))
+scatter!(xs, ys, zs, marker_z = zs)
+p2 = contour(xgrid, ygrid, (x, y) -> kriging_surrogate((x, y)))
 scatter!(xs, ys, marker_z = zs)
-p2 = contour(x, y, (x, y) -> radial_surrogate([x, y]))
-scatter!(xs, ys, marker_z = zs)
-plot(p1, p2, title = "Radial Surrogate")
+plot(p1, p2, title = "Kriging surrogate")
 ```
+
+Increasing `time_step` raises the noise level; at large enough values the fit is
+dominated by the perturbation and the three basins of the original Branin function
+stop being recoverable from this many samples.

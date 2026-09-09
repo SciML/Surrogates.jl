@@ -1,9 +1,12 @@
 # Rosenbrock function
 
 The Rosenbrock function is defined as:
-``f(x) = \sum_{i=1}^{d-1}[ (x_{i+1}-x_i)^2 + (x_i - 1)^2]``
+``f(x) = \sum_{i=1}^{d-1}[ 100(x_{i+1}-x_i^2)^2 + (x_i - 1)^2]``
 
-I will treat the 2D version, which is commonly defined as:
+Its global minimum, ``f(\mathbf{1}) = 0``, sits at the bottom of a narrow curved
+valley: easy to enter and hard to traverse, which is what the benchmark tests.
+
+We treat the 2D version here, which is commonly written as:
 ``f(x,y) = (1-x)^2 + 100(y-x^2)^2``
 Let's import Surrogates and Plots:
 
@@ -31,12 +34,13 @@ lb = [0.0, 0.0]
 ub = [1.0, 1.0]
 xys = sample(n, lb, ub, SobolSample())
 zs = f.(xys);
-x, y = 0:1, 0:1
-p1 = surface(x, y, (x1, x2) -> f((x1, x2)))
+xgrid = range(lb[1], ub[1], length = 100)
+ygrid = range(lb[2], ub[2], length = 100)
+p1 = surface(xgrid, ygrid, (x1, x2) -> f((x1, x2)))
 xs = [xy[1] for xy in xys]
 ys = [xy[2] for xy in xys]
 scatter!(xs, ys, zs)
-p2 = contour(x, y, (x1, x2) -> f((x1, x2)))
+p2 = contour(xgrid, ygrid, (x1, x2) -> f((x1, x2)))
 scatter!(xs, ys)
 plot(p1, p2, title = "True function")
 ```
@@ -52,25 +56,25 @@ inver = InverseDistanceSurrogate(xys, zs, lb, ub)
 Plotting:
 
 ```@example rosen
-p1 = surface(x, y, (x, y) -> mypoly([x y]))
+p1 = surface(xgrid, ygrid, (x, y) -> mypoly([x y]))
 scatter!(xs, ys, zs, marker_z = zs)
-p2 = contour(x, y, (x, y) -> mypoly([x y]))
+p2 = contour(xgrid, ygrid, (x, y) -> mypoly([x y]))
 scatter!(xs, ys, marker_z = zs)
 plot(p1, p2, title = "Polynomial expansion")
 ```
 
 ```@example rosen
-p1 = surface(x, y, (x, y) -> loba([x y]))
+p1 = surface(xgrid, ygrid, (x, y) -> loba([x y]))
 scatter!(xs, ys, zs, marker_z = zs)
-p2 = contour(x, y, (x, y) -> loba([x y]))
+p2 = contour(xgrid, ygrid, (x, y) -> loba([x y]))
 scatter!(xs, ys, marker_z = zs)
 plot(p1, p2, title = "Lobachevsky")
 ```
 
 ```@example rosen
-p1 = surface(x, y, (x, y) -> inver([x y]))
+p1 = surface(xgrid, ygrid, (x, y) -> inver([x y]))
 scatter!(xs, ys, zs, marker_z = zs)
-p2 = contour(x, y, (x, y) -> inver([x y]))
+p2 = contour(xgrid, ygrid, (x, y) -> inver([x y]))
 scatter!(xs, ys, marker_z = zs)
 plot(p1, p2, title = "Inverse distance")
 ```

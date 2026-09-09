@@ -1,8 +1,13 @@
-# Ackley Function
+# Ackley function
 
 The Ackley function is defined as:
 ``f(x) = -a*\exp(-b\sqrt{\frac{1}{d}\sum_{i=1}^d x_i^2}) - \exp(\frac{1}{d} \sum_{i=1}^d \cos(cx_i)) + a + \exp(1)``
-Usually the recommended values are: ``a = 20``, ``b = 0.2`` and ``c = 2\pi``
+Usually the recommended values are: ``a = 20``, ``b = 0.2`` and ``c = 2\pi``.
+
+The global minimum is ``f(0) = 0``. The outer envelope is a shallow, almost flat
+bowl, while the cosine term covers it in a fine grid of local minima — so a
+surrogate can fit the overall shape easily and still mislead a local optimizer.
+That is what makes it a standard test for global methods.
 
 Let's see the 1D case.
 
@@ -18,13 +23,13 @@ function ackley(x)
     a, b, c = 20.0, 0.2, 2.0 * π
     len_recip = inv(length(x))
     sum_sqrs = zero(eltype(x))
-    sum_cos = sum_sqrs
+    sum_cos = zero(eltype(x))
     for i in x
         sum_cos += cos(c * i)
         sum_sqrs += i^2
     end
     return (-a * exp(-b * sqrt(len_recip * sum_sqrs)) -
-            exp(len_recip * sum_cos) + a + 2.71)
+            exp(len_recip * sum_cos) + a + exp(1))
 end
 ```
 
@@ -47,7 +52,7 @@ my_loba = LobachevskySurrogate(x, y, lb, ub)
 ```@example ackley
 scatter(x, y, label = "Sampled points", xlims = (lb, ub), ylims = (0, 30), legend = :top)
 plot!(xs, ackley.(xs), label = "True function", legend = :top)
-plot!(xs, my_rad.(xs), label = "Polynomial expansion", legend = :top)
+plot!(xs, my_rad.(xs), label = "Radial basis", legend = :top)
 plot!(xs, my_loba.(xs), label = "Lobachevsky", legend = :top)
 ```
 

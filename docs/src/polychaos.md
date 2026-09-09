@@ -1,4 +1,4 @@
-# Polynomial Chaos Surrogate Tutorial
+# Polynomial chaos surrogate tutorial
 
 We can create a surrogate using a polynomial expansion, with a different polynomial basis depending on the distribution of the data we are trying to fit. Under the hood, PolyChaos.jl has been used. It is possible to specify a type of polynomial for each dimension of the problem.
 
@@ -8,7 +8,7 @@ PolynomialChaosSurrogate
 
 ## Sampling
 
-We choose to sample f in 100 points between 0 and 10 using the `sample` function. The sampling points are chosen using a Low Discrepancy. This can be done by passing `HaltonSample()` to the `sample` function.
+We choose to sample f in 100 points between 1 and 6 using the `sample` function. The sampling points are chosen from a low-discrepancy sequence, by passing `HaltonSample()` to the `sample` function.
 
 ```@example polychaos
 using Surrogates
@@ -25,7 +25,7 @@ scatter(x, y, label = "Sampled points", xlims = (lower_bound, upper_bound), lege
 plot!(f, label = "True function", xlims = (lower_bound, upper_bound), legend = :top)
 ```
 
-## Building a Surrogate
+## Building a surrogate
 
 ```@example polychaos
 poly1 = PolynomialChaosSurrogate(x, y, lower_bound, upper_bound)

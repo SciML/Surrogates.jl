@@ -1,4 +1,4 @@
-## Linear Surrogate
+# Linear surrogate tutorial
 
 The linear surrogate models a scalar response as an affine function of the
 explanatory variables: an intercept plus one slope per input dimension, fitted
@@ -19,9 +19,11 @@ using Surrogates
 using Plots
 ```
 
+## One dimension
+
 ### Sampling
 
-We choose to sample f in 100 points between 0 and 10 using the `sample` function. The sampling points are chosen using a Sobol sequence, this can be done by passing `SobolSample()` to the `sample` function.
+We choose to sample f in 100 points between 5.2 and 12.5 using the `sample` function. The sampling points are chosen using a Sobol sequence, this can be done by passing `SobolSample()` to the `sample` function.
 
 ```@example linear_surrogate1D
 f(x) = 2 * x + 10.0
@@ -34,7 +36,7 @@ scatter(x, y, label = "Sampled points", xlims = (lower_bound, upper_bound))
 plot!(f, label = "True function", xlims = (lower_bound, upper_bound))
 ```
 
-## Building a Surrogate
+### Building a surrogate
 
 With our sampled points, we can build the **Linear Surrogate** using the `LinearSurrogate` function.
 
@@ -60,7 +62,7 @@ plot!(f, label = "True function", xlims = (lower_bound, upper_bound))
 plot!(my_linear_surr_1D, label = "Surrogate function", xlims = (lower_bound, upper_bound))
 ```
 
-## Optimizing
+### Optimizing
 
 Having built a surrogate, we can now use it to search for minima in our original function `f`.
 
@@ -74,7 +76,7 @@ plot!(f, label = "True function", xlims = (lower_bound, upper_bound))
 plot!(my_linear_surr_1D, label = "Surrogate function", xlims = (lower_bound, upper_bound))
 ```
 
-## Vector-valued responses
+### Vector-valued responses
 
 A single surrogate can model several outputs at once. Pass a vector of responses
 per sample; the design matrix is shared, so each output is fitted independently
@@ -101,7 +103,7 @@ multi.coeff
 multi(7.0), f(7.0)
 ```
 
-## Linear Surrogate tutorial (ND)
+## Several dimensions
 
 A linear surrogate is the right tool when the response is dominated by a global
 trend: it is cheap, needs few samples, and its coefficients are directly

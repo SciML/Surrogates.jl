@@ -1,4 +1,4 @@
-# InverseDistance Surrogate Tutorial
+# Inverse distance surrogate tutorial
 
 The **Inverse Distance Surrogate** (Shepard's method) is an interpolating method, and in this method, the unknown points are calculated with a weighted average of the sampling points. This model uses the inverse distance between the unknown and training points to predict the unknown point. We do not need to fit this model because the response of an unknown point x is computed with respect to the distance between x and the training points.
 
@@ -19,6 +19,8 @@ using Surrogates
 using Plots
 ```
 
+## One dimension
+
 ### Sampling
 
 We choose to sample f in 100 points between 0 and 10 using the `sample` function. The sampling points are chosen using a Low Discrepancy, this can be done by passing `HaltonSample()` to the `sample` function.
@@ -36,7 +38,7 @@ scatter(x, y, label = "Sampled points", xlims = (lower_bound, upper_bound), lege
 plot!(f, label = "True function", xlims = (lower_bound, upper_bound), legend = :top)
 ```
 
-## Building a Surrogate
+### Building a surrogate
 
 ```@example Inverse_Distance1D
 InverseDistance = InverseDistanceSurrogate(x, y, lower_bound, upper_bound)
@@ -94,7 +96,7 @@ sampled response exactly.
 maximum(abs(InverseDistance(x[i]) - y[i]) for i in eachindex(x))
 ```
 
-## Optimizing
+### Optimizing
 
 Having built a surrogate, we can now use it to search for minima in our original function `f`.
 
@@ -109,7 +111,7 @@ plot!(InverseDistance, label = "Surrogate function",
     xlims = (lower_bound, upper_bound), legend = :top)
 ```
 
-## Inverse Distance Surrogate Tutorial (ND):
+## Several dimensions
 
 First of all we will define the `Schaffer` function we are going to build a surrogate for. Notice, how its argument is a vector of numbers, one for each coordinate, and its output is a scalar.
 
@@ -141,12 +143,13 @@ zs = schaffer.(xys);
 ```
 
 ```@example Inverse_DistanceND
-x, y = -5:10, 0:15
-p1 = surface(x, y, (x1, x2) -> schaffer((x1, x2)))
+xgrid = range(lower_bound[1], upper_bound[1], length = 100)
+ygrid = range(lower_bound[2], upper_bound[2], length = 100)
+p1 = surface(xgrid, ygrid, (x1, x2) -> schaffer((x1, x2)))
 xs = [xy[1] for xy in xys]
 ys = [xy[2] for xy in xys]
 scatter!(xs, ys, zs)
-p2 = contour(x, y, (x1, x2) -> schaffer((x1, x2)))
+p2 = contour(xgrid, ygrid, (x1, x2) -> schaffer((x1, x2)))
 scatter!(xs, ys)
 plot(p1, p2, title = "True function")
 ```
@@ -160,9 +163,9 @@ InverseDistance = InverseDistanceSurrogate(xys, zs, lower_bound, upper_bound)
 ```
 
 ```@example Inverse_DistanceND
-p1 = surface(x, y, (x, y) -> InverseDistance([x y]))
+p1 = surface(xgrid, ygrid, (x, y) -> InverseDistance([x y]))
 scatter!(xs, ys, zs, marker_z = zs)
-p2 = contour(x, y, (x, y) -> InverseDistance([x y]))
+p2 = contour(xgrid, ygrid, (x, y) -> InverseDistance([x y]))
 scatter!(xs, ys, marker_z = zs)
 plot(p1, p2, title = "Surrogate")
 ```
@@ -189,12 +192,12 @@ length(xys), length(InverseDistance.x)
 ```
 
 ```@example Inverse_DistanceND
-p1 = surface(x, y, (x, y) -> InverseDistance([x y]))
+p1 = surface(xgrid, ygrid, (x, y) -> InverseDistance([x y]))
 xs = [xy[1] for xy in InverseDistance.x]
 ys = [xy[2] for xy in InverseDistance.x]
 zs = schaffer.(InverseDistance.x)
 scatter!(xs, ys, zs, marker_z = zs)
-p2 = contour(x, y, (x, y) -> InverseDistance([x y]))
+p2 = contour(xgrid, ygrid, (x, y) -> InverseDistance([x y]))
 scatter!(xs, ys, marker_z = zs)
 plot(p1, p2)
 ```

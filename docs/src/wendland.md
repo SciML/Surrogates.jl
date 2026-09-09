@@ -1,4 +1,4 @@
-# Wendland Surrogate Tutorial
+# Wendland surrogate tutorial
 
 The Wendland surrogate uses a compactly supported radial kernel: a sample point
 influences predictions only within a finite radius of it. Most kernel pairs
@@ -32,7 +32,9 @@ x = sample(n, lower_bound, upper_bound, SobolSample())
 y = f.(x)
 ```
 
-## Building Surrogate
+## One dimension
+
+### Building a surrogate
 
 `eps` is the reciprocal of the support radius: a sample point influences
 predictions within distance `1 / eps` of it, and nowhere else. Here `eps = 0.45`
@@ -80,7 +82,7 @@ end
 plot!()
 ```
 
-## Wendland Surrogate Tutorial (ND)
+## Several dimensions
 
 The surrogate works the same way in more dimensions; only the bounds change
 shape. Note that the kernel exponent depends on the input dimension, so the
@@ -115,10 +117,11 @@ maximum(abs(wend_ND(xys[i]) - zs[i]) for i in eachindex(xys))
 ```@example wendlandND
 xs = [xy[1] for xy in xys]
 ys = [xy[2] for xy in xys]
-x, y = -5.0:10.0, 0.0:15.0
-p1 = surface(x, y, (x, y) -> wend_ND([x y]))
+xgrid = range(lower_bound[1], upper_bound[1], length = 100)
+ygrid = range(lower_bound[2], upper_bound[2], length = 100)
+p1 = surface(xgrid, ygrid, (x, y) -> wend_ND([x y]))
 scatter!(xs, ys, zs, marker_z = zs)
-p2 = contour(x, y, (x, y) -> wend_ND([x y]))
+p2 = contour(xgrid, ygrid, (x, y) -> wend_ND([x y]))
 scatter!(xs, ys, marker_z = zs)
 plot(p1, p2, title = "Wendland surrogate")
 ```

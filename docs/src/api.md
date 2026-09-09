@@ -18,7 +18,7 @@ Package-owned interfaces are documented with their corresponding topics:
 - [Wendland surrogates](wendland.md)
 - [XGBoost surrogates](xgboost.md)
 
-## Reexported Sampling Algorithms
+## Reexported sampling algorithms
 
 The reexported `SamplingAlgorithm`, `GoldenSample`, `GridSample`, `HaltonSample`,
 `KroneckerSample`, `LatinHypercubeSample`, `RandomSample`, and `SobolSample`

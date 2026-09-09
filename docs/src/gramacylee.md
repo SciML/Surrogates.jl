@@ -1,10 +1,17 @@
-## Gramacy & Lee Function
+# Gramacy & Lee function
 
-the Gramacy & Lee function is a continuous function. It is not convex. The function is defined on a 1-dimensional space. It is unimodal. The function can be defined on any input domain, but it is usually evaluated on
-``x \in [-0.5, 2.5]``.
+The Gramacy & Lee function is a one-dimensional, continuous, non-convex
+benchmark. It is **multimodal**: the ``\sin(10\pi x)`` factor puts thirteen local
+minima inside the usual evaluation domain
+``x \in [-0.5, 2.5]``, which is what makes it a useful test for a surrogate's
+ability to resolve fine structure from few samples.
 
-The Gramacy & Lee is as follows:
+The Gramacy & Lee function is as follows:
 ``f(x) = \frac{\sin(10\pi x)}{2x} + (x-1)^4``.
+
+Note that it has a removable singularity at ``x = 0``: the limit is
+``5\pi \approx 15.7``, but evaluating the expression there divides zero by zero.
+The plotting grid below steps around it.
 
 Let's import these two packages `Surrogates` and `Plots`:
 
@@ -20,7 +27,7 @@ Now, let's define our objective function:
 function gramacylee(x)
     term1 = sin(10 * pi * x) / (2 * x)
     term2 = (x - 1)^4
-    y = term1 + term2
+    return term1 + term2
 end
 ```
 
@@ -32,7 +39,7 @@ lower_bound = -0.5
 upper_bound = 2.5
 x = sample(n, lower_bound, upper_bound, SobolSample())
 y = gramacylee.(x)
-xs = lower_bound:0.001:upper_bound
+xs = (lower_bound + 0.0005):0.001:upper_bound
 scatter(x, y, label = "Sampled points", xlims = (lower_bound, upper_bound),
     ylims = (-5, 20), legend = :top)
 plot!(xs, gramacylee.(xs), label = "True function", legend = :top)
