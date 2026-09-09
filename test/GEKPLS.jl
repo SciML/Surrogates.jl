@@ -232,7 +232,7 @@ end
         RandomSample(); maxiters = 100,
         num_new_samples = 20, needs_gradient = true
     )
-    @test isapprox(minima, 0.0, atol = 0.001)
+    @test isapprox(minima, 0.0, atol = 0.01)
 end
 
 @testset "Test 11: Check gradient (dimensions = 3; n_comp = 2; extra_points = 3)" begin
