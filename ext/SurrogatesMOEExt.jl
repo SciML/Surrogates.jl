@@ -1,9 +1,9 @@
 module SurrogatesMOEExt
 
 import Surrogates: RadialBasis,
-    InverseDistanceSurrogate, Kriging, LobachevskyStructure,
-    LinearSurrogate, MOE,
-    NeuralSurrogate, XGBoostSurrogate, PolynomialChaosSurrogate
+    InverseDistanceSurrogate, Kriging, LobachevskySurrogate,
+    LinearSurrogate, MOE, NeuralSurrogate, XGBoostSurrogate,
+    PolynomialChaosSurrogate, SecondOrderPolynomialSurrogate, Wendland
 using Distributions: MvNormal
 using GaussianMixtures: GMM, covars, llpg
 using LinearAlgebra: norm
@@ -221,10 +221,12 @@ function _find_best_model(
     )
     # find upper and lower bounds for clustered_train and test values concatenated
 
-    x_vec = [a[1:dim] for a in clustered_train_values]
+    x_vec = dim == 1 ? [first(a) for a in clustered_train_values] :
+        [a[1:dim] for a in clustered_train_values]
     y_vec = [last(a) for a in clustered_train_values]
 
-    x_test_vec = [a[1:dim] for a in clustered_test_values]
+    x_test_vec = dim == 1 ? [first(a) for a in clustered_test_values] :
+        [a[1:dim] for a in clustered_test_values]
     y_test_vec = [last(a) for a in clustered_test_values]
 
     if (dim == 1)
@@ -252,7 +254,7 @@ function _find_best_model(
     best_model = surr_vec[1] #initial assignment can be any model
     for surr_model in surr_vec
         pred = surr_model.(x_test_vec)
-        rmse = norm(pred - y_test_vec, 2)
+        rmse = norm(pred - y_test_vec, 2) / sqrt(length(y_test_vec))
         if (rmse < best_rmse)
             best_rmse = rmse
             best_model = surr_model
@@ -281,19 +283,7 @@ function _surrogate_builder(local_kind, k, x, y, lb, ub)
             push!(local_surr, my_local_i)
 
         elseif local_kind[i].name == "Kriging"
-            #because Kriging takes abs of two vectors
-            if (length(lb) == 1)
-                x = [a[1] for a in x]
-            end
-
             my_local_i = Kriging(
-                x, y, lb, ub, p = local_kind[i].p,
-                theta = local_kind[i].theta
-            )
-            push!(local_surr, my_local_i)
-
-        elseif local_kind[i].name == "GEK"
-            my_local_i = GEK(
                 x, y, lb, ub, p = local_kind[i].p,
                 theta = local_kind[i].theta
             )
@@ -308,7 +298,7 @@ function _surrogate_builder(local_kind, k, x, y, lb, ub)
             push!(local_surr, my_local_i)
 
         elseif local_kind[i].name == "LobachevskySurrogate"
-            my_local_i = LobachevskyStructure(
+            my_local_i = LobachevskySurrogate(
                 x, y, lb, ub,
                 alpha = local_kind[i].alpha,
                 n = local_kind[i].n,
@@ -337,7 +327,7 @@ function _surrogate_builder(local_kind, k, x, y, lb, ub)
             push!(local_surr, my_local_i)
 
         elseif local_kind[i].name == "Wendland"
-            my_local_i = Wendand(
+            my_local_i = Wendland(
                 x, y, lb, ub, eps = local_kind[i].eps,
                 maxiters = local_kind[i].maxiters, tol = local_kind[i].tol
             )
@@ -347,7 +337,14 @@ function _surrogate_builder(local_kind, k, x, y, lb, ub)
             my_local_i = PolynomialChaosSurrogate(x, y, lb, ub, op = local_kind[i].op)
             push!(local_surr, my_local_i)
         else
-            throw("A surrogate with name provided does not exist or is not currently supported with MOE.")
+            throw(
+                ArgumentError(
+                    "MOE does not support a $(local_kind[i].name) expert. Supported: " *
+                        "RadialBasis, Kriging, LinearSurrogate, InverseDistanceSurrogate, " *
+                        "LobachevskySurrogate, NeuralSurrogate, XGBoostSurrogate, " *
+                        "SecondOrderPolynomialSurrogate, Wendland, PolynomialChaosSurrogate."
+                )
+            )
         end
     end
     return local_surr
@@ -359,9 +356,9 @@ end
 add a new point to the dataset.
 """
 function SurrogatesBase.update!(m::MOE, x, y)
-    #function update!(m) #this works
-    push!(m.x, x)
-    push!(m.y, y)
+    # `vcat`, not `push!`: the containers are the caller's own.
+    m.x = vcat(m.x, [x])
+    m.y = vcat(m.y, y)
 
     quantile = 10
 

@@ -900,4 +900,58 @@ end
         moe_nd_inv_rad = MOE(x, y, expert_types, ndim = 2)
         Surrogates.update!(moe_nd_inv_rad, (0.5, 0.5), sum((0.5, 0.5) .^ 2) + 5)
     end
+
+    @testset "every supported expert type builds" begin
+        f = x -> x < 5.0 ? 2x : 3x + 5
+        lb, ub = 0.0, 10.0
+        x = sample(60, lb, ub, SobolSample())
+        y = f.(x)
+
+        experts = [
+            RadialBasisStructure(
+                radial_function = linearRadial(), scale_factor = 1.0, sparse = false
+            ),
+            KrigingStructure(p = 1.0, theta = 1.0),
+            LinearStructure(),
+            InverseDistanceStructure(p = 1.0),
+            LobachevskyStructure(alpha = 2.0, n = 6, sparse = false),
+            SecondOrderPolynomialStructure(),
+            WendlandStructure(eps = 1.0, maxiters = 300, tol = 1.0e-6),
+        ]
+        for e in experts
+            moe = MOE(x, y, [e]; ndim = 1, n_clusters = 2)
+            @test isfinite(moe(3.0))
+        end
+
+        # `GEK` needs `n(1 + d)` observations, values then gradients; a cluster
+        # carries one response per point, so the branch could only ever throw.
+        @test_throws ArgumentError MOE(
+            x, y, [GEKStructure(p = 2.0, theta = 0.5)]; ndim = 1, n_clusters = 2
+        )
+        # An unsupported name used to `throw` a bare `String`, which is not an
+        # `Exception` and so could not be caught by type.
+        @test_throws ArgumentError MOE(
+            x, y, [(name = "NotASurrogate",)]; ndim = 1, n_clusters = 2
+        )
+    end
+
+    @testset "update! leaves the caller's containers alone" begin
+        f = x -> x < 5.0 ? 2x : 3x + 5
+        lb, ub = 0.0, 10.0
+        x = sample(60, lb, ub, SobolSample())
+        y = f.(x)
+        moe = MOE(
+            x, y,
+            [
+                RadialBasisStructure(
+                    radial_function = linearRadial(), scale_factor = 1.0, sparse = false
+                ),
+            ];
+            ndim = 1, n_clusters = 2
+        )
+        Surrogates.update!(moe, 4.4, f(4.4))
+        @test length(x) == 60
+        @test length(y) == 60
+        @test length(moe.x) == 61
+    end
 end

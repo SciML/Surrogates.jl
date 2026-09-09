@@ -45,9 +45,9 @@ function (pc::PolynomialChaosSurrogate)(val::Number)
 end
 
 function (pcND::PolynomialChaosSurrogate)(val)
-    sum = zero(eltype(val))
+    total = zero(eltype(val))
     for i in 1:(pcND.num_of_multi_indexes)
-        sum = sum +
+        total = total +
             pcND.coeff[i] *
             first(
             PolyChaos.evaluate(
@@ -56,7 +56,7 @@ function (pcND::PolynomialChaosSurrogate)(val)
             )
         )
     end
-    return sum
+    return total
 end
 
 function _calculatepce_coeff(
