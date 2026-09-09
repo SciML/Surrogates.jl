@@ -792,7 +792,7 @@ end
 
 Pick the candidate with the best weighted score, cycling the weight.
 
-The score is [`merit_function`](@ref); the weight comes from the cyclic pattern
+The score is `merit_function`; the weight comes from the cyclic pattern
 of Regis and Shoemaker at iteration `numb_iters`, so successive iterations
 alternate between refining near the incumbent and probing unexplored regions.
 This is the selection step DYCORS shares with SRBF -- the two differ in how
@@ -895,8 +895,8 @@ which falls to zero over the run, so late iterations move along very few
 directions -- the useful behaviour when the objective depends on only a handful
 of them. At least one coordinate is always perturbed. The perturbation width
 doubles after three consecutive improvements and halves after `max(d, 5)`
-consecutive failures. Selection among the candidates is
-[`select_evaluation_point`](@ref), shared with SRBF.
+consecutive failures. Candidates are ranked by the same weighted score as
+SRBF, so the two methods differ only in how candidates are generated.
 
 ## References
 
