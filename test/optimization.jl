@@ -43,8 +43,10 @@ const LB2, UB2, MIN2 = [0.0, 0.0], [10.0, 10.0], 1.0
     @testset "converges on an interior optimum" begin
         for (label, mk, tol) in (
                 ("Kriging", x -> Kriging(x, f1d.(x), LB1, UB1), 1.0e-3),
-                ("RadialBasis",
-                    x -> RadialBasis(x, f1d.(x), LB1, UB1, rad = cubicRadial()), 1.0e-3),
+                (
+                    "RadialBasis",
+                    x -> RadialBasis(x, f1d.(x), LB1, UB1, rad = cubicRadial()), 1.0e-3,
+                ),
             )
             Random.seed!(11)
             x = sample(15, LB1, UB1, SobolSample())
@@ -59,8 +61,10 @@ const LB2, UB2, MIN2 = [0.0, 0.0], [10.0, 10.0], 1.0
 
         for (label, mk, tol) in (
                 ("Kriging", x -> Kriging(x, f2d.(x), LB2, UB2), 1.0e-1),
-                ("RadialBasis",
-                    x -> RadialBasis(x, f2d.(x), LB2, UB2, rad = cubicRadial()), 1.0e-1),
+                (
+                    "RadialBasis",
+                    x -> RadialBasis(x, f2d.(x), LB2, UB2, rad = cubicRadial()), 1.0e-1,
+                ),
             )
             Random.seed!(11)
             x = sample(25, LB2, UB2, SobolSample())
@@ -149,8 +153,10 @@ end
     @testset "1-D" begin
         for (label, mk) in (
                 ("Kriging", x -> Kriging(x, f1d.(x), LB1, UB1)),
-                ("RadialBasis",
-                    x -> RadialBasis(x, f1d.(x), LB1, UB1, rad = linearRadial())),
+                (
+                    "RadialBasis",
+                    x -> RadialBasis(x, f1d.(x), LB1, UB1, rad = linearRadial()),
+                ),
             )
             Random.seed!(5)
             x = sample(15, LB1, UB1, SobolSample())
@@ -179,8 +185,10 @@ end
         # the interesting multidimensional path for them.
         for (label, mk) in (
                 ("Wendland", () -> Wendland(x, f2d.(x), LB2, UB2)),
-                ("RadialBasis",
-                    () -> RadialBasis(x, f2d.(x), LB2, UB2, rad = linearRadial())),
+                (
+                    "RadialBasis",
+                    () -> RadialBasis(x, f2d.(x), LB2, UB2, rad = linearRadial()),
+                ),
             )
             @testset "$label" begin
                 Random.seed!(5)
@@ -281,8 +289,10 @@ end
 
         # An already-evaluated point has no predictive variance left, so no
         # improvement can be expected there.
-        @test all(Surrogates._expected_improvement(krig, xi, f_min) < 1.0e-12
-            for xi in krig.x)
+        @test all(
+            Surrogates._expected_improvement(krig, xi, f_min) < 1.0e-12
+                for xi in krig.x
+        )
         # Improvement is an expectation of a non-negative quantity.
         @test all(Surrogates._expected_improvement(krig, g, f_min) >= 0.0 for g in grid)
         # ... and is strictly positive somewhere, or the search could not move.
@@ -543,7 +553,7 @@ end
         @test believed in tmp.x
         @test !(believed in krig.x)
         # ... and it is the temporary model's own prediction there.
-        @test tmp.y[end] ≈ krig(believed) atol=1.0e-6
+        @test tmp.y[end] ≈ krig(believed) atol = 1.0e-6
 
         # A second belief nearby must read the updated model, so the two
         # predictions the strategies see are no longer the same.
