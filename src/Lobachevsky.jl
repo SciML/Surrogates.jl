@@ -33,7 +33,7 @@ input dimension.
     makes every kernel value identical and the interpolation system singular.
     For multidimensional inputs, supply one scale per input dimension; the
     default is a vector of ones matching one training point.
-  - `n::Int = 4`: even, positive kernel order, at most 20 (`factorial(n)`
+  - `n::Int = 4`: even, positive kernel order, at most 20 (`factorial(Int64(n))`
     overflows `Int64` beyond that).
   - `sparse::Bool = false`: use sparse coefficient construction.
 
@@ -81,7 +81,7 @@ function phi_nj1D(point, x, alpha, n)
         val += ifelse(iseven(l), b, -b) * a^(n - 1)
         b = b * (n - l) ÷ (l + 1)
     end
-    return val * (c / (2^n * factorial(n - 1)))
+    return val * (c / (2^n * factorial(Int64(n) - 1)))
 end
 
 # `weight(j)` is the scalar multiplying sample `j`, so one pair serves both
@@ -107,14 +107,14 @@ function _calc_loba_coeff1D(x, y, alpha, n, sparse)
     return Sym \ _construct_y_matrix(y, first(y))
 end
 
-# The kernel evaluates `factorial(n - 1)` and `_phi_int` `factorial(n)`, and
+# The kernel evaluates `factorial(Int64(n) - 1)` and `_phi_int` `factorial(Int64(n))`, and
 # `factorial(::Int)` overflows above 20.
 function _check_lobachevsky_n(n)
     if n <= 0 || n % 2 != 0
         throw(ArgumentError("Kernel order n must be even and positive! Got: $n."))
     end
     if n > 20
-        throw(ArgumentError("Kernel order n must be at most 20, as factorial(n) overflows Int64! Got: $n."))
+        throw(ArgumentError("Kernel order n must be at most 20, as factorial(Int64(n)) overflows Int64! Got: $n."))
     end
     return nothing
 end
@@ -209,7 +209,7 @@ function _phi_int(point, n)
         res += ifelse(iseven(k), b, -b) * c^n
         b = b * (n - k) ÷ (k + 1)
     end
-    return res / (2^n * factorial(n))
+    return res / (2^n * factorial(Int64(n)))
 end
 
 function lobachevsky_integral(loba::LobachevskySurrogate, lb::Number, ub::Number)
