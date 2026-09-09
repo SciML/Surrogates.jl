@@ -40,6 +40,10 @@ SurrogatesPolyChaosExt = "PolyChaos"
 SurrogatesSVMExt = ["LIBSVM", "ScikitLearnBase"]
 SurrogatesXGBoostExt = "XGBoost"
 
+[sources]
+PolyChaos = {url = "https://github.com/SciML/PolyChaos.jl.git", rev = "master"}
+QuasiMonteCarlo = {url = "https://github.com/SciML/QuasiMonteCarlo.jl.git", rev = "master"}
+
 [compat]
 AbstractGPs = "0.5.18"
 Aqua = "0.8"
