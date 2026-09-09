@@ -901,7 +901,9 @@ end
         Surrogates.update!(moe_nd_inv_rad, (0.5, 0.5), sum((0.5, 0.5) .^ 2) + 5)
     end
 
-    @testset "every supported expert type builds" begin
+    @safetestset "every supported expert type builds" begin
+        using Surrogates, GaussianMixtures
+
         f = x -> x < 5.0 ? 2x : 3x + 5
         lb, ub = 0.0, 10.0
         x = sample(60, lb, ub, SobolSample())
@@ -935,7 +937,9 @@ end
         )
     end
 
-    @testset "update! leaves the caller's containers alone" begin
+    @safetestset "update! leaves the caller's containers alone" begin
+        using Surrogates, GaussianMixtures
+
         f = x -> x < 5.0 ? 2x : 3x + 5
         lb, ub = 0.0, 10.0
         x = sample(60, lb, ub, SobolSample())
