@@ -19,8 +19,5 @@ concurrency:
 
 jobs:
   tests:
-    uses: "SciML/.github/.github/workflows/grouped-tests.yml@refs/pull/137/head"
-    with:
-      # Temporary until SciML/.github retags v1 with #136/#137
-      dotgithub-ref: master
+    uses: "SciML/.github/.github/workflows/grouped-tests.yml@v1"
     secrets: "inherit"
