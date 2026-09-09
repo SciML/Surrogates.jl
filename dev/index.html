@@ -34,13 +34,13 @@ value = my_lobachevsky(5.0)
 surrogate_optimize!(f, SRBF(), lb, ub, my_lobachevsky, RandomSample())
 
 #New approximation
-value = my_lobachevsky(5.0)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">135.038390014487</code></pre><h2 id="Reproducibility"><a class="docs-heading-anchor" href="#Reproducibility">Reproducibility</a><a id="Reproducibility-1"></a><a class="docs-heading-anchor-permalink" href="#Reproducibility" title="Permalink"></a></h2><details><summary>The documentation of this SciML package was built using these direct dependencies,</summary><pre class="documenter-example-output"><code class="nohighlight hljs ansi"><span class="sgr32"><span class="sgr1">Status</span></span> `~/_work/Surrogates.jl/Surrogates.jl/docs/Project.toml`
+value = my_lobachevsky(5.0)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">135.03839044031184</code></pre><h2 id="Reproducibility"><a class="docs-heading-anchor" href="#Reproducibility">Reproducibility</a><a id="Reproducibility-1"></a><a class="docs-heading-anchor-permalink" href="#Reproducibility" title="Permalink"></a></h2><details><summary>The documentation of this SciML package was built using these direct dependencies,</summary><pre class="documenter-example-output"><code class="nohighlight hljs ansi"><span class="sgr32"><span class="sgr1">Status</span></span> `~/_work/Surrogates.jl/Surrogates.jl/docs/Project.toml`
   <span class="sgr90">[99985d1d] </span>AbstractGPs v0.5.24
   <span class="sgr90">[e30172f5] </span>Documenter v1.19.0
 <span class="sgr32">⌃</span> <span class="sgr90">[587475ba] </span>Flux v0.16.10
   <span class="sgr90">[cc18c42c] </span>GaussianMixtures v0.3.14
   <span class="sgr90">[91a5bcdd] </span>Plots v1.41.7
-  <span class="sgr90">[8d666b04] </span>PolyChaos v2.1.1
+  <span class="sgr90">[8d666b04] </span>PolyChaos v2.1.2
   <span class="sgr90">[1fd47b50] </span>QuadGK v2.11.3
   <span class="sgr90">[6fc51010] </span>Surrogates v7.10.1 `~/_work/Surrogates.jl/Surrogates.jl`
   <span class="sgr90">[009559a3] </span>XGBoost v2.5.5
@@ -71,7 +71,7 @@ Environment:
   <span class="sgr90">[66dad0bd] </span>AliasTables v1.1.3
   <span class="sgr90">[7d9fca2a] </span>Arpack v0.5.4
   <span class="sgr90">[4fba245c] </span>ArrayInterface v7.30.1
-  <span class="sgr90">[a9b6321e] </span>Atomix v1.1.3
+  <span class="sgr90">[a9b6321e] </span>Atomix v1.2.1
   <span class="sgr90">[62783981] </span>BitTwiddlingConvenienceFunctions v0.1.6
   <span class="sgr90">[fa961155] </span>CEnum v0.5.0
   <span class="sgr90">[2a0fbf3d] </span>CPUSummary v0.2.7
@@ -149,7 +149,7 @@ Environment:
   <span class="sgr90">[929cbde3] </span>LLVM v9.13.1
   <span class="sgr90">[b964fa9f] </span>LaTeXStrings v1.4.1
   <span class="sgr90">[23fbe1c1] </span>Latexify v0.16.12
-  <span class="sgr90">[73f95e8e] </span>LatticeRules v0.0.1
+  <span class="sgr90">[73f95e8e] </span>LatticeRules v0.0.2
   <span class="sgr90">[10f19ff3] </span>LayoutPointers v0.1.17
   <span class="sgr90">[0e77f7df] </span>LazilyInitializedFields v1.3.0
   <span class="sgr90">[d3d80556] </span>LineSearches v7.8.1
@@ -179,7 +179,7 @@ Environment:
   <span class="sgr90">[ccf2f8ad] </span>PlotThemes v3.3.0
   <span class="sgr90">[995b91a9] </span>PlotUtils v1.4.4
   <span class="sgr90">[91a5bcdd] </span>Plots v1.41.7
-  <span class="sgr90">[8d666b04] </span>PolyChaos v2.1.1
+  <span class="sgr90">[8d666b04] </span>PolyChaos v2.1.2
   <span class="sgr90">[f517fe37] </span>Polyester v0.7.19
   <span class="sgr90">[1d0040c9] </span>PolyesterWeave v0.2.2
   <span class="sgr90">[85a6dd25] </span>PositiveFactorizations v0.2.4
@@ -190,7 +190,7 @@ Environment:
   <span class="sgr90">[33c8b6b6] </span>ProgressLogging v0.1.6
   <span class="sgr90">[43287f4e] </span>PtrArrays v1.4.0
   <span class="sgr90">[1fd47b50] </span>QuadGK v2.11.3
-  <span class="sgr90">[8a4e6c94] </span>QuasiMonteCarlo v0.4.2
+  <span class="sgr90">[8a4e6c94] </span>QuasiMonteCarlo v0.4.3
   <span class="sgr90">[c1ae055f] </span>RealDot v0.1.0
   <span class="sgr90">[3cdcf5f2] </span>RecipesBase v1.3.4
   <span class="sgr90">[01d81517] </span>RecipesPipeline v0.6.12
@@ -257,7 +257,7 @@ Environment:
   <span class="sgr90">[83423d85] </span>Cairo_jll v1.18.7+0
   <span class="sgr90">[ee1fde0b] </span>Dbus_jll v1.16.2+0
   <span class="sgr90">[2702e6a9] </span>EpollShim_jll v0.0.20230411+1
-  <span class="sgr90">[2e619515] </span>Expat_jll v2.8.3+0
+  <span class="sgr90">[2e619515] </span>Expat_jll v2.8.4+0
 <span class="sgr33">⌅</span> <span class="sgr90">[b22a6f82] </span>FFMPEG_jll v8.1.2+0
   <span class="sgr90">[f5851436] </span>FFTW_jll v3.3.12+0
   <span class="sgr90">[a3f928ae] </span>Fontconfig_jll v2.17.1+0
@@ -271,11 +271,11 @@ Environment:
   <span class="sgr90">[f8c6e375] </span>Git_jll v2.55.0+0
   <span class="sgr90">[7746bdde] </span>Glib_jll v2.88.3+0
   <span class="sgr90">[3b182d85] </span>Graphite2_jll v1.3.16+0
-  <span class="sgr90">[2e76f6c2] </span>HarfBuzz_jll v100.14003.0+0
+  <span class="sgr90">[2e76f6c2] </span>HarfBuzz_jll v100.14004.0+0
   <span class="sgr90">[1d5cc7b8] </span>IntelOpenMP_jll v2025.2.0+0
   <span class="sgr90">[aacddb02] </span>JpegTurbo_jll v3.2.0+1
   <span class="sgr90">[c1c5ebd0] </span>LAME_jll v3.100.3+0
-  <span class="sgr90">[88015f11] </span>LERC_jll v4.1.0+0
+  <span class="sgr90">[88015f11] </span>LERC_jll v4.2.0+0
   <span class="sgr90">[dad2f222] </span>LLVMExtra_jll v0.0.47+0
   <span class="sgr90">[1d63c593] </span>LLVMOpenMP_jll v22.1.7+0
 <span class="sgr33">⌅</span> <span class="sgr90">[e9f186c6] </span>Libffi_jll v3.4.7+0
@@ -392,4 +392,4 @@ Environment:
   <span class="sgr90">[8e850b90] </span>libblastrampoline_jll v5.15.0+0
   <span class="sgr90">[8e850ede] </span>nghttp2_jll v1.64.0+1
   <span class="sgr90">[3f19e933] </span>p7zip_jll v17.7.0+0
-<span class="sgr36"><span class="sgr1">Info</span></span> Packages marked with <span class="sgr32">⌃</span> and <span class="sgr33">⌅</span> have new versions available. Those with <span class="sgr32">⌃</span> may be upgradable, but those with <span class="sgr33">⌅</span> are restricted by compatibility constraints from upgrading. To see why use `status --outdated -m`</code></pre></details><p>You can also download the <a href="https://github.com/SciML/Surrogates.jl/tree/gh-pages/v7.10.1/assets/Manifest.toml">manifest</a> file and the <a href="https://github.com/SciML/Surrogates.jl/tree/gh-pages/v7.10.1/assets/Project.toml">project</a> file.</p></article><nav class="docs-footer"><a class="docs-footer-nextpage" href="tutorials/">Basics »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.19.0 on <span class="colophon-date" title="Monday 7 September 2026 21:03">Monday 7 September 2026</span>. Using Julia version 1.12.7.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+<span class="sgr36"><span class="sgr1">Info</span></span> Packages marked with <span class="sgr32">⌃</span> and <span class="sgr33">⌅</span> have new versions available. Those with <span class="sgr32">⌃</span> may be upgradable, but those with <span class="sgr33">⌅</span> are restricted by compatibility constraints from upgrading. To see why use `status --outdated -m`</code></pre></details><p>You can also download the <a href="https://github.com/SciML/Surrogates.jl/tree/gh-pages/v7.10.1/assets/Manifest.toml">manifest</a> file and the <a href="https://github.com/SciML/Surrogates.jl/tree/gh-pages/v7.10.1/assets/Project.toml">project</a> file.</p></article><nav class="docs-footer"><a class="docs-footer-nextpage" href="tutorials/">Basics »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.19.0 on <span class="colophon-date" title="Wednesday 9 September 2026 13:39">Wednesday 9 September 2026</span>. Using Julia version 1.12.7.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
