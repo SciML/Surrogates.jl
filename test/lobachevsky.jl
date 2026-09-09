@@ -77,7 +77,7 @@ using Cubature
                     val += (-1)^l * binomial(n, l) * a^(n - 1)
                 end
             end
-            return val * (c / (2^n * factorial(Int64(n) - 1)))
+            return val * (c / 2^n / factorial(Int64(n) - 1))
         end
         function direct_int(point, n)
             res = zero(eltype(point))
@@ -88,7 +88,7 @@ using Cubature
                     res = res + (-1)^k * binomial(n, k) * c^n
                 end
             end
-            return res / (2^n * factorial(Int64(n)))
+            return res / 2^n / factorial(Int64(n))
         end
 
         @test sqrt(12 / 3) == 2.0
