@@ -21,36 +21,36 @@ To enable parallel optimization, we make use of an Ask-Tell interface. The user 
 To ensure that points of interest returned by `potential_optimal_points` are sufficiently far from each other, the function makes use of *virtual points*. They are used as follows:
 
  1. `potential_optimal_points` is told to return `n` points.
- 2. The point with the highest merit function value is selected.
- 3. This point is now treated as a virtual point and is assigned a temporary value that changes the landscape of the merit function. How the temporary value is chosen depends on the strategy used. (see below)
- 4. The point with the new highest merit is selected.
+ 2. The best-scoring candidate is selected. `SRBF` minimizes its merit function, `EI` maximizes expected improvement.
+ 3. This point is now treated as a virtual point: it is added to a temporary copy of the surrogate with an assigned value, which changes the acquisition landscape. How that value is chosen depends on the strategy used (see below). The surrogate you passed in is never modified.
+ 4. The best-scoring candidate under the updated temporary surrogate is selected. Candidates within the minimum-separation tolerance of an already-chosen point are rejected, so a batch never repeats a point.
  5. The process is repeated until `n` points have been selected.
 
 The following strategies are available for virtual point selection for all optimization algorithms:
 
   - "Minimum Constant Liar (MinimumConstantLiar)":
     
-      + The virtual point is assigned using the lowest known value of the merit function across all evaluated points.
+      + The virtual point is assigned the lowest observed objective value.
 
   - "Mean Constant Liar (MeanConstantLiar)":
     
-      + The virtual point is assigned using the mean of the merit function across all evaluated points.
+      + The virtual point is assigned the mean of the observed objective values.
   - "Maximum Constant Liar (MaximumConstantLiar)":
     
-      + The virtual point is assigned using the greatest known value of the merit function across all evaluated points.
+      + The virtual point is assigned the greatest observed objective value.
 
 For Kriging surrogates, specifically, the above and following strategies are available:
 
   - "Kriging Believer (KrigingBeliever):
     
-      + The virtual point is assigned using the mean of the Kriging surrogate at the virtual point.
+      + The virtual point is assigned the Kriging mean at that point, predicted by the temporary surrogate, so each belief accounts for the ones already placed in this batch.
 
   - "Kriging Believer Upper Bound (KrigingBelieverUpperBound)":
     
-      + The virtual point is assigned using 3$\sigma$ above the mean of the Kriging surrogate at the virtual point.
+      + The virtual point is assigned 3$\sigma$ above the temporary surrogate's mean at that point.
   - "Kriging Believer Lower Bound (KrigingBelieverLowerBound)":
     
-      + The virtual point is assigned using 3$\sigma$ below the mean of the Kriging surrogate at the virtual point.
+      + The virtual point is assigned 3$\sigma$ below the temporary surrogate's mean at that point.
 
 In general, MinimumConstantLiar and KrigingBelieverLowerBound tend to favor exploitation, while MaximumConstantLiar and KrigingBelieverUpperBound tend to favor exploration. MeanConstantLiar and KrigingBeliever tend to be compromises between the two.
 

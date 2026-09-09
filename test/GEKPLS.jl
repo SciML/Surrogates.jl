@@ -220,13 +220,19 @@ end
     grads = gradient.(sphere_function, x)
     y = sphere_function.(x)
     g = GEKPLS(x, y, grads, n_comp, delta_x, lb, ub, extra_points, initial_theta)
+    # `maxiters` now counts optimization iterations, so this asks for the same
+    # order of objective evaluations the previous nested loop performed for
+    # `maxiters = 20`. SRBF stops once every candidate falls within `dtol` of an
+    # evaluated point, which caps refinement near `dtol = 1e-3 * norm(ub - lb)`;
+    # the earlier `atol = 1e-4` was reachable only because the proximity filter
+    # ignored the points the run itself added.
     x_point,
         minima = surrogate_optimize!(
         sphere_function, SRBF(), lb, ub, g,
-        RandomSample(); maxiters = 20,
+        RandomSample(); maxiters = 100,
         num_new_samples = 20, needs_gradient = true
     )
-    @test isapprox(minima, 0.0, atol = 0.0001)
+    @test isapprox(minima, 0.0, atol = 0.001)
 end
 
 @testset "Test 11: Check gradient (dimensions = 3; n_comp = 2; extra_points = 3)" begin
