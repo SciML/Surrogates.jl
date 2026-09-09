@@ -24,7 +24,7 @@ using Cubature
         @test_throws ArgumentError LobachevskySurrogate(x, y, 0.0, 2.0, n = 3)
         @test_throws ArgumentError LobachevskySurrogate(x, y, 0.0, 2.0, n = 0)
         @test_throws ArgumentError LobachevskySurrogate(x, y, 0.0, 2.0, n = -2)
-        # factorial(n) overflows Int64 past 20
+        # factorial(Int64(n)) overflows Int64 past 20
         @test_throws ArgumentError LobachevskySurrogate(x, y, 0.0, 2.0, n = 22)
         @test LobachevskySurrogate(x, y, 0.0, 2.0, n = 20) isa LobachevskySurrogate
         @test LobachevskySurrogate(x, y, 0.0, 2.0, alpha = 4.0) isa LobachevskySurrogate
@@ -77,7 +77,7 @@ using Cubature
                     val += (-1)^l * binomial(n, l) * a^(n - 1)
                 end
             end
-            return val * (c / (2^n * factorial(n - 1)))
+            return val * (c / (2^n * factorial(Int64(n) - 1)))
         end
         function direct_int(point, n)
             res = zero(eltype(point))
@@ -88,7 +88,7 @@ using Cubature
                     res = res + (-1)^k * binomial(n, k) * c^n
                 end
             end
-            return res / (2^n * factorial(n))
+            return res / (2^n * factorial(Int64(n)))
         end
 
         @test sqrt(12 / 3) == 2.0

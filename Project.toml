@@ -40,6 +40,7 @@ SurrogatesPolyChaosExt = "PolyChaos"
 SurrogatesSVMExt = ["LIBSVM", "ScikitLearnBase"]
 SurrogatesXGBoostExt = "XGBoost"
 
+
 [compat]
 AbstractGPs = "0.5.18"
 Aqua = "0.8"
@@ -58,7 +59,7 @@ LinearAlgebra = "1.10"
 NNlib = "0.9"
 Optimisers = "0.4.4"
 OptimizationOptimJL = "0.4.16"
-PolyChaos = "2.0"
+PolyChaos = "2.1.2"
 PrecompileTools = "1.2"
 QuadGK = "2.11.3"
 QuasiMonteCarlo = "0.4"
