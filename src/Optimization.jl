@@ -229,7 +229,8 @@ second-order polynomial optimizer.
 
 # Fields
 
-  - `p`: candidate-pool parameter used by the SOP selection logic.
+  - `p`: number of search centers carried, and so the number of candidate
+    points proposed per iteration.
 
 # Usage
 
@@ -284,31 +285,136 @@ struct RTEA{K, Z, P, N, S} <: SurrogateOptimizationAlgorithm
     sigma::S
 end
 
-function merit_function(
-        point, w, surr::AbstractSurrogate, s_max, s_min, d_max, d_min,
-        box_size
-    )
-    if length(point) == 1
-        D_x = box_size + 1
-        for i in 1:length(surr.x)
-            distance = norm(surr.x[i] - point)
-            if distance < D_x
-                D_x = distance
-            end
-        end
-        return w * (surr(point) - s_min) / (s_max - s_min) +
-            (1 - w) * ((d_max - D_x) / (d_max - d_min))
+# Smallest separation two evaluated points are allowed to have, as a fraction
+# of the domain diameter. Candidates closer than this to an existing sample are
+# discarded: they buy almost no information and, for an interpolating
+# surrogate, make the interpolation matrix singular.
+_candidate_tolerance(lb, ub) = 1.0e-3 * norm(ub .- lb)
+
+# The best observation held by a surrogate, as the `(point, value)` pair every
+# single-objective method returns.
+function _best_point(surr::AbstractSurrogate)
+    index = argmin(surr.y)
+    return (surr.x[index], surr.y[index])
+end
+
+# Distance from `point` to the nearest sample of `surr`.
+_nearest_sample_distance(surr::AbstractSurrogate, point) =
+    minimum(norm(x .- point) for x in surr.x)
+
+# Rescale `value` onto `[0, 1]` across `[lo, hi]`. A range too narrow to divide
+# by scores `1`, the convention both criteria use in Regis and Shoemaker (2007).
+function _unit_score(value, lo, hi)
+    span = hi - lo
+    return span <= 1.0e-6 ? one(float(value)) : (value - lo) / span
+end
+
+"""
+    merit_function(point, w, surr, s_max, s_min, d_max, d_min)
+
+Weighted score of a candidate point, to be minimized.
+
+Following Regis and Shoemaker (2007), the score combines two criteria, each
+rescaled onto `[0, 1]` over the candidate pool: the surrogate prediction
+`surr(point)` against the pool's range `[s_min, s_max]`, and the distance from
+`point` to the nearest evaluated sample against the pool's range
+`[d_min, d_max]`, inverted so that an isolated candidate scores low. The weight
+`w` trades one against the other, and cycling `w` over successive iterations is
+what alternates the search between exploitation and exploration.
+
+## References
+
+Regis, R.G. and Shoemaker, C.A. (2007). A stochastic radial basis function
+method for the global optimization of expensive functions. *INFORMS Journal on
+Computing*, 19(4), 497-509.
+"""
+function merit_function(point, w, surr::AbstractSurrogate, s_max, s_min, d_max, d_min)
+    D_x = _nearest_sample_distance(surr, point)
+    return w * _unit_score(surr(point), s_min, s_max) +
+        (1 - w) * _unit_score(d_max - D_x, zero(d_max - D_x), d_max - d_min)
+end
+
+# Cyclic weight pattern of Regis and Shoemaker (2007), shared by SRBF and
+# DYCORS: mostly exploratory at 0.3, almost purely greedy at 0.95.
+const _SRBF_WEIGHTS = (0.3, 0.5, 0.8, 0.95)
+
+# Trust region of half-width `3 * scale * ||incumbent - bound||` around the
+# incumbent, clipped to the domain.
+function _trust_region(incumbent_x, lb::Number, ub::Number, scale)
+    new_lb = max(lb, incumbent_x - 3 * scale * norm(incumbent_x - lb))
+    new_ub = min(ub, incumbent_x + 3 * scale * norm(incumbent_x - ub))
+    return new_lb, new_ub
+end
+
+function _trust_region(incumbent_x, lb, ub, scale)
+    new_lb = incumbent_x .- 3 * scale * norm(incumbent_x .- lb)
+    new_ub = incumbent_x .+ 3 * scale * norm(incumbent_x .- ub)
+    return vec(max.(new_lb, lb)), vec(min.(new_ub, ub))
+end
+
+# Trust-region schedule: double the region after three consecutive improvements,
+# halve it after five consecutive failures, and reset the counters either way.
+# The fourth return value says whether the width moved, so a caller tests it
+# against its usable range only when there is something new to test -- the
+# starting width is not itself a reason to stop.
+function _adjust_trust_region(scale, success, failure, improved)
+    if improved
+        success, failure = success + 1, 0
     else
-        D_x = norm(box_size) + 1
-        for i in 1:length(surr.x)
-            distance = norm(surr.x[i] .- point)
-            if distance < D_x
-                D_x = distance
-            end
-        end
-        return w * (surr(point) - s_min) / (s_max - s_min) +
-            (1 - w) * ((d_max - D_x) / (d_max - d_min))
+        success, failure = 0, failure + 1
     end
+    if success == 3
+        return 2 * scale, 0, 0, true
+    elseif failure == 5
+        return scale / 2, 0, 0, true
+    end
+    return scale, success, failure, false
+end
+
+# Expected improvement of Jones, Schonlau and Welch (1998) at `point`, with the
+# exploration offset `xi`. Exactly zero where the surrogate carries no
+# predictive variance: the value there is already known, so nothing can be
+# gained by evaluating it again.
+function _expected_improvement(krig, point, f_min, xi = 0.01)
+    sigma = std_error_at_point(krig, point)
+    abs(sigma) <= 1.0e-6 && return zero(float(f_min))
+    improvement = f_min - krig(point) - xi
+    z = improvement / sigma
+    return improvement * cdf(Normal(), z) + sigma * pdf(Normal(), z)
+end
+
+# A sampled candidate in the form `update!` and the objective expect: a scalar
+# stays a scalar, a coordinate vector becomes a tuple.
+_as_new_sample(x::Number) = x
+_as_new_sample(x) = Tuple(x)
+
+# Pick the candidate that optimizes `scores` among those at least `dtol` away
+# from every point in `xs`, dropping the ones that are too close as it goes.
+# Returns `(candidate, score)`, or `nothing` once the pool is exhausted.
+#
+# `scores` and `candidates` are consumed in step, so a caller that needs them
+# afterwards must pass copies.
+function _select_distant_candidate!(scores, candidates, xs, dtol; pick = argmin)
+    while !isempty(candidates)
+        i = pick(scores)
+        candidate = candidates[i]
+        if all(norm(x .- candidate) > dtol for x in xs)
+            return (candidate, scores[i])
+        end
+        deleteat!(scores, i)
+        deleteat!(candidates, i)
+    end
+    return nothing
+end
+
+# Range of surrogate predictions and of nearest-sample distances over a
+# candidate pool -- the four normalizing constants `merit_function` needs.
+function _merit_ranges(surr::AbstractSurrogate, candidates)
+    s = [surr(c) for c in candidates]
+    d = [_nearest_sample_distance(surr, c) for c in candidates]
+    s_min, s_max = extrema(s)
+    d_min, d_max = extrema(d)
+    return s_max, s_min, d_max, d_min
 end
 
 """
@@ -340,7 +446,10 @@ call/update contract is described under [`AbstractSurrogate`](@ref).
 
 # Keywords
 
-  - `maxiters::Integer = 100`: maximum number of optimization iterations.
+  - `maxiters::Integer = 100`: maximum number of optimization iterations. One
+    iteration costs one objective evaluation, so this also caps how many times
+    `objective` is called -- except for [`SOP`](@ref), which proposes one
+    candidate per search center and so costs `SOP.p` evaluations per iteration.
   - `num_new_samples::Integer = 100`: number of candidate points considered at
     each iteration.
   - `needs_gradient::Bool = false`: whether the selected method should evaluate
@@ -349,9 +458,15 @@ call/update contract is described under [`AbstractSurrogate`](@ref).
 
 # Returns
 
-The best point and objective value found by the selected single-objective
-method. Multi-objective methods return their algorithm-specific Pareto set and
-front.
+`(point, value)`: the best observation the surrogate holds when the search
+stops. The value is always a measured objective value, never an acquisition
+score. Multi-objective methods ([`SMB`](@ref), [`RTEA`](@ref)) return a Pareto
+set and its front instead.
+
+A search can stop before `maxiters` is reached: when every remaining candidate
+falls within the minimum separation of an already-evaluated point ("Out of
+sampling points"), or when the trust region grows past the domain or shrinks
+below a usable width.
 
 # Example
 
@@ -375,300 +490,57 @@ function surrogate_optimize!(
     scale = 0.2
     success = 0
     failure = 0
-    w_range = [0.3, 0.5, 0.7, 0.95]
-
-    #Vector containing size in each direction
-    box_size = lb - ub
-    success = 0
-    failures = 0
-    dtol = 1.0e-3 * norm(ub - lb)
-    d = length(surr.x)
+    dtol = _candidate_tolerance(lb, ub)
     num_of_iterations = 0
-    for w in Iterators.cycle(w_range)
+    for w in Iterators.cycle(_SRBF_WEIGHTS)
         num_of_iterations += 1
-        if num_of_iterations == maxiters
-            index = argmin(surr.y)
-            return (surr.x[index], surr.y[index])
+        num_of_iterations > maxiters && return _best_point(surr)
+
+        #1) Sample near the incumbent
+        incumbent_value = minimum(surr.y)
+        incumbent_x = surr.x[argmin(surr.y)]
+        new_lb, new_ub = _trust_region(incumbent_x, lb, ub, scale)
+        new_sample = sample(num_new_samples, new_lb, new_ub, sample_type)
+
+        #2) Score the candidates and take the best one far enough from the
+        #   samples already evaluated
+        s_max, s_min, d_max, d_min = _merit_ranges(surr, new_sample)
+        merits = [
+            merit_function(c, w, surr, s_max, s_min, d_max, d_min) for c in new_sample
+        ]
+        selection = _select_distant_candidate!(merits, new_sample, surr.x, dtol)
+        if selection === nothing
+            println("Out of sampling points")
+            return _best_point(surr)
         end
-        for k in 1:maxiters
-            incumbent_value = minimum(surr.y)
-            incumbent_x = surr.x[argmin(surr.y)]
+        adaptive_point_x = _as_new_sample(first(selection))
 
-            new_lb = incumbent_x .- 3 * scale * norm(incumbent_x .- lb)
-            new_ub = incumbent_x .+ 3 * scale * norm(incumbent_x .- ub)
-            new_lb = vec(max.(new_lb, lb))
-            new_ub = vec(min.(new_ub, ub))
-            new_sample = sample(num_new_samples, new_lb, new_ub, sample_type)
-            s = zeros(eltype(surr.x[1]), num_new_samples)
-            for j in 1:num_new_samples
-                s[j] = surr(new_sample[j])
-            end
-            s_max = maximum(s)
-            s_min = minimum(s)
-
-            d_min = norm(box_size .+ 1)
-            d_max = 0.0
-            for r in 1:length(surr.x)
-                for c in 1:num_new_samples
-                    distance_rc = norm(surr.x[r] .- new_sample[c])
-                    if distance_rc > d_max
-                        d_max = distance_rc
-                    end
-                    if distance_rc < d_min
-                        d_min = distance_rc
-                    end
-                end
-            end
-
-            #3)Evaluate merit function in the sampled points
-
-            evaluation_of_merit_function = zeros(float(eltype(surr.x[1])), num_new_samples)
-            @inbounds for r in 1:num_new_samples
-                evaluation_of_merit_function[r] = merit_function(
-                    new_sample[r], w, surr,
-                    s_max, s_min, d_max, d_min,
-                    box_size
-                )
-            end
-            new_addition = false
-            adaptive_point_x = Tuple{}
-            diff_x = zeros(eltype(surr.x[1]), d)
-            while new_addition == false
-                #find minimum
-                new_min_y = minimum(evaluation_of_merit_function)
-                min_index = argmin(evaluation_of_merit_function)
-                new_min_x = new_sample[min_index]
-                for l in 1:d
-                    diff_x[l] = norm(surr.x[l] .- new_min_x)
-                end
-                bit_x = diff_x .> dtol
-                #new_min_x has to have some distance from krig.x
-                if false in bit_x
-                    #The new_point is not actually that new, discard it!
-
-                    deleteat!(evaluation_of_merit_function, min_index[1])
-                    deleteat!(new_sample, min_index)
-
-                    if length(new_sample) == 0
-                        println("Out of sampling points")
-                        index = argmin(surr.y)
-                        return (surr.x[index], surr.y[index])
-                    end
-                else
-                    new_addition = true
-                    adaptive_point_x = Tuple(new_min_x)
-                end
-            end
-
-            #4) Evaluate objective function at adaptive point
-            adaptive_point_y = obj(adaptive_point_x)
-
-            #5) Update surrogate with (adaptive_point,objective(adaptive_point)
-            if (needs_gradient)
-                adaptive_grad = Zygote.gradient(obj, adaptive_point_x)
-                update!(surr, adaptive_point_x, adaptive_point_y, adaptive_grad)
-            else
-                update!(surr, adaptive_point_x, adaptive_point_y)
-            end
-
-            #6) How to go on?
-            if surr(adaptive_point_x) < incumbent_value
-                #success
-                incumbent_x = adaptive_point_x
-                incumbent_value = adaptive_point_y
-                if failure == 0
-                    success += 1
-                else
-                    failure = 0
-                    success += 1
-                end
-            else
-                #failure
-                if success == 0
-                    failure += 1
-                else
-                    success = 0
-                    failure += 1
-                end
-            end
-
-            if success == 3
-                scale = scale * 2
-                if scale > 0.8 * norm(ub - lb)
-                    println("Exiting, scale too big")
-                    index = argmin(surr.y)
-                    return (surr.x[index], surr.y[index])
-                end
-                success = 0
-                failure = 0
-            end
-
-            if failure == 5
-                scale = scale / 2
-                #check bounds and go on only if > 1e-5*interval
-                if scale < 1.0e-5
-                    println("Exiting, too narrow")
-                    index = argmin(surr.y)
-                    return (surr.x[index], surr.y[index])
-                end
-                success = 0
-                failure = 0
-            end
-        end
-    end
-    return
-end
-
-"""
-SRBF 1D:
-surrogate_optimize!(obj::Function,::SRBF,lb::Number,ub::Number,surr::AbstractSurrogate,sample_type::SamplingAlgorithm;maxiters=100,num_new_samples=100)
-"""
-function surrogate_optimize!(
-        obj::Function, ::SRBF, lb::Number, ub::Number,
-        surr::AbstractSurrogate, sample_type::SamplingAlgorithm;
-        maxiters = 100, num_new_samples = 100
-    )
-    #Suggested by:
-    #https://www.mathworks.com/help/gads/surrogate-optimization-algorithm.html
-    scale = 0.2
-    success = 0
-    failure = 0
-    w_range = [0.3, 0.5, 0.7, 0.95]
-    box_size = lb - ub
-    success = 0
-    failures = 0
-    dtol = 1.0e-3 * norm(ub - lb)
-    num_of_iterations = 0
-    for w in Iterators.cycle(w_range)
-        num_of_iterations += 1
-        if num_of_iterations == maxiters
-            index = argmin(surr.y)
-            return (surr.x[index], surr.y[index])
-        end
-        for k in 1:maxiters
-            #1) Sample near incumbent (the 2 fraction is arbitrary here)
-            incumbent_value = minimum(surr.y)
-            incumbent_x = surr.x[argmin(surr.y)]
-
-            new_lb = incumbent_x - scale * norm(incumbent_x - lb)
-            new_ub = incumbent_x + scale * norm(incumbent_x - ub)
-            if new_lb < lb
-                new_lb = lb
-            end
-            if new_ub > ub
-                new_ub = ub
-            end
-            new_sample = sample(num_new_samples, new_lb, new_ub, sample_type)
-
-            #2) Create  merit function
-            s = zeros(eltype(surr.x[1]), num_new_samples)
-            for j in 1:num_new_samples
-                s[j] = surr(new_sample[j])
-            end
-            s_max = maximum(s)
-            s_min = minimum(s)
-
-            d_min = box_size + 1
-            d_max = 0.0
-            for r in 1:length(surr.x)
-                for c in 1:num_new_samples
-                    distance_rc = norm(surr.x[r] - new_sample[c])
-                    if distance_rc > d_max
-                        d_max = distance_rc
-                    end
-                    if distance_rc < d_min
-                        d_min = distance_rc
-                    end
-                end
-            end
-            #3) Evaluate merit function at the sampled points
-            evaluation_of_merit_function = map(
-                x -> merit_function(
-                    x, w, surr, s_max,
-                    s_min, d_max, d_min, box_size
-                ),
-                new_sample
-            )
-
-            new_addition = false
-            adaptive_point_x = zero(eltype(new_sample[1]))
-            while new_addition == false
-                #find minimum
-                new_min_y = minimum(evaluation_of_merit_function)
-                min_index = argmin(evaluation_of_merit_function)
-                new_min_x = new_sample[min_index]
-
-                diff_x = abs.(surr.x .- new_min_x)
-                bit_x = diff_x .> dtol
-                #new_min_x has to have some distance from krig.x
-                if false in bit_x
-                    #The new_point is not actually that new, discard it!
-                    deleteat!(evaluation_of_merit_function, min_index)
-                    deleteat!(new_sample, min_index)
-                    if length(new_sample) == 0
-                        println("Out of sampling points")
-                        index = argmin(surr.y)
-                        return (surr.x[index], surr.y[index])
-                    end
-                else
-                    new_addition = true
-                    adaptive_point_x = new_min_x
-                end
-            end
-            #4) Evaluate objective function at adaptive point
-            adaptive_point_y = obj(adaptive_point_x)
-
-            #5) Update surrogate with (adaptive_point,objective(adaptive_point)
+        #3) Evaluate the objective there and refit
+        adaptive_point_y = obj(adaptive_point_x)
+        if needs_gradient
+            adaptive_grad = Zygote.gradient(obj, adaptive_point_x)
+            update!(surr, adaptive_point_x, adaptive_point_y, adaptive_grad)
+        else
             update!(surr, adaptive_point_x, adaptive_point_y)
+        end
 
-            #6) How to go on?
-            if surr(adaptive_point_x) < incumbent_value
-                #success
-                incumbent_x = adaptive_point_x
-                incumbent_value = adaptive_point_y
-                if failure == 0
-                    success += 1
-                else
-                    failure = 0
-                    success += 1
-                end
-            else
-                #failure
-                if success == 0
-                    failure += 1
-                else
-                    success = 0
-                    failure += 1
-                end
-            end
-
-            if success == 3
-                scale = scale * 2
-                #check bounds cannot go more than [a,b]
-                if scale > 0.8 * norm(ub - lb)
-                    println("Exiting, scale too big")
-                    index = argmin(surr.y)
-                    return (surr.x[index], surr.y[index])
-                end
-                success = 0
-                failure = 0
-            end
-
-            if failure == 5
-                scale = scale / 2
-                #check bounds and go on only if > 1e-5*interval
-                if scale < 1.0e-5
-                    println("Exiting, too narrow")
-                    index = argmin(surr.y)
-                    return (surr.x[index], surr.y[index])
-                end
-                success = 0
-                failure = 0
-            end
+        #4) Widen or narrow the trust region, judged on the measured value
+        #   rather than the refitted surrogate's prediction
+        scale, success, failure,
+            resized = _adjust_trust_region(
+            scale, success, failure, adaptive_point_y < incumbent_value
+        )
+        if resized && scale > 0.8 * norm(ub - lb)
+            println("Exiting, scale too big")
+            return _best_point(surr)
+        elseif resized && scale < 1.0e-5
+            println("Exiting, too narrow")
+            return _best_point(surr)
         end
     end
     return
 end
+
 
 """
     potential_optimal_points(alg, strategy, lb, ub, surrogate, sample_type, n_parallel;
@@ -711,210 +583,41 @@ function potential_optimal_points(
         num_new_samples = 500
     )
     scale = 0.2
-    w_range = [0.3, 0.5, 0.7, 0.95]
-    w_cycle = Iterators.cycle(w_range)
-
+    w_cycle = Iterators.cycle(_SRBF_WEIGHTS)
     w, state = iterate(w_cycle)
+    dtol = _candidate_tolerance(lb, ub)
 
-    #Vector containing size in each direction
-    box_size = lb - ub
-    dtol = 1.0e-3 * norm(ub - lb)
-    d = length(surr.x)
     incumbent_x = surr.x[argmin(surr.y)]
-
-    new_lb = incumbent_x .- 3 * scale * norm(incumbent_x .- lb)
-    new_ub = incumbent_x .+ 3 * scale * norm(incumbent_x .- ub)
-
-    @inbounds for i in 1:length(new_lb)
-        if new_lb[i] < lb[i]
-            new_lb = collect(new_lb)
-            new_lb[i] = lb[i]
-        end
-        if new_ub[i] > ub[i]
-            new_ub = collect(new_ub)
-            new_ub[i] = ub[i]
-        end
-    end
-
+    new_lb, new_ub = _trust_region(incumbent_x, lb, ub, scale)
     new_sample = sample(num_new_samples, new_lb, new_ub, sample_type)
-    s = zeros(eltype(surr.x[1]), num_new_samples)
-    for j in 1:num_new_samples
-        s[j] = surr(new_sample[j])
-    end
-    s_max = maximum(s)
-    s_min = minimum(s)
 
-    d_min = norm(box_size .+ 1)
-    d_max = 0.0
-    for r in 1:length(surr.x)
-        for c in 1:num_new_samples
-            distance_rc = norm(surr.x[r] .- new_sample[c])
-            if distance_rc > d_max
-                d_max = distance_rc
-            end
-            if distance_rc < d_min
-                d_min = distance_rc
-            end
-        end
-    end
-
+    # Virtual points accumulate here; the true surrogate is left untouched.
     tmp_surr = deepcopy(surr)
+    proposed_points_x = Vector{typeof(surr.x[1])}(undef, n_parallel)
+    merit_of_proposed_points = zeros(float(eltype(surr.y)), n_parallel)
 
     new_addition = 0
-    diff_x = zeros(eltype(surr.x[1]), d)
-
-    evaluation_of_merit_function = zeros(float(eltype(surr.x[1])), num_new_samples)
-    proposed_points_x = Vector{typeof(surr.x[1])}(undef, n_parallel)
-    merit_of_proposed_points = zeros(Float64, n_parallel)
-
     while new_addition < n_parallel
-        #find minimum
-
-        @inbounds for r in eachindex(evaluation_of_merit_function)
-            evaluation_of_merit_function[r] = merit_function(
-                new_sample[r], w, tmp_surr,
-                s_max, s_min, d_max, d_min,
-                box_size
+        # Scored against `tmp_surr`, so the liars placed at the points already
+        # chosen for this batch steer the next choice away from them, and the
+        # separation filter sees them too.
+        s_max, s_min, d_max, d_min = _merit_ranges(tmp_surr, new_sample)
+        merits = [
+            merit_function(c, w, tmp_surr, s_max, s_min, d_max, d_min)
+                for c in new_sample
+        ]
+        selection = _select_distant_candidate!(merits, new_sample, tmp_surr.x, dtol)
+        if selection === nothing
+            println("Out of sampling points")
+            return (
+                proposed_points_x[1:new_addition],
+                merit_of_proposed_points[1:new_addition],
             )
         end
 
-        min_index = argmin(evaluation_of_merit_function)
-        new_min_x = new_sample[min_index]
-        min_x_merit = evaluation_of_merit_function[min_index]
-
-        for l in 1:d
-            diff_x[l] = norm(surr.x[l] .- new_min_x)
-        end
-        bit_x = diff_x .> dtol
-        #new_min_x has to have some distance from krig.x
-        if false in bit_x
-            #The new_point is not actually that new, discard it!
-
-            deleteat!(evaluation_of_merit_function, min_index)
-            deleteat!(new_sample, min_index)
-
-            if length(new_sample) == 0
-                println("Out of sampling points")
-                index = argmin(surr.y)
-                return (surr.x[index], surr.y[index])
-            end
-        else
-            new_addition += 1
-            proposed_points_x[new_addition] = new_min_x
-            merit_of_proposed_points[new_addition] = min_x_merit
-
-            # Update temporary surrogate using provided strategy
-            calculate_liars(strategy, tmp_surr, surr, new_min_x)
-        end
-
-        #4) Update w
-        w, state = iterate(w_cycle, state)
-    end
-
-    return (proposed_points_x, merit_of_proposed_points)
-end
-
-# Ask SRBF 1D
-function potential_optimal_points(
-        ::SRBF, strategy, lb::Number, ub::Number,
-        surr::AbstractSurrogate,
-        sample_type::SamplingAlgorithm, n_parallel;
-        num_new_samples = 500
-    )
-    scale = 0.2
-    success = 0
-    w_range = [0.3, 0.5, 0.7, 0.95]
-    w_cycle = Iterators.cycle(w_range)
-
-    w, state = iterate(w_cycle)
-
-    box_size = lb - ub
-    success = 0
-    failures = 0
-    dtol = 1.0e-3 * norm(ub - lb)
-    num_of_iterations = 0
-
-    #1) Sample near incumbent (the 2 fraction is arbitrary here)
-    incumbent_x = surr.x[argmin(surr.y)]
-
-    new_lb = incumbent_x - scale * norm(incumbent_x - lb)
-    new_ub = incumbent_x + scale * norm(incumbent_x - ub)
-    if new_lb < lb
-        new_lb = lb
-    end
-    if new_ub > ub
-        new_ub = ub
-    end
-
-    new_sample = sample(num_new_samples, new_lb, new_ub, sample_type)
-
-    #2) Create  merit function
-    s = zeros(eltype(surr.x[1]), num_new_samples)
-    for j in 1:num_new_samples
-        s[j] = surr(new_sample[j])
-    end
-    s_max = maximum(s)
-    s_min = minimum(s)
-
-    d_min = box_size + 1
-    d_max = 0.0
-    for r in 1:length(surr.x)
-        for c in 1:num_new_samples
-            distance_rc = norm(surr.x[r] - new_sample[c])
-            if distance_rc > d_max
-                d_max = distance_rc
-            end
-            if distance_rc < d_min
-                d_min = distance_rc
-            end
-        end
-    end
-
-    new_addition = 0
-    proposed_points_x = zeros(eltype(new_sample[1]), n_parallel)
-    merit_of_proposed_points = zeros(eltype(new_sample[1]), n_parallel)
-
-    # Temporary surrogate for virtual points
-    tmp_surr = deepcopy(surr)
-
-    # Loop until we have n_parallel new points
-    while new_addition < n_parallel
-
-        #3) Evaluate merit function at the sampled points in parallel
-        evaluation_of_merit_function = merit_function.(
-            new_sample, w, tmp_surr, s_max,
-            s_min, d_max, d_min, box_size
-        )
-
-        #find minimum
-        min_index = argmin(evaluation_of_merit_function)
-        new_min_x = new_sample[min_index]
-        min_x_merit = evaluation_of_merit_function[min_index]
-
-        diff_x = abs.(tmp_surr.x .- new_min_x)
-        bit_x = diff_x .> dtol
-        #new_min_x has to have some distance from krig.x
-        if false in bit_x
-            #The new_point is not actually that new, discard it!
-            deleteat!(evaluation_of_merit_function, min_index)
-            deleteat!(new_sample, min_index)
-            if length(new_sample) == 0
-                println("Out of sampling points")
-                return (
-                    proposed_points_x[1:new_addition],
-                    merit_of_proposed_points[1:new_addition],
-                )
-            end
-        else
-            new_addition += 1
-            proposed_points_x[new_addition] = new_min_x
-            merit_of_proposed_points[new_addition] = min_x_merit
-
-            # Update temporary surrogate using provided strategy
-            calculate_liars(strategy, tmp_surr, surr, new_min_x)
-        end
-
-        #4) Update w
+        new_addition += 1
+        proposed_points_x[new_addition], merit_of_proposed_points[new_addition] = selection
+        calculate_liars(strategy, tmp_surr, surr, proposed_points_x[new_addition])
         w, state = iterate(w_cycle, state)
     end
 
@@ -922,208 +625,66 @@ function potential_optimal_points(
 end
 
 """
-This is an implementation of Lower Confidence Bound (LCB),
-a popular acquisition function in Bayesian optimization.
-Under a Gaussian process (GP) prior, the goal is to minimize:
-``LCB(x) := E[x] - k * \\sqrt{(V[x])}``
-default value ``k = 2``.
-"""
-function surrogate_optimize!(
-        obj::Function, ::LCBS, lb::Number, ub::Number, krig,
-        sample_type::SamplingAlgorithm; maxiters = 100,
-        num_new_samples = 100, k = 2.0
-    )
-    dtol = 1.0e-3 * norm(ub - lb)
-    for i in 1:maxiters
-        new_sample = sample(num_new_samples, lb, ub, sample_type)
-        evaluations = zeros(eltype(krig.x[1]), num_new_samples)
-        for j in 1:num_new_samples
-            evaluations[j] = krig(new_sample[j]) +
-                k * std_error_at_point(krig, new_sample[j])
-        end
+    surrogate_optimize!(obj, ::LCBS, lb, ub, krig, sample_type;
+        maxiters = 100, num_new_samples = 100, k = 2.0)
 
-        new_addition = false
-        min_add_x = zero(eltype(new_sample[1]))
-        min_add_y = zero(eltype(krig.y[1]))
-        while new_addition == false
-            #find minimum
-            new_min_y = minimum(evaluations)
-            min_index = argmin(evaluations)
-            new_min_x = new_sample[min_index]
+Minimize `obj` with the lower confidence bound acquisition function.
 
-            diff_x = abs.(krig.x .- new_min_x)
-            bit_x = diff_x .> dtol
-            #new_min_x has to have some distance from krig.x
-            if false in bit_x
-                #The new_point is not actually that new, discard it!
-                deleteat!(evaluations, min_index)
-                deleteat!(new_sample, min_index)
+Under a Gaussian process prior the acquisition is
 
-                if length(new_sample) == 0
-                    println("Out of sampling points")
-                    index = argmin(krig.y)
-                    return (krig.x[index], krig.y[index])
-                end
-            else
-                new_addition = true
-                min_add_x = new_min_x
-                min_add_y = new_min_y
-            end
-        end
-        if min_add_y < 1.0e-6 * (maximum(krig.y) - minimum(krig.y))
-            return
-        else
-            if (abs(min_add_y) == Inf || min_add_y == NaN)
-                println("New point being added is +Inf or NaN, skipping.\n")
-            else
-                update!(krig, min_add_x, min_add_y)
-            end
-        end
-    end
-    return
-end
+``LCB(x) = E[x] - k\\sqrt{V[x]}``
 
-"""
-This is an implementation of Lower Confidence Bound (LCB),
-a popular acquisition function in Bayesian optimization.
-Under a Gaussian process (GP) prior, the goal is to minimize:
+which is minimized over a fresh candidate pool at each iteration. Larger `k`
+weights the predictive standard deviation more heavily and so explores more.
+The search stops once no candidate's bound improves on the best observation,
+meaning none of them can plausibly beat the incumbent.
 
-``LCB(x) := E[x] - k * \\sqrt{(V[x])}``
+`krig` must provide `std_error_at_point`, so this method needs a surrogate with
+a predictive variance such as [`Kriging`](@ref).
 
-default value ``k = 2``.
+## References
+
+Cox, D.D. and John, S. (1992). A statistical method for global optimization.
+*IEEE International Conference on Systems, Man, and Cybernetics*, 1241-1246.
+
+Srinivas, N., Krause, A., Kakade, S.M. and Seeger, M. (2010). Gaussian process
+optimization in the bandit setting: no regret and experimental design.
+*ICML*, 1015-1022.
 """
 function surrogate_optimize!(
         obj::Function, ::LCBS, lb, ub, krig,
         sample_type::SamplingAlgorithm; maxiters = 100,
         num_new_samples = 100, k = 2.0
     )
-    dtol = 1.0e-3 * norm(ub - lb)
-    for i in 1:maxiters
-        d = length(krig.x)
+    dtol = _candidate_tolerance(lb, ub)
+    for _ in 1:maxiters
         new_sample = sample(num_new_samples, lb, ub, sample_type)
-        evaluations = zeros(eltype(krig.x[1]), num_new_samples)
-        for j in 1:num_new_samples
-            evaluations[j] = krig(new_sample[j]) +
-                k * std_error_at_point(krig, new_sample[j])
-        end
+        bounds = [
+            krig(c) - k * std_error_at_point(krig, c) for c in new_sample
+        ]
 
-        new_addition = false
-        min_add_x = Tuple{}
-        min_add_y = zero(eltype(krig.y[1]))
-        diff_x = zeros(eltype(krig.x[1]), d)
-        while new_addition == false
-            #find minimum
-            new_min_y = minimum(evaluations)
-            min_index = argmin(evaluations)
-            new_min_x = new_sample[min_index]
-            for l in 1:d
-                diff_x[l] = norm(krig.x[l] .- new_min_x)
-            end
-            bit_x = diff_x .> dtol
-            #new_min_x has to have some distance from krig.x
-            if false in bit_x
-                #The new_point is not actually that new, discard it!
-                deleteat!(evaluations, min_index)
-                deleteat!(new_sample, min_index)
-
-                if length(new_sample) == 0
-                    println("Out of sampling points")
-                    index = argmin(krig.y)
-                    return (krig.x[index], krig.y[index])
-                end
-            else
-                new_addition = true
-                min_add_x = new_min_x
-                min_add_y = new_min_y
-            end
+        selection = _select_distant_candidate!(bounds, new_sample, krig.x, dtol)
+        if selection === nothing
+            println("Out of sampling points")
+            return _best_point(krig)
         end
-        if min_add_y < 1.0e-6 * (maximum(krig.y) - minimum(krig.y))
-            index = argmin(krig.y)
-            return (krig.x[index], krig.y[index])
+        min_add_x, min_add_bound = selection
+
+        # Nothing left that could beat the incumbent even at its optimistic
+        # bound, so there is no point evaluating further.
+        min_add_bound >= minimum(krig.y) && return _best_point(krig)
+
+        min_add_y = obj(min_add_x)
+        if isinf(min_add_y) || isnan(min_add_y)
+            println("New point being added is +Inf or NaN, skipping.")
         else
-            min_add_y = obj(min_add_x) # I actually add the objc function at that point
-            if (abs(min_add_y) == Inf || min_add_y == NaN)
-                println("New point being added is +Inf or NaN, skipping.\n")
-            else
-                update!(krig, Tuple(min_add_x), min_add_y)
-            end
+            update!(krig, _as_new_sample(min_add_x), min_add_y)
         end
     end
-    return
+    return _best_point(krig)
 end
 
-"""
-Expected improvement method 1D
-"""
-function surrogate_optimize!(
-        obj::Function, ::EI, lb::Number, ub::Number, krig,
-        sample_type::SamplingAlgorithm; maxiters = 100,
-        num_new_samples = 100
-    )
-    dtol = 1.0e-3 * norm(ub - lb)
-    eps = 0.01
-    for i in 1:maxiters
-        # Sample lots of points from the design space -- we will evaluate the EI function at these points
-        new_sample = sample(num_new_samples, lb, ub, sample_type)
-
-        # Find the best point so far
-        f_min = minimum(krig.y)
-
-        # Allocate some arrays
-        evaluations = zeros(eltype(krig.x[1]), num_new_samples)  # Holds EI function evaluations
-        point_found = false                                     # Whether we have found a new point to test
-        new_x_max = zero(eltype(krig.x[1]))                     # New x point
-        new_EI_max = zero(eltype(krig.x[1]))                    # EI at new x point
-        while point_found == false
-            # For each point in the sample set, evaluate the Expected Improvement function
-            for j in 1:length(new_sample)
-                std = std_error_at_point(krig, new_sample[j])
-                u = krig(new_sample[j])
-                if abs(std) > 1.0e-6
-                    z = (f_min - u - eps) / std
-                else
-                    z = 0
-                end
-                # Evaluate EI at point new_sample[j]
-                evaluations[j] = (f_min - u - eps) * cdf(Normal(), z) +
-                    std * pdf(Normal(), z)
-            end
-            # find the sample which maximizes the EI function
-            index_max = argmax(evaluations)
-            x_new = new_sample[index_max]   # x point which maximized EI
-            y_new = maximum(evaluations)    # EI at the new point
-            diff_x = abs.(krig.x .- x_new)
-            bit_x = diff_x .> dtol
-            #new_min_x has to have some distance from krig.x
-            if false in bit_x
-                #The new_point is not actually that new, discard it!
-                deleteat!(evaluations, index_max)
-                deleteat!(new_sample, index_max)
-                if length(new_sample) == 0
-                    println("Out of sampling points")
-                    index = argmin(krig.y)
-                    return (krig.x[index], krig.y[index])
-                end
-            else
-                point_found = true
-                new_x_max = x_new
-                new_EI_max = y_new
-            end
-        end
-        # if the EI is less than some tolerance times the difference between the maximum and minimum points
-        # in the surrogate, then we terminate the optimizer.
-        if new_EI_max < 1.0e-6 * norm(maximum(krig.y) - minimum(krig.y))
-            index = argmin(krig.y)
-            println("Termination tolerance reached.")
-            return (krig.x[index], krig.y[index])
-        end
-        # Otherwise, evaluate the true objective function at the new point and repeat.
-        update!(krig, new_x_max, obj(new_x_max))
-    end
-    return println("Completed maximum number of iterations")
-end
-
-# Ask EI 1D & ND
+# Ask EI, 1-D and ND
 function potential_optimal_points(
         ::EI, strategy, lb, ub, krig,
         sample_type::SamplingAlgorithm, n_parallel::Number;
@@ -1131,145 +692,87 @@ function potential_optimal_points(
     )
     lb = krig.lb
     ub = krig.ub
+    dtol = _candidate_tolerance(lb, ub)
 
-    dtol = 1.0e-3 * norm(ub - lb)
-    eps = 0.01
-
-    tmp_krig = deepcopy(krig) # Temporary copy of the kriging model to store virtual points
-
-    new_x_max = Vector{typeof(tmp_krig.x[1])}(undef, n_parallel)             # New x point
-    new_EI_max = zeros(eltype(tmp_krig.x[1]), n_parallel)                    # EI at new x point
+    # Virtual points accumulate here; the true surrogate is left untouched.
+    tmp_krig = deepcopy(krig)
+    new_x_max = Vector{typeof(tmp_krig.x[1])}(undef, n_parallel)
+    new_EI_max = zeros(float(eltype(tmp_krig.y)), n_parallel)
 
     for i in 1:n_parallel
-        # Sample lots of points from the design space -- we will evaluate the EI function at these points
         new_sample = sample(num_new_samples, lb, ub, sample_type)
-
-        # Find the best point so far
         f_min = minimum(tmp_krig.y)
+        improvements = [_expected_improvement(tmp_krig, c, f_min) for c in new_sample]
 
-        # Allocate some arrays
-        evaluations = zeros(eltype(tmp_krig.x[1]), num_new_samples)  # Holds EI function evaluations
-        point_found = false                                     # Whether we have found a new point to test
-        while point_found == false
-            # For each point in the sample set, evaluate the Expected Improvement function
-            for j in eachindex(new_sample)
-                std = std_error_at_point(tmp_krig, new_sample[j])
-                u = tmp_krig(new_sample[j])
-                if abs(std) > 1.0e-6
-                    z = (f_min - u - eps) / std
-                else
-                    z = 0
-                end
-                # Evaluate EI at point new_sample[j]
-                evaluations[j] = (f_min - u - eps) * cdf(Normal(), z) +
-                    std * pdf(Normal(), z)
-            end
-            # find the sample which maximizes the EI function
-            index_max = argmax(evaluations)
-            x_new = new_sample[index_max]   # x point which maximized EI
-            y_new = maximum(evaluations)    # EI at the new point
-            diff_x = [norm(prev_point .- x_new) for prev_point in tmp_krig.x]
-            bit_x = [diff_x_point .> dtol for diff_x_point in diff_x]
-            #new_min_x has to have some distance from tmp_krig.x
-            if false in bit_x
-                #The new_point is not actually that new, discard it!
-                deleteat!(evaluations, index_max)
-                deleteat!(new_sample, index_max)
-                if length(new_sample) == 0
-                    println("Out of sampling points")
-                    index = argmin(tmp_krig.y)
-                    return (tmp_krig.x[index], tmp_krig.y[index])
-                end
-            else
-                point_found = true
-                new_x_max[i] = x_new
-                new_EI_max[i] = y_new
-                calculate_liars(strategy, tmp_krig, krig, x_new)
-            end
+        # Filtered against `tmp_krig`, which holds a liar at every point already
+        # chosen for this batch, so the batch cannot repeat a point.
+        selection = _select_distant_candidate!(
+            improvements, new_sample, tmp_krig.x, dtol; pick = argmax
+        )
+        if selection === nothing
+            println("Out of sampling points")
+            return (new_x_max[1:(i - 1)], new_EI_max[1:(i - 1)])
         end
+
+        new_x_max[i], new_EI_max[i] = selection
+        calculate_liars(strategy, tmp_krig, krig, new_x_max[i])
     end
 
     return (new_x_max, new_EI_max)
 end
 
 """
-This is an implementation of Expected Improvement (EI),
-arguably the most popular acquisition function in Bayesian optimization.
-Under a Gaussian process (GP) prior, the goal is to
-maximize expected improvement:
+    surrogate_optimize!(obj, ::EI, lb, ub, krig, sample_type;
+        maxiters = 100, num_new_samples = 100)
 
-``EI(x) := E[max(f_{best}-f(x),0)``
+Minimize `obj` with the expected improvement acquisition function.
+
+At each iteration a fresh candidate pool is scored by
+
+``EI(x) = (f_{min} - \\mu(x) - \\xi)\\Phi(z) + \\sigma(x)\\phi(z),
+\\qquad z = \\frac{f_{min} - \\mu(x) - \\xi}{\\sigma(x)}``
+
+the candidate maximizing it is evaluated, and the surrogate is refitted. The
+offset ``\\xi`` biases the search towards exploration. The search stops once the
+best expected improvement is negligible against the spread of the observations.
+
+`krig` must provide `std_error_at_point`, so this method needs a surrogate with
+a predictive variance such as [`Kriging`](@ref).
+
+## References
+
+Jones, D.R., Schonlau, M. and Welch, W.J. (1998). Efficient global optimization
+of expensive black-box functions. *Journal of Global Optimization*, 13,
+455-492.
 """
 function surrogate_optimize!(
         obj::Function, ::EI, lb, ub, krig,
         sample_type::SamplingAlgorithm; maxiters = 100,
         num_new_samples = 100
     )
-    dtol = 1.0e-3 * norm(ub - lb)
-    eps = 0.01
-    for i in 1:maxiters
-        d = length(krig.x)
-        # Sample lots of points from the design space -- we will evaluate the EI function at these points
+    dtol = _candidate_tolerance(lb, ub)
+    for _ in 1:maxiters
         new_sample = sample(num_new_samples, lb, ub, sample_type)
-
-        # Find the best point so far
         f_min = minimum(krig.y)
+        improvements = [_expected_improvement(krig, c, f_min) for c in new_sample]
 
-        # Allocate some arrays
-        evaluations = zeros(eltype(krig.x[1]), num_new_samples)  # Holds EI function evaluations
-        point_found = false                                     # Whether we have found a new point to test
-        new_x_max = zero(eltype(krig.x[1]))                     # New x point
-        new_EI_max = zero(eltype(krig.x[1]))                    # EI at new x point
-        diff_x = zeros(eltype(krig.x[1]), d)
-        while point_found == false
-            # For each point in the sample set, evaluate the Expected Improvement function
-            for j in 1:length(new_sample)
-                std = std_error_at_point(krig, new_sample[j])
-                u = krig(new_sample[j])
-                if abs(std) > 1.0e-6
-                    z = (f_min - u - eps) / std
-                else
-                    z = 0
-                end
-                # Evaluate EI at point new_sample[j]
-                evaluations[j] = (f_min - u - eps) * cdf(Normal(), z) +
-                    std * pdf(Normal(), z)
-            end
-            # find the sample which maximizes the EI function
-            index_max = argmax(evaluations)
-            x_new = new_sample[index_max]    # x point which maximized EI
-            EI_new = maximum(evaluations)    # EI at the new point
-            for l in 1:d
-                diff_x[l] = norm(krig.x[l] .- x_new)
-            end
-            bit_x = diff_x .> dtol
-            #new_min_x has to have some distance from krig.x
-            if false in bit_x
-                #The new_point is not actually that new, discard it!
-                deleteat!(evaluations, index_max)
-                deleteat!(new_sample, index_max)
-                if length(new_sample) == 0
-                    println("Out of sampling points.")
-                    index = argmin(krig.y)
-                    return (krig.x[index], krig.y[index])
-                end
-            else
-                point_found = true
-                new_x_max = x_new
-                new_EI_max = EI_new
-            end
+        selection = _select_distant_candidate!(
+            improvements, new_sample, krig.x, dtol; pick = argmax
+        )
+        if selection === nothing
+            println("Out of sampling points")
+            return _best_point(krig)
         end
-        # if the EI is less than some tolerance times the difference between the maximum and minimum points
-        # in the surrogate, then we terminate the optimizer.
+        new_x_max, new_EI_max = selection
+
         if new_EI_max < 1.0e-6 * norm(maximum(krig.y) - minimum(krig.y))
-            index = argmin(krig.y)
             println("Termination tolerance reached.")
-            return (krig.x[index], krig.y[index])
+            return _best_point(krig)
         end
-        # Otherwise, evaluate the true objective function at the new point and repeat.
-        update!(krig, Tuple(new_x_max), obj(new_x_max))
+        update!(krig, _as_new_sample(new_x_max), obj(new_x_max))
     end
-    return println("Completed maximum number of iterations.")
+    println("Completed maximum number of iterations.")
+    return _best_point(krig)
 end
 
 function adjust_step_size(sigma_n, sigma_min, C_success, t_success, C_fail, t_fail)
@@ -1284,74 +787,39 @@ function adjust_step_size(sigma_n, sigma_min, C_success, t_success, C_fail, t_fa
     return sigma_n, C_success, C_fail
 end
 
-function select_evaluation_point_1D(
-        new_points1, surr1::AbstractSurrogate, numb_iters,
-        maxiters
-    )
-    v = [0.3, 0.5, 0.8, 0.95]
-    k = 4
-    n = length(surr1.x)
-    if mod(maxiters - 1, 4) != 0
-        w_nR = v[mod(maxiters - 1, 4)]
-    else
-        w_nR = v[4]
-    end
-    w_nD = 1 - w_nR
+"""
+    select_evaluation_point(candidates, surr, numb_iters)
 
-    l = length(new_points1)
-    evaluations1 = zeros(eltype(surr1.y[1]), l)
+Pick the candidate with the best weighted score, cycling the weight.
 
-    for i in 1:l
-        evaluations1[i] = surr1(new_points1[i])
-    end
-    s_max = maximum(evaluations1)
-    s_min = minimum(evaluations1)
-    V_nR = zeros(eltype(surr1.y[1]), l)
-    for i in 1:l
-        if abs(s_max - s_min) <= 10.0e-6
-            V_nR[i] = 1.0
-        else
-            V_nR[i] = (evaluations1[i] - s_min) / (s_max - s_min)
-        end
-    end
-
-    #Compute score V_nD
-    V_nD = zeros(eltype(surr1.y[1]), l)
-    delta_n_x = zeros(eltype(surr1.x[1]), l)
-    delta = zeros(eltype(surr1.x[1]), n)
-    for j in 1:l
-        for i in 1:n
-            delta[i] = norm(new_points1[j] - surr1.x[i])
-        end
-        delta_n_x[j] = minimum(delta)
-    end
-    delta_n_max = maximum(delta_n_x)
-    delta_n_min = minimum(delta_n_x)
-    for i in 1:l
-        if abs(delta_n_max - delta_n_min) <= 10.0e-6
-            V_nD[i] = 1.0
-        else
-            V_nD[i] = (delta_n_max - delta_n_x[i]) / (delta_n_max - delta_n_min)
-        end
-    end
-
-    #Compute weighted score
-    W_n = w_nR * V_nR + w_nD * V_nD
-    return new_points1[argmin(W_n)]
+The score is `merit_function`; the weight comes from the cyclic pattern
+of Regis and Shoemaker at iteration `numb_iters`, so successive iterations
+alternate between refining near the incumbent and probing unexplored regions.
+This is the selection step DYCORS shares with SRBF -- the two differ in how
+candidates are generated, not in how they are ranked.
+"""
+function select_evaluation_point(candidates, surr::AbstractSurrogate, numb_iters)
+    w = _SRBF_WEIGHTS[mod1(numb_iters - 1, length(_SRBF_WEIGHTS))]
+    s_max, s_min, d_max, d_min = _merit_ranges(surr, candidates)
+    scores = [merit_function(c, w, surr, s_max, s_min, d_max, d_min) for c in candidates]
+    return candidates[argmin(scores)]
 end
 
 """
-surrogate_optimize!(obj::Function,::DYCORS,lb::Number,ub::Number,surr1::AbstractSurrogate,sample_type::SamplingAlgorithm;maxiters=100,num_new_samples=100)
+    surrogate_optimize!(obj, ::DYCORS, lb::Number, ub::Number, surr1, sample_type;
+        maxiters = 100, num_new_samples = 100)
 
-DYCORS optimization method in 1D, following closely: Combining radial basis function
-surrogates and dynamic coordinate search in high-dimensional expensive black-box optimization".
+One-dimensional DYCORS. With a single coordinate there is nothing to choose
+between, so this reduces to perturbing the incumbent by a Gaussian step whose
+width follows the same success/failure schedule as the multidimensional method.
+See the multidimensional method for the algorithm and its reference.
 """
 function surrogate_optimize!(
         obj::Function, ::DYCORS, lb::Number, ub::Number,
         surr1::AbstractSurrogate, sample_type::SamplingAlgorithm;
         maxiters = 100, num_new_samples = 100
     )
-    x_best = argmin(surr1.y)
+    x_best = surr1.x[argmin(surr1.y)]
     y_best = minimum(surr1.y)
     sigma_n = 0.2 * norm(ub - lb)
     d = length(lb)
@@ -1361,34 +829,28 @@ function surrogate_optimize!(
     C_success = 0
     C_fail = 0
     for k in 1:maxiters
-        p_select = min(20 / d, 1) * (1 - log(k)) / log(maxiters - 1)
+        # Falls from the full perturbation probability to zero over the run,
+        # so later iterations perturb fewer coordinates.
+        p_select = min(20 / d, 1) * (1 - log(k) / log(max(maxiters, 2)))
         # In 1D I_perturb is always equal to one, no need to sample
         d = 1
         I_perturb = d
         new_points = zeros(eltype(surr1.x[1]), num_new_samples)
         for i in 1:num_new_samples
             new_points[i] = x_best + rand(Normal(0, sigma_n))
+            # Reflect a perturbation that leaves the box back about the
+            # bound it crossed, clamping if it overshoots the far side.
             while new_points[i] < lb || new_points[i] > ub
                 if new_points[i] > ub
-                    #reflection
-                    new_points[i] = max(
-                        lb,
-                        maximum(surr1.x) -
-                            norm(new_points[i] - maximum(surr1.x))
-                    )
+                    new_points[i] = max(lb, 2 * ub - new_points[i])
                 end
                 if new_points[i] < lb
-                    #reflection
-                    new_points[i] = min(
-                        ub,
-                        minimum(surr1.x) +
-                            norm(new_points[i] - minimum(surr1.x))
-                    )
+                    new_points[i] = min(ub, 2 * lb - new_points[i])
                 end
             end
         end
 
-        x_new = select_evaluation_point_1D(new_points, surr1, k, maxiters)
+        x_new = select_evaluation_point(new_points, surr1, k)
         f_new = obj(x_new)
 
         if f_new < y_best
@@ -1415,74 +877,32 @@ function surrogate_optimize!(
     return (surr1.x[index], surr1.y[index])
 end
 
-function select_evaluation_point_ND(
-        new_points, surrn::AbstractSurrogate, numb_iters,
-        maxiters
-    )
-    v = [0.3, 0.5, 0.8, 0.95]
-    k = 4
-    n = size(surrn.x, 1)
-    d = size(surrn.x, 2)
-    if mod(maxiters - 1, 4) != 0
-        w_nR = v[mod(maxiters - 1, 4)]
-    else
-        w_nR = v[4]
-    end
-    w_nD = 1 - w_nR
-
-    l = size(new_points, 1)
-    evaluations = zeros(eltype(surrn.y[1]), l)
-    for i in 1:l
-        evaluations[i] = surrn(Tuple(new_points[i, :]))
-    end
-    s_max = maximum(evaluations)
-    s_min = minimum(evaluations)
-    V_nR = zeros(eltype(surrn.y[1]), l)
-    for i in 1:l
-        if abs(s_max - s_min) <= 10.0e-6
-            V_nR[i] = 1.0
-        else
-            V_nR[i] = (evaluations[i] - s_min) / (s_max - s_min)
-        end
-    end
-
-    #Compute score V_nD
-    V_nD = zeros(eltype(surrn.y[1]), l)
-    delta_n_x = zeros(eltype(surrn.x[1]), l)
-    delta = zeros(eltype(surrn.x[1]), n)
-    for j in 1:l
-        for i in 1:n
-            delta[i] = norm(new_points[j, :] - collect(surrn.x[i]))
-        end
-        delta_n_x[j] = minimum(delta)
-    end
-    delta_n_max = maximum(delta_n_x)
-    delta_n_min = minimum(delta_n_x)
-    for i in 1:l
-        if abs(delta_n_max - delta_n_min) <= 10.0e-6
-            V_nD[i] = 1.0
-        else
-            V_nD[i] = (delta_n_max - delta_n_x[i]) / (delta_n_max - delta_n_min)
-        end
-    end
-    #Compute weighted score
-    W_n = w_nR * V_nR + w_nD * V_nD
-    return new_points[argmin(W_n), :]
-end
 
 """
-      surrogate_optimize!(obj::Function,::DYCORS,lb::Number,ub::Number,surr1::AbstractSurrogate,sample_type::SamplingAlgorithm;maxiters=100,num_new_samples=100)
+    surrogate_optimize!(obj, ::DYCORS, lb, ub, surrn, sample_type;
+        maxiters = 100, num_new_samples = 100)
 
-This is an implementation of the DYCORS strategy by Regis and Shoemaker:
-Rommel G Regis and Christine A Shoemaker.
-Combining radial basis function surrogates and dynamic coordinate search in high-dimensional expensive black-box optimization.
-Engineering Optimization, 45(5): 529–555, 2013.
-This is an extension of the SRBF strategy that changes how the
-candidate points are generated. The main idea is that many objective
-functions depend only on a few directions, so it may be advantageous to
-perturb only a few directions. In particular, we use a perturbation probability
-to perturb a given coordinate and decrease this probability after each function
-evaluation, so fewer coordinates are perturbed later in the optimization.
+Minimize `obj` with dynamic coordinate search.
+
+DYCORS extends SRBF by changing how candidates are generated, not how they are
+ranked: candidates are Gaussian perturbations of the incumbent in a random
+subset of the coordinates rather than a design over a trust region. Each
+coordinate is perturbed with probability
+
+``p_{select}(k) = \\min(20/d, 1)\\left(1 - \\frac{\\ln k}{\\ln k_{max}}\\right)``
+
+which falls to zero over the run, so late iterations move along very few
+directions -- the useful behaviour when the objective depends on only a handful
+of them. At least one coordinate is always perturbed. The perturbation width
+doubles after three consecutive improvements and halves after `max(d, 5)`
+consecutive failures. Candidates are ranked by the same weighted score as
+SRBF, so the two methods differ only in how candidates are generated.
+
+## References
+
+Regis, R.G. and Shoemaker, C.A. (2013). Combining radial basis function
+surrogates and dynamic coordinate search in high-dimensional expensive
+black-box optimization. *Engineering Optimization*, 45(5), 529-555.
 """
 function surrogate_optimize!(
         obj::Function, ::DYCORS, lb, ub, surrn::AbstractSurrogate,
@@ -1499,10 +919,14 @@ function surrogate_optimize!(
     C_success = 0
     C_fail = 0
     for k in 1:maxiters
-        p_select = min(20 / d, 1) * (1 - log(k)) / log(maxiters - 1)
+        # Falls from the full perturbation probability to zero over the run,
+        # so later iterations perturb fewer coordinates.
+        p_select = min(20 / d, 1) * (1 - log(k) / log(max(maxiters, 2)))
         new_points = zeros(eltype(surrn.x[1]), num_new_samples, d)
         for j in 1:num_new_samples
-            w = sample(d, 0, 1, sample_type)
+            # A fresh draw per candidate: a design sequence would restart and
+            # hand every candidate the same mask.
+            w = rand(d)
             I_perturb = w .< p_select
             if ~(true in I_perturb)
                 val = rand(1:d)
@@ -1522,25 +946,20 @@ function surrogate_optimize!(
             for j in 1:d
                 while new_points[i, j] < lb[j] || new_points[i, j] > ub[j]
                     if new_points[i, j] > ub[j]
-                        new_points[i, j] = max(
-                            lb[j],
-                            maximum(surrn.x)[j] -
-                                norm(new_points[i, j] - maximum(surrn.x)[j])
-                        )
+                        new_points[i, j] = max(lb[j], 2 * ub[j] - new_points[i, j])
                     end
                     if new_points[i, j] < lb[j]
-                        new_points[i, j] = min(
-                            ub[j],
-                            minimum(surrn.x)[j] +
-                                norm(new_points[i] - minimum(surrn.x)[j])
-                        )
+                        new_points[i, j] = min(ub[j], 2 * lb[j] - new_points[i, j])
                     end
                 end
             end
         end
 
         #ND version
-        x_new = select_evaluation_point_ND(new_points, surrn, k, maxiters)
+        # `new_points` is a `num_new_samples x d` matrix; the surrogate is
+        # queried with coordinate tuples.
+        candidates = [Tuple(new_points[i, :]) for i in axes(new_points, 1)]
+        x_new = collect(select_evaluation_point(candidates, surrn, k))
         f_new = obj(x_new)
 
         if f_new < y_best
@@ -1599,13 +1018,11 @@ function I_tier_ranking_1D(P, surrSOP::AbstractSurrogate)
                 val2_p = obj2_1D(p, P)
                 val1_q = surrSOP.y[q_index]
                 val2_q = obj2_1D(q, P)
-                p_dominates_q = (val1_p < val1_q || abs(val1_p - val1_q) <= 10^-5) &&
-                    (val2_p < val2_q || abs(val2_p - val2_q) <= 10^-5) &&
-                    ((val1_p < val1_q) || (val2_p < val2_q))
-
-                q_dominates_p = (val1_p < val1_q || abs(val1_p - val1_q) < 10^-5) &&
-                    (val2_p < val2_q || abs(val2_p - val2_q) < 10^-5) &&
-                    ((val1_p < val1_q) || (val2_p < val2_q))
+                # `q` dominates `p` when it is no worse in both objectives and
+                # strictly better in one.
+                q_dominates_p = (val1_q < val1_p || abs(val1_q - val1_p) <= 10^-5) &&
+                    (val2_q < val2_p || abs(val2_q - val2_p) <= 10^-5) &&
+                    ((val1_q < val1_p) || (val2_q < val2_p))
                 if q_dominates_p
                     n_p += 1
                 end
@@ -1630,56 +1047,79 @@ end
 
 function II_tier_ranking_1D(D::Dict, srg::AbstractSurrogate)
     for i in 1:length(D)
-        pos = []
-        yn = []
-        for j in 1:length(D[i])
-            push!(pos, findall(e -> e == D[i][j], srg.x))
-            push!(yn, srg.y[pos[j]])
-        end
         D[i] = D[i][sortperm(D[i])]
     end
     return D
 end
 
-function Hypervolume_Pareto_improving(f1_new, f2_new, Pareto_set)
-    if size(Pareto_set, 1) == 1
-        area_before = zero(eltype(f1_new))
-    else
-        my_p = Pareto_set
-        #Area before
-        v_ref = [maximum(Pareto_set[:, 1]), maximum(Pareto_set[:, 2])]
-        my_p = vcat(my_p, v_ref)
-        v = sortperm(my_p[:, 2])
-        my_p[:, 1] = my_p[:, 1][v]
-        my_p[:, 2] = my_p[:, 2][v]
-        area_before = zero(eltype(f1_new))
-        for j in 1:(length(v) - 1)
-            area_before += (my_p[j + 1, 2] - my_p[j, 2]) * (v_ref[1] - my_p[j])
+# Hypervolume of the region dominated by `points` and bounded by `v_ref`, for
+# two objectives, both minimised.
+#
+# Sweeps the rows in order of the first objective and accumulates a strip only
+# where the second objective improves on every row seen so far. Dominated rows
+# never improve on it and so contribute nothing, which is what lets the caller
+# pass a set that is not a Pareto front.
+function _dominated_hypervolume(points, v_ref)
+    order = sortperm(points[:, 1])
+    area = zero(eltype(points))
+    best_f2 = v_ref[2]
+    for i in order
+        f1, f2 = points[i, 1], points[i, 2]
+        if f2 < best_f2 && f1 < v_ref[1]
+            area += (v_ref[1] - f1) * (best_f2 - f2)
+            best_f2 = f2
         end
     end
-    #Area after
-    Pareto_set = vcat(Pareto_set, [f1_new f2_new])
-    v_ref = [maximum(Pareto_set[:, 1]) maximum(Pareto_set[:, 2])]
-    Pareto_set = vcat(Pareto_set, v_ref)
-    v = sortperm(Pareto_set[:, 2])
-    Pareto_set[:, 1] = Pareto_set[:, 1][v]
-    Pareto_set[:, 2] = Pareto_set[:, 2][v]
-    area_after = zero(eltype(f1_new))
-    for j in 1:(length(v) - 1)
-        area_after += (Pareto_set[j + 1, 2] - Pareto_set[j, 2]) * (v_ref[1] - Pareto_set[j])
+    return area
+end
+
+# Hypervolume gained by adding `(f1_new, f2_new)` to `Pareto_set`.
+#
+# Both areas are measured against the same reference point, taken over the union
+# of the old set and the new one; measuring each against its own maximum would
+# compare areas in two different frames.
+function Hypervolume_Pareto_improving(f1_new, f2_new, Pareto_set)
+    Pareto_after = vcat(Pareto_set, [f1_new f2_new])
+    # The reference has to *strictly* dominate every row, or whichever row
+    # attains the maximum contributes a zero-width strip and is invisible. Its
+    # offset is a fraction of each objective's own spread, so the measure stays
+    # scale free; a degenerate objective falls back to one.
+    v_ref = map(1:2) do j
+        col = @view Pareto_after[:, j]
+        spread = maximum(col) - minimum(col)
+        maximum(col) + (spread > 0 ? 0.1 * spread : one(spread))
     end
-    return area_after - area_before
+    v_ref = reshape(v_ref, 1, 2)
+    return _dominated_hypervolume(Pareto_after, v_ref) -
+        _dominated_hypervolume(Pareto_set, v_ref)
 end
 
 """
-surrogate_optimize!(obj::Function,::SOP,lb::Number,ub::Number,surr::AbstractSurrogate,sample_type::SamplingAlgorithm;maxiters=100,num_new_samples=100)
+    surrogate_optimize!(obj, sop::SOP, lb, ub, surr, sample_type;
+        maxiters = 100, num_new_samples = min(500d, 5000))
 
-SOP Surrogate optimization method, following closely the following papers:
+Minimize `obj` with surrogate optimization using Pareto center selection.
 
-    - SOP: parallel surrogate global optimization with Pareto center selection for computationally expensive single objective problems by Tipaluck Krityakierne
-    - Multiobjective Optimization Using Evolutionary Algorithms by Kalyan Deb
+SOP maintains several search centers at once and picks them by non-dominated
+sorting on two criteria: the observed objective value, and the distance to the
+nearest evaluated point. Ranking centers this way spreads them between the
+promising and the unexplored parts of the domain, which is what makes the
+method parallel-friendly -- `sop.p` centers are carried, and one candidate is
+proposed from each per iteration. A center whose proposal fails to improve the dominated hypervolume
+has its radius halved, and after enough failures it is placed on a tabu list.
 
-#Suggested number of new_samples = min(500*d,5000)
+`num_new_samples` is best set to `min(500d, 5000)` for a `d`-dimensional
+problem.
+
+## References
+
+Krityakierne, T., Akhtar, T. and Shoemaker, C.A. (2016). SOP: parallel
+surrogate global optimization with Pareto center selection for computationally
+expensive single objective problems. *Journal of Global Optimization*, 64,
+421-445.
+
+Deb, K. (2001). *Multi-Objective Optimization Using Evolutionary Algorithms*.
+Wiley.
 """
 function surrogate_optimize!(
         obj::Function, sop1::SOP, lb::Number, ub::Number,
@@ -1825,7 +1265,9 @@ function surrogate_optimize!(
             end
 
             f_1 = obj(new_points[i, 1])
-            f_2 = obj2_1D(f_1, surrSOP.x)
+            # Second objective: distance from the candidate to the nearest
+            # evaluated point.
+            f_2 = obj2_1D(new_points[i, 1], surrSOP.x)
 
             l = length(Fronts[1])
             Pareto_set = zeros(eltype(surrSOP.x[1]), l, 2)
@@ -1846,7 +1288,10 @@ function surrogate_optimize!(
             else
                 #P_i is success
                 #Adaptive_learning
-                update!(surrSOP, new_points[i, 1], new_points[i, 2])
+                # `new_points[i, 2]` is the surrogate's own prediction at the
+                # candidate, used to rank candidates. The surrogate is fitted to
+                # observations, so store the measured value instead.
+                update!(surrSOP, new_points[i, 1], f_1)
                 push!(r_centers_global, r_centers[i])
                 push!(N_failures_global, N_failures[i])
             end
@@ -1888,13 +1333,11 @@ function I_tier_ranking_ND(P, surrSOPD::AbstractSurrogate)
                 val2_p = obj2_ND(p, P)
                 val1_q = surrSOPD.y[q_index]
                 val2_q = obj2_ND(q, P)
-                p_dominates_q = (val1_p < val1_q || abs(val1_p - val1_q) <= 10^-5) &&
-                    (val2_p < val2_q || abs(val2_p - val2_q) <= 10^-5) &&
-                    ((val1_p < val1_q) || (val2_p < val2_q))
-
-                q_dominates_p = (val1_p < val1_q || abs(val1_p - val1_q) < 10^-5) &&
-                    (val2_p < val2_q || abs(val2_p - val2_q) < 10^-5) &&
-                    ((val1_p < val1_q) || (val2_p < val2_q))
+                # `q` dominates `p` when it is no worse in both objectives and
+                # strictly better in one.
+                q_dominates_p = (val1_q < val1_p || abs(val1_q - val1_p) <= 10^-5) &&
+                    (val2_q < val2_p || abs(val2_q - val2_p) <= 10^-5) &&
+                    ((val1_q < val1_p) || (val2_q < val2_p))
                 if q_dominates_p
                     n_p += 1
                 end
@@ -2077,7 +1520,7 @@ function surrogate_optimize!(
             end
 
             f_1 = obj(Tuple(new_points_x[i]))
-            f_2 = obj2_ND(f_1, surrSOPD.x)
+            f_2 = obj2_ND(new_points_x[i], surrSOPD.x)
 
             l = length(Fronts[1])
             Pareto_set = zeros(eltype(surrSOPD.x[1]), l, 2)
@@ -2097,7 +1540,7 @@ function surrogate_optimize!(
             else
                 #P_i is success
                 #Adaptive_learning
-                update!(surrSOPD, new_points_x[i], new_points_y[i])
+                update!(surrSOPD, new_points_x[i], f_1)
                 push!(r_centers_global, r_centers[i])
                 push!(N_failures_global, N_failures[i])
             end
@@ -2459,16 +1902,7 @@ function surrogate_optimize!(
         # For each point in the sample set, evaluate the Expected Improvement function
         while point_found == false
             for j in 1:length(new_sample)
-                std = std_error_at_point(krig, new_sample[j])
-                u = krig(new_sample[j])
-                if abs(std) > 1.0e-6
-                    z = (f_min - u - eps) / std
-                else
-                    z = 0
-                end
-                # Evaluate EI at point new_sample[j]
-                evaluations[j] = (f_min - u - eps) * cdf(Normal(), z) +
-                    std * pdf(Normal(), z)
+                evaluations[j] = _expected_improvement(krig, new_sample[j], f_min, eps)
             end
             # find the sample which maximizes the EI function
             index_max = argmax(evaluations)

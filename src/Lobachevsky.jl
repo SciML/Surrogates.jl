@@ -81,7 +81,10 @@ function phi_nj1D(point, x, alpha, n)
         val += ifelse(iseven(l), b, -b) * a^(n - 1)
         b = b * (n - l) ÷ (l + 1)
     end
-    return val * (c / (2^n * factorial(Int64(n) - 1)))
+    # Divided in two steps rather than by one product: `2^n * factorial(n - 1)`
+    # overflows `Int64` at n = 18 without warning, and the wrapped value is
+    # negative at n = 20.
+    return val * (c / 2^n / factorial(Int64(n) - 1))
 end
 
 # `weight(j)` is the scalar multiplying sample `j`, so one pair serves both
@@ -107,8 +110,10 @@ function _calc_loba_coeff1D(x, y, alpha, n, sparse)
     return Sym \ _construct_y_matrix(y, first(y))
 end
 
-# The kernel evaluates `factorial(Int64(n) - 1)` and `_phi_int` `factorial(Int64(n))`, and
-# `factorial(::Int)` overflows above 20.
+# The kernel evaluates `factorial(Int64(n) - 1)` and `_phi_int`
+# `factorial(Int64(n))`. Widening to `Int64` keeps the bound independent of the
+# platform word size -- `factorial(::Int)` stops at 12 on a 32-bit build -- and
+# `factorial(::Int64)` overflows above 20.
 function _check_lobachevsky_n(n)
     if n <= 0 || n % 2 != 0
         throw(ArgumentError("Kernel order n must be even and positive! Got: $n."))
@@ -209,7 +214,7 @@ function _phi_int(point, n)
         res += ifelse(iseven(k), b, -b) * c^n
         b = b * (n - k) ÷ (k + 1)
     end
-    return res / (2^n * factorial(Int64(n)))
+    return res / 2^n / factorial(Int64(n))
 end
 
 function lobachevsky_integral(loba::LobachevskySurrogate, lb::Number, ub::Number)
