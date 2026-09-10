@@ -1,4 +1,4 @@
-# Polynomial chaos surrogate tutorial
+# Polynomial Chaos Surrogate Tutorial
 
 We can create a surrogate using a polynomial expansion, with a different polynomial basis depending on the distribution of the data we are trying to fit. Under the hood, PolyChaos.jl has been used. It is possible to specify a type of polynomial for each dimension of the problem.
 
@@ -25,7 +25,7 @@ scatter(x, y, label = "Sampled points", xlims = (lower_bound, upper_bound), lege
 plot!(f, label = "True function", xlims = (lower_bound, upper_bound), legend = :top)
 ```
 
-## Building a surrogate
+## Building a Surrogate
 
 ```@example polychaos
 poly1 = PolynomialChaosSurrogate(x, y, lower_bound, upper_bound)

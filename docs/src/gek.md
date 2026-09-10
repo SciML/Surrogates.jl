@@ -1,4 +1,4 @@
-# Gradient enhanced Kriging surrogate tutorial
+# Gradient Enhanced Kriging Surrogate Tutorial
 
 Gradient-enhanced Kriging extends Kriging with derivative observations. Because the
 Gaussian kernel is mean-square differentiable, the joint covariance of a process and

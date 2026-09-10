@@ -1,4 +1,4 @@
-# Earth (MARS) surrogate tutorial
+# Earth (MARS) Surrogate Tutorial
 
 `EarthSurrogate` implements multivariate adaptive regression splines. The model
 is a sum of *hinge* functions about the mean response,

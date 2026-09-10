@@ -1,4 +1,4 @@
-# Second order polynomial surrogate tutorial
+# Second Order Polynomial Surrogate Tutorial
 
 The second-order polynomial model is the least-squares fit
 

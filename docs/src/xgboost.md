@@ -1,4 +1,4 @@
-# XGBoost surrogate tutorial
+# XGBoost Surrogate Tutorial
 
 Gradient boosting fits an additive ensemble of decision trees, each round training a new tree on the residuals of the ensemble so far.
 

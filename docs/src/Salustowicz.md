@@ -1,4 +1,4 @@
-# Salustowicz benchmark function
+# Salustowicz Benchmark Function
 
 The Salustowicz function is a one-dimensional benchmark, usually evaluated on
 ``x \in [0, 10]``. The ``e^{-x}x^3`` prefactor makes its amplitude vary by

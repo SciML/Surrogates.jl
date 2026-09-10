@@ -1,4 +1,4 @@
-# Wendland surrogate tutorial
+# Wendland Surrogate Tutorial
 
 The Wendland surrogate uses a compactly supported radial kernel: a sample point
 influences predictions only within a finite radius of it. Most kernel pairs

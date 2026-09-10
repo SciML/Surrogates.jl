@@ -1,4 +1,4 @@
-# Neural network surrogate tutorial
+# Neural Network Surrogate Tutorial
 
 It's possible to define a neural network as a surrogate, using Flux.
 This is useful because we can call optimization methods on it.

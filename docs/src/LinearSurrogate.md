@@ -36,7 +36,7 @@ scatter(x, y, label = "Sampled points", xlims = (lower_bound, upper_bound))
 plot!(f, label = "True function", xlims = (lower_bound, upper_bound))
 ```
 
-### Building a surrogate
+### Building a Surrogate
 
 With our sampled points, we can build the **Linear Surrogate** using the `LinearSurrogate` function.
 
@@ -139,7 +139,7 @@ y = otl_circuit.(x)
 extrema(y)
 ```
 
-### Building a surrogate
+### Building a Surrogate
 
 ```@example linear_surrogateND
 my_linear_ND = LinearSurrogate(x, y, lower_bound, upper_bound)

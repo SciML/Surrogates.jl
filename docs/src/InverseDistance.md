@@ -38,7 +38,7 @@ scatter(x, y, label = "Sampled points", xlims = (lower_bound, upper_bound), lege
 plot!(f, label = "True function", xlims = (lower_bound, upper_bound), legend = :top)
 ```
 
-### Building a surrogate
+### Building a Surrogate
 
 ```@example Inverse_Distance1D
 InverseDistance = InverseDistanceSurrogate(x, y, lower_bound, upper_bound)
@@ -154,7 +154,7 @@ scatter!(xs, ys)
 plot(p1, p2, title = "True function")
 ```
 
-### Building a surrogate
+### Building a Surrogate
 
 Using the sampled points we build the surrogate, the steps are analogous to the 1-dimensional case.
 

@@ -1,4 +1,4 @@
-# Lobachevsky surrogate tutorial
+# Lobachevsky Surrogate Tutorial
 
 Lobachevsky splines function is a function that is used for univariate and multivariate scattered interpolation. Introduced by Lobachevsky in 1842 to investigate errors in astronomical measurements.
 

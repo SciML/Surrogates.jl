@@ -1,4 +1,4 @@
-# Gramacy & Lee function
+# Gramacy & Lee Function
 
 The Gramacy & Lee function is a one-dimensional, continuous, non-convex
 benchmark. It is **multimodal**: the ``\sin(10\pi x)`` factor puts thirteen local

@@ -105,7 +105,7 @@ NeuralSurrogate(x,y,lb,ub; model = Chain(Dense(length(x[1]),1), first), loss = (
 SVMSurrogate
 ```
 
-## Structure descriptors
+## Structure Descriptors
 
 ```@docs
 RadialBasisStructure

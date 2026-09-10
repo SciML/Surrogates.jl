@@ -1,4 +1,4 @@
-# Branin function
+# Branin Function
 
 The Branin function is commonly used as a test function for metamodelling in computer experiments, especially in the context of optimization.
 

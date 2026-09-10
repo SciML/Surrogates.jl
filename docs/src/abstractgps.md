@@ -1,4 +1,4 @@
-# Gaussian process surrogate tutorial
+# Gaussian Process Surrogate Tutorial
 
 Gaussian Process regression in Surrogates.jl is implemented as a simple wrapper around the [AbstractGPs.jl](https://github.com/JuliaGaussianProcesses/AbstractGPs.jl) package. AbstractGPs comes with a variety of covariance functions (kernels). See [KernelFunctions.jl](https://github.com/JuliaGaussianProcesses/KernelFunctions.jl/) for examples.
 
@@ -38,7 +38,7 @@ plot!(xs, f.(xs), label = "True function", legend = :top)
 plot!(0:0.001:1, gp_surrogate.gp_posterior; label = "Posterior", ribbon_scale = 2)
 ```
 
-## Optimization example
+## Optimization Example
 
 This example shows the use of AbstractGP Surrogates to find the minima of a function:
 

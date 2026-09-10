@@ -1,4 +1,4 @@
-# Variable fidelity surrogate tutorial
+# Variable Fidelity Surrogate Tutorial
 
 With the variable fidelity surrogate, we can specify two different surrogates: one for high-fidelity data and one for low-fidelity data. By default, the first half of the samples are considered high-fidelity and the second half low-fidelity.
 
