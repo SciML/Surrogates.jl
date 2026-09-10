@@ -1,4 +1,4 @@
-# Radial Basis Surrogates Tutorial (1D)
+# Radial basis surrogate tutorial
 
 The Radial Basis Surrogate model represents the interpolating function as a linear combination of basis functions, one for each training point. Let's say we are building a surrogate for:
 
@@ -33,7 +33,9 @@ scatter(x, y, label = "Sampled Points", xlims = (lower_bound, upper_bound), lege
 plot!(x, y, label = "True function", legend = :top)
 ```
 
-## Building Surrogate
+## One dimension
+
+### Building a surrogate
 
 With our sampled points we can build the **Radial Surrogate** using the `RadialBasis` function.
 
@@ -63,7 +65,7 @@ plot!(radial_surrogate, label = "Surrogate function",
     xlims = (lower_bound, upper_bound), legend = :top)
 ```
 
-## Optimizing
+### Optimizing
 
 Having built a surrogate, we can now use it to search for minima in our original function `f`.
 
@@ -78,7 +80,7 @@ plot!(radial_surrogate, label = "Surrogate function",
     xlims = (lower_bound, upper_bound), legend = :top)
 ```
 
-# Radial Basis Surrogate Tutorial (ND)
+## Several dimensions
 
 First of all, we will define the `Booth` function we are going to build the surrogate for:
 
@@ -100,7 +102,7 @@ function booth(x)
 end
 ```
 
-## Sampling
+### Sampling
 
 Let's define our bounds, this time we are working in two dimensions. In particular we want our first dimension `x` to have bounds `-5, 10`, and `0, 15` for the second dimension. We are taking 100 samples of the space using Sobol Sequences. We then evaluate our function on all of the sampling points.
 
@@ -114,17 +116,18 @@ zs = booth.(xys)
 ```
 
 ```@example RadialBasisSurrogateND
-x, y = -5.0:10.0, 0.0:15.0
-p1 = surface(x, y, (x1, x2) -> booth((x1, x2)))
+xgrid = range(lower_bound[1], upper_bound[1], length = 100)
+ygrid = range(lower_bound[2], upper_bound[2], length = 100)
+p1 = surface(xgrid, ygrid, (x1, x2) -> booth((x1, x2)))
 xs = [xy[1] for xy in xys]
 ys = [xy[2] for xy in xys]
 scatter!(xs, ys, zs)
-p2 = contour(x, y, (x1, x2) -> booth((x1, x2)))
+p2 = contour(xgrid, ygrid, (x1, x2) -> booth((x1, x2)))
 scatter!(xs, ys)
 plot(p1, p2, title = "True function")
 ```
 
-## Building a surrogate
+### Building a surrogate
 
 Using the sampled points we build the surrogate, the steps are analogous to the 1-dimensional case.
 
@@ -133,14 +136,14 @@ radial_basis = RadialBasis(xys, zs, lower_bound, upper_bound)
 ```
 
 ```@example RadialBasisSurrogateND
-p1 = surface(x, y, (x, y) -> radial_basis([x y]))
+p1 = surface(xgrid, ygrid, (x, y) -> radial_basis([x y]))
 scatter!(xs, ys, zs, marker_z = zs)
-p2 = contour(x, y, (x, y) -> radial_basis([x y]))
+p2 = contour(xgrid, ygrid, (x, y) -> radial_basis([x y]))
 scatter!(xs, ys, marker_z = zs)
 plot(p1, p2, title = "Surrogate")
 ```
 
-## Optimizing
+### Optimizing
 
 With our surrogate, we can now search for the minima of the function.
 
@@ -161,12 +164,12 @@ size(xys)
 ```
 
 ```@example RadialBasisSurrogateND
-p1 = surface(x, y, (x, y) -> radial_basis([x y]))
+p1 = surface(xgrid, ygrid, (x, y) -> radial_basis([x y]))
 xs = [xy[1] for xy in xys]
 ys = [xy[2] for xy in xys]
 zs = booth.(xys)
 scatter!(xs, ys, zs, marker_z = zs)
-p2 = contour(x, y, (x, y) -> radial_basis([x y]))
+p2 = contour(xgrid, ygrid, (x, y) -> radial_basis([x y]))
 scatter!(xs, ys, marker_z = zs)
 plot(p1, p2)
 ```

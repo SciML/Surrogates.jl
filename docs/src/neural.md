@@ -40,12 +40,13 @@ zs = schaffer.(xys)
 ```
 
 ```@example Neural_surrogate
-x, y = 0:8, 0:8
-p1 = surface(x, y, (x1, x2) -> schaffer((x1, x2)))
+xgrid = range(lower_bound[1], upper_bound[1], length = 100)
+ygrid = range(lower_bound[2], upper_bound[2], length = 100)
+p1 = surface(xgrid, ygrid, (x1, x2) -> schaffer((x1, x2)))
 xs = [xy[1] for xy in xys]
 ys = [xy[2] for xy in xys]
 scatter!(xs, ys, zs)
-p2 = contour(x, y, (x1, x2) -> schaffer((x1, x2)))
+p2 = contour(xgrid, ygrid, (x1, x2) -> schaffer((x1, x2)))
 scatter!(xs, ys)
 plot(p1, p2, title = "True function")
 ```
@@ -66,9 +67,9 @@ neural = NeuralSurrogate(xys, zs, lower_bound, upper_bound, model = model1, n_ep
 ```
 
 ```@example Neural_surrogate
-p1 = surface(x, y, (x, y) -> neural([x, y]))
+p1 = surface(xgrid, ygrid, (x, y) -> neural([x, y]))
 scatter!(xs, ys, zs, marker_z = zs)
-p2 = contour(x, y, (x, y) -> neural([x, y]))
+p2 = contour(xgrid, ygrid, (x, y) -> neural([x, y]))
 scatter!(xs, ys, marker_z = zs)
 plot(p1, p2, title = "Surrogate")
 ```

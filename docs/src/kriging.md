@@ -1,4 +1,4 @@
-# Kriging Surrogate Tutorial (1D)
+# Kriging surrogate tutorial
 
 Kriging, or Gaussian process regression, is a method of interpolation in which the
 interpolated values are modeled by a Gaussian process. The model has two
@@ -26,7 +26,9 @@ using Surrogates
 using Plots
 ```
 
-## Sampling
+## One dimension
+
+### Sampling
 
 We choose to sample f in 100 points between 0 and 1 using the `sample` function. The sampling points are chosen using a Sobol sequence; This can be done by passing `SobolSample()` to the `sample` function.
 
@@ -47,7 +49,7 @@ scatter(
 plot!(xs, f.(xs), label = "True function", legend = :top)
 ```
 
-## Building a surrogate
+### Building a surrogate
 
 With our sampled points, we can build the Kriging surrogate using the `Kriging` function.
 
@@ -63,7 +65,7 @@ plot!(xs, kriging_surrogate.(xs), label = "Surrogate function",
     ribbon = p -> std_error_at_point(kriging_surrogate, p), legend = :top)
 ```
 
-## Optimizing
+### Optimizing
 
 Having built a surrogate, we can now use it to search for minima in our original function `f`.
 
@@ -79,7 +81,7 @@ plot!(xs, kriging_surrogate.(xs), label = "Surrogate function",
     ribbon = p -> std_error_at_point(kriging_surrogate, p), legend = :top)
 ```
 
-# Kriging Surrogate Tutorial (ND)
+## Several dimensions
 
 First of all, let's define the function we are going to build a surrogate for. Notice how its argument is a vector of numbers, one for each coordinate, and its output is a scalar.
 
@@ -101,7 +103,7 @@ function branin(x)
 end
 ```
 
-## Sampling
+### Sampling
 
 Let's define our bounds, this time we are working in two dimensions. In particular, we want our first dimension `x` to have bounds `-5, 10`, and `0, 15` for the second dimension. We are taking 50 samples of the space using Sobol sequences. We then evaluate our function on all the sampling points.
 
@@ -115,17 +117,18 @@ zs = branin.(xys)
 ```
 
 ```@example kriging_tutorialnd
-x, y = -5:10, 0:15
-p1 = surface(x, y, (x1, x2) -> branin((x1, x2)))
+xgrid = range(lower_bound[1], upper_bound[1], length = 100)
+ygrid = range(lower_bound[2], upper_bound[2], length = 100)
+p1 = surface(xgrid, ygrid, (x1, x2) -> branin((x1, x2)))
 xs = [xy[1] for xy in xys]
 ys = [xy[2] for xy in xys]
 scatter!(xs, ys, zs)
-p2 = contour(x, y, (x1, x2) -> branin((x1, x2)))
+p2 = contour(xgrid, ygrid, (x1, x2) -> branin((x1, x2)))
 scatter!(xs, ys)
 plot(p1, p2, title = "True function")
 ```
 
-## Building a surrogate
+### Building a surrogate
 
 Using the sampled points, we build the surrogate, the steps are analogous to the 1-dimensional case.
 
@@ -139,14 +142,14 @@ kriging_surrogate.theta
 ```
 
 ```@example kriging_tutorialnd
-p1 = surface(x, y, (x, y) -> kriging_surrogate([x y]))
+p1 = surface(xgrid, ygrid, (x, y) -> kriging_surrogate([x y]))
 scatter!(xs, ys, zs, marker_z = zs)
-p2 = contour(x, y, (x, y) -> kriging_surrogate([x y]))
+p2 = contour(xgrid, ygrid, (x, y) -> kriging_surrogate([x y]))
 scatter!(xs, ys, marker_z = zs)
 plot(p1, p2, title = "Surrogate")
 ```
 
-## Optimizing
+### Optimizing
 
 With our surrogate, we can now search for the minima of the branin function.
 
@@ -167,12 +170,12 @@ size(xys)
 ```
 
 ```@example kriging_tutorialnd
-p1 = surface(x, y, (x, y) -> kriging_surrogate([x y]))
+p1 = surface(xgrid, ygrid, (x, y) -> kriging_surrogate([x y]))
 xs = [xy[1] for xy in xys]
 ys = [xy[2] for xy in xys]
 zs = branin.(xys)
 scatter!(xs, ys, zs, marker_z = zs)
-p2 = contour(x, y, (x, y) -> kriging_surrogate([x y]))
+p2 = contour(xgrid, ygrid, (x, y) -> kriging_surrogate([x y]))
 scatter!(xs, ys, marker_z = zs)
 plot(p1, p2)
 ```

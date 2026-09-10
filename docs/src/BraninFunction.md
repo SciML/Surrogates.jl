@@ -40,12 +40,13 @@ lower_bound = [-5, 0]
 upper_bound = [10, 15]
 xys = sample(n_samples, lower_bound, upper_bound, SobolSample())
 zs = branin.(xys)
-x, y = -5.00:10.00, 0.00:15.00
-p1 = surface(x, y, (x1, x2) -> branin((x1, x2)))
+xgrid = range(lower_bound[1], upper_bound[1], length = 100)
+ygrid = range(lower_bound[2], upper_bound[2], length = 100)
+p1 = surface(xgrid, ygrid, (x1, x2) -> branin((x1, x2)))
 xs = [xy[1] for xy in xys]
 ys = [xy[2] for xy in xys]
 scatter!(xs, ys, zs)
-p2 = contour(x, y, (x1, x2) -> branin((x1, x2)))
+p2 = contour(xgrid, ygrid, (x1, x2) -> branin((x1, x2)))
 scatter!(xs, ys)
 plot(p1, p2, title = "True function")
 ```
@@ -58,9 +59,9 @@ radial_surrogate = RadialBasis(xys, zs, lower_bound, upper_bound)
 ```
 
 ```@example BraninFunction
-p1 = surface(x, y, (x, y) -> radial_surrogate([x y]))
+p1 = surface(xgrid, ygrid, (x, y) -> radial_surrogate([x y]))
 scatter!(xs, ys, zs, marker_z = zs)
-p2 = contour(x, y, (x, y) -> radial_surrogate([x y]))
+p2 = contour(xgrid, ygrid, (x, y) -> radial_surrogate([x y]))
 scatter!(xs, ys, marker_z = zs)
 plot(p1, p2, title = "Radial Surrogate")
 ```
@@ -72,9 +73,9 @@ InverseDistance = InverseDistanceSurrogate(xys, zs, lower_bound, upper_bound)
 ```
 
 ```@example BraninFunction
-p1 = surface(x, y, (x, y) -> InverseDistance([x y]))
+p1 = surface(xgrid, ygrid, (x, y) -> InverseDistance([x y]))
 scatter!(xs, ys, zs, marker_z = zs)
-p2 = contour(x, y, (x, y) -> InverseDistance([x y]))
+p2 = contour(xgrid, ygrid, (x, y) -> InverseDistance([x y]))
 scatter!(xs, ys, marker_z = zs)
 plot(p1, p2, title = "Inverse Distance Surrogate")
 ```
@@ -87,9 +88,9 @@ Lobachevsky = LobachevskySurrogate(
 ```
 
 ```@example BraninFunction
-p1 = surface(x, y, (x, y) -> Lobachevsky([x y]))
+p1 = surface(xgrid, ygrid, (x, y) -> Lobachevsky([x y]))
 scatter!(xs, ys, zs, marker_z = zs)
-p2 = contour(x, y, (x, y) -> Lobachevsky([x y]))
+p2 = contour(xgrid, ygrid, (x, y) -> Lobachevsky([x y]))
 scatter!(xs, ys, marker_z = zs)
 plot(p1, p2, title = "Lobachevsky Surrogate")
 ```

@@ -27,7 +27,9 @@ using Surrogates
 using Plots
 ```
 
-## Sampling
+## One dimension
+
+### Sampling
 
 We choose to sample f in 100 points between 2 and 10 using the `sample` function. The sampling points are chosen using a Sobol sequence, this can be done by passing `SobolSample()` to the `sample` function.
 
@@ -53,7 +55,7 @@ y = vcat(y1, y2)
 length(y) == 2 * n_samples
 ```
 
-## Building a surrogate
+### Building a surrogate
 
 With our sampled points, we can build the Gradient Enhanced Kriging surrogate using the `GEK` function.
 
@@ -66,7 +68,7 @@ plot!(my_gek, label = "Surrogate function", ribbon = p -> std_error_at_point(my_
     xlims = (lower_bound, upper_bound), legend = :top)
 ```
 
-# Gradient Enhanced Kriging Surrogate Tutorial (ND)
+## Several dimensions
 
 First of all, let's define the function we are going to build a surrogate for.
 
@@ -87,7 +89,7 @@ function leon(x)
 end
 ```
 
-## Sampling
+### Sampling
 
 Let's define our bounds, this time we are working in two dimensions. In particular, we want our first dimension `x` to have bounds `0, 1`, and `0, 1` for the second dimension. We are taking 100 samples of the space using Sobol Sequences. We then evaluate our function on all the sampling points.
 
@@ -100,7 +102,8 @@ y1 = leon.(xys)
 ```
 
 ```@example GEK_ND
-xgrid, ygrid = 0:0.05:1, 0:0.05:1
+xgrid = range(lower_bound[1], upper_bound[1], length = 100)
+ygrid = range(lower_bound[2], upper_bound[2], length = 100)
 p1 = surface(xgrid, ygrid, (x1, x2) -> leon((x1, x2)))
 xs = [xy[1] for xy in xys]
 ys = [xy[2] for xy in xys]
@@ -110,7 +113,7 @@ scatter!(xs, ys)
 plot(p1, p2, title = "True function")
 ```
 
-## Building a surrogate
+### Building a surrogate
 
 Using the sampled points, we build the surrogate, the steps are analogous to the 1-dimensional case.
 

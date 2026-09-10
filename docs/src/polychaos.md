@@ -8,7 +8,7 @@ PolynomialChaosSurrogate
 
 ## Sampling
 
-We choose to sample f in 100 points between 0 and 10 using the `sample` function. The sampling points are chosen using a Low Discrepancy. This can be done by passing `HaltonSample()` to the `sample` function.
+We choose to sample f in 100 points between 1 and 6 using the `sample` function. The sampling points are chosen from a low-discrepancy sequence, by passing `HaltonSample()` to the `sample` function.
 
 ```@example polychaos
 using Surrogates

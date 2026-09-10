@@ -2,7 +2,10 @@
 
 The sphere function of dimension d is defined as:
 ``f(x) = \sum_{i=1}^d x_i^2``
-with lower bound -10 and upper bound 10.
+with lower bound -10 and upper bound 10. Its global minimum is
+``f(\mathbf{0}) = 0``. It is convex and perfectly smooth, which makes it the
+sanity check of the benchmark set: a surrogate that struggles here has a
+problem unrelated to the difficulty of the objective.
 
 Let's import Surrogates and Plots:
 
@@ -33,7 +36,7 @@ plot(x, y, seriestype = :scatter, label = "Sampled points",
 plot!(xs, sphere_function.(xs), label = "True function", legend = :top)
 ```
 
-Fitting RadialSurrogate with different radial basis:
+Fitting `RadialBasis` with different radial basis functions:
 
 ```@example sphere_function
 rad_1d_linear = RadialBasis(x, y, lb, ub)

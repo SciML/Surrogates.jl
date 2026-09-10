@@ -44,7 +44,7 @@ ub = [3.5, 0.5]
 x = sample(50, lb, ub, SobolSample())
 y = f.(x)
 my_radial_basis_ego = RadialBasis(x, y, lb, ub)
-#I can find my pareto set and pareto front by calling again the surrogate_optimize! function:
+# The Pareto set and Pareto front come back from surrogate_optimize!:
 pareto_set,
 pareto_front = surrogate_optimize!(
     f, SMB(), lb, ub, my_radial_basis_ego, SobolSample(); maxiters = 10, n_new_look = 100);

@@ -1,7 +1,10 @@
-## Salustowicz Benchmark Function
+# Salustowicz Benchmark Function
 
-The true underlying function HyGP had to approximate is the 1D Salustowicz function. The function can be evaluated in the given domain:
-``x \in [0, 10]``.
+The Salustowicz function is a one-dimensional benchmark, usually evaluated on
+``x \in [0, 10]``. The ``e^{-x}x^3`` prefactor makes its amplitude vary by
+several orders of magnitude across that domain — large oscillations near
+``x \approx 3`` decaying to almost nothing by ``x = 10`` — so it separates
+surrogates that adapt their length scale from those that do not.
 
 The Salustowicz benchmark function is as follows:
 
@@ -18,9 +21,9 @@ Now, let's define our objective function:
 
 ```@example salustowicz1D
 function salustowicz(x)
-    term1 = 2.72^(-x) * x^3 * cos(x) * sin(x)
+    term1 = exp(-x) * x^3 * cos(x) * sin(x)
     term2 = (cos(x) * sin(x) * sin(x) - 1)
-    y = term1 * term2
+    return term1 * term2
 end
 ```
 
@@ -30,7 +33,6 @@ Let's sample f in 30 points between 0 and 10 using the `sample` function. The sa
 n_samples = 30
 lower_bound = 0
 upper_bound = 10
-num_round = 2
 x = sample(n_samples, lower_bound, upper_bound, SobolSample())
 y = salustowicz.(x)
 xs = lower_bound:0.001:upper_bound
@@ -51,7 +53,7 @@ plot!(xs, InverseDistance.(xs), label = "InverseDistanceSurrogate", legend = :to
 plot!(xs, lobachevsky_surrogate.(xs), label = "Lobachevsky", legend = :topright)
 ```
 
-Not's let's see Kriging Surrogate with different hyper parameter:
+Now let's see the Kriging surrogate under different correlation exponents `p`. Smaller `p` gives rougher sample paths, and the ribbon shows the predicted standard error:
 
 ```@example salustowicz1D
 kriging_surrogate1 = Kriging(x, y, lower_bound, upper_bound, p = 0.9);

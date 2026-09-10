@@ -58,7 +58,7 @@ MOE_at0 = MOE_1D_RAD_RAD(0.0)
 
 As we can see, the accuracy is significantly better.
 
-## Under the Hood - How SurrogatesMOE Works
+## Under the Hood: How SurrogatesMOE Works
 
 First, we create Gaussian Mixture Models for the number of expert types provided using the x and y values. For example, in the above example, we create two clusters. Then, using a small test dataset kept aside from the input data, we choose the best surrogate model for each of the clusters. At prediction time, we use the appropriate surrogate model based on the cluster to which the new point belongs.
 
@@ -111,7 +111,7 @@ rbf_rmse = rmse(true_vals, rbf_pred_vals)
 @show rbf_rmse, moe_rmse
 ```
 
-## Usage Notes - Example With Other Surrogates
+## Usage Notes: Example With Other Surrogates
 
 From the above example, simply change or add to the expert types:
 

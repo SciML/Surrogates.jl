@@ -25,9 +25,11 @@ using Surrogates
 using Plots
 ```
 
-## Sampling
+## One dimension
 
-We choose to sample f in 100 points between 0 and 4 using the `sample` function. The sampling points are chosen using a Sobol sequence, this can be done by passing `SobolSample()` to the `sample` function.
+### Sampling
+
+We choose to sample f in 100 points between 1 and 4 using the `sample` function. The sampling points are chosen using a Sobol sequence, this can be done by passing `SobolSample()` to the `sample` function.
 
 ```@example LobachevskySurrogate_tutorial
 f(x) = sin(x) + sin(10 / 3 * x)
@@ -40,7 +42,7 @@ scatter(x, y, label = "Sampled points", xlims = (lower_bound, upper_bound))
 plot!(f, label = "True function", xlims = (lower_bound, upper_bound))
 ```
 
-## Building a surrogate
+### Building a surrogate
 
 With our sampled points, we can build the Lobachevsky surrogate using the `LobachevskySurrogate` function.
 
@@ -58,7 +60,7 @@ plot!(
     lobachevsky_surrogate, label = "Surrogate function", xlims = (lower_bound, upper_bound))
 ```
 
-## Optimizing
+### Optimizing
 
 Having built a surrogate, we can now use it to search for minima in our original function `f`.
 
@@ -73,7 +75,7 @@ plot!(
     lobachevsky_surrogate, label = "Surrogate function", xlims = (lower_bound, upper_bound))
 ```
 
-## The closed-form integral
+### The closed-form integral
 
 The Lobachevsky spline integrates in closed form, which the other surrogates in
 this package do not. `lobachevsky_integral` evaluates that formula, and it
@@ -94,7 +96,7 @@ println("relative difference    = ", abs(closed - numerical) / abs(numerical))
 
 In the example below, it shows how to use `lobachevsky_surrogate` for higher dimension problems.
 
-# Lobachevsky Surrogate Tutorial (ND):
+## Several dimensions
 
 First of all, we will define the `Schaffer` function we are going to build surrogate for. Notice, one how its argument is a vector of numbers, one for each coordinate, and its output is a scalar.
 
@@ -112,7 +114,7 @@ function schaffer(x)
 end
 ```
 
-## Sampling
+### Sampling
 
 Let's define our bounds, this time we are working in two dimensions. In particular, we want our first dimension `x` to have bounds `0, 8`, and `0, 8` for the second dimension. We are taking 60 samples of the space using Sobol Sequences. We then evaluate our function on all of the sampling points.
 
@@ -126,17 +128,18 @@ zs = schaffer.(xys);
 ```
 
 ```@example LobachevskySurrogate_ND
-x, y = 0:8, 0:8
-p1 = surface(x, y, (x1, x2) -> schaffer((x1, x2)))
+xgrid = range(lower_bound[1], upper_bound[1], length = 100)
+ygrid = range(lower_bound[2], upper_bound[2], length = 100)
+p1 = surface(xgrid, ygrid, (x1, x2) -> schaffer((x1, x2)))
 xs = [xy[1] for xy in xys]
 ys = [xy[2] for xy in xys]
 scatter!(xs, ys, zs)
-p2 = contour(x, y, (x1, x2) -> schaffer((x1, x2)))
+p2 = contour(xgrid, ygrid, (x1, x2) -> schaffer((x1, x2)))
 scatter!(xs, ys)
 plot(p1, p2, title = "True function")
 ```
 
-## Building a surrogate
+### Building a surrogate
 
 Using the sampled points, we build the surrogate, the steps are analogous to the 1-dimensional case.
 
@@ -146,14 +149,14 @@ Lobachevsky = LobachevskySurrogate(
 ```
 
 ```@example LobachevskySurrogate_ND
-p1 = surface(x, y, (x, y) -> Lobachevsky([x y]))
+p1 = surface(xgrid, ygrid, (x, y) -> Lobachevsky([x y]))
 scatter!(xs, ys, zs, marker_z = zs)
-p2 = contour(x, y, (x, y) -> Lobachevsky([x y]))
+p2 = contour(xgrid, ygrid, (x, y) -> Lobachevsky([x y]))
 scatter!(xs, ys, marker_z = zs)
 plot(p1, p2, title = "Surrogate")
 ```
 
-## Optimizing
+### Optimizing
 
 With our surrogate, we can now search for the minima of the function.
 
@@ -175,18 +178,18 @@ length(xys), length(Lobachevsky.x)
 ```
 
 ```@example LobachevskySurrogate_ND
-p1 = surface(x, y, (x, y) -> Lobachevsky([x y]))
+p1 = surface(xgrid, ygrid, (x, y) -> Lobachevsky([x y]))
 xys = Lobachevsky.x
 xs = [i[1] for i in xys]
 ys = [i[2] for i in xys]
 zs = schaffer.(xys)
 scatter!(xs, ys, zs, marker_z = zs)
-p2 = contour(x, y, (x, y) -> Lobachevsky([x y]))
+p2 = contour(xgrid, ygrid, (x, y) -> Lobachevsky([x y]))
 scatter!(xs, ys, marker_z = zs)
 plot(p1, p2)
 ```
 
-## Integrating out a coordinate
+### Integrating out a coordinate
 
 `lobachevsky_integrate_dimension` integrates the surrogate over one coordinate
 and returns a surrogate on the remaining ones — the marginal. Here we integrate
@@ -213,7 +216,7 @@ lobachevsky_integral(marginal, marginal.lb, marginal.ub),
 lobachevsky_integral(Lobachevsky, lower_bound, upper_bound)
 ```
 
-## Vector-valued responses
+### Vector-valued responses
 
 The interpolant is linear in the responses and the kernel matrix does not
 involve them, so several outputs can be fitted at once against the same matrix.

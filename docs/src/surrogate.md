@@ -122,7 +122,7 @@ WendlandStructure
 PolyChaosStructure
 ```
 
-# Creating another surrogate
+## Creating another surrogate
 
 It's great that you want to add another surrogate to the library!
 You will need to:
@@ -131,7 +131,7 @@ You will need to:
  2. Define update!(your\_surrogate, x\_new, y\_new)
  3. Define your\_surrogate(value) for the approximation
 
-## Example
+### Example
 
 ```julia
 mutable struct NewSurrogate{X, Y, L, U, C, A, B} <: AbstractDeterministicSurrogate

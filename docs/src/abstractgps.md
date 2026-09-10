@@ -84,12 +84,13 @@ upper_bound = [1.0, 1.0]
 xys = sample(n_samples, lower_bound, upper_bound, SobolSample())
 zs = hypot_func.(xys)
 
-x, y = -2:2, -2:2
-p1 = surface(x, y, (x1, x2) -> hypot_func((x1, x2)))
+xgrid = range(lower_bound[1], upper_bound[1], length = 100)
+ygrid = range(lower_bound[2], upper_bound[2], length = 100)
+p1 = surface(xgrid, ygrid, (x1, x2) -> hypot_func((x1, x2)))
 xs = [xy[1] for xy in xys]
 ys = [xy[2] for xy in xys]
 scatter!(xs, ys, zs)
-p2 = contour(x, y, (x1, x2) -> hypot_func((x1, x2)))
+p2 = contour(xgrid, ygrid, (x1, x2) -> hypot_func((x1, x2)))
 scatter!(xs, ys)
 plot(p1, p2, title = "True function")
 ```
@@ -98,9 +99,9 @@ Now let's see how our surrogate performs:
 
 ```@example abstractgps_tutorialnd
 gp_surrogate = AbstractGPSurrogate(xys, zs)
-p1 = surface(x, y, (x, y) -> gp_surrogate([x y]))
+p1 = surface(xgrid, ygrid, (x, y) -> gp_surrogate([x y]))
 scatter!(xs, ys, zs, marker_z = zs)
-p2 = contour(x, y, (x, y) -> gp_surrogate([x y]))
+p2 = contour(xgrid, ygrid, (x, y) -> gp_surrogate([x y]))
 scatter!(xs, ys, marker_z = zs)
 plot(p1, p2, title = "Surrogate")
 ```
