@@ -10,7 +10,7 @@
 x = [(0.0,), (1.0,), (2.0,)]
 y = [0.0, 1.0, 4.0]
 surrogate = SecondOrderPolynomialSurrogate(x, y, [0.0], [2.0])
-surrogate((1.5,))</code></pre></div><a class="docs-sourcelink" target="_blank" href="https://github.com/SciML/Surrogates.jl/blob/aa6e134fd575d7a2e34c6d9342bc97ca910effd2/src/SecondOrderPolynomialSurrogate.jl#L1-L89">source</a></section></details></article><pre><code class="language-julia hljs">using Surrogates
+surrogate((1.5,))</code></pre></div><a class="docs-sourcelink" target="_blank" href="https://github.com/SciML/Surrogates.jl/blob/e6089d5ed38bac0c7fa66de1c5d19a79b42ce7be/src/SecondOrderPolynomialSurrogate.jl#L1-L89">source</a></section></details></article><pre><code class="language-julia hljs">using Surrogates
 using Plots</code></pre><h2 id="Sampling"><a class="docs-heading-anchor" href="#Sampling">Sampling</a><a id="Sampling-1"></a><a class="docs-heading-anchor-permalink" href="#Sampling" title="Permalink"></a></h2><pre><code class="language-julia hljs">f = x -&gt; 3 * sin(x) + 10 / x
 lb = 3.0
 ub = 6.0
@@ -18,13 +18,13 @@ n = 100
 x = sample(n, lb, ub, HaltonSample())
 y = f.(x)
 scatter(x, y, label = &quot;Sampled points&quot;, xlims = (lb, ub))
-plot!(f, label = &quot;True function&quot;, xlims = (lb, ub))</code></pre><img src="08285565.svg" alt="Example block output"/><h2 id="Building-the-surrogate"><a class="docs-heading-anchor" href="#Building-the-surrogate">Building the surrogate</a><a id="Building-the-surrogate-1"></a><a class="docs-heading-anchor-permalink" href="#Building-the-surrogate" title="Permalink"></a></h2><pre><code class="language-julia hljs">sec = SecondOrderPolynomialSurrogate(x, y, lb, ub)
+plot!(f, label = &quot;True function&quot;, xlims = (lb, ub))</code></pre><img src="c88af0ad.svg" alt="Example block output"/><h2 id="Building-the-surrogate"><a class="docs-heading-anchor" href="#Building-the-surrogate">Building the surrogate</a><a id="Building-the-surrogate-1"></a><a class="docs-heading-anchor-permalink" href="#Building-the-surrogate" title="Permalink"></a></h2><pre><code class="language-julia hljs">sec = SecondOrderPolynomialSurrogate(x, y, lb, ub)
 plot(x, y, seriestype = :scatter, label = &quot;Sampled points&quot;, xlims = (lb, ub))
 plot!(f, label = &quot;True function&quot;, xlims = (lb, ub))
-plot!(sec, label = &quot;Surrogate function&quot;, xlims = (lb, ub))</code></pre><img src="d9f8e8bd.svg" alt="Example block output"/><h2 id="Optimizing"><a class="docs-heading-anchor" href="#Optimizing">Optimizing</a><a id="Optimizing-1"></a><a class="docs-heading-anchor-permalink" href="#Optimizing" title="Permalink"></a></h2><pre><code class="language-julia hljs">surrogate_optimize!(f, SRBF(), lb, ub, sec, SobolSample())
+plot!(sec, label = &quot;Surrogate function&quot;, xlims = (lb, ub))</code></pre><img src="84ea4f29.svg" alt="Example block output"/><h2 id="Optimizing"><a class="docs-heading-anchor" href="#Optimizing">Optimizing</a><a id="Optimizing-1"></a><a class="docs-heading-anchor-permalink" href="#Optimizing" title="Permalink"></a></h2><pre><code class="language-julia hljs">surrogate_optimize!(f, SRBF(), lb, ub, sec, SobolSample())
 scatter(x, y, label = &quot;Sampled points&quot;)
 plot!(f, label = &quot;True function&quot;, xlims = (lb, ub))
-plot!(sec, label = &quot;Surrogate function&quot;, xlims = (lb, ub))</code></pre><img src="8be5c1b2.svg" alt="Example block output"/><p>The optimization method successfully found the minimum.</p><h2 id="Multi-output-responses"><a class="docs-heading-anchor" href="#Multi-output-responses">Multi-output responses</a><a id="Multi-output-responses-1"></a><a class="docs-heading-anchor-permalink" href="#Multi-output-responses" title="Permalink"></a></h2><p>Passing a vector response per sample fits one column of coefficients per output against a single shared factorization, and evaluation returns a vector.</p><pre><code class="language-julia hljs">using Surrogates
+plot!(sec, label = &quot;Surrogate function&quot;, xlims = (lb, ub))</code></pre><img src="b0f7d9f1.svg" alt="Example block output"/><p>The optimization method successfully found the minimum.</p><h2 id="Multi-output-responses"><a class="docs-heading-anchor" href="#Multi-output-responses">Multi-output responses</a><a id="Multi-output-responses-1"></a><a class="docs-heading-anchor-permalink" href="#Multi-output-responses" title="Permalink"></a></h2><p>Passing a vector response per sample fits one column of coefficients per output against a single shared factorization, and evaluation returns a vector.</p><pre><code class="language-julia hljs">using Surrogates
 
 lb = [0.0, 0.0]
 ub = [10.0, 10.0]
@@ -34,7 +34,7 @@ y = f.(x)
 sec = SecondOrderPolynomialSurrogate(x, y, lb, ub)
 sec((2.0, 3.0))</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">2-element Vector{Float64}:
  4.000000000000003
- 5.999999999999995</code></pre><p>Both outputs are exactly quadratic, so they are recovered to round-off:</p><pre><code class="language-julia hljs">f((2.0, 3.0))</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">2-element Vector{Float64}:
+ 5.999999999999996</code></pre><p>Both outputs are exactly quadratic, so they are recovered to round-off:</p><pre><code class="language-julia hljs">f((2.0, 3.0))</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">2-element Vector{Float64}:
  4.0
  6.0</code></pre><h2 id="Reading-the-coefficients"><a class="docs-heading-anchor" href="#Reading-the-coefficients">Reading the coefficients</a><a id="Reading-the-coefficients-1"></a><a class="docs-heading-anchor-permalink" href="#Reading-the-coefficients" title="Permalink"></a></h2><p><code>β</code> follows the columns of the design matrix — intercept, coordinates, pairwise products in lexicographic order, then squares. A target written as <span>$a + bᵀp + pᵀCp$</span> with symmetric <span>$C$</span> therefore has cross coefficient <span>$2C₁₂$</span>, since <span>$C$</span> contributes that off-diagonal term twice.</p><pre><code class="language-julia hljs">using Surrogates
 
@@ -48,10 +48,10 @@ ub = [5.0, 5.0]
 x = sample(30, lb, ub, SobolSample())
 sec = SecondOrderPolynomialSurrogate(x, g.(x), lb, ub)
 sec.β</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">6-element Vector{Float64}:
- 0.2999999999999999
+ 0.2999999999999997
  0.7000000000000002
- 0.09999999999999998
- 0.7999999999999998
+ 0.1
+ 0.7999999999999999
  0.30000000000000004
  0.10000000000000009</code></pre><pre><code class="language-julia hljs">[a, b[1], b[2], 2C[1, 2], C[1, 1], C[2, 2]]</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">6-element Vector{Float64}:
  0.3
@@ -59,4 +59,4 @@ sec.β</code></pre><pre class="documenter-example-output"><code class="nohighlig
  0.1
  0.8
  0.3
- 0.1</code></pre></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../xgboost/">« XGBoost</a><a class="docs-footer-nextpage" href="../earth/">Earth (MARS) »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.19.0 on <span class="colophon-date" title="Thursday 10 September 2026 13:15">Thursday 10 September 2026</span>. Using Julia version 1.13.0.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+ 0.1</code></pre></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../xgboost/">« XGBoost</a><a class="docs-footer-nextpage" href="../earth/">Earth (MARS) »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.19.0 on <span class="colophon-date" title="Thursday 10 September 2026 13:19">Thursday 10 September 2026</span>. Using Julia version 1.13.0.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
