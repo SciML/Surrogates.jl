@@ -6,7 +6,7 @@ using XGBoost: xgboost, predict
 import SurrogatesBase
 
 """
-    XGBoostSurrogate(x, y, lb, ub, num_round)
+    XGBoostSurrogate(x, y, lb, ub; num_round = 1)
 
 Build a tree-boosted surrogate. `num_round` is the number of boosting rounds.
 
@@ -58,16 +58,7 @@ function SurrogatesBase.update!(xgb::XGBoostSurrogate, x_new, y_new)
     end
     xgb.x = vcat(xgb.x, x_new)
     xgb.y = vcat(xgb.y, y_new)
-    if length(xgb.lb) == 1
-        xgb.bst = xgboost(
-            (xgb.x, xgb.y);
-            num_round = xgb.num_round
-        )
-    else
-        xgb.bst = xgboost(
-            (xgb.x, xgb.y); num_round = xgb.num_round
-        )
-    end
+    xgb.bst = xgboost((xgb.x, xgb.y); num_round = xgb.num_round)
     return nothing
 end
 

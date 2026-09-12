@@ -16,7 +16,7 @@ Builds a SVM Surrogate using [LIBSVM](https://github.com/JuliaML/LIBSVM.jl).
   - `x`: Input data points.
   - `y`: Output data points.
   - `lb`: Lower bound of input data points.
-  - `ub`: Upper bound of output data points.
+  - `ub`: Upper bound of input data points.
 """
 function Surrogates.SVMSurrogate(x, y, lb, ub)
     X = Array{Float64, 2}(undef, length(x), length(first(x)))
@@ -54,15 +54,12 @@ end
 function SurrogatesBase.update!(svmsurr::SVMSurrogate, x_new, y_new)
     svmsurr.x = vcat(svmsurr.x, x_new)
     svmsurr.y = vcat(svmsurr.y, y_new)
-    return if length(svmsurr.lb) == 1
-        svmsurr.model = fit!(
-            SVC(), reshape(svmsurr.x, length(svmsurr.x), 1), svmsurr.y
-        )
+    svmsurr.model = if length(svmsurr.lb) == 1
+        fit!(SVC(), reshape(svmsurr.x, length(svmsurr.x), 1), svmsurr.y)
     else
-        svmsurr.model = fit!(
-            SVC(), transpose(reduce(hcat, collect.(svmsurr.x))), svmsurr.y
-        )
+        fit!(SVC(), transpose(reduce(hcat, collect.(svmsurr.x))), svmsurr.y)
     end
+    return nothing
 end
 
 end # module
