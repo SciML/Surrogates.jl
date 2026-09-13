@@ -4,7 +4,7 @@ using AbstractGPs: GP, posterior
 using Distributions: logpdf
 using KernelFunctions: Matern52Kernel
 using Statistics: mean, var
-using Surrogates: AbstractGPSurrogate, Surrogates, _append_samples, _match_stored
+using Surrogates: AbstractGPSurrogate, Surrogates
 
 import SurrogatesBase
 
@@ -22,11 +22,11 @@ end
 # could not be differentiated by `ForwardDiff.gradient`, which supplies a vector.
 # `_match_stored` is the same conversion `update!` uses.
 function (g::AbstractGPSurrogate)(val)
-    return only(mean(g.gp_posterior([_match_stored(first(g.x), val)])))
+    return only(mean(g.gp_posterior([Surrogates._match_stored(first(g.x), val)])))
 end
 
 function Surrogates.std_error_at_point(g::AbstractGPSurrogate, val)
-    point = _match_stored(first(g.x), val)
+    point = Surrogates._match_stored(first(g.x), val)
     return sqrt(only(var(g.gp_posterior([point]))))
 end
 
@@ -36,7 +36,7 @@ function SurrogatesBase.update!(g::AbstractGPSurrogate, new_x, new_y)
     # design uses. Iterating `new_x` directly, as this did, walked the
     # *coordinates* of a single multidimensional point.
     n = length(g.x)
-    x_all, y_all = _append_samples(g.x, g.y, new_x, new_y)
+    x_all, y_all = Surrogates._append_samples(g.x, g.y, new_x, new_y)
     for p in view(x_all, (n + 1):length(x_all))
         in(p, g.x) &&
             error("Adding a sample that already exists, cannot update AbstractGPSurrogate!")

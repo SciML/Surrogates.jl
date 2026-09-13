@@ -1,11 +1,7 @@
 module SurrogatesMOEExt
 
 import Surrogates
-using Surrogates: _append_samples, _build_component
-import Surrogates: RadialBasis,
-    InverseDistanceSurrogate, Kriging, LobachevskySurrogate,
-    LinearSurrogate, MOE, NeuralSurrogate, XGBoostSurrogate,
-    PolynomialChaosSurrogate, SecondOrderPolynomialSurrogate, Wendland
+import Surrogates: MOE
 using Distributions: MvNormal
 using GaussianMixtures: GMM, covars, llpg
 using LinearAlgebra: norm
@@ -258,7 +254,7 @@ an array of surrogate objects
 """
 function _surrogate_builder(local_kind, k, x, y, lb, ub)
     # Dispatch on the descriptor's type; see `src/ComponentSurrogates.jl`.
-    return [_build_component(local_kind[i], x, y, lb, ub) for i in 1:k]
+    return [Surrogates._build_component(local_kind[i], x, y, lb, ub) for i in 1:k]
 end
 
 """
@@ -270,7 +266,7 @@ function SurrogatesBase.update!(m::MOE, x, y)
     # `_append_samples`: the caller's containers are left alone, one new point
     # is told from a batch of them, and a point may be written either as a tuple
     # or as a coordinate vector.
-    m.x, m.y = _append_samples(m.x, m.y, x, y)
+    m.x, m.y = Surrogates._append_samples(m.x, m.y, x, y)
 
     # The split the constructor used, not a fresh one: refitting on a different
     # train/test partition would score the experts against different data.

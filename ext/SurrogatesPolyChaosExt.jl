@@ -1,6 +1,6 @@
 module SurrogatesPolyChaosExt
 
-using Surrogates: PolynomialChaosSurrogate, Surrogates, _append_samples
+using Surrogates: PolynomialChaosSurrogate, Surrogates
 using PolyChaos: AbstractCanonicalOrthoPoly, GaussOrthoPoly, MultiOrthoPoly
 
 import PolyChaos
@@ -85,7 +85,7 @@ function _calculatepce_coeff(x, y, num_of_multi_indexes, orthopolys::MultiOrthoP
 end
 
 function SurrogatesBase.update!(polych::PolynomialChaosSurrogate, x_new, y_new)
-    polych.x, polych.y = _append_samples(
+    polych.x, polych.y = Surrogates._append_samples(
         polych.x, polych.y, x_new, y_new
     )
     polych.coeff = _calculatepce_coeff(

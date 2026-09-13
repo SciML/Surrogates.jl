@@ -1,7 +1,6 @@
 module SurrogatesXGBoostExt
 
-using Surrogates: Surrogates, XGBoostSurrogate, _check_dimension,
-    _is_single_sample, _match_stored
+using Surrogates: Surrogates, XGBoostSurrogate
 using XGBoost: xgboost, predict
 
 import SurrogatesBase
@@ -63,17 +62,17 @@ end
 # matrix with the wrong number of features and answers anyway, so a scalar query
 # against a multidimensional model returned a number rather than raising.
 function (xgb::XGBoostSurrogate)(val)
-    _check_dimension(xgb, val)
+    Surrogates._check_dimension(xgb, val)
     return predict(xgb.bst, reshape(collect(val), length(val), 1))[1]
 end
 
 function SurrogatesBase.update!(xgb::XGBoostSurrogate, x_new, y_new)
     # `_is_single_sample` is the core's rule for telling one new sample from a
     # batch of them.
-    added_x, added_y = if _is_single_sample(x_new, first(xgb.x))
-        ([_match_stored(first(xgb.x), x_new)], [y_new])
+    added_x, added_y = if Surrogates._is_single_sample(x_new, first(xgb.x))
+        ([Surrogates._match_stored(first(xgb.x), x_new)], [y_new])
     else
-        ([_match_stored(first(xgb.x), p) for p in x_new], collect(y_new))
+        ([Surrogates._match_stored(first(xgb.x), p) for p in x_new], collect(y_new))
     end
     xgb.x = vcat(xgb.x, added_x)
     xgb.y = vcat(xgb.y, added_y)

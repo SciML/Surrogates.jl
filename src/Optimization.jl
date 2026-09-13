@@ -68,12 +68,6 @@ or `SurrogatesBase.AbstractStochasticSurrogate`, not this union alias.
 """
 const AbstractSurrogate = Union{AbstractDeterministicSurrogate, AbstractStochasticSurrogate}
 
-# Broadcasting a surrogate applies it to each point rather than iterating the
-# surrogate itself: `surrogate.(points)` predicts on many points and
-# `gradient.(surrogate, points)` differentiates at each. Deterministic
-# surrogates inherit this from `Function`; the stochastic half does not, so the
-# method is defined on the union.
-Base.broadcastable(surrogate::AbstractSurrogate) = Ref(surrogate)
 
 """
     KrigingBeliever()

@@ -396,6 +396,24 @@ include("extensions.jl")
 # `extensions.jl` because it dispatches on the extension surrogate types, whose
 # stubs are defined there.
 include("ComponentSurrogates.jl")
+
+# A surrogate passed as an *argument* to a broadcast must be treated as a scalar:
+# `std_error_at_point.(surrogate, points)` and `gradient.(surrogate, points)`
+# should evaluate at each point, not iterate the surrogate. Broadcast asks
+# `broadcastable` of its arguments, and Base's fallback is `collect(x)`, so
+# without a method these fail with `no method matching length(...)`.
+#
+# `surrogate.(points)` needs nothing: the surrogate is in function position
+# there, and broadcast never asks `broadcastable` of the function.
+#
+# Deterministic surrogates already get this from `Function`. The stochastic ones
+# do not, so each needs a method. Declared per concrete type rather than on
+# `AbstractStochasticSurrogate`: that type belongs to `SurrogatesBase`, and a
+# method on another package's function over another package's types is piracy.
+for T in (:Kriging, :GEK, :KPLS, :KPLSK, :GEKPLS, :AbstractGPSurrogate)
+    @eval Base.broadcastable(surrogate::$T) = Ref(surrogate)
+end
+
 export AbstractGPSurrogate, logpdf_surrogate
 export NeuralSurrogate
 export GENNSurrogate, predict_derivative

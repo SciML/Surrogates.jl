@@ -1348,7 +1348,7 @@ end
 @safetestset "extension surrogates reject bad input" begin
     using Surrogates
     using Surrogates: sample, SobolSample, update!
-    using Flux, NNlib, Optimisers, LIBSVM, PolyChaos, AbstractGPs
+    using Flux, Optimisers, LIBSVM, PolyChaos, AbstractGPs
     import XGBoost
     using Test
 
@@ -1456,7 +1456,7 @@ end
 @safetestset "extension update! accepts a point in either representation" begin
     using Surrogates
     using Surrogates: sample, SobolSample, update!
-    using Flux, NNlib, Optimisers, LIBSVM, PolyChaos, AbstractGPs, GaussianMixtures
+    using Flux, Optimisers, LIBSVM, PolyChaos, AbstractGPs, GaussianMixtures
     import XGBoost
     using Test
 
@@ -1527,7 +1527,7 @@ end
 @safetestset "the Flux surrogates infer their return type" begin
     using Surrogates
     using Surrogates: sample, SobolSample
-    using Flux, NNlib, Optimisers
+    using Flux, Optimisers
     using Test
 
     # The call branched on `size(out, 1)` at runtime, so it inferred

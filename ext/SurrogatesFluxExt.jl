@@ -3,7 +3,7 @@ module SurrogatesFluxExt
 using Flux: Chain, Dense
 using NNlib: relu
 using Statistics: mean, std
-using Surrogates: NeuralSurrogate, Surrogates, _is_single_sample, _match_stored
+using Surrogates: NeuralSurrogate, Surrogates
 
 import Flux
 import Optimisers
@@ -149,10 +149,10 @@ function SurrogatesBase.update!(my_n::NeuralSurrogate, x_new, y_new)
     # multi-output response unambiguous: `[y1, y2]` against a single new point is
     # one two-output response, not two scalar ones.
     reference = first(my_n.x)
-    added_x, added_y = if _is_single_sample(x_new, reference)
-        ([_match_stored(reference, x_new)], [y_new])
+    added_x, added_y = if Surrogates._is_single_sample(x_new, reference)
+        ([Surrogates._match_stored(reference, x_new)], [y_new])
     else
-        ([_match_stored(reference, p) for p in x_new], collect(y_new))
+        ([Surrogates._match_stored(reference, p) for p in x_new], collect(y_new))
     end
     x_all = vcat(my_n.x, added_x)
     y_all = vcat(my_n.y, added_y)
@@ -598,9 +598,9 @@ function SurrogatesBase.update!(genn::GENNSurrogate, x_new, y_new; dydx_new = no
     # one-dimensional points. `_is_single_sample` settles it against the stored
     # design, as it does for every other surrogate.
     reference = first(genn.x)
-    x_new = _is_single_sample(x_new, reference) ?
-        _match_stored(reference, x_new) :
-        [_match_stored(reference, p) for p in x_new]
+    x_new = Surrogates._is_single_sample(x_new, reference) ?
+        Surrogates._match_stored(reference, x_new) :
+        [Surrogates._match_stored(reference, p) for p in x_new]
 
     # Normalize new data to match stored format
     x_new_mat = _normalize_x(x_new)

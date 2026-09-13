@@ -132,10 +132,10 @@ using Zygote
         # stall, or a heavy penalty returns the whole unpruned forward basis.
         sizes = [
             length(
-                    EarthSurrogate(
-                        grid_1d, y, 0.0, 10.0; penalty = p, n_min_terms = 1
-                    ).basis
-                ) for p in (0.0, 2.0, 10.0, 20.0, 50.0, 200.0)
+                EarthSurrogate(
+                    grid_1d, y, 0.0, 10.0; penalty = p, n_min_terms = 1
+                ).basis
+            ) for p in (0.0, 2.0, 10.0, 20.0, 50.0, 200.0)
         ]
         @test issorted(sizes, rev = true)
         @test first(sizes) > last(sizes)

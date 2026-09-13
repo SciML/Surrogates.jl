@@ -90,13 +90,13 @@ lobachevsky_integral(loba::LobachevskySurrogate,lb,ub)
 ```
 
   - Support vector machine surrogate, requires `using LIBSVM`.
-  - Gradient boosted trees surrogate, requires `using XGBoost`.
-  - Neural network surrogate, requires `using Flux`.
+  - Gradient boosted trees surrogate, requires `using XGBoost`; documented in
+    the [XGBoost Surrogate Tutorial](@ref).
+  - Neural network surrogate, requires `using Flux`; documented in the
+    [Neural Network Surrogate Tutorial](@ref).
 
 ```@docs
 SVMSurrogate
-XGBoostSurrogate
-NeuralSurrogate
 ```
 
 ## Structure Descriptors

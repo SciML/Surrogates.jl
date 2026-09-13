@@ -306,9 +306,12 @@ end
 end
 
 @testset "surrogates broadcast as scalars" begin
-    # `surrogate.(points)` must apply the surrogate to each point, not try to
-    # iterate the surrogate. Deterministic surrogates inherit this from
-    # `Function`; the stochastic half needs the explicit `broadcastable`.
+    # A surrogate broadcast as an *argument* must be treated as a scalar.
+    # `surrogate.(points)` alone does not test this: there the surrogate is in
+    # function position, and broadcast never asks `broadcastable` of the
+    # function, so it passes with or without the method. Only the argument
+    # position exercises it, and it is what `std_error_at_point.(s, pts)` and
+    # `gradient.(s, pts)` do.
     using Random
     f = t -> (t - 3.7)^2 + 1.0
     Random.seed!(3)
@@ -326,12 +329,23 @@ end
         ("Wendland", Wendland(x, y, 1.0, 6.0)),
     ]
 
+    apply(s, p) = s(p)
+
     @testset "$(name)" for (name, surr) in vcat(stochastic, deterministic)
         vals = surr.(pts)
         @test length(vals) == 3
         @test all(isfinite, vals)
         # Broadcasting and looping must agree.
         @test vals ≈ [surr(p) for p in pts]
+        # The surrogate as a broadcast argument: this is the one that needs
+        # `broadcastable`, and it must agree with the loop too.
+        @test apply.(surr, pts) ≈ [surr(p) for p in pts]
+    end
+
+    @testset "$(name): std_error_at_point broadcasts over points" for (name, surr) in
+        stochastic
+        @test std_error_at_point.(surr, pts) ≈
+            [std_error_at_point(surr, p) for p in pts]
     end
 
     @testset "the retyped models really are stochastic" begin

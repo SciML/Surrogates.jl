@@ -1,6 +1,6 @@
 module SurrogatesSVMExt
 
-using Surrogates: SVMSurrogate, Surrogates, _append_samples
+using Surrogates: SVMSurrogate, Surrogates
 using LIBSVM: SVC
 using ScikitLearnBase: fit!, predict
 
@@ -52,7 +52,7 @@ end
   - `y_new`: Vector of new output points to be added to the training set of SVMSurrogate.
 """
 function SurrogatesBase.update!(svmsurr::SVMSurrogate, x_new, y_new)
-    svmsurr.x, svmsurr.y = _append_samples(
+    svmsurr.x, svmsurr.y = Surrogates._append_samples(
         svmsurr.x, svmsurr.y, x_new, y_new
     )
     svmsurr.model = if length(svmsurr.lb) == 1
