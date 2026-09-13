@@ -1,11 +1,8 @@
+# Stochastic: this model answers `std_error_at_point` with a BLUP predictive
+# standard deviation, which is what the supertype marks.
 """
-    Kriging(x, y, lb::Number, ub::Number; p = 2.0,
-            theta = 0.5 / max(1.0e-6 * abs(ub - lb), std(x))^p)
-    Kriging(x, y, lb, ub;
-            p = 2.0 .* collect(one.(x[1])),
-            theta = [0.5 / max(1.0e-6 * norm(ub .- lb),
-                               std(x_i[i] for x_i in x))^p[i]
-                     for i in eachindex(x[1])])
+    Kriging(x, y, lb, ub; p = 2, theta = nothing, optimize_theta = theta === nothing,
+            n_start = 4, maxiters = 250)
 
 Fit a Kriging interpolant with a power-exponential correlation model. The
 surrogate is callable for mean predictions, while [`std_error_at_point`](@ref)
@@ -81,7 +78,7 @@ surrogate(0.25)
 std_error_at_point(surrogate, 0.25)
 ```
 """
-mutable struct Kriging{X, Y, L, U, P, T, M, B, S, R} <: AbstractDeterministicSurrogate
+mutable struct Kriging{X, Y, L, U, P, T, M, B, S, R} <: AbstractStochasticSurrogate
     x::X
     y::Y
     lb::L

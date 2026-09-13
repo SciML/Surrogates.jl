@@ -68,6 +68,13 @@ or `SurrogatesBase.AbstractStochasticSurrogate`, not this union alias.
 """
 const AbstractSurrogate = Union{AbstractDeterministicSurrogate, AbstractStochasticSurrogate}
 
+# Broadcasting a surrogate applies it to each point rather than iterating the
+# surrogate itself: `surrogate.(points)` predicts on many points and
+# `gradient.(surrogate, points)` differentiates at each. Deterministic
+# surrogates inherit this from `Function`; the stochastic half does not, so the
+# method is defined on the union.
+Base.broadcastable(surrogate::AbstractSurrogate) = Ref(surrogate)
+
 """
     KrigingBeliever()
 
@@ -260,22 +267,38 @@ struct SMB <: SurrogateOptimizationAlgorithm end
 """
     RTEA(k, z, p, n_c, sigma)
 
-Surrogate optimization marker for the radial basis trust-region evolutionary
-algorithm.
+Surrogate optimization marker for the rolling tide evolutionary algorithm, a
+multi-objective method for noisy objectives.
+
+Each iteration proposes one child by simulated binary crossover and Gaussian
+mutation of two members of the current Pareto approximation, then re-evaluates
+`k` of its least-visited members. The re-evaluation is what the method is for:
+under a noisy objective a member may only appear non-dominated, and repeated
+measurement is what removes it.
 
 # Fields
 
-  - `k`: trust-region or candidate-count parameter used by the RTEA method.
-  - `z`: target or reference value used by the method.
-  - `p`: polynomial or distance parameter used by the method.
-  - `n_c`: candidate count or population size.
-  - `sigma`: perturbation scale.
+  - `k`: number of Pareto members re-evaluated per iteration.
+  - `z`: fraction of the iteration budget reserved for re-evaluation alone. New
+    children are proposed while `iter < (1 - z) * maxiters`; the remaining `z`
+    of the run only re-measures what the front already holds.
+  - `p`: probability that a pair of parents is crossed. With probability
+    `1 - p` the child is a copy of one parent, mutated.
+  - `n_c`: distribution index of the simulated binary crossover. Larger values
+    concentrate children nearer their parents.
+  - `sigma`: standard deviation of the Gaussian mutation.
 
 # Usage
 
 ```julia
 surrogate_optimize!(objective, RTEA(k, z, p, n_c, sigma), lb, ub, surrogate, sample_type)
 ```
+
+## References
+
+Fieldsend, J. E., & Everson, R. M. (2015). The rolling tide evolutionary
+algorithm: a multiobjective optimizer for noisy optimization problems. *IEEE
+Transactions on Evolutionary Computation*, 19(1), 103-117.
 """
 struct RTEA{K, Z, P, N, S} <: SurrogateOptimizationAlgorithm
     k::K
@@ -291,11 +314,85 @@ end
 # surrogate, make the interpolation matrix singular.
 _candidate_tolerance(lb, ub) = 1.0e-3 * norm(ub .- lb)
 
+# Dimensions a coordinate-perturbation method may move.
+#
+# A `SectionSample` pins a subset of coordinates and searches only the rest.
+# `sample` applies that itself — it overwrites the fixed entries from `x0` — so
+# `SRBF`, `EI` and `LCBS`, which obtain every candidate from `sample`, stay on
+# the section with no special handling. `DYCORS` and `SOP` perturb coordinates
+# *after* sampling, so they have to be told: without this they moved the pinned
+# coordinates too and returned points off the section they were asked to search,
+# with no error raised.
+#
+# An empty result means every coordinate is pinned, which leaves nothing to
+# search; the callers keep the centre unchanged rather than perturbing it.
+_free_dimensions(::SamplingAlgorithm, d) = 1:d
+_free_dimensions(section::SectionSample, d) = free_dimensions(section)
+
+# Responses that line up one-to-one with `surr.x`.
+#
+# `GEK` is the sole exception: it appends the observed gradients to its response
+# vector, so `y` there holds `[values; gradients]` and runs `1 + d` times the
+# length of `x`. Ranking over the whole vector would compare a directional
+# derivative against a function value. Every other surrogate's `y` is returned
+# untouched rather than sliced, so that no storage layout is assumed. The `GEK`
+# method lives in `GEK.jl`, which is included after this file.
+_sample_responses(surr::AbstractSurrogate) = surr.y
+
 # The best observation held by a surrogate, as the `(point, value)` pair every
 # single-objective method returns.
 function _best_point(surr::AbstractSurrogate)
-    index = argmin(surr.y)
-    return (surr.x[index], surr.y[index])
+    responses = _sample_responses(surr)
+    index = argmin(responses)
+    return (surr.x[index], responses[index])
+end
+
+# A one-dimensional point as a number.
+#
+# In one dimension the package's own convention is that a sample *is* a number —
+# `sample` never produces anything else — but a design may still be handed in as
+# one-element containers, which `KPLS` and friends accept and which the call and
+# `update!` paths handle. The scalar branches of `DYCORS` and `SOP` do coordinate
+# arithmetic directly on the incumbent, so they need the number.
+_scalar_point(p::Number) = p
+_scalar_point(p) = only(p)
+
+# Refit `surr` with one freshly evaluated sample. Gradient-enhanced surrogates
+# require the objective's gradient alongside its value, so `needs_gradient` asks
+# for it by AD here rather than making every method special-case the model.
+function _update_with_sample!(
+        surr::AbstractSurrogate, obj, new_x, new_y, needs_gradient::Bool
+    )
+    if needs_gradient
+        # `Zygote.gradient` returns one entry per argument of `obj`, and `obj`
+        # takes a single point, so the gradient itself is that lone entry. Passing
+        # the wrapper straight through supplies one "derivative" per point, which
+        # is the right count only when the domain is one-dimensional.
+        update!(surr, new_x, new_y, only(Zygote.gradient(obj, new_x)))
+    else
+        update!(surr, new_x, new_y)
+    end
+    return nothing
+end
+
+# Predictive standard deviation, or `nothing` when the surrogate does not model
+# one. `EI` and `LCBS` score candidates with it, so they need to tell a genuinely
+# deterministic surrogate apart from a stochastic one before they start.
+_has_std_error(surr::AbstractSurrogate) =
+    hasmethod(std_error_at_point, Tuple{typeof(surr), Any})
+
+# Guard for the two methods that cannot run without a variance estimate.
+function _require_std_error(surr::AbstractSurrogate, method_name)
+    _has_std_error(surr) && return nothing
+    throw(
+        ArgumentError(
+            "$(method_name) scores candidates with the surrogate's predictive " *
+                "standard deviation, which $(nameof(typeof(surr))) does not provide. " *
+                "Use a surrogate that implements `std_error_at_point` (`Kriging`, " *
+                "`GEK`, `AbstractGPSurrogate`), or pick a method that only needs " *
+                "predictions, such as `SRBF()`, `DYCORS()` or `SOP(n)`."
+        )
+    )
 end
 
 # Distance from `point` to the nearest sample of `surr`.
@@ -341,8 +438,11 @@ const _SRBF_WEIGHTS = (0.3, 0.5, 0.8, 0.95)
 # Trust region of half-width `3 * scale * ||incumbent - bound||` around the
 # incumbent, clipped to the domain.
 function _trust_region(incumbent_x, lb::Number, ub::Number, scale)
-    new_lb = max(lb, incumbent_x - 3 * scale * norm(incumbent_x - lb))
-    new_ub = min(ub, incumbent_x + 3 * scale * norm(incumbent_x - ub))
+    # Scalar bounds mean a one-dimensional problem, where the incumbent is a
+    # number even if the design happens to hold it in a one-element container.
+    x = _scalar_point(incumbent_x)
+    new_lb = max(lb, x - 3 * scale * norm(x - lb))
+    new_ub = min(ub, x + 3 * scale * norm(x - ub))
     return new_lb, new_ub
 end
 
@@ -453,8 +553,9 @@ call/update contract is described under [`AbstractSurrogate`](@ref).
   - `num_new_samples::Integer = 100`: number of candidate points considered at
     each iteration.
   - `needs_gradient::Bool = false`: whether the selected method should evaluate
-    an objective gradient and pass it to a gradient-aware `update!` method.
-    This keyword is supported by the multidimensional `SRBF` method.
+    an objective gradient and pass it to a gradient-aware `update!` method. Set
+    it for the gradient-enhanced surrogates, `GEK` and `GEKPLS`, which refuse a
+    response without one. Every single-objective method accepts it.
 
 # Returns
 
@@ -497,8 +598,7 @@ function surrogate_optimize!(
         num_of_iterations > maxiters && return _best_point(surr)
 
         #1) Sample near the incumbent
-        incumbent_value = minimum(surr.y)
-        incumbent_x = surr.x[argmin(surr.y)]
+        incumbent_x, incumbent_value = _best_point(surr)
         new_lb, new_ub = _trust_region(incumbent_x, lb, ub, scale)
         new_sample = sample(num_new_samples, new_lb, new_ub, sample_type)
 
@@ -517,12 +617,7 @@ function surrogate_optimize!(
 
         #3) Evaluate the objective there and refit
         adaptive_point_y = obj(adaptive_point_x)
-        if needs_gradient
-            adaptive_grad = Zygote.gradient(obj, adaptive_point_x)
-            update!(surr, adaptive_point_x, adaptive_point_y, adaptive_grad)
-        else
-            update!(surr, adaptive_point_x, adaptive_point_y)
-        end
+        _update_with_sample!(surr, obj, adaptive_point_x, adaptive_point_y, needs_gradient)
 
         #4) Widen or narrow the trust region, judged on the measured value
         #   rather than the refitted surrogate's prediction
@@ -587,7 +682,7 @@ function potential_optimal_points(
     w, state = iterate(w_cycle)
     dtol = _candidate_tolerance(lb, ub)
 
-    incumbent_x = surr.x[argmin(surr.y)]
+    incumbent_x, _ = _best_point(surr)
     new_lb, new_ub = _trust_region(incumbent_x, lb, ub, scale)
     new_sample = sample(num_new_samples, new_lb, new_ub, sample_type)
 
@@ -626,7 +721,7 @@ end
 
 """
     surrogate_optimize!(obj, ::LCBS, lb, ub, krig, sample_type;
-        maxiters = 100, num_new_samples = 100, k = 2.0)
+        maxiters = 100, num_new_samples = 100, k = 2.0, needs_gradient = false)
 
 Minimize `obj` with the lower confidence bound acquisition function.
 
@@ -639,8 +734,10 @@ weights the predictive standard deviation more heavily and so explores more.
 The search stops once no candidate's bound improves on the best observation,
 meaning none of them can plausibly beat the incumbent.
 
-`krig` must provide `std_error_at_point`, so this method needs a surrogate with
-a predictive variance such as [`Kriging`](@ref).
+`krig` must provide `std_error_at_point`: [`Kriging`](@ref), [`GEK`](@ref),
+[`KPLS`](@ref), [`KPLSK`](@ref), [`GEKPLS`](@ref) or `AbstractGPSurrogate`. Given
+a surrogate without a predictive variance, this method raises an `ArgumentError`
+before the search starts rather than failing partway through it.
 
 ## References
 
@@ -654,8 +751,9 @@ optimization in the bandit setting: no regret and experimental design.
 function surrogate_optimize!(
         obj::Function, ::LCBS, lb, ub, krig,
         sample_type::SamplingAlgorithm; maxiters = 100,
-        num_new_samples = 100, k = 2.0
+        num_new_samples = 100, k = 2.0, needs_gradient = false
     )
+    _require_std_error(krig, "LCBS")
     dtol = _candidate_tolerance(lb, ub)
     for _ in 1:maxiters
         new_sample = sample(num_new_samples, lb, ub, sample_type)
@@ -672,13 +770,15 @@ function surrogate_optimize!(
 
         # Nothing left that could beat the incumbent even at its optimistic
         # bound, so there is no point evaluating further.
-        min_add_bound >= minimum(krig.y) && return _best_point(krig)
+        min_add_bound >= minimum(_sample_responses(krig)) && return _best_point(krig)
 
         min_add_y = obj(min_add_x)
         if isinf(min_add_y) || isnan(min_add_y)
             println("New point being added is +Inf or NaN, skipping.")
         else
-            update!(krig, _as_new_sample(min_add_x), min_add_y)
+            _update_with_sample!(
+                krig, obj, _as_new_sample(min_add_x), min_add_y, needs_gradient
+            )
         end
     end
     return _best_point(krig)
@@ -690,8 +790,12 @@ function potential_optimal_points(
         sample_type::SamplingAlgorithm, n_parallel::Number;
         num_new_samples = 100
     )
-    lb = krig.lb
-    ub = krig.ub
+    _require_std_error(krig, "EI")
+    # The caller's bounds are the bounds. Reading `krig.lb`/`krig.ub` instead
+    # discarded the arguments the caller passed, and assumed a field layout that
+    # `KPLS`, `KPLSK` and `GEKPLS` do not have — those store their design in
+    # standardized units and expose no `lb`, so the batch call died with
+    # `type KPLS has no field lb`.
     dtol = _candidate_tolerance(lb, ub)
 
     # Virtual points accumulate here; the true surrogate is left untouched.
@@ -701,7 +805,7 @@ function potential_optimal_points(
 
     for i in 1:n_parallel
         new_sample = sample(num_new_samples, lb, ub, sample_type)
-        f_min = minimum(tmp_krig.y)
+        f_min = minimum(_sample_responses(tmp_krig))
         improvements = [_expected_improvement(tmp_krig, c, f_min) for c in new_sample]
 
         # Filtered against `tmp_krig`, which holds a liar at every point already
@@ -722,8 +826,74 @@ function potential_optimal_points(
 end
 
 """
+    potential_optimal_points(::LCBS, strategy, lb, ub, krig, sample_type, n_parallel;
+        num_new_samples = 100, k = 2.0)
+
+Propose `n_parallel` points by the lower confidence bound acquisition.
+
+Each round scores a fresh candidate pool by ``\\mu(x) - k\\sigma(x)`` against a
+temporary surrogate carrying a virtual value at every point already chosen, so a
+batch never proposes the same point twice. Returns `(points, bounds)`.
+"""
+function potential_optimal_points(
+        ::LCBS, strategy, lb, ub, krig,
+        sample_type::SamplingAlgorithm, n_parallel::Number;
+        num_new_samples = 100, k = 2.0
+    )
+    _require_std_error(krig, "LCBS")
+    dtol = _candidate_tolerance(lb, ub)
+
+    # Virtual points accumulate here; the true surrogate is left untouched.
+    tmp_krig = deepcopy(krig)
+    proposed_points_x = Vector{typeof(tmp_krig.x[1])}(undef, n_parallel)
+    bound_of_proposed_points = zeros(float(eltype(tmp_krig.y)), n_parallel)
+
+    for i in 1:n_parallel
+        new_sample = sample(num_new_samples, lb, ub, sample_type)
+        bounds = [
+            tmp_krig(c) - k * std_error_at_point(tmp_krig, c) for c in new_sample
+        ]
+
+        selection = _select_distant_candidate!(bounds, new_sample, tmp_krig.x, dtol)
+        if selection === nothing
+            println("Out of sampling points")
+            return (
+                proposed_points_x[1:(i - 1)],
+                bound_of_proposed_points[1:(i - 1)],
+            )
+        end
+
+        proposed_points_x[i], bound_of_proposed_points[i] = selection
+        calculate_liars(strategy, tmp_krig, krig, proposed_points_x[i])
+    end
+
+    return (proposed_points_x, bound_of_proposed_points)
+end
+
+# The remaining algorithms have no ask-tell form. `DYCORS` schedules its
+# coordinate-perturbation probability on the iteration index against `maxiters`,
+# which a batch has no counterpart for, and `SOP` already evaluates `p` centers
+# per iteration, so asking it for a batch would nest one batch inside another.
+# Every argument but the algorithm is left untyped so this method is strictly
+# less specific than each real one; narrowing any of them would make it ambiguous
+# with the methods above rather than a fallback for them.
+function potential_optimal_points(
+        alg::SurrogateOptimizationAlgorithm, strategy, lb, ub,
+        surr, sample_type, n_parallel; kwargs...
+    )
+    throw(
+        ArgumentError(
+            "potential_optimal_points is not defined for $(nameof(typeof(alg))). " *
+                "The ask-tell interface supports `SRBF()`, `EI()` and `LCBS()`; " *
+                "for a batch with $(nameof(typeof(alg))), call `surrogate_optimize!` " *
+                "directly instead."
+        )
+    )
+end
+
+"""
     surrogate_optimize!(obj, ::EI, lb, ub, krig, sample_type;
-        maxiters = 100, num_new_samples = 100)
+        maxiters = 100, num_new_samples = 100, needs_gradient = false)
 
 Minimize `obj` with the expected improvement acquisition function.
 
@@ -736,8 +906,10 @@ the candidate maximizing it is evaluated, and the surrogate is refitted. The
 offset ``\\xi`` biases the search towards exploration. The search stops once the
 best expected improvement is negligible against the spread of the observations.
 
-`krig` must provide `std_error_at_point`, so this method needs a surrogate with
-a predictive variance such as [`Kriging`](@ref).
+`krig` must provide `std_error_at_point`: [`Kriging`](@ref), [`GEK`](@ref),
+[`KPLS`](@ref), [`KPLSK`](@ref), [`GEKPLS`](@ref) or `AbstractGPSurrogate`. Given
+a surrogate without a predictive variance, this method raises an `ArgumentError`
+before the search starts rather than failing partway through it.
 
 ## References
 
@@ -748,12 +920,13 @@ of expensive black-box functions. *Journal of Global Optimization*, 13,
 function surrogate_optimize!(
         obj::Function, ::EI, lb, ub, krig,
         sample_type::SamplingAlgorithm; maxiters = 100,
-        num_new_samples = 100
+        num_new_samples = 100, needs_gradient = false
     )
+    _require_std_error(krig, "EI")
     dtol = _candidate_tolerance(lb, ub)
     for _ in 1:maxiters
         new_sample = sample(num_new_samples, lb, ub, sample_type)
-        f_min = minimum(krig.y)
+        f_min = minimum(_sample_responses(krig))
         improvements = [_expected_improvement(krig, c, f_min) for c in new_sample]
 
         selection = _select_distant_candidate!(
@@ -765,11 +938,13 @@ function surrogate_optimize!(
         end
         new_x_max, new_EI_max = selection
 
-        if new_EI_max < 1.0e-6 * norm(maximum(krig.y) - minimum(krig.y))
+        if new_EI_max < 1.0e-6 * norm(maximum(_sample_responses(krig)) - minimum(_sample_responses(krig)))
             println("Termination tolerance reached.")
             return _best_point(krig)
         end
-        update!(krig, _as_new_sample(new_x_max), obj(new_x_max))
+        _update_with_sample!(
+            krig, obj, _as_new_sample(new_x_max), obj(new_x_max), needs_gradient
+        )
     end
     println("Completed maximum number of iterations.")
     return _best_point(krig)
@@ -807,7 +982,7 @@ end
 
 """
     surrogate_optimize!(obj, ::DYCORS, lb::Number, ub::Number, surr1, sample_type;
-        maxiters = 100, num_new_samples = 100)
+        maxiters = 100, num_new_samples = 100, needs_gradient = false)
 
 One-dimensional DYCORS. With a single coordinate there is nothing to choose
 between, so this reduces to perturbing the incumbent by a Gaussian step whose
@@ -817,10 +992,11 @@ See the multidimensional method for the algorithm and its reference.
 function surrogate_optimize!(
         obj::Function, ::DYCORS, lb::Number, ub::Number,
         surr1::AbstractSurrogate, sample_type::SamplingAlgorithm;
-        maxiters = 100, num_new_samples = 100
+        maxiters = 100, num_new_samples = 100, needs_gradient = false
     )
-    x_best = surr1.x[argmin(surr1.y)]
-    y_best = minimum(surr1.y)
+    x_best, y_best = _best_point(surr1)
+    x_best = _scalar_point(x_best)
+    free = _free_dimensions(sample_type, 1)
     sigma_n = 0.2 * norm(ub - lb)
     d = length(lb)
     sigma_min = 0.2 * (0.5)^6 * norm(ub - lb)
@@ -837,7 +1013,8 @@ function surrogate_optimize!(
         I_perturb = d
         new_points = zeros(eltype(surr1.x[1]), num_new_samples)
         for i in 1:num_new_samples
-            new_points[i] = x_best + rand(Normal(0, sigma_n))
+            new_points[i] = isempty(free) ? x_best :
+                x_best + rand(Normal(0, sigma_n))
             # Reflect a perturbation that leaves the box back about the
             # bound it crossed, clamping if it overshoots the far side.
             while new_points[i] < lb || new_points[i] > ub
@@ -871,16 +1048,15 @@ function surrogate_optimize!(
             x_best = x_new
             y_best = f_new
         end
-        update!(surr1, x_new, f_new)
+        _update_with_sample!(surr1, obj, x_new, f_new, needs_gradient)
     end
-    index = argmin(surr1.y)
-    return (surr1.x[index], surr1.y[index])
+    return _best_point(surr1)
 end
 
 
 """
     surrogate_optimize!(obj, ::DYCORS, lb, ub, surrn, sample_type;
-        maxiters = 100, num_new_samples = 100)
+        maxiters = 100, num_new_samples = 100, needs_gradient = false)
 
 Minimize `obj` with dynamic coordinate search.
 
@@ -905,12 +1081,22 @@ surrogates and dynamic coordinate search in high-dimensional expensive
 black-box optimization. *Engineering Optimization*, 45(5), 529-555.
 """
 function surrogate_optimize!(
-        obj::Function, ::DYCORS, lb, ub, surrn::AbstractSurrogate,
+        obj::Function, dycors::DYCORS, lb, ub, surrn::AbstractSurrogate,
         sample_type::SamplingAlgorithm; maxiters = 100,
-        num_new_samples = 100
+        num_new_samples = 100, needs_gradient = false
     )
-    x_best = collect(surrn.x[argmin(surrn.y)])
-    y_best = minimum(surrn.y)
+    # A one-dimensional problem may be written with length-1 vector bounds.
+    # `sample` returns scalars for those, so the multidimensional path below
+    # would perturb scalar samples with vector bounds; the scalar method is the
+    # one that matches. `SRBF`, `LCBS` and `EI` have a single generic method and
+    # need no such guard.
+    length(lb) == 1 && return surrogate_optimize!(
+        obj, dycors, first(lb), first(ub), surrn, sample_type;
+        maxiters = maxiters, num_new_samples = num_new_samples,
+        needs_gradient = needs_gradient
+    )
+    x_best, y_best = _best_point(surrn)
+    x_best = collect(x_best)
     sigma_n = 0.2 * norm(ub - lb)
     d = length(lb)
     sigma_min = 0.2 * (0.5)^6 * norm(ub - lb)
@@ -918,6 +1104,7 @@ function surrogate_optimize!(
     t_fail = max(d, 5)
     C_success = 0
     C_fail = 0
+    free = _free_dimensions(sample_type, d)
     for k in 1:maxiters
         # Falls from the full perturbation probability to zero over the run,
         # so later iterations perturb fewer coordinates.
@@ -928,9 +1115,12 @@ function surrogate_optimize!(
             # hand every candidate the same mask.
             w = rand(d)
             I_perturb = w .< p_select
-            if ~(true in I_perturb)
-                val = rand(1:d)
-                I_perturb = vcat(zeros(Int, val - 1), 1, zeros(Int, d - val))
+            # A pinned coordinate is never a candidate for perturbation.
+            for i in 1:d
+                i in free || (I_perturb[i] = false)
+            end
+            if !any(I_perturb) && !isempty(free)
+                I_perturb[rand(free)] = true
             end
             I_perturb = Int.(I_perturb)
             for i in 1:d
@@ -980,16 +1170,15 @@ function surrogate_optimize!(
             x_best = x_new
             y_best = f_new
         end
-        update!(surrn, Tuple(x_new), f_new)
+        _update_with_sample!(surrn, obj, Tuple(x_new), f_new, needs_gradient)
     end
-    index = argmin(surrn.y)
-    return (surrn.x[index], surrn.y[index])
+    return _best_point(surrn)
 end
 
 function obj2_1D(value, points)
     min = +Inf
     my_p = filter(x -> abs(x - value) > 10^-6, points)
-    for i in 1:length(my_p)
+    for i in eachindex(my_p)
         new_val = norm(my_p[i] - value)
         if new_val < min
             min = new_val
@@ -1004,7 +1193,7 @@ function I_tier_ranking_1D(P, surrSOP::AbstractSurrogate)
     Fronts = Dict{Int, Array{eltype(surrSOP.x[1]), 1}}()
     i = 1
     while true
-        F = []
+        F = eltype(P)[]
         j = 1
         for p in P
             n_p = 0
@@ -1014,9 +1203,9 @@ function I_tier_ranking_1D(P, surrSOP::AbstractSurrogate)
                 #for sure at this stage
                 p_index = j
                 q_index = k
-                val1_p = surrSOP.y[p_index]
+                val1_p = _sample_responses(surrSOP)[p_index]
                 val2_p = obj2_1D(p, P)
-                val1_q = surrSOP.y[q_index]
+                val1_q = _sample_responses(surrSOP)[q_index]
                 val2_q = obj2_1D(q, P)
                 # `q` dominates `p` when it is no worse in both objectives and
                 # strictly better in one.
@@ -1045,11 +1234,29 @@ function I_tier_ranking_1D(P, surrSOP::AbstractSurrogate)
     return F
 end
 
-function II_tier_ranking_1D(D::Dict, srg::AbstractSurrogate)
+# Order the points inside each tier by their observed response.
+#
+# Tier-II ranking breaks ties within a tier by objective value (Krityakierne,
+# Akhtar and Shoemaker, 2016). Sorting the points themselves instead orders them
+# by coordinate — lexicographically over the tuple in more than one dimension —
+# which carries no information about which center is the more promising.
+function _sort_tier_by_response!(D::Dict, surr::AbstractSurrogate)
+    responses = _sample_responses(surr)
     for i in 1:length(D)
-        D[i] = D[i][sortperm(D[i])]
+        keys_for_tier = map(D[i]) do point
+            index = findfirst(==(point), surr.x)
+            # A tier holds evaluated centers, so a point with no sample behind
+            # it cannot be ranked; send it to the back rather than error.
+            index === nothing ? typemax(float(eltype(responses))) :
+                float(responses[index])
+        end
+        D[i] = D[i][sortperm(keys_for_tier)]
     end
     return D
+end
+
+function II_tier_ranking_1D(D::Dict, srg::AbstractSurrogate)
+    return _sort_tier_by_response!(D, srg)
 end
 
 # Hypervolume of the region dominated by `points` and bounded by `v_ref`, for
@@ -1096,7 +1303,7 @@ end
 
 """
     surrogate_optimize!(obj, sop::SOP, lb, ub, surr, sample_type;
-        maxiters = 100, num_new_samples = min(500d, 5000))
+        maxiters = 100, num_new_samples = min(500d, 5000), needs_gradient = false)
 
 Minimize `obj` with surrogate optimization using Pareto center selection.
 
@@ -1124,25 +1331,31 @@ Wiley.
 function surrogate_optimize!(
         obj::Function, sop1::SOP, lb::Number, ub::Number,
         surrSOP::AbstractSurrogate, sample_type::SamplingAlgorithm;
-        maxiters = 100, num_new_samples = min(500 * 1, 5000)
+        maxiters = 100, num_new_samples = min(500 * 1, 5000),
+        needs_gradient = false
     )
     d = length(lb)
+    free = _free_dimensions(sample_type, d)
     N_fail = 3
     N_tenure = 5
     tau = 10^-5
     num_P = sop1.p
-    centers_global = surrSOP.x
+    # This branch does coordinate arithmetic on the design directly, so the
+    # points must be numbers even when the surrogate holds them in one-element
+    # containers. Bound once, so no later use can read the raw field instead.
+    design = _scalar_point.(surrSOP.x)
+    centers_global = design
     r_centers_global = 0.2 * norm(ub - lb) * ones(length(surrSOP.x))
     N_failures_global = zeros(length(surrSOP.x))
-    tabu = []
-    N_tenures_tabu = []
+    tabu = eltype(design)[]
+    N_tenures_tabu = Int[]
     for k in 1:maxiters
         N_tenures_tabu .+= 1
         #deleting points that have been in tabu for too long
         del = N_tenures_tabu .> N_tenure
 
         if length(del) > 0
-            for i in 1:length(del)
+            for i in eachindex(del)
                 if del[i]
                     del[i] = i
                 end
@@ -1152,7 +1365,7 @@ function surrogate_optimize!(
         end
 
         ##### P CENTERS ######
-        C = []
+        C = eltype(design)[]
 
         #S(x) set of points already evaluated
         #Rank points in S with:
@@ -1160,25 +1373,22 @@ function surrogate_optimize!(
         Fronts_I = I_tier_ranking_1D(centers_global, surrSOP)
         #2) Second tier ranking
         Fronts = II_tier_ranking_1D(Fronts_I, surrSOP)
-        ranked_list = []
-        for i in 1:length(Fronts)
-            for j in 1:length(Fronts[i])
-                push!(ranked_list, Fronts[i][j])
-            end
-        end
-        ranked_list = eltype(surrSOP.x[1]).(ranked_list)
+        # Flattened front by front, in rank order.
+        ranked_list = eltype(design)[
+            p for i in 1:length(Fronts) for p in Fronts[i]
+        ]
 
         centers_full = 0
         i = 1
         while i <= length(ranked_list) && centers_full == 0
             flag = 0
-            for j in 1:length(ranked_list)
-                for m in 1:length(tabu)
+            for j in eachindex(ranked_list)
+                for m in eachindex(tabu)
                     if abs(ranked_list[j] - tabu[m]) < tau
                         flag = 1
                     end
                 end
-                for l in 1:length(centers_global)
+                for l in eachindex(centers_global)
                     if abs(ranked_list[j] - centers_global[l]) < tau
                         flag = 1
                     end
@@ -1201,8 +1411,8 @@ function surrogate_optimize!(
             i = 1
             while i <= length(ranked_list) && centers_full == 0
                 flag = 0
-                for j in 1:length(ranked_list)
-                    for m in 1:length(centers_global)
+                for j in eachindex(ranked_list)
+                    for m in eachindex(centers_global)
                         if abs(centers_global[j] - ranked_list[m]) < tau
                             flag = 1
                         end
@@ -1243,9 +1453,13 @@ function surrogate_optimize!(
             #Like in DYCORS, I_perturb = 1 always
             evaluations = zeros(eltype(surrSOP.y[1]), num_new_samples)
             for j in 1:num_new_samples
-                a = lb - C[i]
-                b = ub - C[i]
-                N_candidates[j] = C[i] + rand(truncated(Normal(0, r_centers[i]), a, b))
+                N_candidates[j] = if isempty(free)
+                    C[i]
+                else
+                    a = lb - C[i]
+                    b = ub - C[i]
+                    C[i] + rand(truncated(Normal(0, r_centers[i]), a, b))
+                end
                 evaluations[j] = surrSOP(N_candidates[j])
             end
             x_best = N_candidates[argmin(evaluations)]
@@ -1267,13 +1481,13 @@ function surrogate_optimize!(
             f_1 = obj(new_points[i, 1])
             # Second objective: distance from the candidate to the nearest
             # evaluated point.
-            f_2 = obj2_1D(new_points[i, 1], surrSOP.x)
+            f_2 = obj2_1D(new_points[i, 1], design)
 
             l = length(Fronts[1])
-            Pareto_set = zeros(eltype(surrSOP.x[1]), l, 2)
+            Pareto_set = zeros(eltype(design[1]), l, 2)
 
             for j in 1:l
-                val = obj2_1D(Fronts[1][j], surrSOP.x)
+                val = obj2_1D(Fronts[1][j], design)
                 Pareto_set[j, 1] = obj(Fronts[1][j])
                 Pareto_set[j, 2] = val
             end
@@ -1291,20 +1505,21 @@ function surrogate_optimize!(
                 # `new_points[i, 2]` is the surrogate's own prediction at the
                 # candidate, used to rank candidates. The surrogate is fitted to
                 # observations, so store the measured value instead.
-                update!(surrSOP, new_points[i, 1], f_1)
+                _update_with_sample!(
+                    surrSOP, obj, new_points[i, 1], f_1, needs_gradient
+                )
                 push!(r_centers_global, r_centers[i])
                 push!(N_failures_global, N_failures[i])
             end
         end
     end
-    index = argmin(surrSOP.y)
-    return (surrSOP.x[index], surrSOP.y[index])
+    return _best_point(surrSOP)
 end
 
 function obj2_ND(value, points)
     min = +Inf
     my_p = filter(x -> norm(x .- value) > 10^-6, points)
-    for i in 1:length(my_p)
+    for i in eachindex(my_p)
         new_val = norm(my_p[i] .- value)
         if new_val < min
             min = new_val
@@ -1329,9 +1544,9 @@ function I_tier_ranking_ND(P, surrSOPD::AbstractSurrogate)
                 #for sure at this stage
                 p_index = j
                 q_index = k
-                val1_p = surrSOPD.y[p_index]
+                val1_p = _sample_responses(surrSOPD)[p_index]
                 val2_p = obj2_ND(p, P)
-                val1_q = surrSOPD.y[q_index]
+                val1_q = _sample_responses(surrSOPD)[q_index]
                 val2_q = obj2_ND(q, P)
                 # `q` dominates `p` when it is no worse in both objectives and
                 # strictly better in one.
@@ -1361,24 +1576,27 @@ function I_tier_ranking_ND(P, surrSOPD::AbstractSurrogate)
 end
 
 function II_tier_ranking_ND(D::Dict, srgD::AbstractSurrogate)
-    for i in 1:length(D)
-        pos = []
-        yn = []
-        for j in 1:length(D[i])
-            push!(pos, findall(e -> e == D[i][j], srgD.x))
-            push!(yn, srgD.y[pos[j]])
-        end
-        D[i] = D[i][sortperm(D[i])]
-    end
-    return D
+    return _sort_tier_by_response!(D, srgD)
 end
 
 function surrogate_optimize!(
         obj::Function, sopd::SOP, lb, ub, surrSOPD::AbstractSurrogate,
         sample_type::SamplingAlgorithm; maxiters = 100,
-        num_new_samples = min(500 * length(lb), 5000)
+        num_new_samples = min(500 * length(lb), 5000),
+        needs_gradient = false
+    )
+    # A one-dimensional problem may be written with length-1 vector bounds.
+    # `sample` returns scalars for those, so the multidimensional path below
+    # would perturb scalar samples with vector bounds; the scalar method is the
+    # one that matches. `SRBF`, `LCBS` and `EI` have a single generic method and
+    # need no such guard.
+    length(lb) == 1 && return surrogate_optimize!(
+        obj, sopd, first(lb), first(ub), surrSOPD, sample_type;
+        maxiters = maxiters, num_new_samples = num_new_samples,
+        needs_gradient = needs_gradient
     )
     d = length(lb)
+    free = _free_dimensions(sample_type, d)
     N_fail = 3
     N_tenure = 5
     tau = 10^-5
@@ -1386,15 +1604,15 @@ function surrogate_optimize!(
     centers_global = surrSOPD.x
     r_centers_global = 0.2 * norm(ub .- lb) * ones(length(surrSOPD.x))
     N_failures_global = zeros(length(surrSOPD.x))
-    tabu = []
-    N_tenures_tabu = []
+    tabu = eltype(surrSOPD.x)[]
+    N_tenures_tabu = Int[]
     for k in 1:maxiters
         N_tenures_tabu .+= 1
         #deleting points that have been in tabu for too long
         del = N_tenures_tabu .> N_tenure
 
         if length(del) > 0
-            for i in 1:length(del)
+            for i in eachindex(del)
                 if del[i]
                     del[i] = i
                 end
@@ -1414,7 +1632,7 @@ function surrogate_optimize!(
         Fronts = II_tier_ranking_ND(Fronts_I, surrSOPD)
         ranked_list = Array{eltype(surrSOPD.x), 1}()
         for i in 1:length(Fronts)
-            for j in 1:length(Fronts[i])
+            for j in eachindex(Fronts[i])
                 push!(ranked_list, Fronts[i][j])
             end
         end
@@ -1423,13 +1641,13 @@ function surrogate_optimize!(
         i = 1
         while i <= length(ranked_list) && centers_full == 0
             flag = 0
-            for j in 1:length(ranked_list)
-                for m in 1:length(tabu)
+            for j in eachindex(ranked_list)
+                for m in eachindex(tabu)
                     if norm(ranked_list[j] .- tabu[m]) < tau
                         flag = 1
                     end
                 end
-                for l in 1:length(centers_global)
+                for l in eachindex(centers_global)
                     if norm(ranked_list[j] .- centers_global[l]) < tau
                         flag = 1
                     end
@@ -1452,8 +1670,8 @@ function surrogate_optimize!(
             i = 1
             while i <= length(ranked_list) && centers_full == 0
                 flag = 0
-                for j in 1:length(ranked_list)
-                    for m in 1:length(centers_global)
+                for j in eachindex(ranked_list)
+                    for m in eachindex(centers_global)
                         if norm(centers_global[j] .- ranked_list[m]) < tau
                             flag = 1
                         end
@@ -1496,6 +1714,11 @@ function surrogate_optimize!(
             evaluations = zeros(eltype(surrSOPD.y[1]), num_new_samples)
             for j in 1:num_new_samples
                 for k in 1:d
+                    if !(k in free)
+                        # Pinned: the centre already holds the section's value.
+                        N_candidates[j, k] = C[i][k]
+                        continue
+                    end
                     a = lb[k] - C[i][k]
                     b = ub[k] - C[i][k]
                     N_candidates[j, k] = C[i][k] +
@@ -1540,14 +1763,15 @@ function surrogate_optimize!(
             else
                 #P_i is success
                 #Adaptive_learning
-                update!(surrSOPD, new_points_x[i], f_1)
+                _update_with_sample!(
+                    surrSOPD, obj, new_points_x[i], f_1, needs_gradient
+                )
                 push!(r_centers_global, r_centers[i])
                 push!(N_failures_global, N_failures[i])
             end
         end
     end
-    index = argmin(surrSOPD.y)
-    return (surrSOPD.x[index], surrSOPD.y[index])
+    return _best_point(surrSOPD)
 end
 
 #EGO
@@ -1575,6 +1799,73 @@ function _nonDominatedSorting(arr::Array{Float64, 2})
     return fronts
 end
 
+# The estimated Pareto set and front held by a multi-objective surrogate, as the
+# `(points, responses)` pair both `SMB` and `RTEA` report. Every response is a
+# measured evaluation, so the two vectors stay in step by construction.
+function _pareto_of(surr::AbstractSurrogate)
+    responses = _sample_responses(surr)
+    matrix = permutedims(
+        reshape(hcat(responses...), (length(responses[1]), length(responses)))
+    )
+    indices = _nonDominatedSorting(matrix)[1]
+    return (surr.x[indices], collect(responses[indices]))
+end
+
+# Spread factor of simulated binary crossover (Deb and Agrawal, 1995). The
+# distribution index enters as `1 / (n_c + 1)`; writing it as `1 / n_c + 1`
+# parses as `(1 / n_c) + 1`, which is a different exponent for every `n_c` but
+# `n_c` solving `1/n + 1 = 1/(n+1)`, i.e. no real one.
+function _sbx_beta(mu, n_c)
+    exponent = 1 / (n_c + 1)
+    return mu <= 0.5 ? (2 * mu)^exponent : (1 / (2 * (1 - mu)))^exponent
+end
+
+# One simulated-binary-crossover child of parents `u` and `v`, or `v` unchanged
+# when no crossover occurs. The arithmetic broadcasts so it holds for a scalar
+# parent and for a coordinate tuple alike: `*` is not defined between a scalar
+# and a `Tuple`, which made every crossover in the multidimensional method a
+# `MethodError`.
+function _sbx_child(u, v, p_cross, n_c)
+    rand() >= p_cross && return v
+    beta = _sbx_beta(rand(), n_c)
+    return 0.5 .* ((1 + beta) .* v .+ (1 - beta) .* u)
+end
+
+# Offspring have to land inside the box: they are handed to the surrogate as
+# samples and reported in the Pareto set, and neither is meaningful outside the
+# domain the surrogate was fitted on.
+_clamp_to_box(x::Number, lb::Number, ub::Number) = clamp(x, lb, ub)
+_clamp_to_box(x, lb, ub) = clamp.(x, lb, ub)
+
+# Offer `(x_new, y_new)` to the running Pareto approximation: accepted when no
+# member dominates it, and accepting it evicts every member it dominates.
+function _offer_to_pareto!(pareto_set, pareto_front, n_revaluations, x_new, y_new)
+    y = collect(y_new)
+    any(member -> _dominates(collect(member), y), pareto_front) && return false
+
+    dominated = findall(member -> _dominates(y, collect(member)), pareto_front)
+    deleteat!(pareto_set, dominated)
+    deleteat!(pareto_front, dominated)
+    deleteat!(n_revaluations, dominated)
+
+    push!(pareto_set, x_new)
+    push!(pareto_front, y_new)
+    push!(n_revaluations, 0)
+    return true
+end
+
+# Whether the member at `index` survives its re-evaluation: it stays only while
+# no *other* member dominates its fresh response. Comparing it against the whole
+# front would compare it with itself, and `_dominates(y, y)` is false only
+# because the strict-inequality clause fails, which is luck rather than intent.
+function _survives_revaluation(pareto_front, index, y_r)
+    y = collect(y_r)
+    return !any(
+        i -> i != index && _dominates(collect(pareto_front[i]), y),
+        eachindex(pareto_front)
+    )
+end
+
 function surrogate_optimize!(
         obj::Function, sbm::SMB, lb::Number, ub::Number,
         surrSMB::AbstractSurrogate, sample_type::SamplingAlgorithm;
@@ -1584,11 +1875,24 @@ function surrogate_optimize!(
     dim_out = length(surrSMB.y[1])
     d = 1
     x_to_look = sample(n_new_look, lb, ub, sample_type)
+    # One candidate is consumed per iteration, so the pool has to outlast the
+    # loop; without this the screening sweep walks off the end of `x_to_look`.
+    if maxiters > n_new_look
+        throw(
+            ArgumentError(
+                "SMB consumes one candidate per iteration, so `n_new_look` " *
+                    "($(n_new_look)) must be at least `maxiters` ($(maxiters))."
+            )
+        )
+    end
     for iter in 1:maxiters
         index_min = 0
         min_mean = +Inf
         for i in 1:n_new_look
-            new_mean = sum(obj(x_to_look[i])) / dim_out
+            # Screen with the surrogate, not the objective. Calling `obj` here
+            # would spend `n_new_look` true evaluations deciding where to spend
+            # one, which is the cost a surrogate method exists to avoid.
+            new_mean = sum(surrSMB(x_to_look[i])) / dim_out
             if new_mean < min_mean
                 min_mean = new_mean
                 index_min = i
@@ -1604,16 +1908,7 @@ function surrogate_optimize!(
         update!(surrSMB, x_new, y_new)
     end
     #Find and return Pareto
-    y = surrSMB.y
-    y = permutedims(reshape(hcat(y...), (length(y[1]), length(y)))) #2d matrix
-    Fronts = _nonDominatedSorting(y) #this returns the indexes
-    pareto_front_index = Fronts[1]
-    pareto_set = []
-    pareto_front = []
-    for i in 1:length(pareto_front_index)
-        push!(pareto_set, surrSMB.x[pareto_front_index[i]])
-        push!(pareto_front, surrSMB.y[pareto_front_index[i]])
-    end
+    pareto_set, pareto_front = _pareto_of(surrSMB)
     return pareto_set, pareto_front
 end
 
@@ -1626,11 +1921,24 @@ function surrogate_optimize!(
     dim_out = length(surrSMBND.y[1])
     d = length(lb)
     x_to_look = sample(n_new_look, lb, ub, sample_type)
+    # One candidate is consumed per iteration, so the pool has to outlast the
+    # loop; without this the screening sweep walks off the end of `x_to_look`.
+    if maxiters > n_new_look
+        throw(
+            ArgumentError(
+                "SMB consumes one candidate per iteration, so `n_new_look` " *
+                    "($(n_new_look)) must be at least `maxiters` ($(maxiters))."
+            )
+        )
+    end
     for iter in 1:maxiters
         index_min = 0
         min_mean = +Inf
         for i in 1:n_new_look
-            new_mean = sum(obj(x_to_look[i])) / dim_out
+            # Screen with the surrogate, not the objective. Calling `obj` here
+            # would spend `n_new_look` true evaluations deciding where to spend
+            # one, which is the cost a surrogate method exists to avoid.
+            new_mean = sum(surrSMBND(x_to_look[i])) / dim_out
             if new_mean < min_mean
                 min_mean = new_mean
                 index_min = i
@@ -1645,16 +1953,7 @@ function surrogate_optimize!(
         update!(surrSMBND, x_new, y_new)
     end
     #Find and return Pareto
-    y = surrSMBND.y
-    y = permutedims(reshape(hcat(y...), (length(y[1]), length(y)))) #2d matrix
-    Fronts = _nonDominatedSorting(y) #this returns the indexes
-    pareto_front_index = Fronts[1]
-    pareto_set = []
-    pareto_front = []
-    for i in 1:length(pareto_front_index)
-        push!(pareto_set, surrSMBND.x[pareto_front_index[i]])
-        push!(pareto_front, surrSMBND.y[pareto_front_index[i]])
-    end
+    pareto_set, pareto_front = _pareto_of(surrSMBND)
     return pareto_set, pareto_front
 end
 
@@ -1671,92 +1970,65 @@ function surrogate_optimize!(
     n_c = rtea.n_c
     sigma = rtea.sigma
     #find pareto set of the first evaluations: (estimated pareto)
-    y = surrRTEA.y
-    y = permutedims(reshape(hcat(y...), (length(y[1]), length(y)))) #2d matrix
-    Fronts = _nonDominatedSorting(y) #this returns the indexes
-    pareto_front_index = Fronts[1]
-    pareto_set = []
-    pareto_front = []
-    for i in 1:length(pareto_front_index)
-        push!(pareto_set, surrRTEA.x[pareto_front_index[i]])
-        push!(pareto_front, surrRTEA.y[pareto_front_index[i]])
-    end
+    pareto_set, pareto_front = _pareto_of(surrRTEA)
     number_of_revaluations = zeros(Int, length(pareto_set))
+    dtol = _candidate_tolerance(lb, ub)
     iter = 1
     d = 1
-    dim_out = length(surrRTEA.y[1])
     while iter < maxiters
         if iter < (1 - Z) * maxiters
             #1) propose new point x_new
 
-            #sample randomly from (estimated) pareto v and u
-            if length(pareto_set) < 2
-                throw(ArgumentError("Starting pareto set is too small, increase the number of sampling points of the surrogate."))
+            # Sample two parents from the (estimated) Pareto set. A one-point
+            # front is a legitimate state — an objective whose components share
+            # a minimizer converges to exactly that — and leaves the mutation to
+            # do the local search. Only an empty front is unworkable.
+            if isempty(pareto_set)
+                throw(
+                    ArgumentError(
+                        "The Pareto set is empty, so RTEA has no parents to " *
+                            "draw from. Increase the number of sampling points " *
+                            "used to build the surrogate."
+                    )
+                )
             end
-            u = pareto_set[rand(1:length(pareto_set))]
-            v = pareto_set[rand(1:length(pareto_set))]
+            u = rand(pareto_set)
+            v = rand(pareto_set)
 
             #children
-            if rand() < p_cross
-                mu = rand()
-                if mu <= 0.5
-                    beta = (2 * mu)^(1 / n_c + 1)
-                else
-                    beta = (1 / (2 * (1 - mu)))^(1 / n_c + 1)
-                end
-                x = 0.5 * ((1 + beta) * v + (1 - beta) * u)
-            else
-                x = v
-            end
+            x = _sbx_child(u, v, p_cross, n_c)
 
             #mutation
-            x_new = x + rand(Normal(0, sigma))
+            x_new = _clamp_to_box(x + rand(Normal(0, sigma)), lb, ub)
             y_new = obj(x_new)
 
-            #update pareto
-            new_to_pareto = false
-            counter = zeros(Int, dim_out)
-            for i in 1:length(pareto_set)
-                #compare the y_new values to pareto, if there is at least one entry where it dominates all the others, then it can be in pareto
-                for l in 1:dim_out
-                    if y_new[l] < pareto_front[i][l]
-                        counter[l]
-                    end
-                end
+            # A child that lands on top of an existing sample teaches the
+            # surrogate nothing and makes an interpolating one singular. The
+            # mutation is clamped to the box, so a front that has converged on a
+            # bound produces exact duplicates readily.
+            if all(norm(p .- x_new) > dtol for p in surrRTEA.x)
+                #update pareto
+                _offer_to_pareto!(
+                    pareto_set, pareto_front, number_of_revaluations, x_new, y_new
+                )
+                update!(surrRTEA, x_new, y_new)
             end
-            for j in 1:dim_out
-                if counter[j] == dim_out
-                    new_to_pareto = true
-                end
-            end
-            if new_to_pareto == true
-                push!(pareto_set, x_new)
-                push!(pareto_front, y_new)
-                push!(number_of_revaluations, 0)
-            end
-            update!(surrRTEA, x_new, y_new)
         end
         for k in 1:K
+            # Re-evaluation can evict its own subject, so the front can run
+            # empty; `findmin` has no answer on an empty collection.
+            isempty(pareto_set) && break
             val, pos = findmin(number_of_revaluations)
             x_r = pareto_set[pos]
             y_r = obj(x_r)
             number_of_revaluations[pos] = number_of_revaluations[pos] + 1
             #check if it is again in the pareto set or not, if not eliminate it from pareto
-            still_in_pareto = false
-            for i in 1:length(pareto_set)
-                counter = zeros(Int, dim_out)
-                for l in 1:dim_out
-                    if y_r[l] < pareto_front[i][l]
-                        counter[l]
-                    end
-                end
-            end
-            for j in 1:dim_out
-                if counter[j] == dim_out
-                    still_in_pareto = true
-                end
-            end
-            if still_in_pareto == false
+            # The fresh response replaces the stored one first: under the noisy
+            # objectives this method targets, the re-evaluation is the better
+            # estimate, and leaving the old value in place would judge the
+            # member on a reading the check has just superseded.
+            pareto_front[pos] = y_r
+            if !_survives_revaluation(pareto_front, pos, y_r)
                 #remove from pareto
                 deleteat!(pareto_set, pos)
                 deleteat!(pareto_front, pos)
@@ -1779,93 +2051,70 @@ function surrogate_optimize!(
     n_c = rtea.n_c
     sigma = rtea.sigma
     #find pareto set of the first evaluations: (estimated pareto)
-    y = surrRTEAND.y
-    y = permutedims(reshape(hcat(y...), (length(y[1]), length(y)))) #2d matrix
-    Fronts = _nonDominatedSorting(y) #this returns the indexes
-    pareto_front_index = Fronts[1]
-    pareto_set = []
-    pareto_front = []
-    for i in 1:length(pareto_front_index)
-        push!(pareto_set, surrRTEAND.x[pareto_front_index[i]])
-        push!(pareto_front, surrRTEAND.y[pareto_front_index[i]])
-    end
+    pareto_set, pareto_front = _pareto_of(surrRTEAND)
     number_of_revaluations = zeros(Int, length(pareto_set))
+    dtol = _candidate_tolerance(lb, ub)
     iter = 1
     d = length(lb)
-    dim_out = length(surrRTEAND.y[1])
     while iter < maxiters
         if iter < (1 - Z) * maxiters
 
-            #sample pareto_set
-            if length(pareto_set) < 2
-                throw(ArgumentError("Starting pareto set is too small, increase the number of sampling points of the surrogate."))
+            # Sample two parents from the (estimated) Pareto set. A one-point
+            # front is a legitimate state — an objective whose components share
+            # a minimizer converges to exactly that — and leaves the mutation to
+            # do the local search. Only an empty front is unworkable.
+            if isempty(pareto_set)
+                throw(
+                    ArgumentError(
+                        "The Pareto set is empty, so RTEA has no parents to " *
+                            "draw from. Increase the number of sampling points " *
+                            "used to build the surrogate."
+                    )
+                )
             end
-            u = pareto_set[rand(1:length(pareto_set))]
-            v = pareto_set[rand(1:length(pareto_set))]
+            u = rand(pareto_set)
+            v = rand(pareto_set)
 
             #children
-            if rand() < p_cross
-                mu = rand()
-                if mu <= 0.5
-                    beta = (2 * mu)^(1 / n_c + 1)
-                else
-                    beta = (1 / (2 * (1 - mu)))^(1 / n_c + 1)
-                end
-                x = 0.5 * ((1 + beta) * v + (1 - beta) * u)
-            else
-                x = v
-            end
+            x = _sbx_child(u, v, p_cross, n_c)
 
             #mutation
-            for i in 1:d
-                x_new[i] = x[i] + rand(Normal(0, sigma))
-            end
+            # `x_new` has to be built, not indexed into: the child is a fresh
+            # point, and there is no prior array here to write through.
+            # `_as_new_sample` puts the child back in the representation the
+            # surrogate's samples use, so it can be stored alongside them.
+            x_new = _as_new_sample(
+                _clamp_to_box(collect(x) .+ rand(Normal(0, sigma), d), lb, ub)
+            )
             y_new = obj(x_new)
 
-            #update pareto
-            new_to_pareto = false
-            counter = zeros(Int, dim_out)
-            for i in 1:length(pareto_set)
-                #compare the y_new values to pareto, if there is at least one entry where it dominates all the others, then it can be in pareto
-                for l in 1:dim_out
-                    if y_new[l] < pareto_front[i][l]
-                        counter[l]
-                    end
-                end
+            # A child that lands on top of an existing sample teaches the
+            # surrogate nothing and makes an interpolating one singular. The
+            # mutation is clamped to the box, so a front that has converged on a
+            # bound produces exact duplicates readily.
+            if all(norm(p .- x_new) > dtol for p in surrRTEAND.x)
+                #update pareto
+                _offer_to_pareto!(
+                    pareto_set, pareto_front, number_of_revaluations, x_new, y_new
+                )
+                update!(surrRTEAND, x_new, y_new)
             end
-            for j in 1:dim_out
-                if counter[j] == dim_out
-                    new_to_pareto = true
-                end
-            end
-            if new_to_pareto == true
-                push!(pareto_set, x_new)
-                push!(pareto_front, y_new)
-                push!(number_of_revaluations, 0)
-            end
-            update!(surrRTEAND, x_new, y_new)
         end
         for k in 1:K
+            # Re-evaluation can evict its own subject, so the front can run
+            # empty; `findmin` has no answer on an empty collection.
+            isempty(pareto_set) && break
             val, pos = findmin(number_of_revaluations)
             x_r = pareto_set[pos]
             y_r = obj(x_r)
             number_of_revaluations[pos] = number_of_revaluations[pos] + 1
             #check if it is again in the pareto set or not, if not eliminate it from pareto
-            still_in_pareto = false
-            for i in 1:length(pareto_set)
-                counter = zeros(Int, dim_out)
-                for l in 1:dim_out
-                    if y_r[l] < pareto_front[i][l]
-                        counter[l]
-                    end
-                end
-            end
-            for j in 1:dim_out
-                if counter[j] == dim_out
-                    still_in_pareto = true
-                end
-            end
-            if still_in_pareto == false
+            # The fresh response replaces the stored one first: under the noisy
+            # objectives this method targets, the re-evaluation is the better
+            # estimate, and leaving the old value in place would judge the
+            # member on a reading the check has just superseded.
+            pareto_front[pos] = y_r
+            if !_survives_revaluation(pareto_front, pos, y_r)
                 #remove from pareto
                 deleteat!(pareto_set, pos)
                 deleteat!(pareto_front, pos)
@@ -1880,8 +2129,9 @@ end
 function surrogate_optimize!(
         obj::Function, ::EI, lb::AbstractArray, ub::AbstractArray, krig,
         sample_type::SectionSample;
-        maxiters = 100, num_new_samples = 100
+        maxiters = 100, num_new_samples = 100, needs_gradient = false
     )
+    _require_std_error(krig, "EI")
     dtol = 1.0e-3 * norm(ub - lb)
     eps = 0.01
     for i in 1:maxiters
@@ -1890,7 +2140,7 @@ function surrogate_optimize!(
         new_sample = sample(num_new_samples, lb, ub, sample_type)
 
         # Find the best point so far
-        f_min = minimum(krig.y)
+        f_min = minimum(_sample_responses(krig))
 
         # Allocate some arrays
         evaluations = zeros(eltype(krig.x[1]), num_new_samples)  # Holds EI function evaluations
@@ -1901,7 +2151,7 @@ function surrogate_optimize!(
 
         # For each point in the sample set, evaluate the Expected Improvement function
         while point_found == false
-            for j in 1:length(new_sample)
+            for j in eachindex(new_sample)
                 evaluations[j] = _expected_improvement(krig, new_sample[j], f_min, eps)
             end
             # find the sample which maximizes the EI function
@@ -1932,11 +2182,13 @@ function surrogate_optimize!(
         end
         # if the EI is less than some tolerance times the difference between the maximum and minimum points
         # in the surrogate, then we terminate the optimizer.
-        if new_EI_max < 1.0e-6 * norm(maximum(krig.y) - minimum(krig.y))
+        if new_EI_max < 1.0e-6 * norm(maximum(_sample_responses(krig)) - minimum(_sample_responses(krig)))
             println("Termination tolerance reached.")
             return section_sampler_returner(sample_type, krig.x, krig.y, lb, ub, krig)
         end
-        update!(krig, Tuple(new_x_max), obj(new_x_max))
+        _update_with_sample!(
+            krig, obj, Tuple(new_x_max), obj(new_x_max), needs_gradient
+        )
     end
     return println("Completed maximum number of iterations.")
 end
@@ -1947,7 +2199,7 @@ function section_sampler_returner(
     )
     d_fixed = fixed_dimensions(sample_type)
     @assert length(surrn_y) == size(surrn_x)[1]
-    surrn_xy = [(surrn_x[y], surrn_y[y]) for y in 1:length(surrn_y)]
+    surrn_xy = collect(zip(surrn_x, surrn_y))
     section_surr1_xy = filter(
         xyz -> xyz[1][d_fixed] == Tuple(sample_type.x0[d_fixed]),
         surrn_xy

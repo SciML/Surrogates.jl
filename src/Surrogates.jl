@@ -4,8 +4,8 @@ using Distributions: Normal, cdf, pdf, truncated
 using ExtendableSparse: ExtendableSparseMatrix
 using IterativeSolvers: cg
 using CommonSolve: solve
-using LinearAlgebra: ColumnNorm, Diagonal, I, LAPACKException, PosDefException,
-    SingularException, Symmetric, cholesky, diag, dot, eigvals,
+using LinearAlgebra: Cholesky, ColumnNorm, Diagonal, I, LAPACKException,
+    PosDefException, SingularException, Symmetric, cholesky, diag, dot, eigvals,
     issuccess, logdet, norm, pinv, qr, rank, ⋅
 using OptimizationOptimJL: NelderMead
 using SciMLBase: OptimizationProblem
@@ -14,7 +14,8 @@ using QuasiMonteCarlo: GoldenSample, GridSample, HaltonSample, KroneckerSample,
     LatinHypercubeSample, RandomSample, SamplingAlgorithm, SobolSample
 using Statistics: mean, std
 using SurrogatesBase: update!, AbstractDeterministicSurrogate,
-    AbstractStochasticSurrogate
+    AbstractStochasticSurrogate, parameters, hyperparameters,
+    update_hyperparameters!
 
 import QuasiMonteCarlo
 import SurrogatesBase
@@ -70,6 +71,7 @@ include("GEKPLS.jl")
 include("KPLS.jl")
 include("KPLSK.jl")
 include("VirtualStrategy.jl")
+include("ParameterInterface.jl")
 
 """
     current_surrogates
@@ -121,7 +123,8 @@ consume this value to build the requested surrogate internally.
 """
 function RadialBasisStructure(; radial_function, scale_factor, sparse)
     return (
-        name = "RadialBasis", radial_function = radial_function,
+        name = "RadialBasis", type = RadialBasis,
+        radial_function = radial_function,
         scale_factor = scale_factor, sparse = sparse,
     )
 end
@@ -141,7 +144,7 @@ Create a named-tuple configuration for a [`Kriging`](@ref) surrogate.
 A named tuple with fields `name`, `p`, and `theta`.
 """
 function KrigingStructure(; p, theta)
-    return (name = "Kriging", p = p, theta = theta)
+    return (name = "Kriging", type = Kriging, p = p, theta = theta)
 end
 
 """
@@ -159,7 +162,7 @@ Create a named-tuple configuration for a [`GEK`](@ref) surrogate.
 A named tuple with fields `name`, `p`, and `theta`.
 """
 function GEKStructure(; p, theta)
-    return (name = "GEK", p = p, theta = theta)
+    return (name = "GEK", type = GEK, p = p, theta = theta)
 end
 
 """
@@ -172,7 +175,7 @@ Create a named-tuple configuration for a [`LinearSurrogate`](@ref).
 A named tuple with the field `name = "LinearSurrogate"`.
 """
 function LinearStructure()
-    return (name = "LinearSurrogate",)
+    return (name = "LinearSurrogate", type = LinearSurrogate)
 end
 
 """
@@ -190,7 +193,7 @@ Create a named-tuple configuration for an
 A named tuple with fields `name` and `p`.
 """
 function InverseDistanceStructure(; p)
-    return (name = "InverseDistanceSurrogate", p = p)
+    return (name = "InverseDistanceSurrogate", type = InverseDistanceSurrogate, p = p)
 end
 
 """
@@ -209,7 +212,10 @@ Create a named-tuple configuration for a [`LobachevskySurrogate`](@ref).
 A named tuple with fields `name`, `alpha`, `n`, and `sparse`.
 """
 function LobachevskyStructure(; alpha, n, sparse)
-    return (name = "LobachevskySurrogate", alpha = alpha, n = n, sparse = sparse)
+    return (
+        name = "LobachevskySurrogate", type = LobachevskySurrogate,
+        alpha = alpha, n = n, sparse = sparse,
+    )
 end
 
 """
@@ -230,8 +236,8 @@ A named tuple with fields `name`, `model`, `loss`, `opt`, and `n_epochs`.
 """
 function NeuralStructure(; model, loss, opt, n_epochs)
     return (
-        name = "NeuralSurrogate", model = model, loss = loss, opt = opt,
-        n_epochs = n_epochs,
+        name = "NeuralSurrogate", type = NeuralSurrogate, model = model,
+        loss = loss, opt = opt, n_epochs = n_epochs,
     )
 end
 
@@ -250,10 +256,20 @@ Create a named-tuple configuration for a [`GENNSurrogate`](@ref).
 # Returns
 
 A named tuple with fields `name`, `model`, `opt`, `n_epochs`, and `gamma`.
+
+!!! note
+    
+    Unlike the other `*Structure` helpers, this one cannot be used as a
+    component of [`MOE`](@ref) or [`VariableFidelitySurrogate`](@ref).
+    [`GENNSurrogate`](@ref) is gradient-enhanced: it requires a per-sample
+    gradient array alongside `x` and `y`, and a composite surrogate carries only
+    function values, so there is nothing to supply. Both composites reject the
+    descriptor with a message saying so. The helper is retained for symmetry and
+    for direct use in code that does have gradients to hand.
 """
 function GENNStructure(; model, opt, n_epochs, gamma)
     return (
-        name = "GENNSurrogate", model = model, opt = opt,
+        name = "GENNSurrogate", type = GENNSurrogate, model = model, opt = opt,
         n_epochs = n_epochs, gamma = gamma,
     )
 end
@@ -272,7 +288,7 @@ Create a named-tuple configuration for an [`XGBoostSurrogate`](@ref).
 A named tuple with fields `name` and `num_round`.
 """
 function XGBoostStructure(; num_round)
-    return (name = "XGBoostSurrogate", num_round = num_round)
+    return (name = "XGBoostSurrogate", type = XGBoostSurrogate, num_round = num_round)
 end
 
 """
@@ -286,7 +302,10 @@ Create a named-tuple configuration for a
 A named tuple with the field `name = "SecondOrderPolynomialSurrogate"`.
 """
 function SecondOrderPolynomialStructure()
-    return (name = "SecondOrderPolynomialSurrogate",)
+    return (
+        name = "SecondOrderPolynomialSurrogate",
+        type = SecondOrderPolynomialSurrogate,
+    )
 end
 
 """
@@ -305,7 +324,10 @@ Create a named-tuple configuration for a [`Wendland`](@ref) surrogate.
 A named tuple with fields `name`, `eps`, `maxiters`, and `tol`.
 """
 function WendlandStructure(; eps, maxiters, tol)
-    return (name = "Wendland", eps = eps, maxiters = maxiters, tol = tol)
+    return (
+        name = "Wendland", type = Wendland, eps = eps, maxiters = maxiters,
+        tol = tol,
+    )
 end
 
 """
@@ -322,7 +344,7 @@ Create a named-tuple configuration for a [`PolynomialChaosSurrogate`](@ref).
 A named tuple with fields `name` and `op`.
 """
 function PolyChaosStructure(; op)
-    return (name = "PolynomialChaosSurrogate", op = op)
+    return (name = "PolynomialChaosSurrogate", type = PolynomialChaosSurrogate, op = op)
 end
 
 Base.@deprecate_binding surrogate_optimize surrogate_optimize!
@@ -342,6 +364,7 @@ export potential_optimal_points
 export MinimumConstantLiar, MaximumConstantLiar, MeanConstantLiar, KrigingBeliever,
     KrigingBelieverUpperBound, KrigingBelieverLowerBound
 export update!
+export parameters, hyperparameters, update_hyperparameters!
 
 # radial basis functions
 export linearRadial, cubicRadial, multiquadricRadial, thinplateRadial
@@ -368,6 +391,11 @@ export AbstractSurrogate
 
 # Extensions
 include("extensions.jl")
+
+# Component construction for the composite surrogates. Included after
+# `extensions.jl` because it dispatches on the extension surrogate types, whose
+# stubs are defined there.
+include("ComponentSurrogates.jl")
 export AbstractGPSurrogate, logpdf_surrogate
 export NeuralSurrogate
 export GENNSurrogate, predict_derivative

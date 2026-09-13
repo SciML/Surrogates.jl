@@ -244,6 +244,7 @@ evaluation to the selected expert.
   - `e`: expert surrogate configurations.
   - `nd`: number of input dimensions.
   - `nc`: number of clusters.
+  - `q`: row stride used to split the design into training and test parts.
 
 # Arguments
 
@@ -255,13 +256,15 @@ evaluation to the selected expert.
 
   - `ndim`: number of input dimensions.
   - `n_clusters`: number of mixture clusters.
-  - `quantile`: quantile used when assigning local training data.
+  - `quantile`: row stride of the held-out test split — every `quantile`-th
+    sample is used to score candidate experts, the rest to fit them. Stored, so
+    `update!` refits on the same split.
 
 # Returns
 
 An `MOE` surrogate satisfying the generic surrogate interface.
 """
-mutable struct MOE{X, Y, C, D, M, E, ND, NC} <: AbstractDeterministicSurrogate
+mutable struct MOE{X, Y, C, D, M, E, ND, NC, Q} <: AbstractDeterministicSurrogate
     x::X
     y::Y
     c::C #clusters (C) - vector of gaussian mixture clusters
@@ -270,11 +273,12 @@ mutable struct MOE{X, Y, C, D, M, E, ND, NC} <: AbstractDeterministicSurrogate
     e::E #expert types
     nd::ND #number of dimensions
     nc::NC #number of clusters
+    q::Q #row stride of the held-out test split
 end
 
 """
-    GENNSurrogate(x, y, dydx, lb, ub; model, opt, n_epochs, gamma,
-        is_normalize = true)
+    GENNSurrogate(x, y, lb, ub, dydx; model, opt, n_epochs, gamma, lambda,
+        is_normalize = false)
 
 Gradient-enhanced neural-network surrogate backed by Flux.jl.
 
@@ -340,6 +344,11 @@ mutable struct GENNSurrogate{X, Y, D, M, O, P, N, A, U, G, XM, XS, YM, YS, IN} <
     y_std::YS
     is_normalize::IN  # whether normalization is enabled
 end
+
+# `GENNSurrogate` is gradient-enhanced: a virtual point must carry a gradient
+# just as one for `GEK` must. The generic lives in `VirtualStrategy.jl`, which is
+# included before this file, so the method is added here where the type exists.
+_requires_gradient(::GENNSurrogate) = true
 
 """
     predict_derivative(genn::GENNSurrogate, x)

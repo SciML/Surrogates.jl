@@ -169,9 +169,19 @@ function _calc_loba_coeffND(x, y, alpha, n, sparse)
     return Sym \ _construct_y_matrix(y, first(y))
 end
 function LobachevskySurrogate(
-        x, y, lb, ub; alpha = collect(one.(x[1])), n::Int = 4,
-        sparse = false
+        x, y, lb, ub; alpha = ones(float(eltype(first(x))), length(first(x))),
+        n::Int = 4, sparse = false
     )
+    # A one-dimensional design may be written with length-1 vector bounds. The
+    # constructors dispatch on the bounds but the call overloads dispatch on the
+    # query point, which follows the *design*: scalar samples take the scalar
+    # call path, so they need the scalar fit.
+    if first(x) isa Number
+        return LobachevskySurrogate(
+            x, y, first(lb), first(ub);
+            alpha = first(alpha), n = n, sparse = sparse
+        )
+    end
     # A scalar alpha would otherwise reach a BoundsError per dimension.
     d = length(x[1])
     if length(alpha) != d
@@ -273,19 +283,11 @@ function lobachevsky_integrate_dimension(loba::LobachevskySurrogate, lb, ub, dim
     # Broadcasts down the rows of an `n x m` multi-output `coeff`.
     new_coeff = loba.coeff .* scale.(1:n)
 
-    if length(lb) == 2
-        new_x = zeros(eltype(loba.x[1][1]), n)
-        for i in 1:n
-            new_x[i] = deleteat!(collect(loba.x[i]), dim)[1]
-        end
-    else
-        dummy = loba.x[1]
-        dummy = deleteat!(collect(dummy), dim)
-        new_x = typeof(Tuple(dummy))[]
-        for i in 1:n
-            push!(new_x, Tuple(deleteat!(collect(loba.x[i]), dim)))
-        end
-    end
+    # `collect` first: `deleteat!` would otherwise mutate the stored point.
+    # Integrating a 2-D model out to 1-D leaves scalar samples, which is the
+    # representation a one-dimensional design uses.
+    reduced = [deleteat!(collect(p), dim) for p in loba.x]
+    new_x = length(lb) == 2 ? [only(p) for p in reduced] : [Tuple(p) for p in reduced]
     # `collect` first, so neither alpha nor the caller's bounds are mutated.
     new_lb = deleteat!(collect(lb), dim)
     new_ub = deleteat!(collect(ub), dim)
