@@ -64,7 +64,8 @@ my_gek = GEK(x, y, lower_bound, upper_bound, theta = 0.3)
 
 scatter(x, y1, label = "Sampled points", xlims = (lower_bound, upper_bound), legend = :top)
 plot!(f, label = "True function", xlims = (lower_bound, upper_bound), legend = :top)
-plot!(my_gek, label = "Surrogate function", ribbon = p -> std_error_at_point(my_gek, p),
+plot!(xs, my_gek.(xs), label = "Surrogate function",
+    ribbon = std_error_at_point.(my_gek, xs),
     xlims = (lower_bound, upper_bound), legend = :top)
 ```
 
