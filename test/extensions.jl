@@ -174,8 +174,10 @@ end
             y = obj.(x)
             dydx = dim == 1 ?
                 reshape((t -> 2 * (t - 3.7)).(x), length(x), 1) :
-                reduce(vcat,
-                [reshape([2 * (p[1] - 2.5), 2 * (p[2] - 7.5)], 1, 2) for p in x])
+                reduce(
+                    vcat,
+                    [reshape([2 * (p[1] - 2.5), 2 * (p[2] - 7.5)], 1, 2) for p in x]
+                )
             return lb, ub, obj, GENNSurrogate(x, y, lb, ub, dydx, n_epochs = 10)
         end
 
@@ -190,19 +192,23 @@ end
         end
 
         @testset "$(dim)-D $(name)" for dim in (1, 2),
-            (name, alg) in (("SRBF", SRBF()), ("DYCORS", DYCORS()), ("SOP", SOP(2)))
+                (name, alg) in (("SRBF", SRBF()), ("DYCORS", DYCORS()), ("SOP", SOP(2)))
 
             lb, ub, obj, g = build(dim)
-            result = surrogate_optimize!(obj, alg, lb, ub, g, SobolSample();
-                maxiters = 4, needs_gradient = true)
+            result = surrogate_optimize!(
+                obj, alg, lb, ub, g, SobolSample();
+                maxiters = 4, needs_gradient = true
+            )
             @test result isa Tuple && length(result) == 2
             # The returned point must be a point of the right dimension, and its
             # value must be the objective there. Matrix storage failed both: the
             # "point" was one coordinate and the pair was (coordinate, value).
             @test length(collect(result[1])) == dim
             @test result[2] isa Number
-            @test isapprox(result[2], obj(dim == 1 ? result[1] : collect(result[1]));
-                atol = 1.0e-8)
+            @test isapprox(
+                result[2], obj(dim == 1 ? result[1] : collect(result[1]));
+                atol = 1.0e-8
+            )
             @test all(lb .- 1.0e-8 .<= collect(result[1]) .<= ub .+ 1.0e-8)
             @test length(g.x) == length(g.y)
             # A gradient-enhanced model must keep one gradient per sample.
@@ -243,10 +249,14 @@ end
         Random.seed!(8)
         x = sample(30, lb, ub, RandomSample())
 
-        single() = NeuralSurrogate(x, h.(x), lb, ub,
-            model = Chain(Dense(1, 6, tanh), Dense(6, 1)), n_epochs = 10)
-        multi() = NeuralSurrogate(x, g.(x), lb, ub,
-            model = Chain(Dense(1, 6, tanh), Dense(6, 2)), n_epochs = 10)
+        single() = NeuralSurrogate(
+            x, h.(x), lb, ub,
+            model = Chain(Dense(1, 6, tanh), Dense(6, 1)), n_epochs = 10
+        )
+        multi() = NeuralSurrogate(
+            x, g.(x), lb, ub,
+            model = Chain(Dense(1, 6, tanh), Dense(6, 2)), n_epochs = 10
+        )
 
         @testset "shape matches the fitted responses" begin
             @test single()(5.0) isa Number
@@ -254,8 +264,10 @@ end
             @test length(multi()(5.0)) == 2
             # A model that already unwraps, via `first` in the chain, must pass
             # straight through rather than be unwrapped twice.
-            withfirst = NeuralSurrogate(x, h.(x), lb, ub,
-                model = Chain(Dense(1, 1), first), n_epochs = 5)
+            withfirst = NeuralSurrogate(
+                x, h.(x), lb, ub,
+                model = Chain(Dense(1, 1), first), n_epochs = 5
+            )
             @test withfirst(5.0) isa Number
 
             # Every accepted query form gives the same shape.
@@ -263,8 +275,10 @@ end
             Random.seed!(1)
             xn = sample(20, lbn, ubn, SobolSample())
             fn = z -> z[1] * z[2]
-            nd = NeuralSurrogate(xn, fn.(xn), lbn, ubn,
-                model = Chain(Dense(2, 4, tanh), Dense(4, 1)), n_epochs = 5)
+            nd = NeuralSurrogate(
+                xn, fn.(xn), lbn, ubn,
+                model = Chain(Dense(2, 4, tanh), Dense(4, 1)), n_epochs = 5
+            )
             @test nd([3.4, 1.4]) isa Number
             @test nd((3.4, 1.4)) isa Number
         end
@@ -274,8 +288,10 @@ end
             )
             surr = single()
             n_before = length(surr.x)
-            result = surrogate_optimize!(h, alg, lb, ub, surr, SobolSample();
-                maxiters = 5)
+            result = surrogate_optimize!(
+                h, alg, lb, ub, surr, SobolSample();
+                maxiters = 5
+            )
             @test result isa Tuple && length(result) == 2
             # The value is a scalar and is the surrogate's own best observation:
             # this is what a `Matrix{Float32}` response made impossible, since
@@ -317,8 +333,10 @@ end
         x = sample(20, lb, ub, RandomSample())
 
         @testset "multi-output" begin
-            surr = NeuralSurrogate(x, g.(x), lb, ub,
-                model = Chain(Dense(1, 6, tanh), Dense(6, 2)), n_epochs = 5)
+            surr = NeuralSurrogate(
+                x, g.(x), lb, ub,
+                model = Chain(Dense(1, 6, tanh), Dense(6, 2)), n_epochs = 5
+            )
             # One entry per sample, on both sides, so `length` is the count.
             @test length(surr.x) == 20
             @test length(surr.y) == 20
@@ -341,8 +359,10 @@ end
         end
 
         @testset "scalar output" begin
-            surr = NeuralSurrogate(x, h.(x), lb, ub,
-                model = Chain(Dense(1, 6, tanh), Dense(6, 1)), n_epochs = 5)
+            surr = NeuralSurrogate(
+                x, h.(x), lb, ub,
+                model = Chain(Dense(1, 6, tanh), Dense(6, 1)), n_epochs = 5
+            )
             @test length(surr.x) == 20 && length(surr.y) == 20
             @test surr.y[1] isa Number
             @test surr.y[1] ≈ h(x[1])
@@ -361,8 +381,10 @@ end
             Random.seed!(8)
             xn = sample(20, lbn, ubn, RandomSample())
             gn = z -> [z[1]^2 + z[2]^2, (z[1] - 2.0)^2 + z[2]^2]
-            surr = NeuralSurrogate(xn, gn.(xn), lbn, ubn,
-                model = Chain(Dense(2, 6, tanh), Dense(6, 2)), n_epochs = 5)
+            surr = NeuralSurrogate(
+                xn, gn.(xn), lbn, ubn,
+                model = Chain(Dense(2, 6, tanh), Dense(6, 2)), n_epochs = 5
+            )
             # `length` must be the sample count, not the element count: this is
             # the exact confusion that produced the wrong Pareto front.
             @test length(surr.x) == 20
@@ -881,8 +903,10 @@ end
             Random.seed!(3)
             x = sample(20, lb, ub, SobolSample())
             s = XGBoostSurrogate(x, f2.(x), lb, ub; num_round = 2)
-            result = surrogate_optimize!(f2, alg, lb, ub, s, SobolSample();
-                maxiters = 4)
+            result = surrogate_optimize!(
+                f2, alg, lb, ub, s, SobolSample();
+                maxiters = 4
+            )
             # Both halves matter: matrix storage returned a coordinate as the
             # point *and* a value that was not the objective there.
             @test length(collect(result[1])) == 2
@@ -910,8 +934,10 @@ end
             s = XGBoostSurrogate(x, f1.(x), 1.0, 6.0; num_round = 2)
             @test length(s.x) == 20
             @test s(3.0) isa Number
-            result = surrogate_optimize!(f1, SRBF(), 1.0, 6.0, s, SobolSample();
-                maxiters = 4)
+            result = surrogate_optimize!(
+                f1, SRBF(), 1.0, 6.0, s, SobolSample();
+                maxiters = 4
+            )
             @test result[1] isa Number
             @test isapprox(result[2], f1(result[1]); atol = 1.0e-8)
         end
@@ -1252,34 +1278,52 @@ end
     y = f.(x)
     dydx = reshape((t -> 2 * (t - 3.7)).(x), length(x), 1)
     experts = [
-        RadialBasisStructure(radial_function = linearRadial(),
-            scale_factor = 1.0, sparse = false),
-        RadialBasisStructure(radial_function = cubicRadial(),
-            scale_factor = 1.0, sparse = false),
+        RadialBasisStructure(
+            radial_function = linearRadial(),
+            scale_factor = 1.0, sparse = false
+        ),
+        RadialBasisStructure(
+            radial_function = cubicRadial(),
+            scale_factor = 1.0, sparse = false
+        ),
     ]
 
     cases = [
-        ("NeuralSurrogate",
-            () -> NeuralSurrogate(x, y, lb, ub,
-                model = Chain(Dense(1, 6, tanh), Dense(6, 1)), n_epochs = 5),
-            (:ps, :model), (:loss, :opt, :n_epochs)),
-        ("GENNSurrogate",
+        (
+            "NeuralSurrogate",
+            () -> NeuralSurrogate(
+                x, y, lb, ub,
+                model = Chain(Dense(1, 6, tanh), Dense(6, 1)), n_epochs = 5
+            ),
+            (:ps, :model), (:loss, :opt, :n_epochs),
+        ),
+        (
+            "GENNSurrogate",
             () -> GENNSurrogate(x, y, lb, ub, dydx, n_epochs = 5),
             (:ps, :model, :x_mean, :x_std, :y_mean, :y_std),
-            (:opt, :n_epochs, :gamma, :is_normalize)),
-        ("AbstractGPSurrogate",
+            (:opt, :n_epochs, :gamma, :is_normalize),
+        ),
+        (
+            "AbstractGPSurrogate",
             () -> AbstractGPSurrogate(x, y, gp = GP(SqExponentialKernel()), Σy = 0.05),
-            (:gp_posterior,), (:gp, :Sigma_y)),
-        ("PolynomialChaosSurrogate",
+            (:gp_posterior,), (:gp, :Sigma_y),
+        ),
+        (
+            "PolynomialChaosSurrogate",
             () -> PolynomialChaosSurrogate(x, y, lb, ub),
-            (:coeff,), (:orthopolys, :num_of_multi_indexes)),
-        ("XGBoostSurrogate",
+            (:coeff,), (:orthopolys, :num_of_multi_indexes),
+        ),
+        (
+            "XGBoostSurrogate",
             () -> XGBoostSurrogate(x, y, lb, ub; num_round = 2),
-            (:bst,), (:num_round,)),
+            (:bst,), (:num_round,),
+        ),
         ("SVMSurrogate", () -> SVMSurrogate(x, y, lb, ub), (:model,), ()),
-        ("MOE", () -> MOE(x, y, experts),
+        (
+            "MOE", () -> MOE(x, y, experts),
             (:cluster_model, :cluster_distributions, :experts),
-            (:expert_types, :ndim, :n_clusters, :quantile)),
+            (:expert_types, :ndim, :n_clusters, :quantile),
+        ),
     ]
 
     @testset "$(name)" for (name, mk, want_params, want_hyper) in cases
@@ -1391,8 +1435,10 @@ end
     x = sample(60, 0.0, 10.0, SobolSample())
     y = f.(x)
     experts = [
-        RadialBasisStructure(radial_function = linearRadial(), scale_factor = 1.0,
-            sparse = false),
+        RadialBasisStructure(
+            radial_function = linearRadial(), scale_factor = 1.0,
+            sparse = false
+        ),
         LinearStructure(),
     ]
 
@@ -1430,8 +1476,10 @@ end
         ("NeuralSurrogate", (x, r) -> NeuralSurrogate(x, r, lb, ub), y, true),
         ("XGBoostSurrogate", (x, r) -> XGBoostSurrogate(x, r, lb, ub), y, true),
         ("AbstractGPSurrogate", (x, r) -> AbstractGPSurrogate(x, r), y, true),
-        ("PolynomialChaosSurrogate",
-            (x, r) -> PolynomialChaosSurrogate(x, r, lb, ub), y, true),
+        (
+            "PolynomialChaosSurrogate",
+            (x, r) -> PolynomialChaosSurrogate(x, r, lb, ub), y, true,
+        ),
         ("SVMSurrogate", (x, r) -> SVMSurrogate(x, r, lb, ub), labels, true),
         ("MOE", (x, r) -> MOE(x, r, experts; ndim = 2), y, true),
     ]
@@ -1462,8 +1510,10 @@ end
         # `_normalize_x` judges shape from the argument alone, so a coordinate
         # vector looked like `d` one-dimensional samples until the stored design
         # was brought in to settle it.
-        gmat = reduce(vcat,
-            [reshape([2p[1], 2p[2]], 1, 2) for p in x_tuples])
+        gmat = reduce(
+            vcat,
+            [reshape([2p[1], 2p[2]], 1, 2) for p in x_tuples]
+        )
         for point in ((1.0, 2.0), [1.0, 2.0])
             genn = GENNSurrogate(x_tuples, y, lb, ub, gmat; n_epochs = 2)
             n = length(genn.x)
@@ -1525,10 +1575,14 @@ end
         @test from_vectors.x == from_matrix.x
         @test from_vectors.y == from_matrix.y
 
-        genn_vectors = GENNSurrogate(x, vector_y, lb, ub, dydx3; n_epochs = 2,
-            model = Chain(Dense(2, 8, relu), Dense(8, 2)))
-        genn_matrix = GENNSurrogate(x, matrix_y, lb, ub, dydx3; n_epochs = 2,
-            model = Chain(Dense(2, 8, relu), Dense(8, 2)))
+        genn_vectors = GENNSurrogate(
+            x, vector_y, lb, ub, dydx3; n_epochs = 2,
+            model = Chain(Dense(2, 8, relu), Dense(8, 2))
+        )
+        genn_matrix = GENNSurrogate(
+            x, matrix_y, lb, ub, dydx3; n_epochs = 2,
+            model = Chain(Dense(2, 8, relu), Dense(8, 2))
+        )
         @test genn_vectors.x == genn_matrix.x
         @test genn_vectors.y == genn_matrix.y
     end

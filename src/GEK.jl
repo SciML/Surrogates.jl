@@ -173,7 +173,7 @@ function _gek_r(k::GEK, val)
     # accumulates with `push!`.
     dks = [
         let i = (j - 1) ÷ d + 1, l = (j - 1) % d + 1
-            2 * k.theta[l] * (val[l] - k.x[i][l]) * ks[i]
+                2 * k.theta[l] * (val[l] - k.x[i][l]) * ks[i]
         end
             for j in 1:(n * d)
     ]

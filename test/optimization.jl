@@ -747,15 +747,23 @@ end
             x = sample(60, lb, ub, RandomSample())
             y = g.(x)
             builders = (
-                ("RadialBasis",
-                    () -> RadialBasis(x, y, lb, ub, rad = linearRadial())),
-                ("Lobachevsky",
-                    () -> LobachevskySurrogate(x, y, lb, ub, alpha = 2.0, n = 4)),
-                ("SecondOrderPolynomial",
-                    () -> SecondOrderPolynomialSurrogate(x, y, lb, ub)),
+                (
+                    "RadialBasis",
+                    () -> RadialBasis(x, y, lb, ub, rad = linearRadial()),
+                ),
+                (
+                    "Lobachevsky",
+                    () -> LobachevskySurrogate(x, y, lb, ub, alpha = 2.0, n = 4),
+                ),
+                (
+                    "SecondOrderPolynomial",
+                    () -> SecondOrderPolynomialSurrogate(x, y, lb, ub),
+                ),
                 ("LinearSurrogate", () -> LinearSurrogate(x, y, lb, ub)),
-                ("InverseDistance",
-                    () -> InverseDistanceSurrogate(x, y, lb, ub, p = 2.0)),
+                (
+                    "InverseDistance",
+                    () -> InverseDistanceSurrogate(x, y, lb, ub, p = 2.0),
+                ),
             )
             @testset "$(name)" for (name, mk) in builders
                 surr = mk()
@@ -766,10 +774,14 @@ end
                 @test length(surr(x[1])) == 2
 
                 pareto_set, pareto_front = alg_name == "SMB" ?
-                    surrogate_optimize!(g, alg, lb, ub, surr, SobolSample();
-                        maxiters = 6, n_new_look = 50) :
-                    surrogate_optimize!(g, alg, lb, ub, surr, SobolSample();
-                        maxiters = 8)
+                    surrogate_optimize!(
+                        g, alg, lb, ub, surr, SobolSample();
+                        maxiters = 6, n_new_look = 50
+                    ) :
+                    surrogate_optimize!(
+                        g, alg, lb, ub, surr, SobolSample();
+                        maxiters = 8
+                    )
                 check_pareto(pareto_set, pareto_front, g, lb, ub)
             end
         end
@@ -783,16 +795,26 @@ end
             x = sample(60, lb, ub, RandomSample())
             y = g.(x)
             builders = (
-                ("RadialBasis",
-                    () -> RadialBasis(x, y, lb, ub, rad = linearRadial())),
-                ("Lobachevsky",
-                    () -> LobachevskySurrogate(x, y, lb, ub,
-                        alpha = [2.0, 2.0], n = 4)),
-                ("SecondOrderPolynomial",
-                    () -> SecondOrderPolynomialSurrogate(x, y, lb, ub)),
+                (
+                    "RadialBasis",
+                    () -> RadialBasis(x, y, lb, ub, rad = linearRadial()),
+                ),
+                (
+                    "Lobachevsky",
+                    () -> LobachevskySurrogate(
+                        x, y, lb, ub,
+                        alpha = [2.0, 2.0], n = 4
+                    ),
+                ),
+                (
+                    "SecondOrderPolynomial",
+                    () -> SecondOrderPolynomialSurrogate(x, y, lb, ub),
+                ),
                 ("LinearSurrogate", () -> LinearSurrogate(x, y, lb, ub)),
-                ("InverseDistance",
-                    () -> InverseDistanceSurrogate(x, y, lb, ub, p = 2.0)),
+                (
+                    "InverseDistance",
+                    () -> InverseDistanceSurrogate(x, y, lb, ub, p = 2.0),
+                ),
             )
             @testset "$(name)" for (name, mk) in builders
                 surr = mk()
@@ -800,10 +822,14 @@ end
                 @test length(surr(x[1])) == 2
 
                 pareto_set, pareto_front = alg_name == "SMB" ?
-                    surrogate_optimize!(g, alg, lb, ub, surr, SobolSample();
-                        maxiters = 6, n_new_look = 50) :
-                    surrogate_optimize!(g, alg, lb, ub, surr, SobolSample();
-                        maxiters = 8)
+                    surrogate_optimize!(
+                        g, alg, lb, ub, surr, SobolSample();
+                        maxiters = 6, n_new_look = 50
+                    ) :
+                    surrogate_optimize!(
+                        g, alg, lb, ub, surr, SobolSample();
+                        maxiters = 8
+                    )
                 check_pareto(pareto_set, pareto_front, g, lb, ub)
                 @test all(p -> length(coords(p)) == 2, pareto_set)
             end
@@ -851,9 +877,11 @@ end
         @test Surrogates._free_dimensions(SobolSample(), 3) == 1:3
         @test Surrogates._free_dimensions(RandomSample(), 1) == 1:1
         @test Surrogates._free_dimensions(
-            SectionSample([NaN64, 2.0, NaN64], SobolSample()), 3) == [1, 3]
+            SectionSample([NaN64, 2.0, NaN64], SobolSample()), 3
+        ) == [1, 3]
         @test Surrogates._free_dimensions(
-            SectionSample([1.0, 2.0], SobolSample()), 2) == Int[]
+            SectionSample([1.0, 2.0], SobolSample()), 2
+        ) == Int[]
     end
 end
 
@@ -892,8 +920,10 @@ end
         @test all(isfinite, child)
         # Crossing a parent with itself reproduces it, whatever beta is drawn.
         for _ in 1:20
-            @test all(Surrogates._sbx_child((1.5, -2.0), (1.5, -2.0), 1.0, 3.0) .≈
-                (1.5, -2.0))
+            @test all(
+                Surrogates._sbx_child((1.5, -2.0), (1.5, -2.0), 1.0, 3.0) .≈
+                    (1.5, -2.0)
+            )
         end
     end
 
@@ -952,8 +982,10 @@ end
         @test ranked[1] == [(3.0, 3.0), (2.0, 2.0), (1.0, 1.0)]
 
         # Same in one dimension.
-        surr1 = RadialBasis([3.0, 1.0, 2.0], [1.0, 9.0, 5.0], 0.0, 4.0,
-            rad = linearRadial())
+        surr1 = RadialBasis(
+            [3.0, 1.0, 2.0], [1.0, 9.0, 5.0], 0.0, 4.0,
+            rad = linearRadial()
+        )
         D1 = Dict(1 => [3.0, 1.0, 2.0])
         @test Surrogates.II_tier_ranking_1D(D1, surr1)[1] == [3.0, 2.0, 1.0]
     end
@@ -1305,10 +1337,18 @@ end
         # not have: they hold their design in standardized units and expose no
         # `lb`, so every batch call died with `type KPLS has no field lb`.
         for (name, mk) in (
-                ("KPLS", () -> KPLS(xs, ys, 1, [LB1], [UB1], [1.0];
-                    optimize_theta = false)),
-                ("KPLSK", () -> KPLSK(xs, ys, 1, [LB1], [UB1], [1.0];
-                    optimize_theta = false)),
+                (
+                    "KPLS", () -> KPLS(
+                        xs, ys, 1, [LB1], [UB1], [1.0];
+                        optimize_theta = false
+                    ),
+                ),
+                (
+                    "KPLSK", () -> KPLSK(
+                        xs, ys, 1, [LB1], [UB1], [1.0];
+                        optimize_theta = false
+                    ),
+                ),
             )
             @testset "$name" begin
                 Random.seed!(13)

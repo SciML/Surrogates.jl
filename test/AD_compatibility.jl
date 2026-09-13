@@ -892,8 +892,10 @@ end
             Random.seed!(3)
             lb, ub = 1.0, 6.0
             x = sample(20, lb, ub, SobolSample())
-            s = NeuralSurrogate(x, f1.(x), lb, ub,
-                model = Chain(Dense(1, 6, tanh), Dense(6, 1)), n_epochs = 20)
+            s = NeuralSurrogate(
+                x, f1.(x), lb, ub,
+                model = Chain(Dense(1, 6, tanh), Dense(6, 1)), n_epochs = 20
+            )
             z = only(Zygote.gradient(t -> s(t), 3.0))
             fd = ForwardDiff.derivative(t -> s(t), 3.0)
             @test z isa Number && isfinite(z)
@@ -906,8 +908,10 @@ end
             Random.seed!(3)
             lb, ub = [1.0, 1.0], [6.0, 6.0]
             x = sample(20, lb, ub, SobolSample())
-            s = NeuralSurrogate(x, f2.(x), lb, ub,
-                model = Chain(Dense(2, 6, tanh), Dense(6, 1)), n_epochs = 20)
+            s = NeuralSurrogate(
+                x, f2.(x), lb, ub,
+                model = Chain(Dense(2, 6, tanh), Dense(6, 1)), n_epochs = 20
+            )
             z = only(Zygote.gradient(v -> s(v), [3.0, 3.0]))
             fd = ForwardDiff.gradient(v -> s(v), [3.0, 3.0])
             @test length(z) == 2 && all(isfinite, z)
@@ -921,8 +925,10 @@ end
             Random.seed!(3)
             lb, ub = 1.0, 6.0
             x = sample(20, lb, ub, SobolSample())
-            s = AbstractGPSurrogate(x, f1.(x), gp = GP(SqExponentialKernel()),
-                Σy = 0.05)
+            s = AbstractGPSurrogate(
+                x, f1.(x), gp = GP(SqExponentialKernel()),
+                Σy = 0.05
+            )
             z = only(Zygote.gradient(t -> s(t), 3.0))
             fd = ForwardDiff.derivative(t -> s(t), 3.0)
             @test isfinite(z) && isfinite(fd)
@@ -938,8 +944,10 @@ end
             Random.seed!(3)
             lb, ub = [1.0, 1.0], [6.0, 6.0]
             x = sample(20, lb, ub, SobolSample())
-            s = AbstractGPSurrogate(x, f2.(x), gp = GP(SqExponentialKernel()),
-                Σy = 0.05)
+            s = AbstractGPSurrogate(
+                x, f2.(x), gp = GP(SqExponentialKernel()),
+                Σy = 0.05
+            )
             z = only(Zygote.gradient(v -> s((v[1], v[2])), [3.0, 3.0]))
             fd = ForwardDiff.gradient(v -> s((v[1], v[2])), [3.0, 3.0])
             @test length(z) == 2 && all(isfinite, z)
@@ -985,7 +993,7 @@ end
     x = sample(30, lb, ub, SobolSample())
     y = f.(x)
     at = [2.0, 5.0]
-    expected = [2*at[1] 0.0; 0.0 1.0]
+    expected = [2 * at[1] 0.0; 0.0 1.0]
 
     cases = [
         ("RadialBasis", RadialBasis(x, y, lb, ub, rad = linearRadial())),
@@ -1044,8 +1052,8 @@ end
             zy = only(Zygote.gradient(s, q1))
             @test fd isa Number && isfinite(fd)
             @test zy ≈ fd rtol = 1.0e-4
-            @test fd≈df1(q1) atol = 1.5
-            @test only(predict_derivative(s, q1))≈fd atol = 1.0e-4
+            @test fd ≈ df1(q1) atol = 1.5
+            @test only(predict_derivative(s, q1)) ≈ fd atol = 1.0e-4
         end
 
         @testset "N-D" begin
@@ -1055,16 +1063,20 @@ end
             zy = only(Zygote.gradient(s, q2))
             @test length(fd) == 2 && all(isfinite, fd)
             @test zy ≈ fd rtol = 1.0e-4
-            @test fd≈df2(q2) atol = 3.0
+            @test fd ≈ df2(q2) atol = 3.0
         end
     end
 
     @testset "MOE" begin
         experts = [
-            RadialBasisStructure(radial_function = linearRadial(),
-                scale_factor = 1.0, sparse = false),
-            RadialBasisStructure(radial_function = cubicRadial(),
-                scale_factor = 1.0, sparse = false),
+            RadialBasisStructure(
+                radial_function = linearRadial(),
+                scale_factor = 1.0, sparse = false
+            ),
+            RadialBasisStructure(
+                radial_function = cubicRadial(),
+                scale_factor = 1.0, sparse = false
+            ),
         ]
 
         @testset "1-D" begin
@@ -1073,7 +1085,7 @@ end
             zy = only(Zygote.gradient(s, q1))
             @test fd isa Number && isfinite(fd)
             @test zy ≈ fd rtol = 1.0e-4
-            @test fd≈df1(q1) atol = 0.5
+            @test fd ≈ df1(q1) atol = 0.5
         end
 
         @testset "N-D" begin
@@ -1082,7 +1094,7 @@ end
             zy = only(Zygote.gradient(s, q2))
             @test length(fd) == 2 && all(isfinite, fd)
             @test zy ≈ fd rtol = 1.0e-4
-            @test fd≈df2(q2) atol = 0.5
+            @test fd ≈ df2(q2) atol = 0.5
         end
     end
 
@@ -1107,10 +1119,14 @@ end
         labels1 = round.(Int, y1) .% 2
         labels2 = round.(Int, y2) .% 2
         pairs = [
-            ("XGBoostSurrogate", XGBoostSurrogate(x1, y1, lb1, ub1),
-                XGBoostSurrogate(x2, y2, lb2, ub2)),
-            ("SVMSurrogate", SVMSurrogate(x1, labels1, lb1, ub1),
-                SVMSurrogate(x2, labels2, lb2, ub2)),
+            (
+                "XGBoostSurrogate", XGBoostSurrogate(x1, y1, lb1, ub1),
+                XGBoostSurrogate(x2, y2, lb2, ub2),
+            ),
+            (
+                "SVMSurrogate", SVMSurrogate(x1, labels1, lb1, ub1),
+                SVMSurrogate(x2, labels2, lb2, ub2),
+            ),
         ]
         @testset "$(name)" for (name, s1, s2) in pairs
             @test_throws Exception ForwardDiff.derivative(s1, q1)

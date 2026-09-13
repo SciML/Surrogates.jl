@@ -216,8 +216,10 @@ end
 
     # The caller's own containers are left alone.
     x_before = deepcopy(x)
-    update!(KPLS(x, g.(x), 2, lb, ub, [1.0, 1.0]; optimize_theta = false),
-        pts, g.(pts))
+    update!(
+        KPLS(x, g.(x), 2, lb, ub, [1.0, 1.0]; optimize_theta = false),
+        pts, g.(pts)
+    )
     @test x == x_before
 
     k = KPLS(x, g.(x), 2, lb, ub, [1.0, 1.0]; optimize_theta = false)

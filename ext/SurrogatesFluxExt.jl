@@ -629,7 +629,8 @@ function SurrogatesBase.update!(genn::GENNSurrogate, x_new, y_new; dydx_new = no
 
     # Training runs on matrices rebuilt from the stored samples.
     # `_design_matrix`/`_response_matrix` convert the *stored* layout;
-    # `_normalize_y` is for user input and would mis-shape a multi-output design.
+    # `_normalize_y` is for user input and would give a multi-output design the
+    # wrong shape.
     x_combined = hcat(_design_matrix(genn.x), x_new_mat)
     y_combined = hcat(_response_matrix(genn.y), y_new_mat)
     total_samples = size(x_combined, 2)

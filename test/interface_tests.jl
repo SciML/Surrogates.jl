@@ -162,22 +162,38 @@ end
         # `theta` and `p` are configuration even when fitted; `mu`, `b`, `sigma`
         # and the coefficient vectors are outputs of the fit.
         cases = [
-            ("Kriging", Kriging(x, y, 1.0, 6.0),
-                (:mu, :b, :sigma), (:p, :theta)),
-            ("GEK", GEK(x, vcat(y, df.(x)), 1.0, 6.0; optimize_theta = false),
-                (:mu, :b, :sigma), (:p, :theta)),
-            ("RadialBasis", RadialBasis(x, y, 1.0, 6.0, rad = linearRadial()),
-                (:coeff,), (:radial_function, :dim_poly, :scale_factor, :sparse,
-                    :regularization)),
-            ("Wendland", Wendland(x, y, 1.0, 6.0),
-                (:coeff,), (:eps, :maxiters, :tol)),
-            ("Lobachevsky", LobachevskySurrogate(x, y, 1.0, 6.0, alpha = 2.0, n = 4),
-                (:coeff,), (:alpha, :n, :sparse)),
-            ("InverseDistance", InverseDistanceSurrogate(x, y, 1.0, 6.0, p = 2.0),
-                (), (:p,)),
+            (
+                "Kriging", Kriging(x, y, 1.0, 6.0),
+                (:mu, :b, :sigma), (:p, :theta),
+            ),
+            (
+                "GEK", GEK(x, vcat(y, df.(x)), 1.0, 6.0; optimize_theta = false),
+                (:mu, :b, :sigma), (:p, :theta),
+            ),
+            (
+                "RadialBasis", RadialBasis(x, y, 1.0, 6.0, rad = linearRadial()),
+                (:coeff,), (
+                    :radial_function, :dim_poly, :scale_factor, :sparse,
+                    :regularization,
+                ),
+            ),
+            (
+                "Wendland", Wendland(x, y, 1.0, 6.0),
+                (:coeff,), (:eps, :maxiters, :tol),
+            ),
+            (
+                "Lobachevsky", LobachevskySurrogate(x, y, 1.0, 6.0, alpha = 2.0, n = 4),
+                (:coeff,), (:alpha, :n, :sparse),
+            ),
+            (
+                "InverseDistance", InverseDistanceSurrogate(x, y, 1.0, 6.0, p = 2.0),
+                (), (:p,),
+            ),
             ("LinearSurrogate", LinearSurrogate(x, y, 1.0, 6.0), (:coeff,), ()),
-            ("SecondOrderPolynomial", SecondOrderPolynomialSurrogate(x, y, 1.0, 6.0),
-                (:beta,), ()),
+            (
+                "SecondOrderPolynomial", SecondOrderPolynomialSurrogate(x, y, 1.0, 6.0),
+                (:beta,), (),
+            ),
         ]
         @testset "$(name)" for (name, surr, want_params, want_hyper) in cases
             @test parameters(surr) isa NamedTuple
@@ -228,13 +244,25 @@ end
         rmse(m) = sqrt(sum((m(p) - h(collect(p)))^2 for p in grid) / length(grid))
 
         cases = [
-            ("KPLS", () -> KPLS(xn, yn, 2, lbn, ubn, [1.0, 1.0];
-                    optimize_theta = false), (:theta, :n_comp)),
-            ("KPLSK", () -> KPLSK(xn, yn, 2, lbn, ubn, [1.0, 1.0];
-                    optimize_theta = false), (:theta, :theta_pls, :n_comp)),
-            ("GEKPLS", () -> GEKPLS(xn, yn, Zygote.gradient.(h, xn), 2, 1.0e-4,
-                    lbn, ubn, 2, [1.0e-2, 1.0e-2]; optimize_theta = false),
-                (:theta, :n_comp, :delta_x, :extra_points, :nugget, :noise)),
+            (
+                "KPLS", () -> KPLS(
+                    xn, yn, 2, lbn, ubn, [1.0, 1.0];
+                    optimize_theta = false
+                ), (:theta, :n_comp),
+            ),
+            (
+                "KPLSK", () -> KPLSK(
+                    xn, yn, 2, lbn, ubn, [1.0, 1.0];
+                    optimize_theta = false
+                ), (:theta, :theta_pls, :n_comp),
+            ),
+            (
+                "GEKPLS", () -> GEKPLS(
+                    xn, yn, Zygote.gradient.(h, xn), 2, 1.0e-4,
+                    lbn, ubn, 2, [1.0e-2, 1.0e-2]; optimize_theta = false
+                ),
+                (:theta, :n_comp, :delta_x, :extra_points, :nugget, :noise),
+            ),
         ]
 
         @testset "$(name)" for (name, mk, want_hyper) in cases
@@ -257,8 +285,10 @@ end
             # The gradients are stored as an `n x d` matrix but the constructor
             # takes Zygote's broadcast shape, so refitting has to convert back;
             # getting that wrong loses the gradient block entirely.
-            m = GEKPLS(xn, yn, Zygote.gradient.(h, xn), 2, 1.0e-4, lbn, ubn, 2,
-                [1.0e-2, 1.0e-2]; optimize_theta = false)
+            m = GEKPLS(
+                xn, yn, Zygote.gradient.(h, xn), 2, 1.0e-4, lbn, ubn, 2,
+                [1.0e-2, 1.0e-2]; optimize_theta = false
+            )
             before = copy(m.grads)
             update_hyperparameters!(m)
             @test size(m.grads) == size(before)
@@ -308,8 +338,10 @@ end
         # If this stops holding, the broadcast fix above is being tested against
         # the wrong half of the union.
         @test all(s -> s[2] isa SurrogatesBase.AbstractStochasticSurrogate, stochastic)
-        @test all(s -> s[2] isa SurrogatesBase.AbstractDeterministicSurrogate,
-            deterministic)
+        @test all(
+            s -> s[2] isa SurrogatesBase.AbstractDeterministicSurrogate,
+            deterministic
+        )
     end
 end
 
@@ -351,23 +383,31 @@ end
     check_update_representations((x, y) -> Kriging(x, y, lb, ub), "Kriging")
     check_update_representations((x, y) -> Wendland(x, y, lb, ub), "Wendland")
     check_update_representations(
-        (x, y) -> LobachevskySurrogate(x, y, lb, ub), "LobachevskySurrogate")
+        (x, y) -> LobachevskySurrogate(x, y, lb, ub), "LobachevskySurrogate"
+    )
     check_update_representations(
-        (x, y) -> LinearSurrogate(x, y, lb, ub), "LinearSurrogate")
+        (x, y) -> LinearSurrogate(x, y, lb, ub), "LinearSurrogate"
+    )
     check_update_representations(
-        (x, y) -> InverseDistanceSurrogate(x, y, lb, ub), "InverseDistanceSurrogate")
+        (x, y) -> InverseDistanceSurrogate(x, y, lb, ub), "InverseDistanceSurrogate"
+    )
     check_update_representations(
         (x, y) -> SecondOrderPolynomialSurrogate(x, y, lb, ub),
-        "SecondOrderPolynomialSurrogate")
+        "SecondOrderPolynomialSurrogate"
+    )
     check_update_representations(
-        (x, y) -> EarthSurrogate(x, y, lb, ub), "EarthSurrogate")
+        (x, y) -> EarthSurrogate(x, y, lb, ub), "EarthSurrogate"
+    )
     check_update_representations(
         (x, y) -> VariableFidelitySurrogate(x, y, lb, ub),
-        "VariableFidelitySurrogate")
+        "VariableFidelitySurrogate"
+    )
     check_update_representations(
-        (x, y) -> KPLS(x, y, 2, lb, ub, [1.0, 1.0]; optimize_theta = false), "KPLS")
+        (x, y) -> KPLS(x, y, 2, lb, ub, [1.0, 1.0]; optimize_theta = false), "KPLS"
+    )
     check_update_representations(
-        (x, y) -> KPLSK(x, y, 2, lb, ub, [1.0, 1.0]; optimize_theta = false), "KPLSK")
+        (x, y) -> KPLSK(x, y, 2, lb, ub, [1.0, 1.0]; optimize_theta = false), "KPLSK"
+    )
 end
 
 @testset "the gradient-enhanced models take a point either way too" begin
@@ -379,8 +419,10 @@ end
     # `GEK` stores `[values; gradients]`, so its `y` is built the same way here.
     gek_y = vcat(obj.(x), reduce(vcat, [collect(2 .* collect(p)) for p in x]))
     gek() = GEK(x, gek_y, lb, ub; optimize_theta = false)
-    gekpls() = GEKPLS(x, obj.(x), grads, 2, 1.0e-4, lb, ub, 2, [0.01, 0.01];
-        optimize_theta = false)
+    gekpls() = GEKPLS(
+        x, obj.(x), grads, 2, 1.0e-4, lb, ub, 2, [0.01, 0.01];
+        optimize_theta = false
+    )
 
     @testset "$(name)" for (name, build) in (("GEK", gek), ("GEKPLS", gekpls))
         for point in ((1.0, 2.0), [1.0, 2.0]), grad in ((2.0, 4.0), [2.0, 4.0])

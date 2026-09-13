@@ -420,8 +420,10 @@ end
     pts = [(1.0, -2.0, 0.5), (-3.0, 1.5, 2.0)]
     new_grads = gradient.(sphere_function, pts)
 
-    build() = GEKPLS(x, y, grads, 2, 1.0e-4, lb, ub, 2, [0.01, 0.01];
-        optimize_theta = false)
+    build() = GEKPLS(
+        x, y, grads, 2, 1.0e-4, lb, ub, 2, [0.01, 0.01];
+        optimize_theta = false
+    )
 
     batched = build()
     update!(batched, pts, sphere_function.(pts), [first(g) for g in new_grads])
@@ -438,8 +440,12 @@ end
     @test [singly(p) for p in pts] ≈ [batched(p) for p in pts]
 
     # One response and one gradient per new point, or an `ArgumentError`.
-    @test_throws ArgumentError update!(build(), pts, [sphere_function(pts[1])],
-        [first(g) for g in new_grads])
-    @test_throws ArgumentError update!(build(), pts, sphere_function.(pts),
-        [first(new_grads[1])])
+    @test_throws ArgumentError update!(
+        build(), pts, [sphere_function(pts[1])],
+        [first(g) for g in new_grads]
+    )
+    @test_throws ArgumentError update!(
+        build(), pts, sphere_function.(pts),
+        [first(new_grads[1])]
+    )
 end
