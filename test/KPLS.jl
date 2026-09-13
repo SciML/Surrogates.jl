@@ -1,6 +1,7 @@
 using Surrogates
 using Test
 using LinearAlgebra
+include("testutils.jl")
 
 # Sphere function (sum of squares): easy analytical test
 function sphere_function(x)
@@ -123,22 +124,23 @@ end
     @test_throws ArgumentError KPLS(x_bad, y_bad, 1, lb, ub, [1.0])
 end
 
-@testset "KPLS: update! leaves the caller's containers alone" begin
-    lb, ub = [-1.0, -1.0], [1.0, 1.0]
+let lb = [-1.0, -1.0], ub = [1.0, 1.0]
     x = sample(12, lb, ub, SobolSample())
-    y = sphere_function.(x)
-    k = KPLS(x, y, 1, lb, ub, [1.0])
+    k = check_no_caller_aliasing("KPLS", x, sphere_function.(x)) do xs, ys
+        m = KPLS(xs, ys, 1, lb, ub, [1.0])
+        update!(m, (0.31, 0.47), sphere_function((0.31, 0.47)))
+        m
+    end
 
-    update!(k, (0.31, 0.47), sphere_function((0.31, 0.47)))
-    @test length(x) == 12
-    @test length(y) == 12
-    @test length(k.x) == 13
-    @test size(k.x_matrix, 1) == 13
+    @testset "KPLS: update! keeps its design matrix in step" begin
+        @test size(k.x_matrix, 1) == 13
+    end
 
-    # A duplicate is a no-op, and an out-of-bounds point is an error.
-    @test_logs (:warn,) update!(k, (0.31, 0.47), sphere_function((0.31, 0.47)))
-    @test length(k.x) == 13
-    @test_throws ArgumentError update!(k, (5.0, 5.0), 50.0)
+    @testset "KPLS: duplicate is a no-op, out-of-bounds is an error" begin
+        @test_logs (:warn,) update!(k, (0.31, 0.47), sphere_function((0.31, 0.47)))
+        @test length(k.x) == 13
+        @test_throws ArgumentError update!(k, (5.0, 5.0), 50.0)
+    end
 end
 
 @testset "KPLS: prediction matches an independent ordinary-kriging solve" begin
@@ -186,4 +188,38 @@ end
     @test_throws ArgumentError k([(1.0, 2.0, -1.0), (0.5, 0.5, 0.5), (-1.0, 0.0, 1.0)])
     # A `1 x d` row matrix is what `(lb .+ ub) ./ 2` gives for row-matrix bounds.
     @test k([1.0 2.0 -1.0]) ≈ k((1.0, 2.0, -1.0))
+end
+
+@testset "KPLS: update! takes a batch" begin
+    # `docs/src/surrogate.md` states that `update!` accepts one observation or a
+    # batch of them. The PLS models took a single point only, and a batch died
+    # inside `Float64(::Vector)` as a bare `MethodError`.
+    lb, ub = [-2.0, -2.0], [2.0, 2.0]
+    g = p -> p[1]^2 + 0.5p[2]
+    x = sample(20, lb, ub, SobolSample())
+    pts = [(0.3, -0.7), (-1.1, 1.4)]
+
+    batched = KPLS(x, g.(x), 2, lb, ub, [1.0, 1.0]; optimize_theta = false)
+    update!(batched, pts, g.(pts))
+    @test length(batched.x) == 22
+    @test length(batched.y) == 22
+    @test size(batched.x_matrix) == (22, 2)
+    @test size(batched.y_matrix) == (22, 1)
+
+    # One at a time must give the same model.
+    singly = KPLS(x, g.(x), 2, lb, ub, [1.0, 1.0]; optimize_theta = false)
+    for p in pts
+        update!(singly, p, g(p))
+    end
+    @test singly.x == batched.x
+    @test [singly(p) for p in pts] ≈ [batched(p) for p in pts]
+
+    # The caller's own containers are left alone.
+    x_before = deepcopy(x)
+    update!(KPLS(x, g.(x), 2, lb, ub, [1.0, 1.0]; optimize_theta = false),
+        pts, g.(pts))
+    @test x == x_before
+
+    k = KPLS(x, g.(x), 2, lb, ub, [1.0, 1.0]; optimize_theta = false)
+    @test_throws ArgumentError update!(k, pts, [g(pts[1])])
 end

@@ -2,6 +2,7 @@ using Surrogates
 using LinearAlgebra
 using ForwardDiff
 using Test
+include("testutils.jl")
 
 # Ordinary-kriging variance from the Lagrangian (augmented) system with the GEK
 # trend basis, an independent derivation of what `std_error_at_point` reports.
@@ -126,13 +127,10 @@ end
         @test_throws ArgumentError update!(g, 3.5, f(3.5))
     end
 
-    @testset "update! leaves the caller's containers alone" begin
-        xc = copy(x)
-        yc = copy(y)
+    check_no_caller_aliasing("GEK", copy(x), copy(y)) do xc, yc
         g = GEK(xc, yc, lb, ub, theta = 0.3)
         update!(g, 2.5, f(2.5), df(2.5))
-        @test xc == x
-        @test yc == y
+        g
     end
 end
 

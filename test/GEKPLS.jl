@@ -1,6 +1,7 @@
 using Surrogates
 using Zygote
 using Test
+include("testutils.jl")
 
 # Accuracy assertions here are one-sided bounds with the measured value in a
 # comment. They used to be two-sided `isapprox(rmse, pinned, atol)` bands, which
@@ -326,15 +327,11 @@ end
         @test_throws ArgumentError update!(g, (9.0, 0.0, 0.0), 81.0, [18.0, 0.0, 0.0])
     end
 
-    @testset "update! leaves the caller's containers alone" begin
-        xc = collect(x)
-        yc = collect(y)
+    check_no_caller_aliasing("GEKPLS", collect(x), collect(y)) do xc, yc
         g = GEKPLS(xc, yc, grads, 2, 1.0e-4, lb, ub, 2, [0.01, 0.01])
         new_p = (1.0, 2.0, 3.0)
         update!(g, new_p, sphere_function(new_p), gradient(sphere_function, new_p)[1])
-        @test length(xc) == 30
-        @test length(yc) == 30
-        @test length(g.x) == 31
+        g
     end
 
     @testset "the keyword front-end matches the positional form" begin
@@ -411,4 +408,38 @@ end
         @test g.optimize_theta
         @test g.theta != [0.01, 0.01]
     end
+end
+
+@testset "GEKPLS: update! takes a batch" begin
+    lb = [-5.0, -5.0, -5.0]
+    ub = [5.0, 5.0, 5.0]
+    x = sample(50, lb, ub, SobolSample())
+    grads = gradient.(sphere_function, x)
+    y = sphere_function.(x)
+
+    pts = [(1.0, -2.0, 0.5), (-3.0, 1.5, 2.0)]
+    new_grads = gradient.(sphere_function, pts)
+
+    build() = GEKPLS(x, y, grads, 2, 1.0e-4, lb, ub, 2, [0.01, 0.01];
+        optimize_theta = false)
+
+    batched = build()
+    update!(batched, pts, sphere_function.(pts), [first(g) for g in new_grads])
+    @test length(batched.x) == 52
+    @test size(batched.x_matrix) == (52, 3)
+    @test size(batched.grads) == (52, 3)
+
+    singly = build()
+    for (p, g) in zip(pts, new_grads)
+        update!(singly, p, sphere_function(p), first(g))
+    end
+    @test singly.x == batched.x
+    @test singly.grads == batched.grads
+    @test [singly(p) for p in pts] ≈ [batched(p) for p in pts]
+
+    # One response and one gradient per new point, or an `ArgumentError`.
+    @test_throws ArgumentError update!(build(), pts, [sphere_function(pts[1])],
+        [first(g) for g in new_grads])
+    @test_throws ArgumentError update!(build(), pts, sphere_function.(pts),
+        [first(new_grads[1])])
 end

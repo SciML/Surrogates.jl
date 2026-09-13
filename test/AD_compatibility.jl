@@ -5,7 +5,11 @@ using ForwardDiff
 using Test
 using GaussianMixtures
 using Flux
+using AbstractGPs
+using PolyChaos
+using LIBSVM
 using Random
+import XGBoost
 
 Random.seed!(42)
 
@@ -870,6 +874,252 @@ end
             @test result[1] isa Tuple
             # Accuracy test: f(x) = x[1] * x[2], ∇f = [x[2], x[1]], so ∇f([2.0, 5.0]) = [5.0, 2.0]
             @test all(isapprox.(result[1], (5.0, 2.0), atol = 1.0e-1))
+        end
+    end
+end
+
+# AD for the extension-backed surrogates. Five of the seven differentiate under
+# both backends; `XGBoostSurrogate` and `SVMSurrogate` wrap gradient-boosted
+# trees and a LIBSVM model and cannot, which is asserted below rather than
+# assumed.
+@testset "AD for extension surrogates" begin
+    f1 = t -> (t - 3.7)^2 + 1.0
+    f2 = z -> (z[1] - 2.5)^2 + (z[2] - 7.5)^2 + 1.0
+    df1 = t -> 2 * (t - 3.7)
+
+    @testset "NeuralSurrogate" begin
+        @testset "1-D" begin
+            Random.seed!(3)
+            lb, ub = 1.0, 6.0
+            x = sample(20, lb, ub, SobolSample())
+            s = NeuralSurrogate(x, f1.(x), lb, ub,
+                model = Chain(Dense(1, 6, tanh), Dense(6, 1)), n_epochs = 20)
+            z = only(Zygote.gradient(t -> s(t), 3.0))
+            fd = ForwardDiff.derivative(t -> s(t), 3.0)
+            @test z isa Number && isfinite(z)
+            @test fd isa Number && isfinite(fd)
+            # The two backends must agree on the same model.
+            @test isapprox(z, fd; rtol = 1.0e-3)
+        end
+
+        @testset "N-D" begin
+            Random.seed!(3)
+            lb, ub = [1.0, 1.0], [6.0, 6.0]
+            x = sample(20, lb, ub, SobolSample())
+            s = NeuralSurrogate(x, f2.(x), lb, ub,
+                model = Chain(Dense(2, 6, tanh), Dense(6, 1)), n_epochs = 20)
+            z = only(Zygote.gradient(v -> s(v), [3.0, 3.0]))
+            fd = ForwardDiff.gradient(v -> s(v), [3.0, 3.0])
+            @test length(z) == 2 && all(isfinite, z)
+            @test length(fd) == 2 && all(isfinite, fd)
+            @test isapprox(collect(z), fd; rtol = 1.0e-3)
+        end
+    end
+
+    @testset "AbstractGPSurrogate" begin
+        @testset "1-D" begin
+            Random.seed!(3)
+            lb, ub = 1.0, 6.0
+            x = sample(20, lb, ub, SobolSample())
+            s = AbstractGPSurrogate(x, f1.(x), gp = GP(SqExponentialKernel()),
+                Σy = 0.05)
+            z = only(Zygote.gradient(t -> s(t), 3.0))
+            fd = ForwardDiff.derivative(t -> s(t), 3.0)
+            @test isfinite(z) && isfinite(fd)
+            @test isapprox(z, fd; rtol = 1.0e-6)
+            # A GP interpolating a smooth target should have the right sign.
+            @test sign(z) == sign(df1(3.0))
+        end
+
+        @testset "N-D" begin
+            # The design is stored as tuples and the query must match: a vector
+            # raises `DimensionMismatch: dimensionality of x (2) is not ...`,
+            # because `[a, b]` reads as two one-dimensional points.
+            Random.seed!(3)
+            lb, ub = [1.0, 1.0], [6.0, 6.0]
+            x = sample(20, lb, ub, SobolSample())
+            s = AbstractGPSurrogate(x, f2.(x), gp = GP(SqExponentialKernel()),
+                Σy = 0.05)
+            z = only(Zygote.gradient(v -> s((v[1], v[2])), [3.0, 3.0]))
+            fd = ForwardDiff.gradient(v -> s((v[1], v[2])), [3.0, 3.0])
+            @test length(z) == 2 && all(isfinite, z)
+            @test isapprox(collect(z), fd; rtol = 1.0e-6)
+        end
+    end
+
+    @testset "PolynomialChaosSurrogate" begin
+        @testset "1-D" begin
+            Random.seed!(3)
+            lb, ub = 1.0, 6.0
+            x = sample(20, lb, ub, SobolSample())
+            s = PolynomialChaosSurrogate(x, f1.(x), lb, ub)
+            z = only(Zygote.gradient(t -> s(t), 3.0))
+            fd = ForwardDiff.derivative(t -> s(t), 3.0)
+            @test isfinite(z) && isfinite(fd)
+            @test isapprox(z, fd; rtol = 1.0e-6)
+            # A polynomial chaos expansion of a quadratic is essentially exact.
+            @test isapprox(z, df1(3.0); atol = 0.2)
+        end
+
+        @testset "N-D" begin
+            Random.seed!(3)
+            lb, ub = [1.0, 1.0], [6.0, 6.0]
+            x = sample(20, lb, ub, SobolSample())
+            s = PolynomialChaosSurrogate(x, f2.(x), lb, ub)
+            z = only(Zygote.gradient(v -> s(v), [3.0, 3.0]))
+            fd = ForwardDiff.gradient(v -> s(v), [3.0, 3.0])
+            @test length(z) == 2 && all(isfinite, z)
+            @test isapprox(collect(z), fd; rtol = 1.0e-6)
+        end
+    end
+end
+
+# Multi-output AD for the surrogates that support a vector response: the
+# Jacobian row per output is checked against the analytic one, not merely
+# checked for not throwing.
+@testset "multi-output AD" begin
+    lb, ub = [1.0, 1.0], [6.0, 6.0]
+    # Jacobian is [2x1 0; 0 1], so it is known exactly at any point.
+    f = z -> [z[1]^2, z[2]]
+    Random.seed!(4)
+    x = sample(30, lb, ub, SobolSample())
+    y = f.(x)
+    at = [2.0, 5.0]
+    expected = [2*at[1] 0.0; 0.0 1.0]
+
+    cases = [
+        ("RadialBasis", RadialBasis(x, y, lb, ub, rad = linearRadial())),
+        ("InverseDistance", InverseDistanceSurrogate(x, y, lb, ub, p = 1.4)),
+        ("SecondOrderPolynomial", SecondOrderPolynomialSurrogate(x, y, lb, ub)),
+    ]
+
+    @testset "$(name)" for (name, surr) in cases
+        J = Zygote.jacobian(v -> surr(v), at)[1]
+        @test size(J) == (2, 2)
+        @test all(isfinite, J)
+        # The two backends must agree on the same fitted model, whatever the
+        # model's own approximation error is.
+        @test isapprox(J, ForwardDiff.jacobian(v -> surr(v), at); rtol = 1.0e-6)
+    end
+
+    @testset "an interpolant recovers the true Jacobian" begin
+        # `RadialBasis` interpolates this design closely enough to check the
+        # derivative values, not just that they are finite and consistent.
+        surr = RadialBasis(x, y, lb, ub, rad = linearRadial())
+        J = Zygote.jacobian(v -> surr(v), at)[1]
+        @test isapprox(J, expected; atol = 1.5)
+        # The second output is exactly z[2], so its row is [0, 1] to good accuracy.
+        @test isapprox(J[2, :], [0.0, 1.0]; atol = 0.3)
+    end
+end
+
+# Coverage for the extension surrogates the block above does not reach:
+# `GENNSurrogate` and `MOE` under ForwardDiff as well as Zygote, both
+# dimensionalities, against the analytic derivative; and the two that cannot be
+# differentiated at all, pinned so the claim is checked rather than assumed.
+@testset "AD for the remaining extension surrogates" begin
+    f1 = t -> (t - 3.7)^2 + 1.0
+    df1 = t -> 2 * (t - 3.7)
+    f2 = z -> (z[1] - 2.5)^2 + (z[2] - 7.5)^2 + 1.0
+    df2 = z -> [2 * (z[1] - 2.5), 2 * (z[2] - 7.5)]
+
+    lb1, ub1 = 1.0, 6.0
+    lb2, ub2 = [1.0, 1.0], [6.0, 9.0]
+    Random.seed!(5)
+    x1 = sample(30, lb1, ub1, SobolSample())
+    x2 = sample(40, lb2, ub2, SobolSample())
+    y1 = f1.(x1)
+    y2 = f2.(x2)
+    q1 = 3.0
+    q2 = [2.0, 5.0]
+
+    @testset "GENNSurrogate" begin
+        # Trained on gradients, so its derivative is the one thing it should get
+        # right. `predict_derivative` is a prediction; these are true AD through
+        # the network, and the two must agree.
+        @testset "1-D" begin
+            dydx = reshape(df1.(x1), length(x1), 1)
+            s = GENNSurrogate(x1, y1, lb1, ub1, dydx; n_epochs = 400)
+            fd = ForwardDiff.derivative(s, q1)
+            zy = only(Zygote.gradient(s, q1))
+            @test fd isa Number && isfinite(fd)
+            @test zy ≈ fd rtol = 1.0e-4
+            @test fd≈df1(q1) atol = 1.5
+            @test only(predict_derivative(s, q1))≈fd atol = 1.0e-4
+        end
+
+        @testset "N-D" begin
+            dydx = reduce(vcat, [reshape(df2(collect(p)), 1, 2) for p in x2])
+            s = GENNSurrogate(x2, y2, lb2, ub2, dydx; n_epochs = 400)
+            fd = ForwardDiff.gradient(s, q2)
+            zy = only(Zygote.gradient(s, q2))
+            @test length(fd) == 2 && all(isfinite, fd)
+            @test zy ≈ fd rtol = 1.0e-4
+            @test fd≈df2(q2) atol = 3.0
+        end
+    end
+
+    @testset "MOE" begin
+        experts = [
+            RadialBasisStructure(radial_function = linearRadial(),
+                scale_factor = 1.0, sparse = false),
+            RadialBasisStructure(radial_function = cubicRadial(),
+                scale_factor = 1.0, sparse = false),
+        ]
+
+        @testset "1-D" begin
+            s = MOE(x1, y1, experts)
+            fd = ForwardDiff.derivative(s, q1)
+            zy = only(Zygote.gradient(s, q1))
+            @test fd isa Number && isfinite(fd)
+            @test zy ≈ fd rtol = 1.0e-4
+            @test fd≈df1(q1) atol = 0.5
+        end
+
+        @testset "N-D" begin
+            s = MOE(x2, y2, experts; ndim = 2)
+            fd = ForwardDiff.gradient(s, q2)
+            zy = only(Zygote.gradient(s, q2))
+            @test length(fd) == 2 && all(isfinite, fd)
+            @test zy ≈ fd rtol = 1.0e-4
+            @test fd≈df2(q2) atol = 0.5
+        end
+    end
+
+    @testset "AbstractGPSurrogate takes a point in either representation" begin
+        # `ForwardDiff.gradient` supplies a coordinate vector. The call handed
+        # the point straight to the kernel, which compared it against a
+        # tuple-stored design and raised `DimensionMismatch`, so this surrogate
+        # could not be differentiated in more than one dimension at all.
+        s = AbstractGPSurrogate(x2, y2)
+        @test s(Tuple(q2)) == s(q2)
+        @test std_error_at_point(s, Tuple(q2)) == std_error_at_point(s, q2)
+        fd = ForwardDiff.gradient(s, q2)
+        zy = only(Zygote.gradient(s, q2))
+        @test length(fd) == 2 && all(isfinite, fd)
+        @test zy ≈ fd rtol = 1.0e-4
+    end
+
+    @testset "the non-differentiable surrogates fail rather than answer" begin
+        # Gradient-boosted trees and a LIBSVM model are piecewise constant and
+        # wrap foreign calls. Neither backend can differentiate them, and both
+        # must say so rather than return a plausible-looking zero.
+        labels1 = round.(Int, y1) .% 2
+        labels2 = round.(Int, y2) .% 2
+        pairs = [
+            ("XGBoostSurrogate", XGBoostSurrogate(x1, y1, lb1, ub1),
+                XGBoostSurrogate(x2, y2, lb2, ub2)),
+            ("SVMSurrogate", SVMSurrogate(x1, labels1, lb1, ub1),
+                SVMSurrogate(x2, labels2, lb2, ub2)),
+        ]
+        @testset "$(name)" for (name, s1, s2) in pairs
+            @test_throws Exception ForwardDiff.derivative(s1, q1)
+            @test_throws Exception Zygote.gradient(s1, q1)
+            @test_throws Exception ForwardDiff.gradient(s2, q2)
+            @test_throws Exception Zygote.gradient(s2, q2)
+            # They must still predict; only differentiation is unavailable.
+            @test s1(q1) isa Number
+            @test s2(q2) isa Number
         end
     end
 end

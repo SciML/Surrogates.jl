@@ -1,6 +1,7 @@
 using Surrogates
 using Test
 using LinearAlgebra
+include("testutils.jl")
 
 # Sphere function (sum of squares): easy analytical test
 function sphere_function(x)
@@ -117,21 +118,23 @@ end
     @test_throws ArgumentError KPLSK(x_bad, y_bad, 1, lb, ub, [1.0])
 end
 
-@testset "KPLSK: update! leaves the caller's containers alone" begin
-    lb, ub = [-1.0, -1.0], [1.0, 1.0]
+let lb = [-1.0, -1.0], ub = [1.0, 1.0]
     x = sample(12, lb, ub, SobolSample())
-    y = sphere_function.(x)
-    k = KPLSK(x, y, 1, lb, ub, [1.0])
+    k = check_no_caller_aliasing("KPLSK", x, sphere_function.(x)) do xs, ys
+        m = KPLSK(xs, ys, 1, lb, ub, [1.0])
+        update!(m, (0.31, 0.47), sphere_function((0.31, 0.47)))
+        m
+    end
 
-    update!(k, (0.31, 0.47), sphere_function((0.31, 0.47)))
-    @test length(x) == 12
-    @test length(y) == 12
-    @test length(k.x) == 13
-    @test size(k.x_matrix, 1) == 13
+    @testset "KPLSK: update! keeps its design matrix in step" begin
+        @test size(k.x_matrix, 1) == 13
+    end
 
-    @test_logs (:warn,) update!(k, (0.31, 0.47), sphere_function((0.31, 0.47)))
-    @test length(k.x) == 13
-    @test_throws ArgumentError update!(k, (5.0, 5.0), 50.0)
+    @testset "KPLSK: duplicate is a no-op, out-of-bounds is an error" begin
+        @test_logs (:warn,) update!(k, (0.31, 0.47), sphere_function((0.31, 0.47)))
+        @test length(k.x) == 13
+        @test_throws ArgumentError update!(k, (5.0, 5.0), 50.0)
+    end
 end
 
 @testset "KPLSK: theta is released to full dimension" begin
@@ -180,4 +183,27 @@ end
     k = KPLSK(x, g.(x), 2, lb, ub, [1.0, 1.0])
     @test_throws ArgumentError k([(1.0, 2.0, -1.0), (0.5, 0.5, 0.5), (-1.0, 0.0, 1.0)])
     @test k([1.0 2.0 -1.0]) ≈ k((1.0, 2.0, -1.0))
+end
+
+@testset "KPLSK: update! takes a batch" begin
+    lb, ub = [-2.0, -2.0], [2.0, 2.0]
+    g = p -> p[1]^2 + 0.5p[2]
+    x = sample(20, lb, ub, SobolSample())
+    pts = [(0.3, -0.7), (-1.1, 1.4)]
+
+    batched = KPLSK(x, g.(x), 2, lb, ub, [1.0, 1.0]; optimize_theta = false)
+    update!(batched, pts, g.(pts))
+    @test length(batched.x) == 22
+    @test size(batched.x_matrix) == (22, 2)
+    @test size(batched.y_matrix) == (22, 1)
+
+    singly = KPLSK(x, g.(x), 2, lb, ub, [1.0, 1.0]; optimize_theta = false)
+    for p in pts
+        update!(singly, p, g(p))
+    end
+    @test singly.x == batched.x
+    @test [singly(p) for p in pts] ≈ [batched(p) for p in pts]
+
+    k = KPLSK(x, g.(x), 2, lb, ub, [1.0, 1.0]; optimize_theta = false)
+    @test_throws ArgumentError update!(k, pts, [g(pts[1])])
 end

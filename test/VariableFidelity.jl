@@ -1,5 +1,6 @@
 using Surrogates
 using Test
+include("testutils.jl")
 
 # The defining property of the model: it is `low_fid_surr + eps_surr`, where
 # `eps_surr` interpolates `y_high - low_fid_surr(x_high)`. The sum must therefore
@@ -59,17 +60,13 @@ end
     @test high_fidelity_error(vn) < 1.0e-10
 end
 
-@testset "update! leaves the caller's containers alone" begin
-    lb, ub = 0.0, 10.0
-    f = x -> 2x
+let lb = 0.0, ub = 10.0, f = x -> 2x
     x = sample(10, lb, ub, SobolSample())
-    y = f.(x)
-
-    v = VariableFidelitySurrogate(x, y, lb, ub)
-    update!(v, 3.21, f(3.21))
-    @test length(x) == 10
-    @test length(y) == 10
-    @test length(v.x) == 11
+    check_no_caller_aliasing("VariableFidelitySurrogate", x, f.(x)) do xs, ys
+        v = VariableFidelitySurrogate(xs, ys, lb, ub)
+        update!(v, 3.21, f(3.21))
+        v
+    end
 end
 
 @testset "every supported structure builds on both fidelity levels" begin
