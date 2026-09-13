@@ -29,7 +29,7 @@ p_cross = 0.5
 n_c = 1.0
 sigma = 1.5
 surrogate_optimize!(
-    f, RTEA(Z, K, p_cross, n_c, sigma), lb, ub, my_radial_basis_rtea, SobolSample())
+    f, RTEA(K, Z, p_cross, n_c, sigma), lb, ub, my_radial_basis_rtea, SobolSample())
 ```
 
 ## Case 2: objective functions with conflicting minima
