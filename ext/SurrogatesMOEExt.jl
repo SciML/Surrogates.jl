@@ -1,5 +1,7 @@
 module SurrogatesMOEExt
 
+import Surrogates
+using Surrogates: _append_samples, _build_component
 import Surrogates: RadialBasis,
     InverseDistanceSurrogate, Kriging, LobachevskySurrogate,
     LinearSurrogate, MOE, NeuralSurrogate, XGBoostSurrogate,
@@ -19,7 +21,6 @@ constructor for MOE; takes in x, y and expert types and returns an MOE struct
 """
 function MOE(x, y, expert_types; ndim = 1, n_clusters = 2, quantile = 10)
     if (ndim > 1)
-        #x = _vector_of_tuples_to_matrix(x)
         X = _vector_of_tuples_to_matrix(x)
         values = hcat(X, y)
     else
@@ -39,21 +40,16 @@ function MOE(x, y, expert_types; ndim = 1, n_clusters = 2, quantile = 10)
     clusters_train = _cluster_values(x_and_y_train, cluster_classifier_train, n_clusters)
     cluster_classifier_test = _cluster_predict(gm_cluster, x_and_y_test)
     clusters_test = _cluster_values(x_and_y_test, cluster_classifier_test, n_clusters)
-    best_models = []
-    for i in 1:n_clusters
-        best_model = _find_best_model(
-            clusters_train[i], clusters_test[i], ndim,
-            expert_types
-        )
-        push!(best_models, best_model)
-    end
-    # X = values[:, 1:ndim]
-    # y = values[:, 2]
-
-    #return MOE(X, y, gm_cluster, mvn_distributions, best_models)
+    # `Any` deliberately: which expert wins a cluster is not known until the fit
+    # runs and may differ on a refit, so the field's element type has to admit
+    # any of them. A narrower one makes `update!` fail to assign back.
+    best_models = Any[
+        _find_best_model(clusters_train[i], clusters_test[i], ndim, expert_types)
+            for i in 1:n_clusters
+    ]
     return MOE(
         x, y, gm_cluster, mvn_distributions, best_models, expert_types, ndim,
-        n_clusters
+        n_clusters, quantile
     )
 end
 
@@ -133,7 +129,6 @@ function _extract_part(values, quantile)
     indices = collect(1:quantile:num)
     mask = falses(num)
     mask[indices] .= true
-    #mask
     return values[mask, :], values[.~mask, :]
 end
 
@@ -163,7 +158,9 @@ function _cluster_values(values, cluster_classifier, num_clusters)
     if (size(values, 1) != num)
         error("Number of values don't match number of cluster_classifier points")
     end
-    clusters = [[] for n in 1:num_clusters]
+    # Typed: an untyped container makes the downstream comprehensions
+    # `Vector{Any}`, and `_find_best_model`'s `norm` then needs `zero(Any)`.
+    clusters = [Vector{Vector{eltype(values)}}() for _ in 1:num_clusters]
     for i in 1:num
         push!(clusters[cluster_classifier[i]], (values[i, :]))
     end
@@ -182,15 +179,11 @@ distribs - a vector containing frozen multivariate normal distributions for each
 function _create_clusters_distributions(gmm::GMM, ndim, n_clusters)
     means = gmm.μ
     cov = covars(gmm)
-    distribs = []
-
-    for k in 1:n_clusters
-        meansk = means[k, 1:ndim]
-        covk = cov[k][1:ndim, 1:ndim]
-        mvn = MvNormal(meansk, covk) # todo - check if we need allow_singular=True and implement
-        push!(distribs, mvn)
-    end
-    return distribs
+    # Marginal over the inputs: the mixture is fitted on the joint `(x, y)`
+    # design, and prediction weights clusters by the input alone.
+    return [
+        MvNormal(means[k, 1:ndim], cov[k][1:ndim, 1:ndim]) for k in 1:n_clusters
+    ]
 end
 
 """
@@ -198,17 +191,11 @@ _find_upper_lower_bounds(m::Matrix)
 returns upper and lower bounds in vector form
 """
 function _find_upper_lower_bounds(X::Matrix)
-    ub = []
-    lb = []
-    for col in eachcol(X)
-        push!(ub, findmax(col)[1])
-        push!(lb, findmin(col)[1])
-    end
-    if (size(X, 2) == 1)
-        return lb[1][1], ub[1][1]
-    else
-        return lb, ub
-    end
+    # Column extrema. `push!` into an untyped literal gave `Vector{Any}` bounds,
+    # which then reached the component constructors.
+    lb = vec(minimum(X, dims = 1))
+    ub = vec(maximum(X, dims = 1))
+    return size(X, 2) == 1 ? (lb[1], ub[1]) : (lb, ub)
 end
 
 """
@@ -270,84 +257,8 @@ takes in an array of surrogate types, and number of cluster, builds the surrogat
 an array of surrogate objects
 """
 function _surrogate_builder(local_kind, k, x, y, lb, ub)
-    local_surr = []
-    for i in 1:k
-        if local_kind[i].name == "RadialBasis"
-            #fit and append to local_surr
-            my_local_i = RadialBasis(
-                x, y, lb, ub,
-                rad = local_kind[i].radial_function,
-                scale_factor = local_kind[i].scale_factor,
-                sparse = local_kind[i].sparse
-            )
-            push!(local_surr, my_local_i)
-
-        elseif local_kind[i].name == "Kriging"
-            my_local_i = Kriging(
-                x, y, lb, ub, p = local_kind[i].p,
-                theta = local_kind[i].theta
-            )
-            push!(local_surr, my_local_i)
-
-        elseif local_kind[i].name == "LinearSurrogate"
-            my_local_i = LinearSurrogate(x, y, lb, ub)
-            push!(local_surr, my_local_i)
-
-        elseif local_kind[i].name == "InverseDistanceSurrogate"
-            my_local_i = InverseDistanceSurrogate(x, y, lb, ub, local_kind[i].p)
-            push!(local_surr, my_local_i)
-
-        elseif local_kind[i].name == "LobachevskySurrogate"
-            my_local_i = LobachevskySurrogate(
-                x, y, lb, ub,
-                alpha = local_kind[i].alpha,
-                n = local_kind[i].n,
-                sparse = local_kind[i].sparse
-            )
-            push!(local_surr, my_local_i)
-
-        elseif local_kind[i].name == "NeuralSurrogate"
-            my_local_i = NeuralSurrogate(
-                x, y, lb, ub,
-                model = local_kind[i].model,
-                loss = local_kind[i].loss, opt = local_kind[i].opt,
-                n_epochs = local_kind[i].n_epochs
-            )
-            push!(local_surr, my_local_i)
-
-        elseif local_kind[i].name == "XGBoostSurrogate"
-            my_local_i = XGBoostSurrogate(
-                x, y, lb, ub,
-                num_round = local_kind[i].num_round
-            )
-            push!(local_surr, my_local_i)
-
-        elseif local_kind[i].name == "SecondOrderPolynomialSurrogate"
-            my_local_i = SecondOrderPolynomialSurrogate(x, y, lb, ub)
-            push!(local_surr, my_local_i)
-
-        elseif local_kind[i].name == "Wendland"
-            my_local_i = Wendland(
-                x, y, lb, ub, eps = local_kind[i].eps,
-                maxiters = local_kind[i].maxiters, tol = local_kind[i].tol
-            )
-            push!(local_surr, my_local_i)
-
-        elseif local_kind[i].name == "PolynomialChaosSurrogate"
-            my_local_i = PolynomialChaosSurrogate(x, y, lb, ub, op = local_kind[i].op)
-            push!(local_surr, my_local_i)
-        else
-            throw(
-                ArgumentError(
-                    "MOE does not support a $(local_kind[i].name) expert. Supported: " *
-                        "RadialBasis, Kriging, LinearSurrogate, InverseDistanceSurrogate, " *
-                        "LobachevskySurrogate, NeuralSurrogate, XGBoostSurrogate, " *
-                        "SecondOrderPolynomialSurrogate, Wendland, PolynomialChaosSurrogate."
-                )
-            )
-        end
-    end
-    return local_surr
+    # Dispatch on the descriptor's type; see `src/ComponentSurrogates.jl`.
+    return [_build_component(local_kind[i], x, y, lb, ub) for i in 1:k]
 end
 
 """
@@ -356,13 +267,16 @@ end
 add a new point to the dataset.
 """
 function SurrogatesBase.update!(m::MOE, x, y)
-    # `vcat`, not `push!`: the containers are the caller's own.
-    m.x = vcat(m.x, [x])
-    m.y = vcat(m.y, y)
+    # `_append_samples`: the caller's containers are left alone, one new point
+    # is told from a batch of them, and a point may be written either as a tuple
+    # or as a coordinate vector.
+    m.x, m.y = _append_samples(m.x, m.y, x, y)
 
-    quantile = 10
+    # The split the constructor used, not a fresh one: refitting on a different
+    # train/test partition would score the experts against different data.
+    quantile = m.q
 
-    if (m.nd > 1) #numbef of dimensions
+    if (m.nd > 1) #number of dimensions
         X = _vector_of_tuples_to_matrix(m.x)
         values = hcat(X, m.y)
     else
@@ -381,14 +295,11 @@ function SurrogatesBase.update!(m::MOE, x, y)
     clusters_train = _cluster_values(x_and_y_train, cluster_classifier_train, m.nc)
     cluster_classifier_test = _cluster_predict(gm_cluster, x_and_y_test)
     clusters_test = _cluster_values(x_and_y_test, cluster_classifier_test, m.nc)
-    best_models = []
-    for i in 1:(m.nc)
-        best_model = _find_best_model(
-            clusters_train[i], clusters_test[i], m.nd,
-            m.e
-        )
-        push!(best_models, best_model)
-    end
+    # `Any` for the reason given in the constructor.
+    best_models = Any[
+        _find_best_model(clusters_train[i], clusters_test[i], m.nd, m.e)
+            for i in 1:(m.nc)
+    ]
     m.c = gm_cluster
     m.d = mvn_distributions
     return m.m = best_models
@@ -413,5 +324,18 @@ function _vector_of_tuples_to_matrix(v)
     end
     return nothing
 end
+
+
+# ---- SurrogatesBase parameter interface -----------------------------------
+#
+# The mixture model, its cluster distributions and the selected experts are all
+# outputs of the fit; the expert menu and the cluster count are configuration.
+
+SurrogatesBase.parameters(m::MOE) = (;
+    cluster_model = m.c, cluster_distributions = m.d, experts = m.m,
+)
+SurrogatesBase.hyperparameters(m::MOE) = (;
+    expert_types = m.e, ndim = m.nd, n_clusters = m.nc, quantile = m.q,
+)
 
 end #module
