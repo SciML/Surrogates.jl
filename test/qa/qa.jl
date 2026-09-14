@@ -39,12 +39,22 @@ run_qa(
                 :ProductIterator,
                 :RefValue,
                 :_check_sequence,
+                # Surrogates' own internals, shared with its extensions: the
+                # rules for appending a sample, matching a point to the stored
+                # representation, and building a composite's component.
+                :_append_samples,
+                :_build_component,
+                :_check_dimension,
+                :_is_single_sample,
+                :_match_stored,
             ),
         ),
     ),
     reexports_allow = (
         :GoldenSample, :GridSample, :HaltonSample, :KroneckerSample,
         :LatinHypercubeSample, :RandomSample, :SamplingAlgorithm,
-        :SobolSample, :update!,
+        :SobolSample,
+        # The SurrogatesBase interface Surrogates implements and re-exports.
+        :update!, :parameters, :hyperparameters, :update_hyperparameters!,
     ),
 )

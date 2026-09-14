@@ -1,5 +1,8 @@
 const ZERO_SAMPLES_MESSAGE = "Number of samples must be greater than zero"
 
+# We need to convert the matrix that QuasiMonteCarlo produces into a vector of Tuples like Surrogates expects
+# This will eventually be removed once we refactor the rest of the code to work with d x n matrices instead
+# of vectors of Tuples
 """
     sample(n, lb, ub, sampler::SamplingAlgorithm; kwargs...)
 
@@ -37,9 +40,6 @@ x = sample(5, 0.0, 1.0, SobolSample())
 xy = sample(5, [0.0, 0.0], [1.0, 1.0], SobolSample())
 ```
 """
-# We need to convert the matrix that QuasiMonteCarlo produces into a vector of Tuples like Surrogates expects
-# This will eventually be removed once we refactor the rest of the code to work with d x n matrices instead
-# of vectors of Tuples
 function sample(args...; kwargs...)
     s = QuasiMonteCarlo.sample(args...; kwargs...)
     if isone(size(s, 1))

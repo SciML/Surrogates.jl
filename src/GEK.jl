@@ -1,3 +1,5 @@
+# Stochastic: this model answers `std_error_at_point` with a BLUP predictive
+# standard deviation, which is what the supertype marks.
 """
     GEK(x, y, lb, ub; p = 2.0, theta = 1.0)
 
@@ -84,7 +86,7 @@ points make the covariance matrix singular and are rejected with an
     points to an ordinary Kriging system instead of forming derivative covariance
     blocks, and so never builds this matrix.
 """
-mutable struct GEK{X, Y, L, U, P, T, M, B, S, R} <: AbstractDeterministicSurrogate
+mutable struct GEK{X, Y, L, U, P, T, M, B, S, R} <: AbstractStochasticSurrogate
     x::X
     y::Y
     lb::L
@@ -343,8 +345,10 @@ matrix singular.
 function SurrogatesBase.update!(k::GEK, new_x, new_y, new_grad)
     n = length(k.x)
     d = length(k.x[1])
-    single = _is_single_sample(new_x, first(k.x))
-    pts = single ? [new_x] : collect(new_x)
+    reference = first(k.x)
+    single = _is_single_sample(new_x, reference)
+    pts = single ? [_match_stored(reference, new_x)] :
+        [_match_stored(reference, p) for p in new_x]
     vals = single ? [new_y] : collect(new_y)
     grads = single ? collect(new_grad) : reduce(vcat, collect.(new_grad))
 
@@ -386,3 +390,8 @@ function SurrogatesBase.update!(::GEK, ::Any, ::Any)
         )
     )
 end
+
+# `GEK` stores `[values; gradients]`, so only its leading `length(x)` entries are
+# objective values. See `_sample_responses` in `Optimization.jl` for why this is
+# a special case rather than the general rule.
+_sample_responses(surr::GEK) = view(surr.y, 1:length(surr.x))

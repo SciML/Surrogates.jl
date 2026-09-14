@@ -55,55 +55,24 @@ mutable struct VariableFidelitySurrogate{X, Y, L, U, N, F, E, H} <:
 end
 
 # Build the surrogate a `*Structure` named tuple describes. Both fidelity levels
-# and `update!` need exactly this dispatch, so it lives in one place rather than
-# being spelled out once per call site.
-#
-# `GEKStructure` is absent deliberately: `GEK` needs `n(1 + d)` observations,
-# values followed by gradients, and a variable-fidelity design carries only
-# function values — the split by sample count would slice a gradient block in
-# half. It is rejected below with the other unsupported names.
+# and `update!` need exactly this dispatch, so it lives in one place.
 function _variable_fidelity_surrogate(structure, x, y, lb, ub)
-    name = structure.name
-    return if name == "RadialBasis"
-        RadialBasis(
-            x, y, lb, ub, rad = structure.radial_function,
-            scale_factor = structure.scale_factor, sparse = structure.sparse
-        )
-    elseif name == "Kriging"
-        Kriging(x, y, lb, ub, p = structure.p, theta = structure.theta)
-    elseif name == "LinearSurrogate"
-        LinearSurrogate(x, y, lb, ub)
-    elseif name == "InverseDistanceSurrogate"
-        InverseDistanceSurrogate(x, y, lb, ub, p = structure.p)
-    elseif name == "LobachevskySurrogate"
-        LobachevskySurrogate(
-            x, y, lb, ub, alpha = structure.alpha, n = structure.n,
-            sparse = structure.sparse
-        )
-    elseif name == "NeuralSurrogate"
-        NeuralSurrogate(
-            x, y, lb, ub, model = structure.model, loss = structure.loss,
-            opt = structure.opt, n_epochs = structure.n_epochs
-        )
-    elseif name == "XGBoostSurrogate"
-        XGBoostSurrogate(x, y, lb, ub, num_round = structure.num_round)
-    elseif name == "SecondOrderPolynomialSurrogate"
-        SecondOrderPolynomialSurrogate(x, y, lb, ub)
-    elseif name == "Wendland"
-        Wendland(
-            x, y, lb, ub, eps = structure.eps, maxiters = structure.maxiters,
-            tol = structure.tol
-        )
-    else
+    # `GEK` is excluded for a reason specific to this composite, so it is
+    # checked here rather than in the shared builder: `GEK` needs `n(1 + d)`
+    # observations, values followed by gradients, and a variable-fidelity design
+    # carries only function values — the split by sample count would slice a
+    # gradient block in half.
+    if hasproperty(structure, :type) && structure.type === GEK
         throw(
             ArgumentError(
-                "VariableFidelitySurrogate does not support a $(name) component. " *
-                    "Supported: RadialBasis, Kriging, LinearSurrogate, " *
-                    "InverseDistanceSurrogate, LobachevskySurrogate, NeuralSurrogate, " *
-                    "XGBoostSurrogate, SecondOrderPolynomialSurrogate, Wendland."
+                "VariableFidelitySurrogate cannot use a GEK component: it " *
+                    "expects n(1 + d) observations, values followed by " *
+                    "gradients, and a variable-fidelity design carries only " *
+                    "function values."
             )
         )
     end
+    return _build_component(structure, x, y, lb, ub)
 end
 
 # The residuals the correction surrogate is fitted to. Recomputed by `update!`,

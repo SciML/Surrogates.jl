@@ -2,6 +2,7 @@ using LinearAlgebra
 using Surrogates
 using Test
 using Statistics
+include("testutils.jl")
 
 # Ordinary-kriging variance from the Lagrangian (augmented) system, an
 # independent derivation of the quantity `std_error_at_point` reports:
@@ -225,14 +226,10 @@ end
     @test length(k.x) == 3
 end
 
-@testset "update! leaves the caller's containers alone" begin
-    x = [1.0, 2.0, 3.0]
-    y = [4.0, 5.0, 6.0]
+check_no_caller_aliasing("Kriging", [1.0, 2.0, 3.0], [4.0, 5.0, 6.0]) do x, y
     k = Kriging(x, y, 0.0, 10.0)
     update!(k, 4.0, 9.0)
-    @test x == [1.0, 2.0, 3.0]
-    @test y == [4.0, 5.0, 6.0]
-    @test length(k.x) == 4
+    k
 end
 
 @testset "the default correlation scale is re-derived by update!" begin

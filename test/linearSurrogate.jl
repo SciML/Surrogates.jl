@@ -102,15 +102,25 @@ using Test
             @test lin.coeff ≈ [3.0, 2.0, -1.0]
         end
 
-        @testset "update! requires the sample container type to match" begin
-            # `x` is stored in a concretely typed field, so a surrogate built
-            # from tuples cannot absorb a vector-valued point. Current
-            # limitation, pinned so a future fix is noticed.
+        @testset "update! takes a point in either container" begin
+            # `x` is a concretely typed field, so a coordinate vector has to be
+            # brought into the stored representation before it is appended;
+            # `Surrogates._match_stored` does that. Both forms must name the
+            # same point and give the same fit.
             x = [(1.0, 2.0), (3.0, 1.0), (2.0, 5.0), (6.0, 4.0)]
-            lin = LinearSurrogate(x, f.(x), [0.0, 0.0], [10.0, 10.0])
-            @test_throws MethodError update!(lin, [1.5, 2.5], f([1.5, 2.5]))
-            update!(lin, (1.5, 2.5), f((1.5, 2.5)))
-            @test length(lin.x) == 5
+
+            from_tuple = LinearSurrogate(x, f.(x), [0.0, 0.0], [10.0, 10.0])
+            update!(from_tuple, (1.5, 2.5), f((1.5, 2.5)))
+
+            from_vector = LinearSurrogate(x, f.(x), [0.0, 0.0], [10.0, 10.0])
+            update!(from_vector, [1.5, 2.5], f([1.5, 2.5]))
+
+            @test length(from_tuple.x) == 5
+            @test length(from_vector.x) == 5
+            # Stored in the design's own representation, not the caller's.
+            @test from_vector.x == from_tuple.x
+            @test eltype(from_vector.x) == eltype(x)
+            @test from_vector.coeff ≈ from_tuple.coeff
         end
 
         @testset "one-dimensional points wrapped in 1-tuples" begin

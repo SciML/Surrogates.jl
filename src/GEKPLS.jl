@@ -1,3 +1,5 @@
+# Stochastic: this model answers `std_error_at_point` with a BLUP predictive
+# standard deviation, which is what the supertype marks.
 """
     GEKPLS(x, y, grads, n_comp, delta_x, lb, ub, extra_points, theta;
            nugget = 10.0 * eps(), noise = 0.0)
@@ -29,6 +31,8 @@ function values and input gradients are available at every training point.
   - `pls_mean`: mean PLS projection matrix.
   - `y_mean`: response centering value.
   - `y_std`: response scaling value.
+  - `R_fact`: Cholesky factorization of the correlation matrix.
+  - `sigma2`: process variance in standardized response units.
   - `nugget`: starting jitter added to the correlation diagonal.
   - `noise`: observation-noise term added alongside the nugget.
 
@@ -84,7 +88,7 @@ surrogate = GEKPLS(x, y, grads, 1, 1.0e-4, lb, ub, 1, [0.01])
 surrogate((0.25, 0.5))
 ```
 """
-mutable struct GEKPLS{T, X, Y} <: AbstractDeterministicSurrogate
+mutable struct GEKPLS{T, X, Y, R} <: AbstractStochasticSurrogate
     x::X
     y::Y
     x_matrix::Matrix{T}
@@ -104,6 +108,8 @@ mutable struct GEKPLS{T, X, Y} <: AbstractDeterministicSurrogate
     pls_mean::Matrix{T}
     y_mean::T
     y_std::T
+    R_fact::R               # Cholesky factorization of the correlation matrix
+    sigma2::T
     nugget::T
     noise::T
     # Whether `theta` is fitted by maximizing the reduced likelihood, in which
@@ -148,13 +154,14 @@ function _gekpls_fit(
             nugget = nugget, noise = noise, max_escalations = 8
         )
     end
-    beta, gamma, rlf = _reduced_likelihood_function(
+    beta, gamma, rlf, R_fact, sigma2 = _reduced_likelihood_function(
         theta, "squar_exp", d, nt, ij, y_after_std;
         nugget = nugget, noise = noise, max_escalations = 8
     )
     return (;
         beta, gamma, theta, reduced_likelihood_function_value = rlf, X_offset,
         X_scale, X_after_std, pls_mean = pls_mean_reshaped, y_mean, y_std,
+        R_fact, sigma2,
     )
 end
 
@@ -210,22 +217,56 @@ function GEKPLS(
         x_vec, y_vec, X, y, grads, xlimits, delta_x, extra_points, n_comp,
         fit.beta, fit.gamma, fit.theta, fit.reduced_likelihood_function_value,
         fit.X_offset, fit.X_scale, fit.X_after_std, fit.pls_mean,
-        fit.y_mean, fit.y_std, nugget, noise, optimize_theta
+        fit.y_mean, fit.y_std, fit.R_fact, fit.sigma2, nugget, noise,
+        optimize_theta
     )
 end
 
-function _gekpls_predict(g::GEKPLS, pts)
+# Correlations between the query points and every gradient-enhanced training
+# point, in the standardized PLS space. Shared by the prediction and its standard
+# error, which differ only in what they do with this vector.
+function _gekpls_correlations(g::GEKPLS, pts)
     X_test = prep_data_for_pred(pts)
     n_eval = size(X_test, 1)
     X_cont = (X_test .- g.X_offset) ./ g.X_scale
     dx = differences(X_cont, g.X_after_std)
     pred_d = componentwise_distance_PLS(dx, "squar_exp", g.num_components, g.pls_mean)
     nt = size(g.X_after_std, 1)
-    r = transpose(reshape(squar_exp(g.theta, pred_d), (nt, n_eval)))
+    return transpose(reshape(squar_exp(g.theta, pred_d), (nt, n_eval))), n_eval
+end
+
+function _gekpls_predict(g::GEKPLS, pts)
+    r, n_eval = _gekpls_correlations(g, pts)
     f = ones(n_eval, 1)
     y_ = (f * g.beta) + (r * g.gamma)
     y = g.y_mean .+ g.y_std * y_
     return y[1]
+end
+
+# Ordinary-kriging BLUP variance over the gradient-enhanced design. `sigma2` and
+# `R_fact` are in standardized response units, so the result is rescaled by
+# `y_std` to match the predictions.
+function _gekpls_std_error(g::GEKPLS, pts)
+    r, _ = _gekpls_correlations(g, pts)
+    r_vec = vec(collect(r))
+    nt = length(r_vec)
+    return g.y_std *
+        _blup_std_error(g.sigma2, r_vec, ones(eltype(r_vec), nt), g.R_fact)
+end
+
+"""
+    std_error_at_point(g::GEKPLS, val)
+
+Predictive standard deviation of the GEKPLS surrogate at `val`.
+"""
+function std_error_at_point(g::GEKPLS, val::Number)
+    _check_dimension(g, val)
+    return _gekpls_std_error(g, [(val,)])
+end
+
+function std_error_at_point(g::GEKPLS, val)
+    _check_dimension(g, val)
+    return _gekpls_std_error(g, _single_query_point("GEKPLS", val))
 end
 
 function (g::GEKPLS)(x_vec::Number)
@@ -242,15 +283,17 @@ end
 """
     update!(surrogate::GEKPLS, x_new, y_new, grad_new)
 
-Add one observation and its gradient to a fitted [`GEKPLS`](@ref), then refit
-the PLS projection and Kriging coefficients in place.
+Add one observation and its gradient to a fitted [`GEKPLS`](@ref), or a batch of
+them, then refit the PLS projection and Kriging coefficients in place.
 
 # Arguments
 
   - `surrogate`: model to update.
-  - `x_new`: new input point in the same representation used for training.
-  - `y_new`: scalar response at `x_new`.
-  - `grad_new`: gradient at `x_new`, ordered like its input coordinates.
+  - `x_new`: new input point in the same representation used for training, or a
+    collection of such points.
+  - `y_new`: scalar response at `x_new`, or one response per new point.
+  - `grad_new`: gradient at `x_new`, ordered like its input coordinates, or one
+    such gradient per new point.
 
 # Returns
 
@@ -258,12 +301,31 @@ Returns `nothing`. A duplicate `x_new` warns and leaves the model unchanged; an
 `x_new` outside the model bounds throws an `ArgumentError`.
 """
 function SurrogatesBase.update!(g::GEKPLS, x_tup, y_val, grad_tup)
-    new_x = prep_data_for_pred(x_tup)
-    new_grads = prep_data_for_pred(grad_tup)
-    # See `Kriging.update!`: a duplicate is a no-op here, not an error.
-    if vec(new_x) in eachrow(g.x_matrix)
-        @warn "Skipping `update!`: this sample already exists in the GEKPLS " *
-            "surrogate, and duplicate points would make the correlation matrix singular."
+    reference = first(g.x)
+    single = _is_single_sample(x_tup, reference)
+    pts = single ? [_match_stored(reference, x_tup)] :
+        [_match_stored(reference, p) for p in x_tup]
+    vals = single ? [y_val] : collect(y_val)
+    grads = single ? [grad_tup] : collect(grad_tup)
+    d = size(g.grads, 2)
+    if length(vals) != length(pts) || length(grads) != length(pts) ||
+            any(gr -> length(gr) != d, grads)
+        throw(
+            ArgumentError(
+                "GEKPLS `update!` needs one response and $d partial derivatives " *
+                    "per new point; got $(length(pts)) points, $(length(vals)) " *
+                    "responses and $(length(grads)) gradients."
+            )
+        )
+    end
+    new_x = vector_of_tuples_to_matrix(pts)
+    new_grads = vector_of_tuples_to_matrix(grads)
+    # See `Kriging.update!`: a duplicate is a no-op here, not an error. Checked
+    # on the merged samples, so a repetition *within* a batch is caught too.
+    x_all = vcat(g.x, pts)
+    if length(unique(x_all)) != length(x_all)
+        @warn "Skipping `update!`: these samples repeat a point already in the " *
+            "GEKPLS surrogate, and duplicate points would make the correlation matrix singular."
         return nothing
     end
 
@@ -271,12 +333,11 @@ function SurrogatesBase.update!(g::GEKPLS, x_tup, y_val, grad_tup)
         throw(ArgumentError("The new sample lies outside [lb, ub]; cannot update GEKPLS."))
     end
 
-    # `vcat` rather than `push!`: the containers are the caller's own, and
-    # growing them behind their back is what the `copy` below used to paper over.
-    g.x = vcat(g.x, [x_tup])
-    g.y = vcat(g.y, y_val)
+    # `vcat` rather than `push!`: the containers are the caller's own.
+    g.x = vcat(g.x, pts)
+    g.y = vcat(g.y, vals)
     g.x_matrix = vcat(g.x_matrix, new_x)
-    g.y_matrix = vcat(g.y_matrix, y_val)
+    g.y_matrix = vcat(g.y_matrix, vals)
     g.grads = vcat(g.grads, new_grads)
 
     fit = _gekpls_fit(
@@ -294,6 +355,8 @@ function SurrogatesBase.update!(g::GEKPLS, x_tup, y_val, grad_tup)
     g.pls_mean = fit.pls_mean
     g.y_mean = fit.y_mean
     g.y_std = fit.y_std
+    g.R_fact = fit.R_fact
+    g.sigma2 = fit.sigma2
     return nothing
 end
 
@@ -588,6 +651,9 @@ function differences(X, Y)
     return Rx - Ry
 end
 
+# The jitter this function has always used. `KPLS` and `KPLSK` keep it, and keep
+# `max_escalations = 0`, so their fits and their likelihood optimization are
+# unchanged; `GEKPLS` starts far lower and escalates.
 """
     _reduced_likelihood_function(theta, kernel_type, d, nt, ij, y_norma;
                                  nugget = 1.0e6 * eps(), noise = 0.0,
@@ -614,9 +680,6 @@ reduced_likelihood_function_value: real
     beta:  Generalized least-squares regression weights
     gamma: Gaussian Process weights.
 """
-# The jitter this function has always used. `KPLS` and `KPLSK` keep it, and keep
-# `max_escalations = 0`, so their fits and their likelihood optimization are
-# unchanged; `GEKPLS` starts far lower and escalates.
 const _PLS_NUGGET = 1.0e6 * eps()
 const _GEKPLS_NUGGET = 10.0 * eps()
 
@@ -663,7 +726,15 @@ function _reduced_likelihood_function(
     sigma2 = sum((rho) .^ 2, dims = 1) / nt
     detR = prod(diag(C) .^ (2.0 / nt))
     reduced_likelihood_function_value = -nt * log10(sum(sigma2)) - nt * log10(detR)
-    return beta, gamma, reduced_likelihood_function_value
+    # `sigma2` is the process variance in standardized response units; both it
+    # and the correlation matrix's factorization are needed for the BLUP
+    # variance, so they are returned rather than recomputed by every model that
+    # wants a predictive standard deviation. The factorization is built once
+    # here rather than re-wrapped from a stored plain matrix on every query, so
+    # reverse-mode AD through `std_error_at_point` never has to differentiate
+    # through the `Cholesky` constructor itself.
+    return beta, gamma, reduced_likelihood_function_value,
+        Cholesky(Matrix(C), 'L', 0), sum(sigma2)
 end
 
 function _center_scale(X, Y)
@@ -681,7 +752,7 @@ function _center_scale(X, Y)
 end
 
 function _svd_flip_1d(u, v)
-    biggest_abs_val_idx = findmax(abs.(vec(u)))[2]
+    biggest_abs_val_idx = argmax(abs.(vec(u)))
     sign_ = sign(u[biggest_abs_val_idx])
     u .*= sign_
     return v .*= sign_
