@@ -163,7 +163,17 @@ Random.seed!(42)
             # `std_error_at_point` used to reconstruct a `Cholesky` from a stored
             # plain matrix on every call, which ForwardDiff tolerates but Zygote
             # cannot differentiate through; see the "Zygote" testset below.
-            se = x -> ForwardDiff.derivative(t -> std_error_at_point(my_gekpls, t), x)
+            # Checked on a much sparser fit than `my_gekpls`: at this design's
+            # n=1000 density over [0,10], the predictive variance sits at its
+            # numerical floor (~1e-16) everywhere, so its derivative is noise,
+            # not signal — `isfinite` there is a coin flip across BLAS/LAPACK
+            # implementations, not a real regression guard.
+            se_x = sample(5, lb, ub, SobolSample())
+            se_gekpls = GEKPLS(
+                se_x, f.(se_x), Zygote.gradient.(f, se_x), n_comp, delta_x, lb, ub,
+                extra_points, initial_theta
+            )
+            se = x -> ForwardDiff.derivative(t -> std_error_at_point(se_gekpls, t), x)
             @test se(5.0) isa Number && isfinite(se(5.0))
         end
 
@@ -173,7 +183,10 @@ Random.seed!(42)
             @test g(5.0) isa Number
             # Accuracy test: f(x) = x^2, f'(x) = 2x, so f'(5.0) = 10.0
             @test isapprox(g(5.0), 10.0, atol = 1.0)
-            se = x -> ForwardDiff.derivative(t -> std_error_at_point(my_kpls, t), x)
+            # See the GEKPLS testset above for why this uses a sparser fit.
+            se_x = sample(5, lb, ub, SobolSample())
+            se_kpls = KPLS(se_x, f.(se_x), 1, [lb], [ub], [1.0]; optimize_theta = false)
+            se = x -> ForwardDiff.derivative(t -> std_error_at_point(se_kpls, t), x)
             @test se(5.0) isa Number && isfinite(se(5.0))
         end
 
@@ -182,7 +195,10 @@ Random.seed!(42)
             g = x -> ForwardDiff.derivative(my_kplsk, x)
             @test g(5.0) isa Number
             @test isapprox(g(5.0), 10.0, atol = 1.0)
-            se = x -> ForwardDiff.derivative(t -> std_error_at_point(my_kplsk, t), x)
+            # See the GEKPLS testset above for why this uses a sparser fit.
+            se_x = sample(5, lb, ub, SobolSample())
+            se_kplsk = KPLSK(se_x, f.(se_x), 1, [lb], [ub], [1.0]; optimize_theta = false)
+            se = x -> ForwardDiff.derivative(t -> std_error_at_point(se_kplsk, t), x)
             @test se(5.0) isa Number && isfinite(se(5.0))
         end
 
@@ -581,13 +597,21 @@ end
             @test isapprox(result[1], 10.0, atol = 1.0e-1)
             # `std_error_at_point` used to reconstruct a `Cholesky` from a stored
             # plain matrix on every call; Zygote has no adjoint for that
-            # constructor, so reverse mode used to fail here entirely. Not
-            # cross-checked against ForwardDiff, unlike KPLS/KPLSK below: at
-            # this magnitude (~1e-7) the two backends disagree by tens of
-            # percent, which is GEKPLS's own numerical conditioning, not a
-            # forward/reverse-mode bug.
-            se = Zygote.gradient(t -> std_error_at_point(my_gekpls, t), 5.0)[1]
+            # constructor, so reverse mode used to fail here entirely. Checked
+            # on a sparser fit than `my_gekpls`, and cross-checked against
+            # ForwardDiff like KPLS/KPLSK below: at `my_gekpls`'s n=1000
+            # density, the predictive variance sits at its numerical floor and
+            # its derivative is BLAS/LAPACK-rounding noise, not signal, so
+            # forward/reverse mode can disagree by tens of percent there for
+            # reasons that have nothing to do with either backend being wrong.
+            se_x = sample(5, lb, ub, SobolSample())
+            se_gekpls = GEKPLS(
+                se_x, f.(se_x), Zygote.gradient.(f, se_x), n_comp, delta_x, lb, ub,
+                extra_points, initial_theta
+            )
+            se = Zygote.gradient(t -> std_error_at_point(se_gekpls, t), 5.0)[1]
             @test se isa Number && isfinite(se)
+            @test se ≈ ForwardDiff.derivative(t -> std_error_at_point(se_gekpls, t), 5.0) rtol = 1.0e-3
         end
 
         @testset "KPLS" begin
@@ -603,9 +627,12 @@ end
             @test isapprox(result[1], 10.0, atol = 1.0)
             # Reverse mode has to agree with forward mode.
             @test result[1] ≈ ForwardDiff.derivative(my_kpls, 5.0)
-            se = Zygote.gradient(t -> std_error_at_point(my_kpls, t), 5.0)[1]
+            # See the GEKPLS testset above for why this uses a sparser fit.
+            se_x = sample(5, lb, ub, SobolSample())
+            se_kpls = KPLS(se_x, f.(se_x), 1, [lb], [ub], [1.0]; optimize_theta = false)
+            se = Zygote.gradient(t -> std_error_at_point(se_kpls, t), 5.0)[1]
             @test se isa Number && isfinite(se)
-            @test se ≈ ForwardDiff.derivative(t -> std_error_at_point(my_kpls, t), 5.0) rtol = 1.0e-3
+            @test se ≈ ForwardDiff.derivative(t -> std_error_at_point(se_kpls, t), 5.0) rtol = 1.0e-3
         end
 
         @testset "KPLSK" begin
@@ -617,9 +644,12 @@ end
             @test result[1] isa Number
             @test isapprox(result[1], 10.0, atol = 1.0)
             @test result[1] ≈ ForwardDiff.derivative(my_kplsk, 5.0)
-            se = Zygote.gradient(t -> std_error_at_point(my_kplsk, t), 5.0)[1]
+            # See the GEKPLS testset above for why this uses a sparser fit.
+            se_x = sample(5, lb, ub, SobolSample())
+            se_kplsk = KPLSK(se_x, f.(se_x), 1, [lb], [ub], [1.0]; optimize_theta = false)
+            se = Zygote.gradient(t -> std_error_at_point(se_kplsk, t), 5.0)[1]
             @test se isa Number && isfinite(se)
-            @test se ≈ ForwardDiff.derivative(t -> std_error_at_point(my_kplsk, t), 5.0) rtol = 1.0e-3
+            @test se ≈ ForwardDiff.derivative(t -> std_error_at_point(se_kplsk, t), 5.0) rtol = 1.0e-3
         end
 
         @testset "GENN" begin
