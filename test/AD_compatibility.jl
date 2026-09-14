@@ -160,6 +160,11 @@ Random.seed!(42)
             @test g(5.0) isa Number
             # Accuracy test: f(x) = x^2, f'(x) = 2x, so f'(5.0) = 10.0
             @test isapprox(g(5.0), 10.0, atol = 1.0e-1)
+            # `std_error_at_point` used to reconstruct a `Cholesky` from a stored
+            # plain matrix on every call, which ForwardDiff tolerates but Zygote
+            # cannot differentiate through; see the "Zygote" testset below.
+            se = x -> ForwardDiff.derivative(t -> std_error_at_point(my_gekpls, t), x)
+            @test se(5.0) isa Number && isfinite(se(5.0))
         end
 
         @testset "KPLS" begin
@@ -168,6 +173,8 @@ Random.seed!(42)
             @test g(5.0) isa Number
             # Accuracy test: f(x) = x^2, f'(x) = 2x, so f'(5.0) = 10.0
             @test isapprox(g(5.0), 10.0, atol = 1.0)
+            se = x -> ForwardDiff.derivative(t -> std_error_at_point(my_kpls, t), x)
+            @test se(5.0) isa Number && isfinite(se(5.0))
         end
 
         @testset "KPLSK" begin
@@ -175,6 +182,8 @@ Random.seed!(42)
             g = x -> ForwardDiff.derivative(my_kplsk, x)
             @test g(5.0) isa Number
             @test isapprox(g(5.0), 10.0, atol = 1.0)
+            se = x -> ForwardDiff.derivative(t -> std_error_at_point(my_kplsk, t), x)
+            @test se(5.0) isa Number && isfinite(se(5.0))
         end
 
         @testset "Earth" begin
@@ -362,6 +371,12 @@ Random.seed!(42)
             @test g([2.0, 5.0]) isa AbstractVector
             # Accuracy test: f(x) = x[1] * x[2], ∇f = [x[2], x[1]], so ∇f([2.0, 5.0]) = [5.0, 2.0]
             @test isapprox(g([2.0, 5.0]), [5.0, 2.0], atol = 1.0e-1)
+            # `std_error_at_point` is a `sqrt` of a variance that this dense a
+            # design pins near its numerical floor almost everywhere; at
+            # [2.0, 5.0] specifically that floor is close enough to zero that
+            # the `sqrt`'s derivative blows up. [1.0, 1.0] sits away from that.
+            se = x -> ForwardDiff.gradient(t -> std_error_at_point(my_gekpls_ND, t), x)
+            @test se([1.0, 1.0]) isa AbstractVector && all(isfinite, se([1.0, 1.0]))
         end
 
         @testset "KPLS" begin
@@ -370,6 +385,8 @@ Random.seed!(42)
             @test g([2.0, 5.0]) isa AbstractVector
             # Accuracy test: f(x) = x[1] * x[2], ∇f = [x[2], x[1]], so ∇f([2.0, 5.0]) = [5.0, 2.0]
             @test isapprox(g([2.0, 5.0]), [5.0, 2.0], atol = 1.0)
+            se = x -> ForwardDiff.gradient(t -> std_error_at_point(my_kpls_ND, t), x)
+            @test se([2.0, 5.0]) isa AbstractVector && all(isfinite, se([2.0, 5.0]))
         end
 
         @testset "KPLSK" begin
@@ -377,6 +394,8 @@ Random.seed!(42)
             g = x -> ForwardDiff.gradient(my_kplsk_ND, x)
             @test g([2.0, 5.0]) isa AbstractVector
             @test isapprox(g([2.0, 5.0]), [5.0, 2.0], atol = 1.0)
+            se = x -> ForwardDiff.gradient(t -> std_error_at_point(my_kplsk_ND, t), x)
+            @test se([2.0, 5.0]) isa AbstractVector && all(isfinite, se([2.0, 5.0]))
         end
 
         @testset "GENN" begin
@@ -560,6 +579,15 @@ end
             @test result[1] isa Number
             # Accuracy test: f(x) = x^2, f'(x) = 2x, so f'(5.0) = 10.0
             @test isapprox(result[1], 10.0, atol = 1.0e-1)
+            # `std_error_at_point` used to reconstruct a `Cholesky` from a stored
+            # plain matrix on every call; Zygote has no adjoint for that
+            # constructor, so reverse mode used to fail here entirely. Not
+            # cross-checked against ForwardDiff, unlike KPLS/KPLSK below: at
+            # this magnitude (~1e-7) the two backends disagree by tens of
+            # percent, which is GEKPLS's own numerical conditioning, not a
+            # forward/reverse-mode bug.
+            se = Zygote.gradient(t -> std_error_at_point(my_gekpls, t), 5.0)[1]
+            @test se isa Number && isfinite(se)
         end
 
         @testset "KPLS" begin
@@ -575,6 +603,9 @@ end
             @test isapprox(result[1], 10.0, atol = 1.0)
             # Reverse mode has to agree with forward mode.
             @test result[1] ≈ ForwardDiff.derivative(my_kpls, 5.0)
+            se = Zygote.gradient(t -> std_error_at_point(my_kpls, t), 5.0)[1]
+            @test se isa Number && isfinite(se)
+            @test se ≈ ForwardDiff.derivative(t -> std_error_at_point(my_kpls, t), 5.0) rtol = 1.0e-3
         end
 
         @testset "KPLSK" begin
@@ -586,6 +617,9 @@ end
             @test result[1] isa Number
             @test isapprox(result[1], 10.0, atol = 1.0)
             @test result[1] ≈ ForwardDiff.derivative(my_kplsk, 5.0)
+            se = Zygote.gradient(t -> std_error_at_point(my_kplsk, t), 5.0)[1]
+            @test se isa Number && isfinite(se)
+            @test se ≈ ForwardDiff.derivative(t -> std_error_at_point(my_kplsk, t), 5.0) rtol = 1.0e-3
         end
 
         @testset "GENN" begin
@@ -794,6 +828,11 @@ end
             @test result[1] isa Tuple
             # Accuracy test: f(x) = x[1] * x[2], ∇f = [x[2], x[1]], so ∇f([2.0, 5.0]) = [5.0, 2.0]
             @test all(isapprox.(result[1], (5.0, 2.0), atol = 1.0e-1))
+            # [1.0, 1.0], not [2.0, 5.0]; see the ForwardDiff "ND" GEKPLS testset.
+            # Not cross-checked against ForwardDiff, unlike KPLS/KPLSK below;
+            # see the 1D GEKPLS testset above for why.
+            se = Zygote.gradient(t -> std_error_at_point(my_gekpls_ND, t), (1.0, 1.0))[1]
+            @test se isa Tuple && all(isfinite, se)
         end
 
         @testset "KPLS" begin
@@ -805,6 +844,10 @@ end
             @test result[1] isa Tuple
             # Accuracy test: f(x) = x[1] * x[2], ∇f = [x[2], x[1]], so ∇f([2.0, 5.0]) = [5.0, 2.0]
             @test all(isapprox.(result[1], (5.0, 2.0), atol = 1.0))
+            se = Zygote.gradient(t -> std_error_at_point(my_kpls_ND, t), (2.0, 5.0))[1]
+            @test se isa Tuple && all(isfinite, se)
+            fd = ForwardDiff.gradient(t -> std_error_at_point(my_kpls_ND, t), [2.0, 5.0])
+            @test collect(se) ≈ fd rtol = 1.0e-3
         end
 
         @testset "KPLSK" begin
@@ -815,6 +858,10 @@ end
             @test length(result) == 1
             @test result[1] isa Tuple
             @test all(isapprox.(result[1], (5.0, 2.0), atol = 1.0))
+            se = Zygote.gradient(t -> std_error_at_point(my_kplsk_ND, t), (2.0, 5.0))[1]
+            @test se isa Tuple && all(isfinite, se)
+            fd = ForwardDiff.gradient(t -> std_error_at_point(my_kplsk_ND, t), [2.0, 5.0])
+            @test collect(se) ≈ fd rtol = 1.0e-3
         end
 
         @testset "GENN" begin

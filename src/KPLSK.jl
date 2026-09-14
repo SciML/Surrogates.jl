@@ -17,7 +17,7 @@ coefficients. Re-optimizing a d-dimensional Kriging model from this near-optimal
 point is cheaper than optimizing from scratch, while giving the accuracy of a full
 anisotropic Kriging model.
 """
-mutable struct KPLSK{T, X, Y} <: AbstractStochasticSurrogate
+mutable struct KPLSK{T, X, Y, R} <: AbstractStochasticSurrogate
     x::X
     y::Y
     x_matrix::Matrix{T}
@@ -34,7 +34,7 @@ mutable struct KPLSK{T, X, Y} <: AbstractStochasticSurrogate
     X_after_std::Matrix{T}  # standardized training X
     y_mean::T               # mean of y
     y_std::T                # std of y
-    R_chol::Matrix{T}       # lower Cholesky factor of the correlation matrix
+    R_fact::R               # Cholesky factorization of the correlation matrix
     sigma2::T               # process variance, in standardized response units
     # Whether both fitting stages run, in which case `update!` repeats them
     # against the extended sample set.
@@ -82,7 +82,7 @@ of full-dimensional Kriging.
   - `X_after_std`: standardized training inputs.
   - `y_mean`: response centering value.
   - `y_std`: response scaling value.
-  - `R_chol`: lower Cholesky factor of the correlation matrix.
+  - `R_fact`: Cholesky factorization of the correlation matrix.
   - `sigma2`: process variance in standardized response units.
 
 # Arguments
@@ -155,7 +155,7 @@ function KPLSK(
             theta0, "squar_exp", d_full, nt, ij, y_after_std; multistart = false
         ) : theta0
 
-    beta, gamma, reduced_likelihood_function_value, R_chol,
+    beta, gamma, reduced_likelihood_function_value, R_fact,
         sigma2 = _reduced_likelihood_function(
         theta_opt, "squar_exp", d_full, nt, ij, y_after_std
     )
@@ -164,7 +164,7 @@ function KPLSK(
         x_vec, y_vec, X, y, xlimits, n_comp, beta, gamma, theta_opt, theta_pls,
         reduced_likelihood_function_value,
         X_offset, X_scale, X_after_std, y_mean, y_std,
-        R_chol, sigma2, optimize_theta
+        R_fact, sigma2, optimize_theta
     )
 end
 
@@ -195,15 +195,14 @@ function (k::KPLSK)(x_vec)
     return y[1]
 end
 
-# Ordinary-kriging BLUP variance. `sigma2` and `R_chol` are in standardized
+# Ordinary-kriging BLUP variance. `sigma2` and `R_fact` are in standardized
 # response units, so the result is rescaled by `y_std` to match the predictions.
 function _kplsk_std_error(k::KPLSK, x_vec)
     r, _ = _kplsk_correlations(k, x_vec)
     r_vec = vec(collect(r))
     nt = length(r_vec)
-    R_fact = Cholesky(k.R_chol, 'L', 0)
     return k.y_std *
-        _blup_std_error(k.sigma2, r_vec, ones(eltype(r_vec), nt), R_fact)
+        _blup_std_error(k.sigma2, r_vec, ones(eltype(r_vec), nt), k.R_fact)
 end
 
 """
@@ -212,11 +211,6 @@ end
 Predictive standard deviation of the KPLSK surrogate at `val`.
 """
 function std_error_at_point(k::KPLSK, val)
-    _check_dimension(k, val)
-    return _kplsk_std_error(k, val)
-end
-
-function std_error_at_point(k::KPLSK, val::Number)
     _check_dimension(k, val)
     return _kplsk_std_error(k, val)
 end
@@ -238,10 +232,12 @@ Add one new sample point, or a batch of them, and re-train the KPLSK model.
 """
 function SurrogatesBase.update!(k::KPLSK, new_x, new_y)
     pts, vals, new_x_mat, new_y_mat = _pls_new_samples("KPLSK", k.x, new_x, new_y)
-    # A duplicate is a no-op, not an error; see `Kriging`'s `update!`.
-    if any(row -> row in eachrow(k.x_matrix), eachrow(new_x_mat))
-        @warn "Skipping `update!`: this sample already exists in the KPLSK " *
-            "surrogate, and duplicate points would make the correlation matrix singular."
+    # A duplicate is a no-op, not an error; see `Kriging`'s `update!`. Checked on
+    # the merged samples, so a repetition *within* a batch is caught too.
+    x_all = vcat(k.x, pts)
+    if length(unique(x_all)) != length(x_all)
+        @warn "Skipping `update!`: these samples repeat a point already in the " *
+            "KPLSK surrogate, and duplicate points would make the correlation matrix singular."
         return nothing
     end
 
@@ -274,7 +270,7 @@ function SurrogatesBase.update!(k::KPLSK, new_x, new_y)
         _optimize_theta(
             theta0, "squar_exp", d_full, nt, ij, y_after_std; multistart = false
         ) : theta0
-    k.beta, k.gamma, k.reduced_likelihood_function_value, k.R_chol,
+    k.beta, k.gamma, k.reduced_likelihood_function_value, k.R_fact,
         k.sigma2 = _reduced_likelihood_function(
         k.theta, "squar_exp", d_full, nt, ij, y_after_std
     )

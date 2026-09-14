@@ -871,7 +871,7 @@ end
         my_forest_ND = XGBoostSurrogate(x, y, lb, ub; num_round = 2)
         xgboostND = xgboost((reduce(hcat, collect.(x))', y); num_round = 2)
         val = my_forest_ND([1.0, 1.0, 1.0])
-        @test predict(xgboostND, reshape([1.0, 1.0, 1.0], 3, 1))[1] == val
+        @test predict(xgboostND, reshape([1.0, 1.0, 1.0], 1, 3))[1] == val
         update!(my_forest_ND, [[1.0, 1.0, 1.0]], [1.0])
         update!(my_forest_ND, [[1.2, 1.2, 1.0], [1.5, 1.5, 1.0]], [1.728, 3.375])
     end

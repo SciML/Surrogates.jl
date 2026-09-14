@@ -62,6 +62,9 @@ concrete surrogate tests then cover each model's fitting and numerical behavior.
 AbstractSurrogate
 current_surrogates
 std_error_at_point
+parameters
+hyperparameters
+update_hyperparameters!
 ```
 
   - Linear surrogate

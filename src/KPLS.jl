@@ -13,7 +13,7 @@ KPLS reduces the number of kriging hyperparameters from d (input dimension) to h
 
 where W* ∈ R^(d × h) are the PLS rotation coefficients.
 """
-mutable struct KPLS{T, X, Y} <: AbstractStochasticSurrogate
+mutable struct KPLS{T, X, Y, R} <: AbstractStochasticSurrogate
     x::X
     y::Y
     x_matrix::Matrix{T}
@@ -30,7 +30,7 @@ mutable struct KPLS{T, X, Y} <: AbstractStochasticSurrogate
     pls_mean::Matrix{T}     # PLS rotation matrix W* [d, h]
     y_mean::T               # mean of y
     y_std::T                # std of y
-    R_chol::Matrix{T}       # lower Cholesky factor of the correlation matrix
+    R_fact::R               # Cholesky factorization of the correlation matrix
     sigma2::T               # process variance, in standardized response units
     # Whether `theta` is fitted by maximizing the reduced likelihood, in which
     # case `update!` refits it against the extended sample set.
@@ -163,7 +163,7 @@ many correlation parameters.
   - `pls_mean`: PLS projection coefficients.
   - `y_mean`: response centering value.
   - `y_std`: response scaling value.
-  - `R_chol`: lower Cholesky factor of the correlation matrix.
+  - `R_fact`: Cholesky factorization of the correlation matrix.
   - `sigma2`: process variance in standardized response units.
 
 # Arguments
@@ -227,7 +227,7 @@ function KPLS(
         _optimize_theta(theta, "squar_exp", d, nt, ij, y_after_std; n_start = n_start) :
         collect(float.(theta))
 
-    beta, gamma, reduced_likelihood_function_value, R_chol,
+    beta, gamma, reduced_likelihood_function_value, R_fact,
         sigma2 = _reduced_likelihood_function(
         theta_opt, "squar_exp", d, nt, ij, y_after_std
     )
@@ -236,7 +236,7 @@ function KPLS(
         x_vec, y_vec, X, y, xlimits, n_comp, beta, gamma, theta_opt,
         reduced_likelihood_function_value,
         X_offset, X_scale, X_after_std, pls_mean, y_mean, y_std,
-        R_chol, sigma2, optimize_theta
+        R_fact, sigma2, optimize_theta
     )
 end
 
@@ -267,16 +267,15 @@ function (k::KPLS)(x_vec)
     return y[1]
 end
 
-# Ordinary-kriging BLUP variance in the reduced space. `sigma2` and `R_chol` are
+# Ordinary-kriging BLUP variance in the reduced space. `sigma2` and `R_fact` are
 # in standardized response units, so the result is rescaled by `y_std` to match
 # the predictions.
 function _kpls_std_error(k::KPLS, x_vec)
     r, _ = _kpls_correlations(k, x_vec)
     r_vec = vec(collect(r))
     nt = length(r_vec)
-    R_fact = Cholesky(k.R_chol, 'L', 0)
     return k.y_std *
-        _blup_std_error(k.sigma2, r_vec, ones(eltype(r_vec), nt), R_fact)
+        _blup_std_error(k.sigma2, r_vec, ones(eltype(r_vec), nt), k.R_fact)
 end
 
 """
@@ -285,11 +284,6 @@ end
 Predictive standard deviation of the KPLS surrogate at `val`.
 """
 function std_error_at_point(k::KPLS, val)
-    _check_dimension(k, val)
-    return _kpls_std_error(k, val)
-end
-
-function std_error_at_point(k::KPLS, val::Number)
     _check_dimension(k, val)
     return _kpls_std_error(k, val)
 end
@@ -340,10 +334,12 @@ Add one new sample point, or a batch of them, and re-train the KPLS model.
 """
 function SurrogatesBase.update!(k::KPLS, new_x, new_y)
     pts, vals, new_x_mat, new_y_mat = _pls_new_samples("KPLS", k.x, new_x, new_y)
-    # A duplicate is a no-op, not an error; see `Kriging`'s `update!`.
-    if any(row -> row in eachrow(k.x_matrix), eachrow(new_x_mat))
-        @warn "Skipping `update!`: this sample already exists in the KPLS " *
-            "surrogate, and duplicate points would make the correlation matrix singular."
+    # A duplicate is a no-op, not an error; see `Kriging`'s `update!`. Checked on
+    # the merged samples, so a repetition *within* a batch is caught too.
+    x_all = vcat(k.x, pts)
+    if length(unique(x_all)) != length(x_all)
+        @warn "Skipping `update!`: these samples repeat a point already in the " *
+            "KPLS surrogate, and duplicate points would make the correlation matrix singular."
         return nothing
     end
 
@@ -369,7 +365,7 @@ function SurrogatesBase.update!(k::KPLS, new_x, new_y)
     if k.optimize_theta
         k.theta = _optimize_theta(k.theta, "squar_exp", d, nt, ij, y_after_std)
     end
-    k.beta, k.gamma, k.reduced_likelihood_function_value, k.R_chol,
+    k.beta, k.gamma, k.reduced_likelihood_function_value, k.R_fact,
         k.sigma2 = _reduced_likelihood_function(
         k.theta, "squar_exp", d, nt, ij, y_after_std
     )

@@ -324,6 +324,14 @@ end
 
         # Out of bounds is an error, not a printed diagnostic.
         @test_throws ArgumentError update!(g, (9.0, 0.0, 0.0), 81.0, [18.0, 0.0, 0.0])
+
+        # A duplicate within a batch is caught, not just against the design.
+        dup = (2.0, 2.0, 2.0)
+        @test_logs (:warn,) update!(
+            g, [dup, dup], sphere_function.([dup, dup]),
+            [gradient(sphere_function, dup)[1], gradient(sphere_function, dup)[1]]
+        )
+        @test length(g.x) == 31
     end
 
     check_no_caller_aliasing("GEKPLS", collect(x), collect(y)) do xc, yc

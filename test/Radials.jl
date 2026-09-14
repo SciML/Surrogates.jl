@@ -53,6 +53,14 @@ include("testutils.jl")
         my_rad_ND = RadialBasis(x, y, lb, ub, rad = multiquadricRadial())
         prediction = my_rad_ND((1.0, 1.0, 1.0))
 
+        # A 1×d row-matrix query must agree with the equivalent tuple query for
+        # every non-linear kernel; previously it skipped `_as_point` and answered
+        # a d×d outer-difference kernel instead.
+        for rad in (cubicRadial(), multiquadricRadial(), thinplateRadial())
+            r = RadialBasis(x, y, lb, ub, rad = rad)
+            @test r(reshape([1.0, 1.0, 1.0], 1, 3)) ≈ r((1.0, 1.0, 1.0))
+        end
+
         f = x -> x[1] * x[2]
         lb = [1.0, 2.0]
         ub = [10.0, 8.5]

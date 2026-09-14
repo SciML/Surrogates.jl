@@ -141,6 +141,14 @@ let lb = [-1.0, -1.0], ub = [1.0, 1.0]
         @test length(k.x) == 13
         @test_throws ArgumentError update!(k, (5.0, 5.0), 50.0)
     end
+
+    @testset "KPLS: a duplicate within a batch is caught, not just against the design" begin
+        @test_logs (:warn,) update!(
+            k, [(0.6, 0.6), (0.6, 0.6)],
+            [sphere_function((0.6, 0.6)), sphere_function((0.6, 0.6))]
+        )
+        @test length(k.x) == 13
+    end
 end
 
 @testset "KPLS: prediction matches an independent ordinary-kriging solve" begin

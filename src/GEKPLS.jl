@@ -31,7 +31,7 @@ function values and input gradients are available at every training point.
   - `pls_mean`: mean PLS projection matrix.
   - `y_mean`: response centering value.
   - `y_std`: response scaling value.
-  - `R_chol`: lower Cholesky factor of the correlation matrix.
+  - `R_fact`: Cholesky factorization of the correlation matrix.
   - `sigma2`: process variance in standardized response units.
   - `nugget`: starting jitter added to the correlation diagonal.
   - `noise`: observation-noise term added alongside the nugget.
@@ -88,7 +88,7 @@ surrogate = GEKPLS(x, y, grads, 1, 1.0e-4, lb, ub, 1, [0.01])
 surrogate((0.25, 0.5))
 ```
 """
-mutable struct GEKPLS{T, X, Y} <: AbstractStochasticSurrogate
+mutable struct GEKPLS{T, X, Y, R} <: AbstractStochasticSurrogate
     x::X
     y::Y
     x_matrix::Matrix{T}
@@ -108,7 +108,7 @@ mutable struct GEKPLS{T, X, Y} <: AbstractStochasticSurrogate
     pls_mean::Matrix{T}
     y_mean::T
     y_std::T
-    R_chol::Matrix{T}
+    R_fact::R               # Cholesky factorization of the correlation matrix
     sigma2::T
     nugget::T
     noise::T
@@ -154,14 +154,14 @@ function _gekpls_fit(
             nugget = nugget, noise = noise, max_escalations = 8
         )
     end
-    beta, gamma, rlf, R_chol, sigma2 = _reduced_likelihood_function(
+    beta, gamma, rlf, R_fact, sigma2 = _reduced_likelihood_function(
         theta, "squar_exp", d, nt, ij, y_after_std;
         nugget = nugget, noise = noise, max_escalations = 8
     )
     return (;
         beta, gamma, theta, reduced_likelihood_function_value = rlf, X_offset,
         X_scale, X_after_std, pls_mean = pls_mean_reshaped, y_mean, y_std,
-        R_chol, sigma2,
+        R_fact, sigma2,
     )
 end
 
@@ -217,7 +217,7 @@ function GEKPLS(
         x_vec, y_vec, X, y, grads, xlimits, delta_x, extra_points, n_comp,
         fit.beta, fit.gamma, fit.theta, fit.reduced_likelihood_function_value,
         fit.X_offset, fit.X_scale, fit.X_after_std, fit.pls_mean,
-        fit.y_mean, fit.y_std, fit.R_chol, fit.sigma2, nugget, noise,
+        fit.y_mean, fit.y_std, fit.R_fact, fit.sigma2, nugget, noise,
         optimize_theta
     )
 end
@@ -244,15 +244,14 @@ function _gekpls_predict(g::GEKPLS, pts)
 end
 
 # Ordinary-kriging BLUP variance over the gradient-enhanced design. `sigma2` and
-# `R_chol` are in standardized response units, so the result is rescaled by
+# `R_fact` are in standardized response units, so the result is rescaled by
 # `y_std` to match the predictions.
 function _gekpls_std_error(g::GEKPLS, pts)
     r, _ = _gekpls_correlations(g, pts)
     r_vec = vec(collect(r))
     nt = length(r_vec)
-    R_fact = Cholesky(g.R_chol, 'L', 0)
     return g.y_std *
-        _blup_std_error(g.sigma2, r_vec, ones(eltype(r_vec), nt), R_fact)
+        _blup_std_error(g.sigma2, r_vec, ones(eltype(r_vec), nt), g.R_fact)
 end
 
 """
@@ -321,10 +320,12 @@ function SurrogatesBase.update!(g::GEKPLS, x_tup, y_val, grad_tup)
     end
     new_x = vector_of_tuples_to_matrix(pts)
     new_grads = vector_of_tuples_to_matrix(grads)
-    # See `Kriging.update!`: a duplicate is a no-op here, not an error.
-    if any(row -> row in eachrow(g.x_matrix), eachrow(new_x))
-        @warn "Skipping `update!`: this sample already exists in the GEKPLS " *
-            "surrogate, and duplicate points would make the correlation matrix singular."
+    # See `Kriging.update!`: a duplicate is a no-op here, not an error. Checked
+    # on the merged samples, so a repetition *within* a batch is caught too.
+    x_all = vcat(g.x, pts)
+    if length(unique(x_all)) != length(x_all)
+        @warn "Skipping `update!`: these samples repeat a point already in the " *
+            "GEKPLS surrogate, and duplicate points would make the correlation matrix singular."
         return nothing
     end
 
@@ -354,7 +355,7 @@ function SurrogatesBase.update!(g::GEKPLS, x_tup, y_val, grad_tup)
     g.pls_mean = fit.pls_mean
     g.y_mean = fit.y_mean
     g.y_std = fit.y_std
-    g.R_chol = fit.R_chol
+    g.R_fact = fit.R_fact
     g.sigma2 = fit.sigma2
     return nothing
 end
@@ -725,11 +726,15 @@ function _reduced_likelihood_function(
     sigma2 = sum((rho) .^ 2, dims = 1) / nt
     detR = prod(diag(C) .^ (2.0 / nt))
     reduced_likelihood_function_value = -nt * log10(sum(sigma2)) - nt * log10(detR)
-    # `C` is the lower Cholesky factor of the correlation matrix and `sigma2` the
-    # process variance in standardized response units. Both are needed for the
-    # BLUP variance, so they are returned rather than recomputed by every model
-    # that wants a predictive standard deviation.
-    return beta, gamma, reduced_likelihood_function_value, Matrix(C), sum(sigma2)
+    # `sigma2` is the process variance in standardized response units; both it
+    # and the correlation matrix's factorization are needed for the BLUP
+    # variance, so they are returned rather than recomputed by every model that
+    # wants a predictive standard deviation. The factorization is built once
+    # here rather than re-wrapped from a stored plain matrix on every query, so
+    # reverse-mode AD through `std_error_at_point` never has to differentiate
+    # through the `Cholesky` constructor itself.
+    return beta, gamma, reduced_likelihood_function_value,
+        Cholesky(Matrix(C), 'L', 0), sum(sigma2)
 end
 
 function _center_scale(X, Y)

@@ -267,7 +267,8 @@ Calculates current estimate of value 'val' with respect to the RadialBasis objec
 function (rad::RadialBasis)(val)
     _check_dimension(rad, val)
 
-    approx = _approx_rbf(val, rad)
+    point = _as_point(val)
+    approx = _approx_rbf(point, rad)
     return _match_container(approx, first(rad.y))
 end
 

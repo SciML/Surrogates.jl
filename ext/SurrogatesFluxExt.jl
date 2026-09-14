@@ -24,9 +24,9 @@ function _check_n_epochs(name, n_epochs)
 end
 
 """
-    NeuralSurrogate(x, y, lb, ub; model = Chain(Dense(length(x[1]), 1), first), 
-                                 loss = Flux.mse, 
-                                 opt = Optimisers.Adam(1e-3), 
+    NeuralSurrogate(x, y, lb, ub; model = Chain(Dense(length(x[1]), 1)),
+                                 loss = Flux.mse,
+                                 opt = Optimisers.Adam(1e-3),
                                  n_epochs = 10)
 
 ## Arguments
@@ -34,7 +34,7 @@ end
   - `x`: Input data points.
   - `y`: Output data points.
   - `lb`: Lower bound of input data points.
-  - `ub`: Upper bound of output data points.
+  - `ub`: Upper bound of input data points.
 
 # Keyword Arguments
 
@@ -119,10 +119,10 @@ _columns_as_responses(Y) = size(Y, 1) == 1 ? collect(vec(Y)) :
 
 # Bring a new point into the representation the stored design already uses.
 #
-# Points as a features-by-samples matrix.
+# Points as a features-by-samples matrix. Always called with a vector of
+# points — the training set or the already-`_match_stored`-normalized samples
+# from `update!` — never a bare point, so there is no single-point case here.
 function _design_matrix(x)
-    x isa Tuple && return reduce(hcat, collect(x))
-    x isa Number && return fill(float(x), 1, 1)
     first(x) isa Number && return reshape(collect(float.(x)), 1, length(x))
     return reduce(hcat, collect.(x))
 end
@@ -134,7 +134,6 @@ end
 # give a 1x2 row where a 2x1 column is meant — so callers must resolve
 # single-versus-batch first.
 function _response_matrix(y)
-    y isa Number && return fill(float(y), 1, 1)
     # An `n_outputs x n_samples` matrix is already in the layout Flux wants.
     # `first(y)` is a number for a matrix too, so without this the branch below
     # flattened it to a `1 x (k*n)` row and the loss saw the wrong shape.

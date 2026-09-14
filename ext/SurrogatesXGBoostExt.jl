@@ -63,7 +63,7 @@ end
 # against a multidimensional model returned a number rather than raising.
 function (xgb::XGBoostSurrogate)(val)
     Surrogates._check_dimension(xgb, val)
-    return predict(xgb.bst, reshape(collect(val), length(val), 1))[1]
+    return predict(xgb.bst, reshape(collect(val), 1, length(val)))[1]
 end
 
 function SurrogatesBase.update!(xgb::XGBoostSurrogate, x_new, y_new)
