@@ -23,7 +23,7 @@ function water_flow(x)
         (log_val * (1 + (2 * L * T_u / (log_val * r_w^2 * K_w)) + T_u / T_l))
 end
 
-n = 1000
+n = 900
 lb = [0.05, 100, 63070, 990, 63.1, 700, 1120, 9855]
 ub = [0.15, 50000, 115600, 1110, 116, 820, 1680, 12045]
 x = sample(n, lb, ub, SobolSample())
@@ -41,7 +41,7 @@ y_true = water_flow.(x_test)
     g = GEKPLS(x, y, grads, n_comp, delta_x, lb, ub, extra_points, initial_theta)
     y_pred = g.(x_test)
     rmse = sqrt(sum(((y_pred - y_true) .^ 2) / n_test))
-    @test rmse < 0.03  # 0.0221
+    @test rmse < 0.03  # 0.0284
 end
 
 @testset "Test 2: Water Flow Function Test (dimensions = 8; n_comp = 3; extra_points = 2)" begin
@@ -52,7 +52,7 @@ end
     g = GEKPLS(x, y, grads, n_comp, delta_x, lb, ub, extra_points, initial_theta)
     y_pred = g.(x_test)
     rmse = sqrt(sum(((y_pred - y_true) .^ 2) / n_test))
-    @test rmse < 0.03  # 0.0219
+    @test rmse < 0.03  # 0.0251
 end
 
 @testset "Test 3: Water Flow Function Test (dimensions = 8; n_comp = 3; extra_points = 3)" begin
@@ -63,7 +63,7 @@ end
     g = GEKPLS(x, y, grads, n_comp, delta_x, lb, ub, extra_points, initial_theta)
     y_pred = g.(x_test)
     rmse = sqrt(sum(((y_pred - y_true) .^ 2) / n_test))
-    @test rmse < 0.03  # 0.0219
+    @test rmse < 0.03  # 0.0251
 end
 
 # ## welded beam tests
