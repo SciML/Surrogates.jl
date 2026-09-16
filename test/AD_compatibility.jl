@@ -387,11 +387,20 @@ Random.seed!(42)
             @test g([2.0, 5.0]) isa AbstractVector
             # Accuracy test: f(x) = x[1] * x[2], ∇f = [x[2], x[1]], so ∇f([2.0, 5.0]) = [5.0, 2.0]
             @test isapprox(g([2.0, 5.0]), [5.0, 2.0], atol = 1.0e-1)
-            # `std_error_at_point` is a `sqrt` of a variance that this dense a
-            # design pins near its numerical floor almost everywhere; at
-            # [2.0, 5.0] specifically that floor is close enough to zero that
-            # the `sqrt`'s derivative blows up. [1.0, 1.0] sits away from that.
-            se = x -> ForwardDiff.gradient(t -> std_error_at_point(my_gekpls_ND, t), x)
+            # `std_error_at_point` is a `sqrt` of a variance, and this 1000-point
+            # design pins that variance near its numerical floor (~1e-6)
+            # everywhere in the domain, so `sqrt`'s derivative is on a razor's
+            # edge at *any* query point here - no fixed point choice is robust.
+            # A sparser design leaves real predictive uncertainty (~1e-2) so the
+            # derivative is well away from that floor by construction.
+            x_sparse = sample(10, lb, ub, SobolSample())
+            y_sparse = f.(x_sparse)
+            grads_sparse = Zygote.gradient.(f, x_sparse)
+            my_gekpls_sparse = GEKPLS(
+                x_sparse, y_sparse, grads_sparse, n_comp, delta_x, lb, ub,
+                extra_points, initial_theta
+            )
+            se = x -> ForwardDiff.gradient(t -> std_error_at_point(my_gekpls_sparse, t), x)
             @test se([1.0, 1.0]) isa AbstractVector && all(isfinite, se([1.0, 1.0]))
         end
 
@@ -401,7 +410,10 @@ Random.seed!(42)
             @test g([2.0, 5.0]) isa AbstractVector
             # Accuracy test: f(x) = x[1] * x[2], ∇f = [x[2], x[1]], so ∇f([2.0, 5.0]) = [5.0, 2.0]
             @test isapprox(g([2.0, 5.0]), [5.0, 2.0], atol = 1.0)
-            se = x -> ForwardDiff.gradient(t -> std_error_at_point(my_kpls_ND, t), x)
+            # See the GEKPLS ND testset above for why this uses a sparser fit.
+            x_sparse = sample(10, lb, ub, SobolSample())
+            se_kpls_ND = KPLS(x_sparse, f.(x_sparse), 2, lb, ub, [1.0, 1.0]; optimize_theta = false)
+            se = x -> ForwardDiff.gradient(t -> std_error_at_point(se_kpls_ND, t), x)
             @test se([2.0, 5.0]) isa AbstractVector && all(isfinite, se([2.0, 5.0]))
         end
 
@@ -410,7 +422,10 @@ Random.seed!(42)
             g = x -> ForwardDiff.gradient(my_kplsk_ND, x)
             @test g([2.0, 5.0]) isa AbstractVector
             @test isapprox(g([2.0, 5.0]), [5.0, 2.0], atol = 1.0)
-            se = x -> ForwardDiff.gradient(t -> std_error_at_point(my_kplsk_ND, t), x)
+            # See the GEKPLS ND testset above for why this uses a sparser fit.
+            x_sparse = sample(10, lb, ub, SobolSample())
+            se_kplsk_ND = KPLSK(x_sparse, f.(x_sparse), 2, lb, ub, [1.0, 1.0]; optimize_theta = false)
+            se = x -> ForwardDiff.gradient(t -> std_error_at_point(se_kplsk_ND, t), x)
             @test se([2.0, 5.0]) isa AbstractVector && all(isfinite, se([2.0, 5.0]))
         end
 
@@ -858,10 +873,15 @@ end
             @test result[1] isa Tuple
             # Accuracy test: f(x) = x[1] * x[2], ∇f = [x[2], x[1]], so ∇f([2.0, 5.0]) = [5.0, 2.0]
             @test all(isapprox.(result[1], (5.0, 2.0), atol = 1.0e-1))
-            # [1.0, 1.0], not [2.0, 5.0]; see the ForwardDiff "ND" GEKPLS testset.
-            # Not cross-checked against ForwardDiff, unlike KPLS/KPLSK below;
-            # see the 1D GEKPLS testset above for why.
-            se = Zygote.gradient(t -> std_error_at_point(my_gekpls_ND, t), (1.0, 1.0))[1]
+            # See the ForwardDiff "ND" GEKPLS testset for why this uses a
+            # sparser fit. Not cross-checked against ForwardDiff, unlike
+            # KPLS/KPLSK below; see the 1D GEKPLS testset above for why.
+            x_sparse = sample(10, lb, ub, SobolSample())
+            se_gekpls_ND = GEKPLS(
+                x_sparse, f.(x_sparse), Zygote.gradient.(f, x_sparse), n_comp, delta_x,
+                lb, ub, extra_points, initial_theta
+            )
+            se = Zygote.gradient(t -> std_error_at_point(se_gekpls_ND, t), (2.0, 5.0))[1]
             @test se isa Tuple && all(isfinite, se)
         end
 
@@ -874,9 +894,12 @@ end
             @test result[1] isa Tuple
             # Accuracy test: f(x) = x[1] * x[2], ∇f = [x[2], x[1]], so ∇f([2.0, 5.0]) = [5.0, 2.0]
             @test all(isapprox.(result[1], (5.0, 2.0), atol = 1.0))
-            se = Zygote.gradient(t -> std_error_at_point(my_kpls_ND, t), (2.0, 5.0))[1]
+            # See the ForwardDiff "ND" KPLS testset for why this uses a sparser fit.
+            x_sparse = sample(10, lb, ub, SobolSample())
+            se_kpls_ND = KPLS(x_sparse, f.(x_sparse), 2, lb, ub, [1.0, 1.0]; optimize_theta = false)
+            se = Zygote.gradient(t -> std_error_at_point(se_kpls_ND, t), (2.0, 5.0))[1]
             @test se isa Tuple && all(isfinite, se)
-            fd = ForwardDiff.gradient(t -> std_error_at_point(my_kpls_ND, t), [2.0, 5.0])
+            fd = ForwardDiff.gradient(t -> std_error_at_point(se_kpls_ND, t), [2.0, 5.0])
             @test collect(se) ≈ fd rtol = 1.0e-3
         end
 
@@ -888,9 +911,12 @@ end
             @test length(result) == 1
             @test result[1] isa Tuple
             @test all(isapprox.(result[1], (5.0, 2.0), atol = 1.0))
-            se = Zygote.gradient(t -> std_error_at_point(my_kplsk_ND, t), (2.0, 5.0))[1]
+            # See the ForwardDiff "ND" KPLSK testset for why this uses a sparser fit.
+            x_sparse = sample(10, lb, ub, SobolSample())
+            se_kplsk_ND = KPLSK(x_sparse, f.(x_sparse), 2, lb, ub, [1.0, 1.0]; optimize_theta = false)
+            se = Zygote.gradient(t -> std_error_at_point(se_kplsk_ND, t), (2.0, 5.0))[1]
             @test se isa Tuple && all(isfinite, se)
-            fd = ForwardDiff.gradient(t -> std_error_at_point(my_kplsk_ND, t), [2.0, 5.0])
+            fd = ForwardDiff.gradient(t -> std_error_at_point(se_kplsk_ND, t), [2.0, 5.0])
             @test collect(se) ≈ fd rtol = 1.0e-3
         end
 
