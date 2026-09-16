@@ -38,7 +38,7 @@ s(3.5)                             # evaluate it anywhere in [lb, ub]
 ```
 
 Every surrogate is a callable object, so `s(x)` is the prediction at `x`. Sampling comes
-from [QuasiMonteCarlo.jl](https://github.com/SciML/QuasiMonteCarlo.jl) — any sampler
+from [QuasiMonteCarlo.jl](https://github.com/SciML/QuasiMonteCarlo.jl): any sampler
 there works here.
 
 Two more things you can do with any surrogate:
@@ -72,7 +72,7 @@ surrogate_optimize!(f, SRBF(), lb, ub, s, SobolSample())   # minimize f using s
 
 These models ship with Surrogates.jl but stay dormant until you load their backing
 packages, which are weak dependencies and so are **not** installed for you. Add them
-yourself, then `using` them alongside Surrogates — the type is always visible, but its
+yourself, then `using` them alongside Surrogates. The type is always visible, but its
 constructor only exists once the extension loads.
 
 | Model                            | Constructor                              | Install and `using`              |
@@ -95,7 +95,7 @@ s = NeuralSurrogate(x, y, lb, ub)
 ```
 
 Note that `AbstractGPSurrogate` takes no bounds, and `MOE` fits a separate surrogate per
-cluster — if one of its experts is itself extension-backed, you need that extension too.
+cluster. If one of its experts is itself extension-backed, you need that extension too.
 
 ## Working with a surrogate
 
@@ -107,7 +107,7 @@ s = Kriging(x, y, 0.0, 10.0)                # 1D: x isa Vector{Float64}
 s = Kriging(x, y, [0.0, 0.0], [10.0, 10.0]) # 2D: x isa Vector{Tuple{Float64, Float64}}
 ```
 
-Write a point whichever way suits you — `s((1.0, 2.0))` and `s([1.0, 2.0])` mean the same
+Write a point whichever way suits you: `s((1.0, 2.0))` and `s([1.0, 2.0])` mean the same
 thing.
 
 Add observations as they arrive, one at a time or in batches:
@@ -172,7 +172,7 @@ work with these six.
 | `XGBoostSurrogate`               | yes | yes              | no              | no              |
 
 Two exceptions worth knowing: `KPLS`, `KPLSK` and `GEKPLS` always take a component count,
-so their bounds are vectors even in one dimension — `KPLS(x, y, 1, [lb], [ub], [1.0])`.
+so their bounds are vectors even in one dimension: `KPLS(x, y, 1, [lb], [ub], [1.0])`.
 And `SVMSurrogate` wraps a classifier, so its `y` holds class labels rather than a
 continuous response.
 
@@ -183,8 +183,8 @@ interface: `parameters(s)` returns what the fit produced, `hyperparameters(s)` w
 governed it.
 
 `Kriging`, `GEK`, `KPLS`, `KPLSK` and `GEKPLS` fit their correlation scales by maximum
-likelihood, and `update_hyperparameters!(s)` refits them in place on the design the model
-already holds. Surrogates you configure yourself have no such method.
+likelihood. Calling `update_hyperparameters!(s)` re-estimates those scales in place, using
+the design points and observations the model already holds.
 
 ## Automatic differentiation
 
@@ -197,10 +197,9 @@ ForwardDiff.derivative(s, 3.5)          # 1D
 ForwardDiff.gradient(s, [1.0, 2.0])     # multidimensional
 ```
 
-This works for every surrogate built into Surrogates.jl, and for `NeuralSurrogate`,
-`GENNSurrogate`, `AbstractGPSurrogate`, `PolynomialChaosSurrogate` and `MOE`.
+This works for every surrogate in Surrogates.jl, with two exceptions.
 
-`XGBoostSurrogate` and `SVMSurrogate` cannot be differentiated — they wrap
+`XGBoostSurrogate` and `SVMSurrogate` cannot be differentiated: they wrap
 gradient-boosted trees and a LIBSVM model, which are piecewise constant. They predict
 normally; only differentiation is unavailable.
 
@@ -228,8 +227,8 @@ surrogate_optimize!(f, SRBF(), lb, ub, s, SobolSample())
 candidates by uncertainty, so they need one of the six that provide it.
 
 `SMB()` and `RTEA()` minimize several objectives at once, so they need a surrogate that
-takes a vector-valued response — any of the multi-output models above except
-`GENNSurrogate`, which also requires a gradient for every new observation.
+takes a vector-valued response: any of the multi-output models above except
+`GENNSurrogate`, which also requires a Jacobian for every new observation.
 
 Gradient-enhanced surrogates need a gradient alongside every new response. Ask the
 optimizer to obtain it by AD:
@@ -249,7 +248,7 @@ points = potential_optimal_points(EI(), MeanConstantLiar(), lb, ub, s, SobolSamp
 
 It keeps the points apart by assigning *virtual* values to the ones not yet evaluated.
 Choose how with `MinimumConstantLiar`, `MeanConstantLiar`, `MaximumConstantLiar`,
-`KrigingBeliever`, `KrigingBelieverUpperBound` or `KrigingBelieverLowerBound` — the
+`KrigingBeliever`, `KrigingBelieverUpperBound` or `KrigingBelieverLowerBound`: the
 liars take their virtual value from the observations already in hand, the believers from
 the surrogate's own prediction, so those three need a surrogate that models uncertainty.
 
