@@ -28,6 +28,12 @@ they expose predictive uncertainty and [`logpdf_surrogate`](@ref) when they
 expose a log density or marginal likelihood. Implementations should document
 the response shape and units returned by these methods.
 
+`Kriging`, `GEK`, `KPLS`, `KPLSK`, `GEKPLS` and `AbstractGPSurrogate` answer
+[`std_error_at_point`](@ref). Only those can be used with the acquisition
+functions that score candidates by predictive uncertainty, `EI()` and `LCBS()`;
+given a surrogate without one, both raise an `ArgumentError` naming the
+alternatives rather than failing deeper in the search.
+
 The interface is deliberately expressed in terms of the generic call syntax
 and `update!`; optimization code should not depend on a concrete surrogate
 type. A minimal implementation is:
@@ -56,6 +62,9 @@ concrete surrogate tests then cover each model's fitting and numerical behavior.
 AbstractSurrogate
 current_surrogates
 std_error_at_point
+parameters
+hyperparameters
+update_hyperparameters!
 ```
 
   - Linear surrogate
@@ -84,22 +93,10 @@ lobachevsky_integral(loba::LobachevskySurrogate,lb,ub)
 ```
 
   - Support vector machine surrogate, requires `using LIBSVM`.
-
-```
-SVMSurrogate(x,y,lb::Number,ub::Number)
-```
-
-  - Gradient boosted trees surrogate, requires `using XGBoost`.
-
-```
-XGBoostSurrogate(x,y,lb,ub;num_round::Int = 1)
-```
-
-  - Neural network surrogate, requires `using Flux`.
-
-```
-NeuralSurrogate(x,y,lb,ub; model = Chain(Dense(length(x[1]),1), first), loss = (x,y) -> Flux.mse(model(x), y),opt = Descent(0.01),n_echos::Int = 1)
-```
+  - Gradient boosted trees surrogate, requires `using XGBoost`; documented in
+    the [XGBoost Surrogate Tutorial](@ref).
+  - Neural network surrogate, requires `using Flux`; documented in the
+    [Neural Network Surrogate Tutorial](@ref).
 
 ```@docs
 SVMSurrogate

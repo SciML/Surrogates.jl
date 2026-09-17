@@ -12,7 +12,14 @@ points and implements the SurrogatesBase deterministic-surrogate interface.
 # Fields
 
   - `phi`: radial basis function applied to scaled distances.
-  - `dim_poly`: degree of the accompanying polynomial basis.
+  - `dim_poly`: degree the kernel's conditional positive definiteness would ask
+    of a polynomial tail.
+
+    !!! warning
+    
+        No polynomial tail is fitted. `_calc_coeffs` solves the kernel system
+        alone, so this field records the kernel's requirement and does not
+        describe the model. `hyperparameters` reports it for the same reason.
   - `x`: sampled scalar points or multidimensional points.
   - `y`: scalar or vector responses corresponding to `x`.
   - `lb`: lower bound of the modeled domain.
@@ -78,8 +85,8 @@ Construct the linear radial basis function used by [`RadialBasis`](@ref).
 
 # Returns
 
-A `RadialFunction` with polynomial degree `0` and basis
-`z -> norm(z)`.
+A `RadialFunction` with basis `z -> norm(z)` and conditional-positive-definite
+order `1`. See the note on `dim_poly` in [`RadialBasis`](@ref).
 """
 linearRadial() = RadialFunction(0, z -> norm(z))
 
@@ -90,8 +97,8 @@ Construct the cubic radial basis function used by [`RadialBasis`](@ref).
 
 # Returns
 
-A `RadialFunction` with polynomial degree `1` and basis
-`z -> norm(z)^3`.
+A `RadialFunction` with basis `z -> norm(z)^3` and conditional-positive-definite
+order `2`. See the note on `dim_poly` in [`RadialBasis`](@ref).
 """
 cubicRadial() = RadialFunction(1, z -> norm(z)^3)
 
@@ -107,8 +114,8 @@ Construct the multiquadric radial basis function used by
 
 # Returns
 
-A `RadialFunction` with polynomial degree `1` and basis
-`z -> sqrt((c * norm(z))^2 + 1)`.
+A `RadialFunction` with basis `z -> sqrt((c * norm(z))^2 + 1)`. See the note on
+`dim_poly` in [`RadialBasis`](@ref).
 
 # Note
 
@@ -138,8 +145,8 @@ Construct the thin-plate radial basis function used by [`RadialBasis`](@ref).
 
 # Returns
 
-A `RadialFunction` with polynomial degree `2` and basis
-`z -> norm(z)^2 * log(norm(z))`, with the origin handled by returning zero.
+A `RadialFunction` with basis `z -> norm(z)^2 * log(norm(z))`, with the origin
+handled by returning zero. See the note on `dim_poly` in [`RadialBasis`](@ref).
 """
 thinplateRadial() = RadialFunction(
     2, z -> begin
@@ -260,7 +267,8 @@ Calculates current estimate of value 'val' with respect to the RadialBasis objec
 function (rad::RadialBasis)(val)
     _check_dimension(rad, val)
 
-    approx = _approx_rbf(val, rad)
+    point = _as_point(val)
+    approx = _approx_rbf(point, rad)
     return _match_container(approx, first(rad.y))
 end
 

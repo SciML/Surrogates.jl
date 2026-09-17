@@ -11,10 +11,22 @@ import Surrogates: GENNSurrogate
 import SurrogatesBase
 import Zygote
 
+# A non-positive epoch count skips training altogether and leaves the network at
+# its random initialization, which is a silently useless surrogate rather than an
+# error.
+function _check_n_epochs(name, n_epochs)
+    n_epochs < 1 && throw(
+        ArgumentError(
+            "$name needs at least one training epoch! Got: n_epochs = $(n_epochs)."
+        )
+    )
+    return nothing
+end
+
 """
-    NeuralSurrogate(x, y, lb, ub; model = Chain(Dense(length(x[1]), 1), first), 
-                                 loss = Flux.mse, 
-                                 opt = Optimisers.Adam(1e-3), 
+    NeuralSurrogate(x, y, lb, ub; model = Chain(Dense(length(x[1]), 1)),
+                                 loss = Flux.mse,
+                                 opt = Optimisers.Adam(1e-3),
                                  n_epochs = 10)
 
 ## Arguments
@@ -22,7 +34,7 @@ import Zygote
   - `x`: Input data points.
   - `y`: Output data points.
   - `lb`: Lower bound of input data points.
-  - `ub`: Upper bound of output data points.
+  - `ub`: Upper bound of input data points.
 
 # Keyword Arguments
 
@@ -36,78 +48,140 @@ function Surrogates.NeuralSurrogate(
         loss = Flux.mse, opt = Optimisers.Adam(1.0e-3),
         n_epochs::Int = 10
     )
-    if x isa Tuple
-        x = reduce(hcat, x)'
-    elseif x isa Vector{<:Tuple}
-        x = reduce(hcat, collect.(x))
-    elseif x isa Vector
-        if size(x) == (1,) && size(x[1]) == ()
-            x = hcat(x)
-        else
-            x = reduce(hcat, x)
-        end
-    end
-    y = reduce(hcat, y)
+    _check_n_epochs("NeuralSurrogate", n_epochs)
+    # Flux wants features-by-samples matrices; the surrogate stores the samples
+    # themselves. See the note on the struct fields below for why.
+    X = _design_matrix(x)
+    Y = _response_matrix(y)
     opt_state = Flux.setup(opt, model)
     for _ in 1:n_epochs
         grads = Flux.gradient(model) do m
-            result = m(x)
-            loss(result, y)
+            result = m(X)
+            loss(result, Y)
         end
         Optimisers.update!(opt_state, model, grads[1])
     end
     ps = Optimisers.trainables(model)
-    return NeuralSurrogate(x, y, model, loss, opt, ps, n_epochs, lb, ub)
+    # Stored as a vector of points and a vector of responses, the layout every
+    # other surrogate uses and the one the optimizers assume: `length(surr.x)`
+    # is the sample count and `surr.x[i]` is a point.
+    return NeuralSurrogate(
+        _columns_as_points(X), _columns_as_responses(Y),
+        model, loss, opt, ps, n_epochs, lb, ub
+    )
 end
 
-function (my_neural::NeuralSurrogate)(val)
-    out = my_neural.model(val)
-    return out
+# One query point as a features-by-1 matrix, the shape Flux expects for a single
+# sample. `reshape` rather than a copy, so reverse-mode AD can push a gradient
+# back through a call.
+_query_matrix(val::Number) = reshape([val], 1, 1)
+_query_matrix(val::Tuple) = reshape(collect(val), length(val), 1)
+_query_matrix(val::AbstractVector) = reshape(val, length(val), 1)
+_query_matrix(val::AbstractMatrix) = val
+
+"""
+A prediction in the same shape as the responses the surrogate was fitted to: a
+scalar for a single-output model, a vector for a multi-output one.
+
+Flux hands back a `k x 1` matrix even when `k == 1`, and the optimizers compare
+responses with `<`. A model chain ending in `first` already returns a `Number`;
+that case passes straight through.
+"""
+# Dispatched on the stored response type rather than branching on the model's
+# output shape at runtime: a surrogate's output count is fixed when it is fitted,
+# and `Y` already records it. Branching instead inferred `Union{Float32,
+# Vector{Float32}}`, which every optimizer call then had to resolve dynamically.
+#
+# `first` covers both a `k x 1` matrix and the bare `Number` a chain ending in
+# `first` returns.
+_predict(my_neural::NeuralSurrogate{X, Y}, val) where {X, Y <: AbstractVector{<:Number}} =
+    first(my_neural.model(_query_matrix(val)))
+_predict(my_neural::NeuralSurrogate, val) = vec(my_neural.model(_query_matrix(val)))
+
+(my_neural::NeuralSurrogate)(val::Number) = _predict(my_neural, val)
+(my_neural::NeuralSurrogate)(val::Tuple) = _predict(my_neural, val)
+(my_neural::NeuralSurrogate)(val) = _predict(my_neural, val)
+
+# The two conversions at the Flux boundary. Everything above the boundary keeps
+# the package's own layout — a vector of points, a vector of responses — and only
+# these turn it into the features-by-samples / outputs-by-samples matrices Flux
+# consumes.
+
+# The columns of a training matrix, back in the package's sample layout.
+#
+# Storage is derived from the normalized matrices rather than from whatever the
+# caller passed, so that `first(y)` is one sample's response whichever of the
+# accepted input forms `y` arrived in.
+_columns_as_points(X) = size(X, 1) == 1 ? collect(vec(X)) :
+    [Tuple(view(X, :, j)) for j in axes(X, 2)]
+_columns_as_responses(Y) = size(Y, 1) == 1 ? collect(vec(Y)) :
+    [collect(view(Y, :, j)) for j in axes(Y, 2)]
+
+# Bring a new point into the representation the stored design already uses.
+#
+# Points as a features-by-samples matrix. Always called with a vector of
+# points — the training set or the already-`_match_stored`-normalized samples
+# from `update!` — never a bare point, so there is no single-point case here.
+function _design_matrix(x)
+    first(x) isa Number && return reshape(collect(float.(x)), 1, length(x))
+    return reduce(hcat, collect.(x))
 end
 
-function (my_neural::NeuralSurrogate)(val::Tuple)
-    out = my_neural.model(collect(val))
-    return out
-end
-
-function (my_neural::NeuralSurrogate)(val::Number)
-    out = my_neural(reduce(hcat, [[val]]))
-    return out
+# Responses as an outputs-by-samples matrix.
+#
+# `y` is one entry per sample, so a scalar-response vector gives a 1xn row and a
+# multi-output one a kxn matrix. Not safe on a *lone* response — `[y1, y2]` would
+# give a 1x2 row where a 2x1 column is meant — so callers must resolve
+# single-versus-batch first.
+function _response_matrix(y)
+    # An `n_outputs x n_samples` matrix is already in the layout Flux wants.
+    # `first(y)` is a number for a matrix too, so without this the branch below
+    # flattened it to a `1 x (k*n)` row and the loss saw the wrong shape.
+    y isa AbstractMatrix && return float.(y)
+    first(y) isa Number && return reshape(collect(float.(y)), 1, length(y))
+    return reduce(hcat, collect.(y))
 end
 
 function SurrogatesBase.update!(my_n::NeuralSurrogate, x_new, y_new)
-    if x_new isa Tuple
-        x_new = reduce(hcat, x_new)'
-    elseif x_new isa Vector{<:Tuple}
-        x_new = reduce(hcat, collect.(x_new))
-    elseif x_new isa Vector
-        if size(x_new) == (1,) && size(x_new[1]) == ()
-            x_new = hcat(x_new)
-        else
-            x_new = reduce(hcat, x_new)
-        end
-    elseif x_new isa Number
-        x_new = reduce(hcat, [[x_new]])
+    # `_is_single_sample` is the core's own rule for telling one new sample from
+    # a batch of them — it decides from the *inputs*, which is what makes a lone
+    # multi-output response unambiguous: `[y1, y2]` against a single new point is
+    # one two-output response, not two scalar ones.
+    reference = first(my_n.x)
+    added_x, added_y = if Surrogates._is_single_sample(x_new, reference)
+        ([Surrogates._match_stored(reference, x_new)], [y_new])
+    else
+        ([Surrogates._match_stored(reference, p) for p in x_new], collect(y_new))
     end
-    y_new = reduce(hcat, y_new)
+    x_all = vcat(my_n.x, added_x)
+    y_all = vcat(my_n.y, added_y)
+
+    # Training continues on the newly added samples only, as it did before.
+    X = _design_matrix(added_x)
+    Y = _response_matrix(added_y)
+
     opt_state = Flux.setup(my_n.opt, my_n.model)
     for _ in 1:(my_n.n_epochs)
         grads = Flux.gradient(my_n.model) do m
-            result = m(x_new)
-            my_n.loss(result, y_new)
+            result = m(X)
+            my_n.loss(result, Y)
         end
         Optimisers.update!(opt_state, my_n.model, grads[1])
     end
     my_n.ps = Optimisers.trainables(my_n.model)
-    my_n.x = hcat(my_n.x, x_new)
-    my_n.y = hcat(my_n.y, y_new)
+    my_n.x = x_all
+    my_n.y = y_all
     return nothing
 end
 
 # Helper functions for data normalization
+# Convert the accepted input formats to an n_features x n_samples matrix.
 function _normalize_x(x)
-    """Convert various input formats to matrix (n_features x n_samples)"""
-    if x isa Tuple
+    if x isa Number
+        # One sample on a scalar domain: the ordinary case for a
+        # one-dimensional problem, since the optimizers add points one at a time.
+        return fill(float(x), 1, 1)
+    elseif x isa Tuple
         return reduce(hcat, x)'
     elseif x isa Vector{<:Tuple}
         return reduce(hcat, collect.(x))
@@ -124,23 +198,42 @@ function _normalize_x(x)
     end
 end
 
-function _normalize_y(y)
-    """
-    Convert y to matrix (n_outputs x n_samples).
+"""
+    _normalize_y(y, n_samples = nothing)
 
-    Required input formats:
-    - Single output: vector of scalars [y1, y2, ...] or matrix of shape (1, n_samples) or (n_samples, 1)
-    - Multi-output: matrix of shape (n_outputs, n_samples) where n_outputs > 1
+Convert `y` to an `n_outputs x n_samples` matrix.
 
-    For single output, vectors and column vectors are converted to row vector (1 x n_samples).
-    For multi-output, the matrix must already be in (n_outputs x n_samples) format and is kept as-is.
-    Note: For multi-output with 1 sample, provide as (n_outputs, 1) matrix, not as a column vector.
-    """
-    if y isa Vector
+Accepted forms are a scalar, a vector of scalars, or a `(1, n_samples)` matrix
+for a single output, and an `(n_outputs, n_samples)` matrix for several.
+
+An `n x 1` matrix is ambiguous on its own — `n` single-output samples, or one
+`n`-output sample? `n_samples`, which both callers know from the already
+normalized inputs, resolves it; without it the first reading is taken.
+"""
+function _normalize_y(y, n_samples = nothing)
+    if y isa Number
+        # A single response for a single new sample.
+        return fill(float(y), 1, 1)
+    elseif y isa Vector
+        # A vector of per-sample response vectors: the layout every other
+        # surrogate takes for multi-output. One column per sample.
+        first(y) isa Number || return reduce(hcat, collect.(float.(y)))
+        # One sample's multi-output response, not several scalar ones. Only
+        # `n_samples` separates the two readings, exactly as `_append_samples`
+        # decides single-versus-batch from the inputs; without it a two-output
+        # response `[y1, y2]` became two one-output samples and `update!`
+        # rejected it as a dimension mismatch.
+        if n_samples == 1 && length(y) > 1
+            return reshape(float.(y), length(y), 1)
+        end
         # Vector of scalars: create row vector (1 x n_samples)
         return reshape(y, 1, length(y))
     elseif y isa Matrix
         n_rows, n_cols = size(y)
+        # When the sample count is known and the columns already match it, the
+        # matrix is in (n_outputs, n_samples) form — including the (k, 1) case
+        # that is otherwise indistinguishable from k scalar samples.
+        n_samples !== nothing && n_cols == n_samples && return y
         if n_rows == 1
             # Already (1 x n_samples) - correct format for single output
             return y
@@ -159,14 +252,24 @@ function _normalize_y(y)
     end
 end
 
-function _normalize_dydx(dydx, n_inputs, n_outputs, n_samples)
-    """
-    Convert dydx to internal format (n_outputs x n_inputs x n_samples).
+# `GENNSurrogate` stores its samples the way every other surrogate does — a
+# vector of points and a vector of responses — so `length(genn.x)` is the sample
+# count and `genn.x[i]` is a point. The dimensions the training code needs are
+# derived from a sample.
+_n_inputs(genn::GENNSurrogate) = (p = first(genn.x); p isa Number ? 1 : length(p))
+_n_outputs(genn::GENNSurrogate) = (r = first(genn.y); r isa Number ? 1 : length(r))
 
-    Required input shapes:
-    - Single output: matrix of shape (n_samples, n_inputs)
-    - Multi-output: 3D array of shape (n_outputs, n_inputs, n_samples)
-    """
+"""
+    _normalize_dydx(dydx, n_inputs, n_outputs, n_samples)
+
+Convert supplied gradients to the internal `(n_outputs, n_inputs, n_samples)`
+layout. They must arrive as an `(n_samples, n_inputs)` matrix for a single
+output and an `(n_outputs, n_inputs, n_samples)` array for several.
+"""
+function _normalize_dydx(dydx, n_inputs, n_outputs, n_samples)
+    # `update!` takes `dydx_new` as an optional keyword and its caller branches
+    # on the result being `nothing`, so absent gradients pass through.
+    dydx === nothing && return nothing
 
     if n_outputs == 1
         # Single output: expect (n_samples, n_inputs) matrix
@@ -194,7 +297,6 @@ function _normalize_dydx(dydx, n_inputs, n_outputs, n_samples)
 end
 
 function _compute_gradient_loss(model, x_normalized, dydx_true, n_inputs, n_outputs, is_normalize, x_std, y_std)
-    """Compute gradient loss using batch processing where possible"""
     n_samples = size(x_normalized, 2)
     ndims(dydx_true) == 3 || throw(ArgumentError("dydx must have dimensions (n_outputs, n_inputs, n_samples)"))
     size(dydx_true, 3) == n_samples || throw(ArgumentError("Gradient sample count $(size(dydx_true, 3)) does not match input sample count $n_samples"))
@@ -225,7 +327,6 @@ function _train_genn!(
         model, x_normalized, y_normalized, dydx_processed, opt, n_epochs, gamma,
         n_inputs, n_outputs, is_normalize, x_std, y_std
     )
-    """Shared training function for GENN"""
     opt_state = Flux.setup(opt, model)
 
     for _ in 1:n_epochs
@@ -292,9 +393,21 @@ function GENNSurrogate(
         is_normalize::Bool = false
     )
 
+    _check_n_epochs("GENNSurrogate", n_epochs)
+    # `dydx` is what makes this model gradient-enhanced. Without it the fit is an
+    # ordinary `NeuralSurrogate` under another name, and `predict_derivative`
+    # reports slopes no gradient observation ever constrained.
+    dydx === nothing && throw(
+        ArgumentError(
+            "GENNSurrogate is gradient-enhanced and needs per-sample gradients; " *
+                "got `dydx = nothing`. Use `NeuralSurrogate` when there are no " *
+                "gradients to supply."
+        )
+    )
+
     # Normalize input data formats
     x_mat = _normalize_x(x)
-    y_mat = _normalize_y(y)
+    y_mat = _normalize_y(y, size(x_mat, 2))
 
     n_inputs = size(x_mat, 1)
     n_outputs = size(y_mat, 1)
@@ -343,7 +456,8 @@ function GENNSurrogate(
     )
 
     return GENNSurrogate(
-        x_mat, y_mat, dydx_processed, model, opt, ps, n_epochs, lb, ub, gamma,
+        _columns_as_points(x_mat), _columns_as_responses(y_mat), dydx_processed,
+        model, opt, ps, n_epochs, lb, ub, gamma,
         x_mean, x_std, y_mean, y_std, is_normalize
     )
 end
@@ -355,7 +469,7 @@ function (genn::GENNSurrogate)(val)
         val = [val]
     end
 
-    expected_dim = size(genn.x, 1)
+    expected_dim = _n_inputs(genn)
     input_dim = length(val)
     if input_dim != expected_dim
         throw(ArgumentError("Expected $expected_dim-dimensional input, got $input_dim-dimensional input."))
@@ -374,14 +488,16 @@ function (genn::GENNSurrogate)(val)
         out = out .* genn.y_std .+ genn.y_mean
     end
 
-    if size(out, 1) == 1 && size(out, 2) == 1
-        return out[1]
-    elseif size(out, 1) == 1
-        return vec(out)
-    else
-        return out
-    end
+    # Same shape contract as `NeuralSurrogate`, and settled the same way: on the
+    # stored response type, so the call infers concretely.
+    return _genn_output(genn, out)
 end
+
+# A scalar for a single-output model, a vector for a multi-output one. `first`
+# covers both a `k x 1` matrix and a bare `Number`.
+_genn_output(::GENNSurrogate{X, Y}, out) where {X, Y <: AbstractVector{<:Number}} =
+    first(out)
+_genn_output(::GENNSurrogate, out) = vec(out)
 
 function (genn::GENNSurrogate)(val::Tuple)
     return genn(collect(val))
@@ -414,7 +530,7 @@ function Surrogates.predict_derivative(genn::GENNSurrogate, val)
         val = [val]
     end
 
-    expected_dim = size(genn.x, 1)  # Fixed: x is (n_features x n_samples)
+    expected_dim = _n_inputs(genn)
     input_dim = length(val)
     if input_dim != expected_dim
         throw(ArgumentError("Expected $expected_dim-dimensional input, got $input_dim-dimensional input."))
@@ -427,7 +543,7 @@ function Surrogates.predict_derivative(genn::GENNSurrogate, val)
     end
 
     n_inputs = size(val_matrix, 1)
-    n_outputs = size(genn.y, 1)  # Fixed: y is (n_outputs x n_samples)
+    n_outputs = _n_outputs(genn)
 
     # Compute Jacobian: dy/dx for each output (on normalized space)
     jac_normalized = Zygote.jacobian(x -> vec(genn.model(x)), val_matrix)[1]
@@ -450,22 +566,56 @@ function Surrogates.predict_derivative(genn::GENNSurrogate, val)
     end
 end
 
+"""
+    update!(genn::GENNSurrogate, x_new, y_new, dydx_new)
+
+Add one observation and its gradient, with the gradient passed positionally.
+
+`GENNSurrogate` is gradient-enhanced: a sample without a gradient leaves
+`genn.dydx` short of the design and trips the sample-count check. The optimizers
+supply one — `_update_with_sample!` and the virtual-point strategies both call
+`update!(surr, x, y, gradient)` positionally, as they do for `GEK` — so this
+method exists to receive it and reshape it into the `(n_samples, n_inputs)`
+layout `_normalize_dydx` expects for a single-output model.
+
+Without it, every optimization method failed on `GENNSurrogate`: the keyword-only
+form was never matched, and the gradientless path raised
+`ArgumentError: For single output, dydx must be a matrix ...`.
+"""
+function SurrogatesBase.update!(genn::GENNSurrogate, x_new, y_new, dydx_new)
+    n_inputs = _n_inputs(genn)
+    # Zygote hands back a scalar in one dimension and a coordinate vector in
+    # several; both describe one sample, so both become a 1 x n_inputs row.
+    gradient_row = dydx_new isa Number ? fill(float(dydx_new), 1, 1) :
+        reshape(collect(float.(dydx_new)), 1, n_inputs)
+    return SurrogatesBase.update!(genn, x_new, y_new; dydx_new = gradient_row)
+end
+
 function SurrogatesBase.update!(genn::GENNSurrogate, x_new, y_new; dydx_new = nothing)
+    # `_normalize_x` judges shape from the argument alone, so it cannot tell one
+    # `d`-dimensional point written as a coordinate vector from `d` separate
+    # one-dimensional points. `_is_single_sample` settles it against the stored
+    # design, as it does for every other surrogate.
+    reference = first(genn.x)
+    x_new = Surrogates._is_single_sample(x_new, reference) ?
+        Surrogates._match_stored(reference, x_new) :
+        [Surrogates._match_stored(reference, p) for p in x_new]
+
     # Normalize new data to match stored format
     x_new_mat = _normalize_x(x_new)
-    y_new_mat = _normalize_y(y_new)
+    y_new_mat = _normalize_y(y_new, size(x_new_mat, 2))
 
     # Ensure dimensions match
-    if size(x_new_mat, 1) != size(genn.x, 1)
-        throw(ArgumentError("Input dimension mismatch: expected $(size(genn.x, 1)), got $(size(x_new_mat, 1))"))
+    if size(x_new_mat, 1) != _n_inputs(genn)
+        throw(ArgumentError("Input dimension mismatch: expected $(_n_inputs(genn)), got $(size(x_new_mat, 1))"))
     end
-    if size(y_new_mat, 1) != size(genn.y, 1)
-        throw(ArgumentError("Output dimension mismatch: expected $(size(genn.y, 1)), got $(size(y_new_mat, 1))"))
+    if size(y_new_mat, 1) != _n_outputs(genn)
+        throw(ArgumentError("Output dimension mismatch: expected $(_n_outputs(genn)), got $(size(y_new_mat, 1))"))
     end
 
     # Process new gradients
-    n_inputs = size(genn.x, 1)
-    n_outputs = size(genn.y, 1)
+    n_inputs = _n_inputs(genn)
+    n_outputs = _n_outputs(genn)
     n_new_samples = size(x_new_mat, 2)
     dydx_new_processed = _normalize_dydx(dydx_new, n_inputs, n_outputs, n_new_samples)
 
@@ -476,8 +626,12 @@ function SurrogatesBase.update!(genn::GENNSurrogate, x_new, y_new; dydx_new = no
         genn.dydx = cat(genn.dydx, dydx_new_processed; dims = 3)
     end
 
-    x_combined = hcat(genn.x, x_new_mat)
-    y_combined = hcat(genn.y, y_new_mat)
+    # Training runs on matrices rebuilt from the stored samples.
+    # `_design_matrix`/`_response_matrix` convert the *stored* layout;
+    # `_normalize_y` is for user input and would give a multi-output design the
+    # wrong shape.
+    x_combined = hcat(_design_matrix(genn.x), x_new_mat)
+    y_combined = hcat(_response_matrix(genn.y), y_new_mat)
     total_samples = size(x_combined, 2)
     if genn.dydx !== nothing && size(genn.dydx, 3) != total_samples
         throw(ArgumentError("Gradient sample count $(size(genn.dydx, 3)) does not match combined samples $total_samples"))
@@ -511,10 +665,33 @@ function SurrogatesBase.update!(genn::GENNSurrogate, x_new, y_new; dydx_new = no
         genn.n_epochs, genn.gamma, n_inputs, n_outputs, genn.is_normalize, x_std_for_training, y_std_for_training
     )
 
-    # Update stored data
-    genn.x = x_combined
-    genn.y = y_combined
+    # Update stored data, in the package's own layout, derived from the very
+    # matrices just trained on so the two cannot drift apart.
+    genn.x = _columns_as_points(x_combined)
+    genn.y = _columns_as_responses(y_combined)
     return nothing
 end
+
+
+# ---- SurrogatesBase parameter interface -----------------------------------
+#
+# The trained network weights are the learned state; everything that governs how
+# it was trained is configuration. Neither model has a hyperparameter-fitting
+# routine, so neither gets `update_hyperparameters!` — a silent no-op would be
+# worse than a `MethodError`.
+
+SurrogatesBase.parameters(n::NeuralSurrogate) = (; ps = n.ps, model = n.model)
+SurrogatesBase.hyperparameters(n::NeuralSurrogate) = (;
+    loss = n.loss, opt = n.opt, n_epochs = n.n_epochs,
+)
+
+SurrogatesBase.parameters(g::GENNSurrogate) = (;
+    ps = g.ps, model = g.model,
+    x_mean = g.x_mean, x_std = g.x_std, y_mean = g.y_mean, y_std = g.y_std,
+)
+SurrogatesBase.hyperparameters(g::GENNSurrogate) = (;
+    opt = g.opt, n_epochs = g.n_epochs, gamma = g.gamma,
+    is_normalize = g.is_normalize,
+)
 
 end # module

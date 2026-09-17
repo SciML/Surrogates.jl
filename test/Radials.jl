@@ -4,6 +4,7 @@ using LinearAlgebra
 using Surrogates
 using ForwardDiff
 using Zygote
+include("testutils.jl")
 
 @testset "RadialBasis" begin
     @testset "1D" begin
@@ -51,6 +52,14 @@ using Zygote
         my_rad_ND = RadialBasis(x, y, lb, ub, rad = cubicRadial())
         my_rad_ND = RadialBasis(x, y, lb, ub, rad = multiquadricRadial())
         prediction = my_rad_ND((1.0, 1.0, 1.0))
+
+        # A 1×d row-matrix query must agree with the equivalent tuple query for
+        # every non-linear kernel; previously it skipped `_as_point` and answered
+        # a d×d outer-difference kernel instead.
+        for rad in (cubicRadial(), multiquadricRadial(), thinplateRadial())
+            r = RadialBasis(x, y, lb, ub, rad = rad)
+            @test r(reshape([1.0, 1.0, 1.0], 1, 3)) ≈ r((1.0, 1.0, 1.0))
+        end
 
         f = x -> x[1] * x[2]
         lb = [1.0, 2.0]
@@ -392,25 +401,33 @@ using Zygote
         @test surr(2.0) ≈ surr(fill(2.0, 1, 1))
     end
 
-    @testset "update! leaves the caller's containers alone" begin
-        # `push!`/`append!` onto the surrogate's fields grew the very vectors
-        # the caller passed in, so building a surrogate mutated its own inputs.
-        x = [1.0, 2.0, 3.0]
-        y = [4.0, 5.0, 6.0]
-        surr = RadialBasis(x, y, 0.0, 5.0; rad = linearRadial())
-        update!(surr, 4.0, 10.0)
-        @test x == [1.0, 2.0, 3.0]
-        @test y == [4.0, 5.0, 6.0]
-        @test length(surr.x) == 4
-        @test surr(4.0) ≈ 10.0
+    # `push!`/`append!` onto the surrogate's fields grew the very vectors the
+    # caller passed in, so building a surrogate mutated its own inputs. This is
+    # the surrogate that had the bug; the shared check snapshots before
+    # construction for exactly that reason.
+    let surr = check_no_caller_aliasing(
+            "RadialBasis (1-D)", [1.0, 2.0, 3.0], [4.0, 5.0, 6.0]
+        ) do x, y
+            s = RadialBasis(x, y, 0.0, 5.0; rad = linearRadial())
+            update!(s, 4.0, 10.0)
+            s
+        end
+        @testset "RadialBasis (1-D): interpolates the added point" begin
+            @test surr(4.0) ≈ 10.0
+        end
+    end
 
-        x_nd = [(1.0, 2.0), (3.0, 4.0), (5.0, 6.0)]
-        y_nd = [1.0, 2.0, 3.0]
-        surr = RadialBasis(x_nd, y_nd, [0.0, 0.0], [6.0, 7.0]; rad = linearRadial())
-        update!(surr, [(2.0, 3.0), (4.0, 5.0)], [4.0, 5.0])
-        @test length(x_nd) == 3
-        @test length(surr.x) == 5
-        @test surr((2.0, 3.0)) ≈ 4.0
+    let surr = check_no_caller_aliasing(
+            "RadialBasis (N-D)", [(1.0, 2.0), (3.0, 4.0), (5.0, 6.0)],
+            [1.0, 2.0, 3.0]; n_added = 2
+        ) do x, y
+            s = RadialBasis(x, y, [0.0, 0.0], [6.0, 7.0]; rad = linearRadial())
+            update!(s, [(2.0, 3.0), (4.0, 5.0)], [4.0, 5.0])
+            s
+        end
+        @testset "RadialBasis (N-D): interpolates an added point" begin
+            @test surr((2.0, 3.0)) ≈ 4.0
+        end
     end
     @testset "queries of a different element type than the samples" begin
         # The accumulator holds coefficient times kernel value, so its type is

@@ -1,3 +1,5 @@
+# Stochastic: this model answers `std_error_at_point` with a BLUP predictive
+# standard deviation, which is what the supertype marks.
 """
 KPLS: Kriging combined with Partial Least Squares for high-dimensional problems.
 
@@ -11,7 +13,7 @@ KPLS reduces the number of kriging hyperparameters from d (input dimension) to h
 
 where W* ∈ R^(d × h) are the PLS rotation coefficients.
 """
-mutable struct KPLS{T, X, Y} <: AbstractDeterministicSurrogate
+mutable struct KPLS{T, X, Y, R} <: AbstractStochasticSurrogate
     x::X
     y::Y
     x_matrix::Matrix{T}
@@ -28,6 +30,8 @@ mutable struct KPLS{T, X, Y} <: AbstractDeterministicSurrogate
     pls_mean::Matrix{T}     # PLS rotation matrix W* [d, h]
     y_mean::T               # mean of y
     y_std::T                # std of y
+    R_fact::R               # Cholesky factorization of the correlation matrix
+    sigma2::T               # process variance, in standardized response units
     # Whether `theta` is fitted by maximizing the reduced likelihood, in which
     # case `update!` refits it against the extended sample set.
     optimize_theta::Bool
@@ -110,7 +114,7 @@ function _optimize_theta(
     function neg_rlf(log10_theta, _)
         theta = 10 .^ clamp.(log10_theta, log10_lb, log10_ub)
         try
-            _, _, val = _reduced_likelihood_function(
+            _, _, val, _, _ = _reduced_likelihood_function(
                 theta, kernel_type, d, nt, ij, y_norma;
                 nugget = nugget, noise = noise, max_escalations = max_escalations
             )
@@ -159,6 +163,8 @@ many correlation parameters.
   - `pls_mean`: PLS projection coefficients.
   - `y_mean`: response centering value.
   - `y_std`: response scaling value.
+  - `R_fact`: Cholesky factorization of the correlation matrix.
+  - `sigma2`: process variance in standardized response units.
 
 # Arguments
 
@@ -221,35 +227,65 @@ function KPLS(
         _optimize_theta(theta, "squar_exp", d, nt, ij, y_after_std; n_start = n_start) :
         collect(float.(theta))
 
-    beta, gamma, reduced_likelihood_function_value = _reduced_likelihood_function(
+    beta, gamma, reduced_likelihood_function_value, R_fact,
+        sigma2 = _reduced_likelihood_function(
         theta_opt, "squar_exp", d, nt, ij, y_after_std
     )
 
     return KPLS(
         x_vec, y_vec, X, y, xlimits, n_comp, beta, gamma, theta_opt,
         reduced_likelihood_function_value,
-        X_offset, X_scale, X_after_std, pls_mean, y_mean, y_std, optimize_theta
+        X_offset, X_scale, X_after_std, pls_mean, y_mean, y_std,
+        R_fact, sigma2, optimize_theta
     )
 end
 
+# Correlations between one query point and every training point, in the
+# standardized PLS space. Shared by the prediction and its standard error, which
+# differ only in what they do with this vector.
 """
     (k::KPLS)(x_vec)
 
 Predict the output at input point `x_vec` (a tuple or vector).
 """
-function (k::KPLS)(x_vec)
-    _check_dimension(k, x_vec)
+function _kpls_correlations(k::KPLS, x_vec)
     X_test = prep_data_for_pred(_single_query_point("KPLS", x_vec))
     n_eval = size(X_test, 1)
     X_cont = (X_test .- k.X_offset) ./ k.X_scale
     dx = differences(X_cont, k.X_after_std)
     pred_d = componentwise_distance_PLS(dx, "squar_exp", k.n_comp, k.pls_mean)
     nt = size(k.X_after_std, 1)
-    r = transpose(reshape(squar_exp(k.theta, pred_d), (nt, n_eval)))
+    return transpose(reshape(squar_exp(k.theta, pred_d), (nt, n_eval))), n_eval
+end
+
+function (k::KPLS)(x_vec)
+    _check_dimension(k, x_vec)
+    r, n_eval = _kpls_correlations(k, x_vec)
     f = ones(n_eval, 1)
     y_ = (f * k.beta) + (r * k.gamma)
     y = k.y_mean .+ k.y_std * y_
     return y[1]
+end
+
+# Ordinary-kriging BLUP variance in the reduced space. `sigma2` and `R_fact` are
+# in standardized response units, so the result is rescaled by `y_std` to match
+# the predictions.
+function _kpls_std_error(k::KPLS, x_vec)
+    r, _ = _kpls_correlations(k, x_vec)
+    r_vec = vec(collect(r))
+    nt = length(r_vec)
+    return k.y_std *
+        _blup_std_error(k.sigma2, r_vec, ones(eltype(r_vec), nt), k.R_fact)
+end
+
+"""
+    std_error_at_point(k::KPLS, val)
+
+Predictive standard deviation of the KPLS surrogate at `val`.
+"""
+function std_error_at_point(k::KPLS, val)
+    _check_dimension(k, val)
+    return _kpls_std_error(k, val)
 end
 
 """
@@ -263,16 +299,47 @@ function (k::KPLS)(val::Number)
 end
 
 """
+    _pls_new_samples(name, stored_x, new_x, new_y)
+
+One new observation or a batch of them, in both the sample layout the PLS models
+store and the matrix layout they refit from.
+
+`update!` on these models accepted a single point only, so a batch — which every
+other surrogate takes, and which `docs/src/surrogate.md` states as part of the
+interface — died inside `Float64(::Vector)` as a bare `MethodError`.
+"""
+function _pls_new_samples(name, stored_x, new_x, new_y)
+    reference = first(stored_x)
+    single = _is_single_sample(new_x, reference)
+    pts = single ? [_match_stored(reference, new_x)] :
+        [_match_stored(reference, p) for p in new_x]
+    vals = single ? [new_y] : collect(new_y)
+    if length(vals) != length(pts)
+        throw(
+            ArgumentError(
+                "$name `update!` needs one response per new point; got " *
+                    "$(length(pts)) points and $(length(vals)) responses."
+            )
+        )
+    end
+    x_mat = vector_of_tuples_to_matrix(pts)
+    y_mat = reshape(collect(Float64, vals), (length(vals), 1))
+    return pts, vals, x_mat, y_mat
+end
+
+"""
     update!(k::KPLS, new_x, new_y)
 
-Add a new sample point and re-train the KPLS model.
+Add one new sample point, or a batch of them, and re-train the KPLS model.
 """
 function SurrogatesBase.update!(k::KPLS, new_x, new_y)
-    new_x_mat = prep_data_for_pred([new_x])
-    # A duplicate is a no-op, not an error; see `Kriging`'s `update!`.
-    if vec(new_x_mat) in eachrow(k.x_matrix)
-        @warn "Skipping `update!`: this sample already exists in the KPLS " *
-            "surrogate, and duplicate points would make the correlation matrix singular."
+    pts, vals, new_x_mat, new_y_mat = _pls_new_samples("KPLS", k.x, new_x, new_y)
+    # A duplicate is a no-op, not an error; see `Kriging`'s `update!`. Checked on
+    # the merged samples, so a repetition *within* a batch is caught too.
+    x_all = vcat(k.x, pts)
+    if length(unique(x_all)) != length(x_all)
+        @warn "Skipping `update!`: these samples repeat a point already in the " *
+            "KPLS surrogate, and duplicate points would make the correlation matrix singular."
         return nothing
     end
 
@@ -282,10 +349,10 @@ function SurrogatesBase.update!(k::KPLS, new_x, new_y)
 
     # `vcat` rather than `push!`: the containers are the caller's own, and
     # growing them behind their back would extend a design they still hold.
-    k.x = vcat(k.x, [new_x])
-    k.y = vcat(k.y, new_y)
+    k.x = vcat(k.x, pts)
+    k.y = vcat(k.y, vals)
     k.x_matrix = vcat(k.x_matrix, new_x_mat)
-    k.y_matrix = vcat(k.y_matrix, reshape([Float64(new_y)], (1, 1)))
+    k.y_matrix = vcat(k.y_matrix, new_y_mat)
 
     pls_mean, X_after_PLS, y_after_PLS = _compute_pls(k.x_matrix, k.y_matrix, k.n_comp)
     k.X_after_std, y_after_std, k.X_offset, k.y_mean, k.X_scale, k.y_std = standardization(
@@ -298,7 +365,8 @@ function SurrogatesBase.update!(k::KPLS, new_x, new_y)
     if k.optimize_theta
         k.theta = _optimize_theta(k.theta, "squar_exp", d, nt, ij, y_after_std)
     end
-    k.beta, k.gamma, k.reduced_likelihood_function_value = _reduced_likelihood_function(
+    k.beta, k.gamma, k.reduced_likelihood_function_value, k.R_fact,
+        k.sigma2 = _reduced_likelihood_function(
         k.theta, "squar_exp", d, nt, ij, y_after_std
     )
     return nothing

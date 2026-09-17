@@ -43,22 +43,44 @@ function _is_single_sample(new_x, x_el)
 end
 
 """
+    _match_stored(reference, point)
+
+`point` in the representation the stored design already uses, `reference` being
+one of its samples.
+
+A `d`-dimensional point may be written as a tuple or as a coordinate vector, and
+every call overload accepts both. `update!` has to as well, and cannot get there
+by `vcat` alone: appending a `Vector` to a design held as `Tuple`s raises
+`MethodError: Cannot convert Vector{Float64} to Tuple{Float64, Float64}`.
+
+The conversion is representation-only — the element type is left to `vcat`'s own
+promotion, so an integer design is not silently floated.
+"""
+_match_stored(::Number, point) = point
+_match_stored(::Tuple, point) = Tuple(point)
+_match_stored(::AbstractVector, point) = collect(point)
+_match_stored(_, point) = point
+
+"""
     _append_samples(x, y, new_x, new_y) -> (x, y)
 
 Append new observations to a surrogate's sample containers and return the
 extended pair.
 
 Plain `vcat` will not do: for multi-output responses a *single* `new_y` is
-itself a vector, and `vcat` would splat it into the response list.
+itself a vector, and `vcat` would splat it into the response list; and a new
+point may be written in a different representation from the stored ones, which
+[`_match_stored`](@ref) reconciles.
 
 The caller's arrays are not mutated, so a surrogate built from a user's vector
 will not grow that vector behind their back.
 """
 function _append_samples(x, y, new_x, new_y)
-    if _is_single_sample(new_x, first(x))
-        return vcat(x, [new_x]), vcat(y, [new_y])
+    reference = first(x)
+    if _is_single_sample(new_x, reference)
+        return vcat(x, [_match_stored(reference, new_x)]), vcat(y, [new_y])
     end
-    return vcat(x, new_x), vcat(y, new_y)
+    return vcat(x, [_match_stored(reference, p) for p in new_x]), vcat(y, new_y)
 end
 
 """

@@ -21,12 +21,19 @@ To enable parallel optimization, we make use of an Ask-Tell interface. The user 
 To ensure that points of interest returned by `potential_optimal_points` are sufficiently far from each other, the function makes use of *virtual points*. They are used as follows:
 
  1. `potential_optimal_points` is told to return `n` points.
- 2. The best-scoring candidate is selected. `SRBF` minimizes its merit function, `EI` maximizes expected improvement.
+ 2. The best-scoring candidate is selected. `SRBF` minimizes its merit function, `EI` maximizes expected improvement, and `LCBS` minimizes the lower confidence bound.
  3. This point is now treated as a virtual point: it is added to a temporary copy of the surrogate with an assigned value, which changes the acquisition landscape. How that value is chosen depends on the strategy used (see below). The surrogate you passed in is never modified.
  4. The best-scoring candidate under the updated temporary surrogate is selected. Candidates within the minimum-separation tolerance of an already-chosen point are rejected, so a batch never repeats a point.
  5. The process is repeated until `n` points have been selected.
 
-The following strategies are available for virtual point selection for all optimization algorithms:
+`potential_optimal_points` is available for `SRBF()`, `EI()` and `LCBS()`. `DYCORS`
+schedules its coordinate-perturbation probability on the iteration index, which a
+batch has no counterpart for, and `SOP` already evaluates several centers per
+iteration; both raise an `ArgumentError` here and should be called through
+`surrogate_optimize!` instead.
+
+The following strategies are available for virtual point selection with any of the
+three supported algorithms:
 
   - "Minimum Constant Liar (MinimumConstantLiar)":
     
@@ -51,6 +58,11 @@ For Kriging surrogates, specifically, the above and following strategies are ava
   - "Kriging Believer Lower Bound (KrigingBelieverLowerBound)":
     
       + The virtual point is assigned 3$\sigma$ below the temporary surrogate's mean at that point.
+
+A gradient-enhanced surrogate such as `GEK` or `GEKPLS` needs a gradient alongside
+every response, so a virtual point carries one too: the model's own slope at that
+point is used, meaning the virtual observation misstates only the response and
+asserts nothing about the slope the model does not already believe.
 
 In general, MinimumConstantLiar and KrigingBelieverLowerBound tend to favor exploitation, while MaximumConstantLiar and KrigingBelieverUpperBound tend to favor exploration. MeanConstantLiar and KrigingBeliever tend to be compromises between the two.
 

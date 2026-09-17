@@ -5,6 +5,9 @@ using XGBoost: xgboost, predict
 
 import SurrogatesBase
 
+# XGBoost consumes a samples-by-features matrix. The surrogate stores a vector
+# of points, as every other surrogate does, and the matrix is built here at the
+# boundary so that `length(xgb.x)` counts samples and `xgb.x[i]` is a point.
 """
     XGBoostSurrogate(x, y, lb, ub; num_round = 1)
 
@@ -21,45 +24,66 @@ Build a tree-boosted surrogate. `num_round` is the number of boosting rounds.
 
   - `num_round`: number of boosting rounds.
 """
-function Surrogates.XGBoostSurrogate(x, y, lb, ub; num_round::Int = 1)
-    X = Array{Float64, 2}(undef, length(x), length(x[1]))
-    if length(lb) == 1
+function _rows_matrix(x)
+    n = length(x)
+    d = first(x) isa Number ? 1 : length(first(x))
+    X = Array{Float64, 2}(undef, n, d)
+    if d == 1
         for j in eachindex(x)
-            X[j, 1] = x[j]
+            X[j, 1] = first(x[j])
         end
     else
         for j in eachindex(x)
-            X[j, :] .= x[j]
+            X[j, :] .= collect(x[j])
         end
     end
-    bst = xgboost((X, y); num_round)
-    return XGBoostSurrogate(X, y, bst, lb, ub, num_round)
+    return X
+end
+
+function Surrogates.XGBoostSurrogate(x, y, lb, ub; num_round::Int = 1)
+    if num_round < 1
+        throw(
+            ArgumentError(
+                "XGBoostSurrogate needs at least one boosting round! Got: " *
+                    "num_round = $(num_round). Zero or fewer leaves the booster " *
+                    "untrained, so the surrogate would predict a constant."
+            )
+        )
+    end
+    bst = xgboost((_rows_matrix(x), y); num_round)
+    return XGBoostSurrogate(collect(x), collect(y), bst, lb, ub, num_round)
 end
 
 function (xgb::XGBoostSurrogate)(val::Number)
     return xgb([val])
 end
 
+# The dimension check is this package's, not XGBoost's: `predict` accepts a
+# matrix with the wrong number of features and answers anyway, so a scalar query
+# against a multidimensional model returned a number rather than raising.
 function (xgb::XGBoostSurrogate)(val)
-    return predict(xgb.bst, reshape(collect(val), length(val), 1))[1]
+    Surrogates._check_dimension(xgb, val)
+    return predict(xgb.bst, reshape(collect(val), 1, length(val)))[1]
 end
 
 function SurrogatesBase.update!(xgb::XGBoostSurrogate, x_new, y_new)
-    if x_new isa Tuple
-        x_new = reduce(hcat, x_new)
-    elseif x_new isa Vector{<:Tuple}
-        x_new = reduce(hcat, collect.(x_new))
-    elseif x_new isa Vector
-        if size(x_new) == (1,) && size(x_new[1]) == ()
-            x_new = hcat(x_new)'
-        else
-            x_new = reduce(hcat, x_new)'
-        end
+    # `_is_single_sample` is the core's rule for telling one new sample from a
+    # batch of them.
+    added_x, added_y = if Surrogates._is_single_sample(x_new, first(xgb.x))
+        ([Surrogates._match_stored(first(xgb.x), x_new)], [y_new])
+    else
+        ([Surrogates._match_stored(first(xgb.x), p) for p in x_new], collect(y_new))
     end
-    xgb.x = vcat(xgb.x, x_new)
-    xgb.y = vcat(xgb.y, y_new)
-    xgb.bst = xgboost((xgb.x, xgb.y); num_round = xgb.num_round)
+    xgb.x = vcat(xgb.x, added_x)
+    xgb.y = vcat(xgb.y, added_y)
+    xgb.bst = xgboost((_rows_matrix(xgb.x), xgb.y); num_round = xgb.num_round)
     return nothing
 end
+
+
+# ---- SurrogatesBase parameter interface -----------------------------------
+
+SurrogatesBase.parameters(x::XGBoostSurrogate) = (; bst = x.bst)
+SurrogatesBase.hyperparameters(x::XGBoostSurrogate) = (; num_round = x.num_round)
 
 end # module
