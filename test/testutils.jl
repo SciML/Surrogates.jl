@@ -6,6 +6,8 @@
 # failure still says which one broke.
 
 using Test
+using Serialization
+using LinearAlgebra
 
 """
     check_no_caller_aliasing(build_and_update, label, x, y; n_added = 1)
@@ -89,6 +91,47 @@ function check_update_representations(build, label; batch = true)
             @test grew(x_tuples, pts_t, obj.(pts_t)) == 2
             @test grew(x_tuples, pts_v, obj.(pts_t)) == 2
         end
+    end
+    return nothing
+end
+
+"""
+    check_deprecated_inverse_of_R_value(surr, kind)
+
+Assert that `Surrogates._deprecated_inverse_of_R(surr, kind)` still returns a
+left inverse of `Matrix(surr.R_fact)`.
+
+Under `--depwarn=error`, `Base.depwarn` inside the shim throws before a value
+can be returned, so the check runs in a `--depwarn=no` subprocess against the
+same developed package (surrogate serialized across the process boundary).
+"""
+function check_deprecated_inverse_of_R_value(surr, kind)
+    if Base.JLOptions().depwarn != 2
+        Rinv = Surrogates._deprecated_inverse_of_R(surr, kind)
+        @test Rinv * Matrix(surr.R_fact) ≈ LinearAlgebra.I
+        return nothing
+    end
+
+    data_path = tempname()
+    script_path = tempname() * ".jl"
+    try
+        Serialization.serialize(data_path, (surr, kind))
+        open(script_path, "w") do io
+            println(io, "using Surrogates, Test, LinearAlgebra, Serialization")
+            println(io, "surr, kind = deserialize(", repr(data_path), ")")
+            println(io, "ts = @testset \"deprecated inverse shim value\" begin")
+            println(io, "    Rinv = Surrogates._deprecated_inverse_of_R(surr, kind)")
+            println(io, "    @test Rinv * Matrix(surr.R_fact) ≈ I")
+            println(io, "end")
+            println(io, "exit(ts.anynonpass ? 1 : 0)")
+        end
+        proj = Base.active_project()
+        cmd = `$(Base.julia_cmd()) --startup-file=no --project=$(proj) --depwarn=no $(script_path)`
+        p = run(ignorestatus(cmd); wait = true)
+        @test success(p)
+    finally
+        isfile(data_path) && rm(data_path)
+        isfile(script_path) && rm(script_path)
     end
     return nothing
 end

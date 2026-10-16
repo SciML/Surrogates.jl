@@ -257,8 +257,13 @@ end
     x = collect(range(0.5, 4.5, length = 4))
     y = vcat(x .^ 2, 2 .* x)
     g = GEK(x, y, lb, ub, theta = 0.3)
-    Rinv = @test_deprecated g.inverse_of_R
-    @test Rinv * Matrix(g.R_fact) ≈ I
+    if Base.JLOptions().depwarn == 2
+        @test_throws ErrorException g.inverse_of_R
+    else
+        Rinv = @test_deprecated g.inverse_of_R
+        @test Rinv * Matrix(g.R_fact) ≈ I
+    end
+    check_deprecated_inverse_of_R_value(g, :GEK)
 end
 
 @testset "theta is fitted by maximum likelihood" begin
