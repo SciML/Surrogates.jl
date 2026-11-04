@@ -20,6 +20,7 @@ pages = [
         "KPLS and KPLSK" => "kpls.md",
         "MOE" => "moe.md",
         "Parallel optimization" => "parallel.md",
+        "Acausal models (ModelingToolkit)" => "mtk.md",
     ]
     "User guide" => [
         "Samples" => "samples.md",
