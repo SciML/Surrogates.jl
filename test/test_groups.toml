@@ -1,7 +1,8 @@
 [Core]
 versions = ["lts", "1", "pre"]
 
-# Blocked on QuasiMonteCarlo/LatticeRules 32-bit fix until those releases propagate.
+# Flux precompilation on this lane depends on 32-bit SPIR-V runtime support in GPUCompiler.
+# https://github.com/JuliaGPU/GPUCompiler.jl/issues/1085
 ["Core 32-bit"]
 group = "Core"
 versions = ["1"]
