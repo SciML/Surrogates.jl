@@ -163,9 +163,10 @@ end
 # follows from the arithmetic, so a dual number is not truncated back to the
 # design's type.
 function _gek_r(k::GEK, val)
-    n = length(k.x)
-    d = length(k.x[1])
-    ks = [exp(-sum(k.theta[l] * (val[l] - k.x[i][l])^2 for l in 1:d)) for i in 1:n]
+    x, theta = k.x, k.theta
+    n = length(x)
+    d = length(x[1])
+    ks = [exp(-sum(theta[l] * (val[l] - x[i][l])^2 for l in 1:d)) for i in 1:n]
     # Flattened in `_gek_deriv_index` order — point by point, and within a point,
     # coordinate by coordinate — so the layout matches `_gek_covariance`. The
     # index arithmetic inverts `n + (i - 1) * d + l`; a nested comprehension
@@ -173,7 +174,7 @@ function _gek_r(k::GEK, val)
     # accumulates with `push!`.
     dks = [
         let i = (j - 1) ÷ d + 1, l = (j - 1) % d + 1
-            2 * k.theta[l] * (val[l] - k.x[i][l]) * ks[i]
+            2 * theta[l] * (val[l] - x[i][l]) * ks[i]
         end
             for j in 1:(n * d)
     ]

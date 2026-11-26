@@ -104,10 +104,11 @@ end
 # containers (`(5.0)[1] === 5.0`), so one implementation serves both the scalar
 # and the multidimensional case.
 function _kriging_r(k::Kriging, val)
-    d = length(k.x[1])
+    x, theta, p = k.x, k.theta, k.p
+    d = length(x[1])
     return [
-        exp(-sum(k.theta[l] * abs(val[l] - k.x[i][l])^k.p[l] for l in 1:d))
-            for i in eachindex(k.x)
+        exp(-sum(theta[l] * abs(val[l] - x[i][l])^p[l] for l in 1:d))
+            for i in eachindex(x)
     ]
 end
 
