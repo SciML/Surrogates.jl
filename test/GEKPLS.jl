@@ -415,6 +415,23 @@ end
         @test g.theta != before
     end
 
+    @testset "update! refits after one new observation" begin
+        Random.seed!(627)
+        g = GEKPLS(
+            x, y, grads, 2, 1.0e-4, lb, ub, 2, [0.01, 0.01]; optimize_theta = true
+        )
+        frozen = GEKPLS(
+            x, y, grads, 2, 1.0e-4, lb, ub, 2, copy(g.theta); optimize_theta = false
+        )
+        point = sample(10, lb, ub, GoldenSample())[5]
+        response = welded_beam(point)
+        grad = gradient(welded_beam, point)[1]
+        update!(g, point, response, grad)
+        update!(frozen, point, response, grad)
+        @test length(g.x) == 61
+        @test g.reduced_likelihood_function_value > frozen.reduced_likelihood_function_value
+    end
+
     @testset "the keyword front-end passes it through" begin
         g = GEKPLS(
             x, y, grads, lb, ub; n_comp = 2, extra_points = 2,
