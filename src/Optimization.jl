@@ -1077,7 +1077,7 @@ black-box optimization. *Engineering Optimization*, 45(5), 529-555.
 function surrogate_optimize!(
         obj::Function, dycors::DYCORS, lb, ub, surrn::AbstractSurrogate,
         sample_type::SamplingAlgorithm; maxiters = 100,
-        num_new_samples = 100, needs_gradient = false
+        num_new_samples::Integer = 100, needs_gradient = false
     )
     # A one-dimensional problem may be written with length-1 vector bounds.
     # `sample` returns scalars for those, so the multidimensional path below
@@ -1576,7 +1576,7 @@ end
 function surrogate_optimize!(
         obj::Function, sopd::SOP, lb, ub, surrSOPD::AbstractSurrogate,
         sample_type::SamplingAlgorithm; maxiters = 100,
-        num_new_samples = min(500 * length(lb), 5000),
+        num_new_samples::Integer = min(500 * length(lb), 5000),
         needs_gradient = false
     )
     # A one-dimensional problem may be written with length-1 vector bounds.
