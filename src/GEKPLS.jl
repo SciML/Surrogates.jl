@@ -238,7 +238,9 @@ end
 function _gekpls_predict(g::GEKPLS, pts)
     r, n_eval = _gekpls_correlations(g, pts)
     f = ones(n_eval, 1)
-    y_ = (f * g.beta) + (r * g.gamma)
+    # The constant trend makes the kriging weights sum to zero.
+    centered_r = r .- mean(r; dims = 2)
+    y_ = (f * g.beta) + (centered_r * g.gamma)
     y = g.y_mean .+ g.y_std * y_
     return y[1]
 end
