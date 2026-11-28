@@ -4,6 +4,29 @@ using QuasiMonteCarlo: KroneckerSample, GoldenSample
 using Distributions: Cauchy, Normal
 using Test
 
+struct AxisSample <: QuasiMonteCarlo.SamplingAlgorithm end
+
+function QuasiMonteCarlo.sample(n::Integer, d::Integer, ::AxisSample, ::Type{T}) where {T}
+    return T[(i + 2j - 2) // 16 for i in 1:d, j in 1:n]
+end
+
+@testset "Sampling geometry" begin
+    for T in (Float32, Float64)
+        lb = T[-8, 16, 100]
+        ub = T[-4, 32, 164]
+        sampler = AxisSample()
+        @test Surrogates.sample(2, lb[1], ub[1], sampler) == T[-7.75, -7.25]
+        @test Surrogates.sample(2, lb, ub, sampler) == [
+            (T(-7.75), T(18), T(112)), (T(-7.25), T(20), T(120)),
+        ]
+        section = SectionSample(T[NaN, 24, NaN], sampler)
+        @test Surrogates.sample(2, lb, ub, section) == [
+            (T(-7.75), T(24), T(108)), (T(-7.25), T(24), T(116)),
+        ]
+        @test_throws AssertionError Surrogates.sample(2, ub, lb, section)
+    end
+end
+
 #1D
 
 @testset "Sampling" begin
