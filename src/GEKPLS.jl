@@ -143,9 +143,8 @@ function _gekpls_fit(
     X_after_std, y_after_std, X_offset, y_mean, X_scale, y_std = standardization(
         X_after_PLS, y_after_PLS
     )
-    D, ij = cross_distances(X_after_std)
     pls_mean_reshaped = reshape(pls_mean, (size(X, 2), n_comp))
-    d = componentwise_distance_PLS(D, "squar_exp", n_comp, pls_mean_reshaped)
+    d, ij = _projected_cross_distances(X_after_std, pls_mean_reshaped)
     nt = size(X_after_PLS, 1)
     if optimize_theta
         theta = _optimize_theta(
@@ -562,6 +561,29 @@ function cross_distances(X)
         D[ll_0:ll_1, :] = -(X[(k + 1):n_samples, :] .- X[k, :]')
     end
     return D, Int.(ij)
+end
+
+function _projected_cross_distances(X, coeff_pls)
+    n, dimensions = size(X)
+    pairs = binomial(n, 2)
+    ij = Matrix{Int}(undef, pairs, 2)
+    weights = coeff_pls .^ 2
+    projected = Matrix{promote_type(Float64, eltype(weights))}(undef, pairs, size(weights, 2))
+    squared = Matrix{Float64}(undef, n, dimensions)
+    offset = 0
+    @views for i in 1:(n - 1)
+        count = n - i
+        rows = (offset + 1):(offset + count)
+        block = squared[1:count, :]
+        current = X[i:i, :]
+        following = X[(i + 1):n, :]
+        @. block = Float64(-(following - current))^2
+        mul!(projected[rows, :], block, weights)
+        ij[rows, 1] .= i
+        ij[rows, 2] .= (i + 1):n
+        offset += count
+    end
+    return projected, ij
 end
 
 """
