@@ -704,7 +704,7 @@ function _correlation_cholesky(r, nt, ij, nugget, noise, max_escalations)
 end
 
 function _reduced_likelihood_function(
-        theta, kernel_type, d, nt, ij, y_norma;
+        theta, kernel_type, d, nt::Integer, ij, y_norma;
         nugget = _PLS_NUGGET, noise = 0.0, max_escalations = 0
     )
     if kernel_type == "squar_exp"

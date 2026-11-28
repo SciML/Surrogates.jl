@@ -240,6 +240,19 @@ end
     end
 end
 
+@testset "candidate sample counts are integers" begin
+    x = sample(8, LB2, UB2, SobolSample())
+    surr = Kriging(x, f2d.(x), LB2, UB2)
+    @test_throws TypeError surrogate_optimize!(
+        f2d, DYCORS(), LB2, UB2, surr, SobolSample();
+        maxiters = 1, num_new_samples = 1.5
+    )
+    @test_throws TypeError surrogate_optimize!(
+        f2d, SOP(1), LB2, UB2, surr, SobolSample();
+        maxiters = 1, num_new_samples = 1.5
+    )
+end
+
 @testset "EI" begin
     @testset "1-D" begin
         Random.seed!(2)
