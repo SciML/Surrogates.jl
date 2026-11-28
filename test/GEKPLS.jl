@@ -1,6 +1,7 @@
 using Surrogates
 using Zygote
 using Test
+using Random
 include("testutils.jl")
 
 # Accuracy assertions here are one-sided bounds with the measured value in a
@@ -397,14 +398,38 @@ end
     @test err(fitted) < err(given)
 
     @testset "update! refits when fitting is on" begin
+        # The constructor's Latin-hypercube starts are random. Seed them so the
+        # pre-update optimum is reproducible rather than depending on test order.
+        Random.seed!(627)
         g = GEKPLS(
             x, y, grads, 2, 1.0e-4, lb, ub, 2, [0.01, 0.01]; optimize_theta = true
         )
         before = copy(g.theta)
-        new_p = (0.5, 7.0, 7.0)
-        update!(g, new_p, welded_beam(new_p), gradient(welded_beam, new_p)[1])
-        @test length(g.x) == 61
+        # One point can leave the local refit at its starting theta exactly. Add
+        # a fixed batch instead so the extended design has a clear refit signal.
+        new_pts = sample(10, lb, ub, GoldenSample())
+        new_y = welded_beam.(new_pts)
+        new_grads = first.(gradient.(welded_beam, new_pts))
+        update!(g, new_pts, new_y, new_grads)
+        @test length(g.x) == 70
         @test g.theta != before
+    end
+
+    @testset "update! refits after one new observation" begin
+        Random.seed!(627)
+        g = GEKPLS(
+            x, y, grads, 2, 1.0e-4, lb, ub, 2, [0.01, 0.01]; optimize_theta = true
+        )
+        frozen = GEKPLS(
+            x, y, grads, 2, 1.0e-4, lb, ub, 2, copy(g.theta); optimize_theta = false
+        )
+        point = sample(10, lb, ub, GoldenSample())[5]
+        response = welded_beam(point)
+        grad = gradient(welded_beam, point)[1]
+        update!(g, point, response, grad)
+        update!(frozen, point, response, grad)
+        @test length(g.x) == 61
+        @test g.reduced_likelihood_function_value > frozen.reduced_likelihood_function_value
     end
 
     @testset "the keyword front-end passes it through" begin
