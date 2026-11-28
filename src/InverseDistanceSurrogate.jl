@@ -62,8 +62,10 @@ function (inverSurr::InverseDistanceSurrogate)(val)
     _check_dimension(inverSurr, val)
     # A row-matrix query would broadcast into a d x d outer difference.
     point = _as_point(val)
+    # Keep the mutable surrogate out of the closures differentiated by Zygote.
+    x, y = inverSurr.x, inverSurr.y
     p = inverSurr.p
-    d = [norm(point .- inverSurr.x[i]) for i in eachindex(inverSurr.x)]
+    d = [norm(point .- x[i]) for i in eachindex(x)]
     d_min = minimum(d)
     # A query on a sample point returns that response, averaged over ties,
     # instead of Inf / Inf. Tested through the weight rather than `d_min == 0`
@@ -71,12 +73,12 @@ function (inverSurr::InverseDistanceSurrogate)(val)
     # nonzero derivative is not equal to zero.
     if !isfinite(d_min^(-p))
         hits = findall(dᵢ -> !isfinite(dᵢ^(-p)), d)
-        return sum(inverSurr.y[i] for i in hits) / length(hits)
+        return sum(y[i] for i in hits) / length(hits)
     end
     # (d / d_min)^(-p) is the same convex combination as d^(-p) with the
     # largest weight pinned at one, so nothing overflows or underflows.
     w = (d ./ d_min) .^ (-p)
-    return sum(w[i] * inverSurr.y[i] for i in eachindex(w)) / sum(w)
+    return sum(w[i] * y[i] for i in eachindex(w)) / sum(w)
 end
 
 function SurrogatesBase.update!(inverSurr::InverseDistanceSurrogate, x_new, y_new)

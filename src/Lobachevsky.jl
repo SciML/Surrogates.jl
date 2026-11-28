@@ -145,10 +145,11 @@ end
 
 function (loba::LobachevskySurrogate)(val::Number)
     _check_dimension(loba, val)
+    x, alpha, n = loba.x, loba.alpha, loba.n
     return _loba_combine(
         loba.coeff,
-        j -> phi_nj1D(val, loba.x[j], loba.alpha, loba.n),
-        length(loba.x)
+        j -> phi_nj1D(val, x[j], alpha, n),
+        length(x)
     )
 end
 
@@ -195,10 +196,11 @@ end
 
 function (loba::LobachevskySurrogate)(val)
     _check_dimension(loba, val)
+    x, alpha, n = loba.x, loba.alpha, loba.n
     return _loba_combine(
         loba.coeff,
-        j -> phi_njND(val, loba.x[j], loba.alpha, loba.n),
-        length(loba.x)
+        j -> phi_njND(val, x[j], alpha, n),
+        length(x)
     )
 end
 
