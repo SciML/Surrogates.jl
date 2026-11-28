@@ -124,6 +124,18 @@ end
     @test rmse < 26.0  # 22.81
 end
 
+@testset "GEKPLS recovers its trend at equal correlations" begin
+    points = [(a, b) for a in (-1.0, 1.0) for b in (-1.0, 1.0)]
+    surface(p) = 3.0 + p[1] * p[2]
+    g = GEKPLS(
+        points, surface.(points), gradient.(surface, points),
+        [-1.0, -1.0], [1.0, 1.0]; n_comp = 1, extra_points = 0, theta = [1.0e-6]
+    )
+    trend = g.y_mean + g.y_std * only(g.beta)
+    @test g((0.0, 0.0)) ≈ trend
+    @test g((1.0e6, 1.0e6)) ≈ trend
+end
+
 ## sphere function tests
 function sphere_function(x)
     return sum(x .^ 2)
