@@ -3,6 +3,34 @@ using Zygote
 using Test
 include("testutils.jl")
 
+@testset "Projected pairwise distances" begin
+    weights = [0.5 -3.0 0.0; 2.0 1.0 1.0]
+    for T in (Float32, Float64, BigFloat)
+        X = T[0.1 -2.13; 4.4 0.07; 3.2 5.4; -1.51 2.19]
+        d, pairs = Surrogates._projected_cross_distances(X, weights)
+        @test pairs == [1 2; 1 3; 1 4; 2 3; 2 4; 3 4]
+        raw = Float64.(X[pairs[:, 1], :] .- X[pairs[:, 2], :])
+        @test d ≈ raw .^ 2 * weights .^ 2
+        @test eltype(d) === Float64
+    end
+
+    setprecision(BigFloat, 8) do
+        setrounding(BigFloat, RoundDown) do
+            X = reshape(BigFloat[1, 512], 2, 1)
+            W = ones(1, 1)
+            raw, _ = Surrogates.cross_distances(X)
+            d, _ = Surrogates._projected_cross_distances(X, W)
+            @test d == Surrogates.componentwise_distance_PLS(raw, "squar_exp", 1, W)
+        end
+    end
+
+    X = reshape(collect(1.0:(256 * 16)), 256, 16)
+    weights = ones(16, 2)
+    bytes = @allocated Surrogates._projected_cross_distances(X, weights)
+    full_distance_bytes = binomial(size(X, 1), 2) * size(X, 2) * sizeof(eltype(X))
+    @test bytes < full_distance_bytes
+end
+
 # Accuracy assertions here are one-sided bounds with the measured value in a
 # comment. They used to be two-sided `isapprox(rmse, pinned, atol)` bands, which
 # fail when the model gets *better* — three of them were failing for exactly

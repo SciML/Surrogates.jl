@@ -6,7 +6,7 @@ using IterativeSolvers: cg
 using CommonSolve: solve
 using LinearAlgebra: Cholesky, ColumnNorm, Diagonal, I, LAPACKException,
     PosDefException, SingularException, Symmetric, cholesky, diag, dot, eigvals,
-    issuccess, logdet, norm, pinv, qr, rank, ⋅
+    issuccess, logdet, mul!, norm, pinv, qr, rank, ⋅
 using OptimizationOptimJL: NelderMead
 using SciMLBase: OptimizationProblem
 using PrecompileTools: @compile_workload, @setup_workload
