@@ -20,4 +20,6 @@ concurrency:
 jobs:
   tests:
     uses: "SciML/.github/.github/workflows/grouped-tests.yml@v1"
+    with:
+      linux-x86-pocl-workers: 2
     secrets: "inherit"
